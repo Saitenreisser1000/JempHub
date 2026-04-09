@@ -98,29 +98,12 @@ watch(
             <div class="text-caption text-medium-emphasis">Instrument: {{ instrumentType }}</div>
           </div>
         </div>
-        <v-text-field
-          v-model="profileNameInput"
-          label="Nickname"
-          density="compact"
-          variant="outlined"
-        />
-        <v-text-field
-          v-model="profileAvatarInput"
-          label="Profilbild URL"
-          density="compact"
-          variant="outlined"
-          placeholder="https://..."
-          hint="Leer lassen für generiertes Avatar-Bild"
-          persistent-hint
-        />
+        <v-text-field v-model="profileNameInput" label="Nickname" density="compact" variant="outlined" />
+        <v-text-field v-model="profileAvatarInput" label="Profilbild URL" density="compact" variant="outlined"
+          placeholder="https://..." hint="Leer lassen für generiertes Avatar-Bild" persistent-hint />
         <div class="d-flex justify-end">
-          <v-btn
-            color="primary"
-            variant="flat"
-            :loading="profileSaving"
-            :disabled="profileSaving"
-            @click="submitProfile"
-          >
+          <v-btn color="primary" variant="flat" :loading="profileSaving" :disabled="profileSaving"
+            @click="submitProfile">
             Profil speichern
           </v-btn>
         </div>
@@ -154,12 +137,8 @@ watch(
       <v-card rounded="lg" variant="tonal" class="detail-card">
         <v-card-title>Freundschaften & Anfragen</v-card-title>
         <v-card-text class="d-flex flex-column ga-4">
-          <v-alert
-            v-if="!signedIn"
-            type="info"
-            variant="tonal"
-            text="Login erforderlich, um Freundschaften zu verwalten."
-          />
+          <v-alert v-if="!signedIn" type="info" variant="tonal"
+            text="Login erforderlich, um Freundschaften zu verwalten." />
           <template v-else>
             <div>
               <div class="text-subtitle-2 mb-1">Eingehend</div>
@@ -170,7 +149,8 @@ watch(
             </div>
             <div>
               <div class="text-subtitle-2 mb-1">Ausgehend</div>
-              <div v-if="outgoing.length === 0" class="text-caption text-medium-emphasis">Keine gesendeten Anfragen.</div>
+              <div v-if="outgoing.length === 0" class="text-caption text-medium-emphasis">Keine gesendeten Anfragen.
+              </div>
               <div v-for="row in outgoing" :key="`out-${row.id}`" class="text-body-2">
                 {{ userLabelFn(row.addressee_id) }}
               </div>
@@ -191,8 +171,9 @@ watch(
     <v-card v-else-if="panel === 'share'" rounded="lg" variant="tonal" class="detail-card">
       <v-card-title class="d-flex align-center justify-space-between">
         <span>Share Kontakte</span>
-        <v-btn size="small" variant="flat" color="primary" prepend-icon="mdi-plus" @click="shareContacts.addContact()">
-          Kontakt
+        <v-btn size="small" variant="tonal" color="primary" icon aria-label="Kontakt hinzufügen"
+          @click="shareContacts.addContact()">
+          <v-icon>mdi-plus</v-icon>
         </v-btn>
       </v-card-title>
       <v-card-text>
@@ -208,43 +189,23 @@ watch(
           <tbody>
             <tr v-for="contact in shareContacts.contacts" :key="contact.id">
               <td>
-                <v-text-field
-                  :model-value="contact.name"
-                  density="compact"
-                  variant="outlined"
-                  hide-details
+                <v-text-field :model-value="contact.name" density="compact" variant="outlined" hide-details
                   placeholder="Name"
-                  @update:model-value="(v) => shareContacts.updateContactField(contact.id, 'name', v)"
-                />
+                  @update:model-value="(v) => shareContacts.updateContactField(contact.id, 'name', v)" />
               </td>
               <td>
-                <v-text-field
-                  :model-value="contact.email"
-                  density="compact"
-                  variant="outlined"
-                  hide-details
+                <v-text-field :model-value="contact.email" density="compact" variant="outlined" hide-details
                   placeholder="name@mail.com"
-                  @update:model-value="(v) => shareContacts.updateContactField(contact.id, 'email', v)"
-                />
+                  @update:model-value="(v) => shareContacts.updateContactField(contact.id, 'email', v)" />
               </td>
               <td>
-                <v-text-field
-                  :model-value="contact.whatsapp"
-                  density="compact"
-                  variant="outlined"
-                  hide-details
+                <v-text-field :model-value="contact.whatsapp" density="compact" variant="outlined" hide-details
                   placeholder="+43..."
-                  @update:model-value="(v) => shareContacts.updateContactField(contact.id, 'whatsapp', v)"
-                />
+                  @update:model-value="(v) => shareContacts.updateContactField(contact.id, 'whatsapp', v)" />
               </td>
               <td class="text-right">
-                <v-btn
-                  size="small"
-                  variant="tonal"
-                  color="error"
-                  icon="mdi-delete-outline"
-                  @click="shareContacts.removeContact(contact.id)"
-                />
+                <v-btn size="small" variant="tonal" color="error" icon="mdi-delete-outline"
+                  @click="shareContacts.removeContact(contact.id)" />
               </td>
             </tr>
             <tr v-if="shareContacts.contacts.length === 0">
