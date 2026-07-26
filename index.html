@@ -1,0 +1,122 @@
+<!doctype html>
+<html lang="de">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>StemPlayer Klasse</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;700&family=Fraunces:opsz,wght@9..144,700&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <div class="bg-shape bg-shape-1" aria-hidden="true"></div>
+    <div class="bg-shape bg-shape-2" aria-hidden="true"></div>
+
+    <header class="topbar">
+      <h1>StemPlayer Klasse</h1>
+      <div class="topbar-controls">
+        <div id="authSummary" class="auth-summary">Nicht eingeloggt</div>
+        <button id="logoutButton" class="secondary" type="button" hidden>Logout</button>
+        <div class="transport-inline">
+          <button id="playPauseButton" class="primary">Play</button>
+          <button id="stopButton" class="secondary">Stop</button>
+        </div>
+      </div>
+    </header>
+
+    <main class="layout">
+      <section class="panel playlist-panel">
+        <h2>Playlist</h2>
+        <p class="small">Songs aus API (mit Login) oder fallback aus playlist.json.</p>
+
+        <section class="auth-panel">
+          <h3>Zugang</h3>
+          <form id="loginForm" class="inline-form">
+            <input id="loginEmail" type="email" placeholder="E-Mail" required />
+            <input id="loginPassword" type="password" placeholder="Passwort" minlength="8" required />
+            <button type="submit" class="primary">Login</button>
+          </form>
+          <form id="registerForm" class="inline-form">
+            <input id="registerEmail" type="email" placeholder="Neue E-Mail" required />
+            <input
+              id="registerPassword"
+              type="password"
+              placeholder="Neues Passwort (min. 8 Zeichen)"
+              minlength="8"
+              required
+            />
+            <button type="submit" class="secondary">Konto erstellen</button>
+          </form>
+          <p id="authMessage" class="small">Mit Login koennen alle Nutzer alle Songs sehen.</p>
+        </section>
+
+        <section id="adminPanel" class="admin-panel" hidden>
+          <h3>Admin: Song hochladen</h3>
+          <form id="adminSongForm" class="admin-form">
+            <input id="adminSongTitle" type="text" placeholder="Songtitel" required />
+            <input id="adminSongArtist" type="text" placeholder="Artist (optional)" />
+            <input id="adminSongStems" type="file" accept="audio/mpeg,.mp3" multiple required />
+            <button type="submit" class="primary">Song + MP3-Stems hochladen</button>
+          </form>
+          <p class="small">Nur MP3-Dateien, max. 24 Dateien pro Upload.</p>
+        </section>
+
+        <div class="playlist-actions">
+          <button id="importFolderButton" type="button" class="secondary">Stems-Ordner importieren</button>
+          <input id="importFolderInput" type="file" webkitdirectory directory multiple hidden />
+        </div>
+        <ul id="playlist" class="playlist" aria-label="Song Playlist"></ul>
+      </section>
+
+      <section class="panel player-panel">
+        <div class="song-head">
+          <div>
+            <h2 id="songTitle">Kein Song geladen</h2>
+            <p id="songArtist" class="small">Bitte Song aus der Playlist wählen</p>
+          </div>
+          <div id="status" class="status">Bereit</div>
+        </div>
+
+        <div class="progress-wrap">
+          <label for="seek" class="small">Position</label>
+          <input id="seek" type="range" min="0" max="100" value="0" step="0.01" />
+          <div class="time-row">
+            <span id="currentTime">00:00</span>
+            <span id="duration">00:00</span>
+          </div>
+        </div>
+
+        <div class="master">
+          <label for="masterVolume">Master</label>
+          <input id="masterVolume" type="range" min="0" max="1" value="1" step="0.01" />
+        </div>
+
+        <div class="mixer-header">
+          <h3>Stems</h3>
+        </div>
+        <div id="mixer" class="mixer"></div>
+      </section>
+    </main>
+
+    <template id="stemTemplate">
+      <article class="stem">
+        <div class="stem-icon" aria-hidden="true">🔊</div>
+        <div class="stem-main">
+          <div class="stem-title"></div>
+          <div class="stem-actions">
+            <button class="mute-btn secondary" aria-label="Mute">M</button>
+            <button class="solo-btn secondary" aria-label="Solo">S</button>
+          </div>
+        </div>
+        <input class="stem-volume" type="range" min="0" max="1" value="1" step="0.01" aria-label="Lautstärke" />
+        <input class="stem-pan" type="range" min="-1" max="1" value="0" step="0.01" aria-label="Panorama" />
+      </article>
+    </template>
+
+    <script src="app.js" type="module"></script>
+  </body>
+</html>
