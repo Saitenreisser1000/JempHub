@@ -32,7 +32,8 @@ TREE="$REF"
 if [[ -n "$PREFIX" ]]; then
   TREE="${REF}:${PREFIX%/}"
 fi
-git -C "$ROOT_DIR" archive --format=tar.gz --output "$ARCHIVE" "$TREE"
+REPO_DIR="$(git -C "$ROOT_DIR" rev-parse --show-toplevel)"
+git -C "$REPO_DIR" archive --format=tar.gz --output "$ARCHIVE" "$TREE"
 
 cat <<EOF
 Fertig:

@@ -19,6 +19,7 @@ Umgebung: macOS, Node v26.4.0, npm 11.17.0.
 - Backend: sämtliche JavaScript-Dateien syntaktisch geprüft, alle neun direkten Paketabhängigkeiten erfolgreich importiert.
 - Design-System: alle Paketexporte vorhanden; JavaScript-Syntax geprüft. Integration zusätzlich durch GuitarJemp-Build getestet.
 - `check-dependency-resolution.py`: keine Abweichung der direkten Paketversionen gegenüber den ursprünglichen Lockfiles.
+- Lokaler StemPlayer-Release-Builder: Archiv enthält Frontend und Backend direkt an der Archivwurzel; keine anderen Apps, Audioquellen oder Release-Archive.
 - `verify-migration.py`: Originaldateien und Git-Zustände unverändert; alle ursprünglichen Hauptstände Vorfahren von main; alle ursprünglichen Referenzen erhalten.
 
 Build- und Testprotokolle: `/private/tmp/jemphub-build-all.log`, `/private/tmp/jemphub-test-guitar.log`, `/private/tmp/jemphub-test-ear.log`, `/private/tmp/jemphub-ci.log`.

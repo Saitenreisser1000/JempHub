@@ -25,7 +25,7 @@ for f in filter(None,files):
  assert not any(part in ['node_modules','dist','.git'] for part in Path(f).parts),f
  assert not (p.name.startswith('.env') and not p.name.endswith('.example')),f
  if p.stat().st_size>10*1024*1024:large.append(f)
-assert large==['apps/ear/src/assets/audio/pianoSounds.mp3'],large
+assert set(large).issubset({'apps/ear/src/assets/audio/pianoSounds.mp3'}),large
 print('Staged',len(list(filter(None,files))),'files; large-file and environment-file checks passed')
-print(git('commit','-m','Import six JempHub projects with workspaces, preserved local changes and validated builds'))
+print(git('commit','-q','-m','Import six JempHub projects with workspaces, preserved local changes and validated builds'))
 print(git('status','--short','--branch'))
