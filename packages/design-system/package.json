@@ -1,0 +1,23 @@
+{
+  "name": "jemp-design-system",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "sideEffects": [
+    "./src/styles.css",
+    "./src/tokens.css"
+  ],
+  "exports": {
+    ".": "./src/index.js",
+    "./styles.css": "./src/styles.css",
+    "./tokens.css": "./src/tokens.css",
+    "./theme": "./src/theme.js",
+    "./app-shell.css": "./src/app-shell.css",
+    "./timeline-theme": "./src/timelineTheme.js",
+    "./fretboard-theme": "./src/fretboardTheme.js",
+    "./design-constants": "./src/designConstants.js"
+  },
+  "scripts": {
+    "build": "node ../../scripts/check-design-system.mjs"
+  }
+}

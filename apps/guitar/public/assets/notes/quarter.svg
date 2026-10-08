@@ -1,0 +1,5 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
+  <title>Quarter Note</title>
+  <ellipse cx="20" cy="46" rx="12" ry="9" transform="rotate(-18 20 46)" fill="#111" />
+  <rect x="29" y="10" width="4" height="34" rx="2" fill="#111" />
+</svg>

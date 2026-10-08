@@ -1,0 +1,163 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="1400" height="900" viewBox="0 0 1400 900">
+  <defs>
+    <style>
+      .title { font: 700 20px -apple-system, BlinkMacSystemFont, Segoe UI, Roboto, Arial, sans-serif; fill: #111; }
+      .h { font: 700 14px -apple-system, BlinkMacSystemFont, Segoe UI, Roboto, Arial, sans-serif; fill: #111; }
+      .t { font: 12px -apple-system, BlinkMacSystemFont, Segoe UI, Roboto, Arial, sans-serif; fill: #111; }
+      .muted { fill: #444; }
+      .box { fill: #fff; stroke: #c9c9c9; stroke-width: 1.5; rx: 10; }
+      .group { fill: #f7f7fb; stroke: #c9c9c9; stroke-width: 1.5; rx: 14; }
+      .arrow { stroke: #555; stroke-width: 2; fill: none; marker-end: url(#m); }
+      .arrow2 { stroke: #888; stroke-width: 1.5; fill: none; marker-end: url(#m2); }
+    </style>
+    <marker id="m" markerWidth="10" markerHeight="10" refX="9" refY="3" orient="auto" markerUnits="strokeWidth">
+      <path d="M0,0 L10,3 L0,6 Z" fill="#555" />
+    </marker>
+    <marker id="m2" markerWidth="10" markerHeight="10" refX="9" refY="3" orient="auto" markerUnits="strokeWidth">
+      <path d="M0,0 L10,3 L0,6 Z" fill="#888" />
+    </marker>
+  </defs>
+
+  <text x="40" y="42" class="title">GuitarJemp – Komponentenübersicht</text>
+  <text x="40" y="68" class="t muted">High-Level: UI-Komponenten → Pinia Stores/Composables → Domain (Audio/Music)</text>
+
+  <!-- App -->
+  <rect x="40" y="110" width="280" height="90" class="box" />
+  <text x="60" y="145" class="h">App.vue</text>
+  <text x="60" y="168" class="t muted">Layout/Shell, Editor/Show Mode</text>
+
+  <!-- UI group -->
+  <rect x="40" y="230" width="620" height="610" class="group" />
+  <text x="60" y="260" class="h">UI-Komponenten</text>
+
+  <rect x="70" y="290" width="250" height="80" class="box" />
+  <text x="90" y="322" class="h">FretboardEdit</text>
+  <text x="90" y="346" class="t muted">Töne auswählen/ändern</text>
+
+  <rect x="360" y="290" width="270" height="80" class="box" />
+  <text x="380" y="322" class="h">FretboardShow</text>
+  <text x="380" y="346" class="t muted">Anzeige + Playback-Visuals</text>
+
+  <rect x="70" y="400" width="560" height="120" class="box" />
+  <text x="90" y="432" class="h">Timeline (Container)</text>
+  <text x="90" y="456" class="t muted">Orchestriert Playback, Playhead, Audio</text>
+  <text x="90" y="478" class="t muted">setzt Store-State (Transport/Visuals)</text>
+
+  <rect x="70" y="540" width="560" height="90" class="box" />
+  <text x="90" y="572" class="h">TimelineView (Presentational)</text>
+  <text x="90" y="596" class="t muted">Komposition; Events hochleiten</text>
+
+  <rect x="70" y="650" width="260" height="80" class="box" />
+  <text x="90" y="682" class="h">PlaybackControls</text>
+  <text x="90" y="706" class="t muted">Play/Pause, Seek Start, Loop</text>
+
+  <rect x="370" y="650" width="260" height="80" class="box" />
+  <text x="390" y="682" class="h">ModeSelector</text>
+  <text x="390" y="706" class="t muted">Snap, Sound, Beat, Zoom</text>
+
+  <rect x="70" y="750" width="260" height="70" class="box" />
+  <text x="90" y="782" class="h">TimelineTrack</text>
+  <text x="90" y="806" class="t muted">Track + Scrub (Seek)</text>
+
+  <rect x="370" y="750" width="260" height="70" class="box" />
+  <text x="390" y="782" class="h">NoteEvent</text>
+  <text x="390" y="806" class="t muted">Drag/Resize + Preview</text>
+
+  <rect x="70" y="830" width="560" height="0" fill="none" />
+
+  <!-- State group -->
+  <rect x="700" y="110" width="320" height="730" class="group" />
+  <text x="720" y="140" class="h">Pinia Stores</text>
+
+  <rect x="730" y="165" width="260" height="70" class="box" />
+  <text x="750" y="195" class="h">useNotes</text>
+  <text x="750" y="218" class="t muted">Noten (gridIndex, length, color…)</text>
+
+  <rect x="730" y="250" width="260" height="60" class="box" />
+  <text x="750" y="280" class="h">useSelection</text>
+
+  <rect x="730" y="325" width="260" height="70" class="box" />
+  <text x="750" y="355" class="h">useTransport</text>
+  <text x="750" y="378" class="t muted">tempo, playState, playheadMs</text>
+
+  <rect x="730" y="410" width="260" height="85" class="box" />
+  <text x="750" y="440" class="h">useTimelineSettings</text>
+  <text x="750" y="463" class="t muted">snap, sound, loop, zoom, beat…</text>
+
+  <rect x="730" y="510" width="260" height="70" class="box" />
+  <text x="750" y="540" class="h">usePlaybackVisuals</text>
+  <text x="750" y="563" class="t muted">highlight + pulse</text>
+
+  <rect x="730" y="595" width="260" height="60" class="box" />
+  <text x="750" y="625" class="h">useInstrument</text>
+
+  <!-- Logic group -->
+  <rect x="1060" y="110" width="300" height="360" class="group" />
+  <text x="1080" y="140" class="h">Composables</text>
+
+  <rect x="1090" y="170" width="240" height="80" class="box" />
+  <text x="1110" y="202" class="h">usePlayback</text>
+  <text x="1110" y="226" class="t muted">Clock (RAF), seek/start/pause</text>
+
+  <rect x="1090" y="270" width="240" height="70" class="box" />
+  <text x="1110" y="302" class="h">useGrid</text>
+  <text x="1110" y="326" class="t muted">timePerBlock, Helpers</text>
+
+  <!-- Domain group -->
+  <rect x="1060" y="500" width="300" height="340" class="group" />
+  <text x="1080" y="530" class="h">Domain / Audio / Music</text>
+
+  <rect x="1090" y="560" width="240" height="55" class="box" />
+  <text x="1110" y="592" class="h">getTuning()</text>
+
+  <rect x="1090" y="625" width="240" height="55" class="box" />
+  <text x="1110" y="657" class="h">midiForNote()</text>
+
+  <rect x="1090" y="690" width="240" height="55" class="box" />
+  <text x="1110" y="722" class="h">midiToNoteName()</text>
+
+  <rect x="1090" y="755" width="240" height="55" class="box" />
+  <text x="1110" y="787" class="h">playMidi()</text>
+
+  <!-- Arrows: App to UI -->
+  <path class="arrow" d="M320 155 L380 155" />
+  <text x="340" y="146" class="t muted">rendert</text>
+  <path class="arrow2" d="M180 200 L180 290" />
+  <path class="arrow2" d="M180 200 L180 400" />
+  <path class="arrow2" d="M180 200 L480 290" />
+
+  <!-- Timeline container to view/controls -->
+  <path class="arrow" d="M350 460 L700 460" />
+  <text x="420" y="448" class="t muted">liest/schreibt</text>
+
+  <!-- UI to stores -->
+  <path class="arrow2" d="M320 330 L730 200" />
+  <path class="arrow2" d="M320 330 L730 280" />
+  <path class="arrow2" d="M320 330 L730 452" />
+
+  <path class="arrow2" d="M630 330 L730 200" />
+  <path class="arrow2" d="M630 330 L730 360" />
+  <path class="arrow2" d="M630 330 L730 540" />
+  <path class="arrow2" d="M630 330 L730 625" />
+
+  <path class="arrow2" d="M630 460 L730 200" />
+  <path class="arrow2" d="M630 460 L730 360" />
+  <path class="arrow2" d="M630 460 L730 452" />
+  <path class="arrow2" d="M630 460 L730 540" />
+  <path class="arrow2" d="M630 460 L730 625" />
+
+  <!-- Timeline to composables -->
+  <path class="arrow" d="M1020 220 L1090 220" />
+  <path class="arrow" d="M1020 310 L1090 310" />
+
+  <!-- Timeline to domain -->
+  <path class="arrow2" d="M1020 610 L1090 588" />
+  <path class="arrow2" d="M1020 610 L1090 655" />
+  <path class="arrow2" d="M1020 610 L1090 787" />
+
+  <!-- NoteEvent to domain (labeling/preview) -->
+  <path class="arrow2" d="M630 785 L1090 715" />
+  <path class="arrow2" d="M630 785 L1090 655" />
+
+</svg>

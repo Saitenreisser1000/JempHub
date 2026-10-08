@@ -1,0 +1,12 @@
+{
+  "name": "Steel String Guitar (Fingerstyle)",
+  "description": "Sample pack manifest for a steel-string fingerstyle guitar. Put the referenced audio files under /public/samples/guitar-steel-finger/.",
+  "samples": [
+    { "midi": 40, "note": "E2", "url": "/samples/guitar-steel-finger/E2.wav" },
+    { "midi": 45, "note": "A2", "url": "/samples/guitar-steel-finger/A2.wav" },
+    { "midi": 50, "note": "D3", "url": "/samples/guitar-steel-finger/D3.wav" },
+    { "midi": 55, "note": "G3", "url": "/samples/guitar-steel-finger/G3.wav" },
+    { "midi": 59, "note": "B3", "url": "/samples/guitar-steel-finger/B3.wav" },
+    { "midi": 64, "note": "E4", "url": "/samples/guitar-steel-finger/E4.wav" }
+  ]
+}

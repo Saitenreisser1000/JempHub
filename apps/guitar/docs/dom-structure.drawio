@@ -1,0 +1,112 @@
+<mxfile host="app.diagrams.net" modified="2026-02-28T12:00:00.000Z" agent="Codex" version="24.7.17" type="device">
+  <diagram id="dom-structure" name="DOM Structure">
+    <mxGraphModel dx="1800" dy="1200" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="2200" pageHeight="1400" math="0" shadow="0">
+      <root>
+        <mxCell id="0"/>
+        <mxCell id="1" parent="0"/>
+
+        <mxCell id="n1" value="div.app-layout&#xa;Root-Container: vertikales App-Layout (100vh)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry x="820" y="40" width="430" height="70" as="geometry"/>
+        </mxCell>
+
+        <mxCell id="n2" value="header.app-header&#xa;Kopfbereich: Branding/Titel" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;" vertex="1" parent="1">
+          <mxGeometry x="140" y="170" width="330" height="70" as="geometry"/>
+        </mxCell>
+        <mxCell id="n3" value="nav.app-menu&#xa;Menueleiste: top-level Navigation" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;" vertex="1" parent="1">
+          <mxGeometry x="520" y="170" width="330" height="70" as="geometry"/>
+        </mxCell>
+        <mxCell id="n4" value="main.app-content&#xa;Hauptbereich: traegt WindowManager + optional TransportBar" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;" vertex="1" parent="1">
+          <mxGeometry x="900" y="170" width="430" height="70" as="geometry"/>
+        </mxCell>
+        <mxCell id="n5" value="footer.app-footer&#xa;Fussbereich: Status/Workspace-Info" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;" vertex="1" parent="1">
+          <mxGeometry x="1380" y="170" width="330" height="70" as="geometry"/>
+        </mxCell>
+
+        <mxCell id="n6" value="div.app-main-grid&#xa;2-Spalten-Layout: links Editor, rechts Sidebar" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;" vertex="1" parent="1">
+          <mxGeometry x="900" y="300" width="430" height="70" as="geometry"/>
+        </mxCell>
+
+        <mxCell id="n7" value="WindowManager (.window-manager)&#xa;Split-Container mit Drag-Divider" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f8cecc;strokeColor=#b85450;" vertex="1" parent="1">
+          <mxGeometry x="640" y="430" width="430" height="70" as="geometry"/>
+        </mxCell>
+        <mxCell id="n8" value="aside.app-sidebar&#xa;Rechte Sidebar fuer Zusatz-UI" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f8cecc;strokeColor=#b85450;" vertex="1" parent="1">
+          <mxGeometry x="1120" y="430" width="320" height="70" as="geometry"/>
+        </mxCell>
+
+        <mxCell id="n9" value="section.wm-pane-a&#xa;Obere Pane: hostet Fretboard-Bereich" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e1d5e7;strokeColor=#9673a6;" vertex="1" parent="1">
+          <mxGeometry x="350" y="560" width="360" height="70" as="geometry"/>
+        </mxCell>
+        <mxCell id="n10" value="button.wm-divider&#xa;5px Split-Balken: vertikales Resizing" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e1d5e7;strokeColor=#9673a6;" vertex="1" parent="1">
+          <mxGeometry x="760" y="560" width="270" height="70" as="geometry"/>
+        </mxCell>
+        <mxCell id="n11" value="section.wm-pane-b&#xa;Untere Pane: hostet Timeline-Bereich" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e1d5e7;strokeColor=#9673a6;" vertex="1" parent="1">
+          <mxGeometry x="1080" y="560" width="360" height="70" as="geometry"/>
+        </mxCell>
+
+        <mxCell id="n12" value="div.fretboard-main&#xa;Wrapper: beobachtet Parent-Hoehe, reicht Resize an Fretboard weiter" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f5f5f5;strokeColor=#666666;" vertex="1" parent="1">
+          <mxGeometry x="250" y="700" width="430" height="70" as="geometry"/>
+        </mxCell>
+        <mxCell id="n13" value="FretboardView (.fretboard-body)&#xa;Core/Overlay/Numbers/Actions fuer Griffbrett-Interaktion" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f5f5f5;strokeColor=#666666;" vertex="1" parent="1">
+          <mxGeometry x="250" y="820" width="430" height="70" as="geometry"/>
+        </mxCell>
+
+        <mxCell id="n14" value="Timeline Container&#xa;Orchestrierung von Playback, Tracks, Selektion" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f5f5f5;strokeColor=#666666;" vertex="1" parent="1">
+          <mxGeometry x="1110" y="700" width="360" height="70" as="geometry"/>
+        </mxCell>
+        <mxCell id="n15" value="div.timeline-main&#xa;Timeline-UI Root (TopRow, Grid/Tracks, InfoBar)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f5f5f5;strokeColor=#666666;" vertex="1" parent="1">
+          <mxGeometry x="1110" y="820" width="360" height="70" as="geometry"/>
+        </mxCell>
+
+        <mxCell id="n16" value="TransportBar (optional)&#xa;Playback-Steuerung unter dem Hauptbereich" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;" vertex="1" parent="1">
+          <mxGeometry x="900" y="950" width="430" height="70" as="geometry"/>
+        </mxCell>
+
+        <mxCell id="e1" edge="1" source="n1" target="n2" parent="1" style="endArrow=block;html=1;">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        <mxCell id="e2" edge="1" source="n1" target="n3" parent="1" style="endArrow=block;html=1;">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        <mxCell id="e3" edge="1" source="n1" target="n4" parent="1" style="endArrow=block;html=1;">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        <mxCell id="e4" edge="1" source="n1" target="n5" parent="1" style="endArrow=block;html=1;">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        <mxCell id="e5" edge="1" source="n4" target="n6" parent="1" style="endArrow=block;html=1;">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        <mxCell id="e6" edge="1" source="n6" target="n7" parent="1" style="endArrow=block;html=1;">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        <mxCell id="e7" edge="1" source="n6" target="n8" parent="1" style="endArrow=block;html=1;">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        <mxCell id="e8" edge="1" source="n7" target="n9" parent="1" style="endArrow=block;html=1;">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        <mxCell id="e9" edge="1" source="n7" target="n10" parent="1" style="endArrow=block;html=1;">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        <mxCell id="e10" edge="1" source="n7" target="n11" parent="1" style="endArrow=block;html=1;">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        <mxCell id="e11" edge="1" source="n9" target="n12" parent="1" style="endArrow=block;html=1;">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        <mxCell id="e12" edge="1" source="n12" target="n13" parent="1" style="endArrow=block;html=1;">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        <mxCell id="e13" edge="1" source="n11" target="n14" parent="1" style="endArrow=block;html=1;">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        <mxCell id="e14" edge="1" source="n14" target="n15" parent="1" style="endArrow=block;html=1;">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        <mxCell id="e15" edge="1" source="n4" target="n16" parent="1" style="endArrow=block;html=1;dashed=1;">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>

@@ -1,0 +1,78 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="1400" height="520" viewBox="0 0 1400 520">
+  <defs>
+    <style>
+      .title { font: 700 20px -apple-system, BlinkMacSystemFont, Segoe UI, Roboto, Arial, sans-serif; fill: #111; }
+      .h { font: 700 13px -apple-system, BlinkMacSystemFont, Segoe UI, Roboto, Arial, sans-serif; fill: #111; }
+      .t { font: 12px -apple-system, BlinkMacSystemFont, Segoe UI, Roboto, Arial, sans-serif; fill: #111; }
+      .muted { fill: #444; }
+      .lane { fill: #f7f7fb; stroke: #c9c9c9; stroke-width: 1.5; rx: 10; }
+      .msg { stroke: #555; stroke-width: 2; fill: none; marker-end: url(#m); }
+      .dash { stroke: #bbb; stroke-width: 1.5; stroke-dasharray: 4 4; }
+    </style>
+    <marker id="m" markerWidth="10" markerHeight="10" refX="9" refY="3" orient="auto" markerUnits="strokeWidth">
+      <path d="M0,0 L10,3 L0,6 Z" fill="#555" />
+    </marker>
+  </defs>
+
+  <text x="40" y="42" class="title">Playback-Flow (vereinfacht)</text>
+  <text x="40" y="68" class="t muted">Play/Pause → RAF-Ticks → Playhead/Visuals/Audio</text>
+
+  <!-- Lanes -->
+  <g>
+    <rect x="40" y="110" width="170" height="360" class="lane" />
+    <text x="60" y="145" class="h">User</text>
+    <line x1="125" y1="160" x2="125" y2="460" class="dash" />
+
+    <rect x="230" y="110" width="170" height="360" class="lane" />
+    <text x="250" y="145" class="h">PlaybackControls</text>
+    <line x1="315" y1="160" x2="315" y2="460" class="dash" />
+
+    <rect x="420" y="110" width="190" height="360" class="lane" />
+    <text x="440" y="145" class="h">Timeline (Container)</text>
+    <line x1="515" y1="160" x2="515" y2="460" class="dash" />
+
+    <rect x="630" y="110" width="170" height="360" class="lane" />
+    <text x="650" y="145" class="h">usePlayback</text>
+    <line x1="715" y1="160" x2="715" y2="460" class="dash" />
+
+    <rect x="820" y="110" width="170" height="360" class="lane" />
+    <text x="840" y="145" class="h">Stores</text>
+    <text x="840" y="165" class="t muted">Transport/Visuals</text>
+    <line x1="905" y1="180" x2="905" y2="460" class="dash" />
+
+    <rect x="1010" y="110" width="170" height="360" class="lane" />
+    <text x="1030" y="145" class="h">useNotes</text>
+    <line x1="1095" y1="160" x2="1095" y2="460" class="dash" />
+
+    <rect x="1200" y="110" width="170" height="360" class="lane" />
+    <text x="1220" y="145" class="h">Audio</text>
+    <text x="1220" y="165" class="t muted">playMidi()</text>
+    <line x1="1285" y1="180" x2="1285" y2="460" class="dash" />
+  </g>
+
+  <!-- Messages -->
+  <path class="msg" d="M125 200 L315 200" />
+  <text x="150" y="192" class="t">klick Play/Pause</text>
+
+  <path class="msg" d="M315 240 L515 240" />
+  <text x="340" y="232" class="t">emit toggle-play</text>
+
+  <path class="msg" d="M515 280 L715 280" />
+  <text x="545" y="272" class="t">start() / pause()</text>
+
+  <path class="msg" d="M715 330 L515 330" />
+  <text x="555" y="322" class="t">onTick(tMs)</text>
+
+  <path class="msg" d="M515 360 L905 360" />
+  <text x="590" y="352" class="t">setPlayheadMs + prune/highlight</text>
+
+  <path class="msg" d="M515 390 L1095 390" />
+  <text x="660" y="382" class="t">activeNotes lesen</text>
+
+  <path class="msg" d="M515 420 L1285 420" />
+  <text x="720" y="412" class="t">playMidi(midi, duration)</text>
+
+  <path class="msg" d="M125 460 L315 460" />
+  <text x="150" y="452" class="t">klick Seek Start</text>
+</svg>

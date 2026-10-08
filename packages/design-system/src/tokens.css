@@ -1,0 +1,69 @@
+:root {
+  --color-primary: #c66a2b;
+  --color-primary-2: #1f3a5f;
+  --color-accent: #2e7d6e;
+  --color-success: #2e9e5b;
+  --color-success-hover: #27864d;
+  --color-warning: #d18b1f;
+  --color-error: #c0392b;
+  --color-error-soft-text: #7b2a2a;
+  --color-error-soft-bg: #f6e9e9;
+  --color-error-soft-border: #b68888;
+
+  --color-text: #1e2329;
+  --color-text-muted: #5e6a78;
+  --color-heading: #141922;
+  --color-heading-muted: #2b3442;
+  --color-heading-inverse: #f1f5fb;
+  --color-border: #dfe5ec;
+  --color-border-strong: #c8d2de;
+  --color-surface: #ffffff;
+  --color-surface-2: #f2f5f8;
+
+  --font-ui: 'Manrope', 'Nunito Sans', 'Avenir Next', 'Segoe UI', sans-serif;
+  --font-display: 'Sora', 'Avenir Next', 'Segoe UI', sans-serif;
+
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-6: 24px;
+
+  --radius-sm: 8px;
+  --radius-md: 12px;
+  --radius-lg: 16px;
+
+  --elev-1: 0 4px 14px rgb(0 0 0 / 6%);
+  --elev-2: 0 10px 30px rgb(0 0 0 / 10%);
+
+  --ui-fast: 140ms ease;
+  --ui-med: 220ms ease;
+  --shadow-focus: 0 0 0 3px rgb(198 106 43 / 40%);
+}
+
+.v-theme--guitarjempDark {
+  --color-primary: #e59a65;
+  --color-primary-2: #8fa9cc;
+  --color-accent: #57a899;
+  --color-success: #5bc67d;
+  --color-success-hover: #4baa6a;
+  --color-warning: #e3b35b;
+  --color-error: #e07166;
+  --color-error-soft-text: #ffc4c4;
+  --color-error-soft-bg: #3d2328;
+  --color-error-soft-border: #8c4a56;
+
+  --color-text: #e7ecf3;
+  --color-text-muted: #acb8c7;
+  --color-heading: #f2f6fc;
+  --color-heading-muted: #c8d2e2;
+  --color-heading-inverse: #f8fbff;
+  --color-border: #2f3744;
+  --color-border-strong: #434f62;
+  --color-surface: #1a2029;
+  --color-surface-2: #202735;
+
+  --elev-1: 0 8px 24px rgb(0 0 0 / 35%);
+  --elev-2: 0 16px 36px rgb(0 0 0 / 45%);
+  --shadow-focus: 0 0 0 3px rgb(229 154 101 / 40%);
+}

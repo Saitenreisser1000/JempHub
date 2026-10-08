@@ -1,0 +1,126 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta
+      name="description"
+      content="Jemphub is the central launchpad for Jemp's online music projects."
+    />
+    <title>Jemphub | Music Project Hub</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700&family=Sora:wght@500;700&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="design-system/styles.css" />
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body class="v-theme--guitarjempDark">
+    <main class="hub">
+      <header class="hero">
+        <h1>JempHub</h1>
+        <p class="lead">One home for developing music skills</p>
+        <div class="pulse-line" aria-hidden="true">
+          <span></span>
+          <span></span>
+          <span></span>
+          <span></span>
+          <span></span>
+          <span></span>
+          <span></span>
+          <span></span>
+          <span></span>
+          <span></span>
+          <span></span>
+          <span></span>
+        </div>
+      </header>
+
+      <section class="projects" aria-label="Project links">
+        <article class="project-card project-card--earjemp">
+          <h2>EarJemp</h2>
+          <p>
+            Train your ear with interactive exercises for intervals, chords, and scales.
+          </p>
+          <a class="project-link" href="https://earjemp.jemphub.com/" target="_blank" rel="noreferrer"
+            >Open EarJemp</a
+          >
+        </article>
+
+        <article class="project-card project-card--stemplayer">
+          <h2>StemPlayer</h2>
+          <p>
+            Play with music stems and create your own mixes.
+          </p>
+          <a class="project-link" href="https://stemplayer.jemphub.com" target="_blank" rel="noreferrer"
+            >Open StemPlayer</a
+          >
+        </article>
+
+        <article class="project-card project-card--notejemp">
+          <h2>NoteJemp</h2>
+          <p>
+            Capture and organize your notes.
+          </p>
+          <a class="project-link" href="https://notejemp.jemphub.com/" target="_blank" rel="noreferrer"
+            >Open NoteJemp</a
+          >
+        </article>
+
+        <article class="project-card project-card--next">
+          <h2>GuitarJemp</h2>
+          <p>
+            Explore the fretboard and practice guitar with interactive tools.
+          </p>
+          <a class="project-link" href="https://guitarjemp.jemphub.com/" target="_blank" rel="noreferrer"
+            >Open GuitarJemp</a
+          >
+        </article>
+      </section>
+
+      <footer class="site-footer" aria-label="Legal information">
+        <nav class="legal-links" aria-label="Legal links">
+          <a href="#imprint-modal">Legal Notice</a>
+          <a href="#privacy-modal">Privacy</a>
+        </nav>
+      </footer>
+    </main>
+
+    <section id="imprint-modal" class="lightbox" aria-labelledby="imprint-title">
+      <a href="#" class="lightbox-backdrop" aria-label="Close legal notice"></a>
+      <div class="lightbox-panel" role="dialog" aria-modal="true">
+        <div class="lightbox-head">
+          <h2 id="imprint-title">Legal Notice</h2>
+          <a href="#" class="lightbox-close" aria-label="Close">Close</a>
+        </div>
+        <p>
+          Responsible for content according to Section 5 TMG: Stefan Leutgeb.
+        </p>
+        <p>
+          Add your full postal address, contact details, and all legally
+          required information before publishing.
+        </p>
+      </div>
+    </section>
+
+    <section id="privacy-modal" class="lightbox" aria-labelledby="privacy-title">
+      <a href="#" class="lightbox-backdrop" aria-label="Close privacy policy"></a>
+      <div class="lightbox-panel" role="dialog" aria-modal="true">
+        <div class="lightbox-head">
+          <h2 id="privacy-title">Privacy Policy</h2>
+          <a href="#" class="lightbox-close" aria-label="Close">Close</a>
+        </div>
+        <p>
+          This page is a central overview of linked projects. Technically
+          necessary server logs may be processed when the page is accessed.
+        </p>
+        <p>
+          Replace this placeholder with your complete privacy policy for
+          jemphub.com and all connected services.
+        </p>
+      </div>
+    </section>
+  </body>
+</html>

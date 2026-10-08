@@ -1,0 +1,86 @@
+<!doctype html>
+<html lang="de">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>JempHub</title>
+    <style>
+      :root {
+        --bg1: #f6efe4;
+        --bg2: #e6f0ea;
+        --ink: #1f2a25;
+        --muted: #5f6d66;
+        --card: rgba(255, 255, 255, 0.8);
+        --border: rgba(31, 42, 37, 0.15);
+        --accent: #1f6b54;
+      }
+      * { box-sizing: border-box; }
+      body {
+        margin: 0;
+        min-height: 100vh;
+        font-family: "Segoe UI", "Avenir Next", sans-serif;
+        color: var(--ink);
+        background: linear-gradient(140deg, var(--bg1), var(--bg2));
+        display: grid;
+        place-items: center;
+        padding: 24px;
+      }
+      main {
+        width: min(860px, 100%);
+        background: var(--card);
+        border: 1px solid var(--border);
+        border-radius: 16px;
+        padding: 28px;
+        box-shadow: 0 20px 48px rgba(0, 0, 0, 0.08);
+      }
+      h1 {
+        margin: 0 0 10px;
+        font-size: clamp(1.8rem, 5vw, 2.5rem);
+      }
+      p { margin: 0 0 20px; color: var(--muted); }
+      .links {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+        gap: 12px;
+      }
+      a {
+        text-decoration: none;
+        color: var(--ink);
+        background: #fff;
+        border: 1px solid var(--border);
+        border-radius: 12px;
+        padding: 14px;
+        transition: transform 0.15s ease, border-color 0.2s ease;
+      }
+      a:hover {
+        transform: translateY(-1px);
+        border-color: var(--accent);
+      }
+      .title {
+        font-weight: 700;
+        display: block;
+        margin-bottom: 4px;
+      }
+      .small {
+        color: var(--muted);
+        font-size: 0.92rem;
+      }
+    </style>
+  </head>
+  <body>
+    <main>
+      <h1>JempHub</h1>
+      <p>Temporare Startseite. Waehle einen Bereich:</p>
+      <div class="links">
+        <a href="/earjemp/">
+          <span class="title">EarJemp</span>
+          <span class="small">Projektseite</span>
+        </a>
+        <a href="/stemplayer/">
+          <span class="title">StemPlayer</span>
+          <span class="small">Login und Audio-Playback</span>
+        </a>
+      </div>
+    </main>
+  </body>
+</html>

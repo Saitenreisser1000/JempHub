@@ -1,0 +1,22 @@
+{
+  "original_files_and_git_states_unchanged": true,
+  "all_original_heads_are_ancestors": true,
+  "all_original_refs_preserved": true,
+  "intentional_changes_to_copied_files": {
+    "Jemphub": [
+      "index.html"
+    ],
+    "GuitarJemp": [
+      "package.json"
+    ],
+    "earjemp-master": [],
+    "NoteJemp": [],
+    "StemPlayer": [
+      "backend/package.json",
+      "scripts/create-release.sh"
+    ],
+    "jemp-design-system": [
+      "package.json"
+    ]
+  }
+}

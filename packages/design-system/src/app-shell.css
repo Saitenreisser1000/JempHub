@@ -1,0 +1,280 @@
+.app-layout {
+  --app-left-rail-w: 56px;
+  --app-bg: #1e242c;
+  --app-bg-elevated: #2a313b;
+  --app-bg-panel: #343d49;
+  --app-bg-panel-2: #404b58;
+  --app-bg-soft: #4b5868;
+  --app-border: rgb(255 255 255 / 0.11);
+  --app-border-strong: rgb(255 255 255 / 0.18);
+  --app-layer-0: #1e242c;
+  --app-layer-1: #2a313b;
+  --app-layer-2: #343d49;
+  --app-layer-3: #404b58;
+  --app-layer-4: #4b5868;
+  --app-layer-overlay: #566476;
+  --app-text: #edf2f7;
+  --app-text-muted: #b1bccd;
+  --app-text-dim: #94a0b3;
+  --app-accent: #d08a43;
+  --app-accent-soft: rgb(208 138 67 / 0.18);
+  --app-shadow-lg: 0 18px 40px rgb(0 0 0 / 0.22);
+  --app-shadow-md: 0 10px 24px rgb(0 0 0 / 0.18);
+  --app-radius-md: 12px;
+  --app-radius-lg: 16px;
+  --app-glass-1: rgb(255 255 255 / 0.03);
+  --app-glass-2: rgb(255 255 255 / 0.05);
+  --app-glass-3: rgb(255 255 255 / 0.06);
+  --app-glass-4: rgb(255 255 255 / 0.08);
+  --app-grad-menu-bar: linear-gradient(180deg, var(--app-layer-3), var(--app-layer-2));
+  --app-grad-control: linear-gradient(180deg, color-mix(in srgb, var(--app-layer-3) 82%, transparent), color-mix(in srgb, var(--app-layer-2) 88%, transparent));
+  --app-grad-control-hover: linear-gradient(180deg, color-mix(in srgb, var(--app-layer-4) 88%, transparent), color-mix(in srgb, var(--app-layer-3) 92%, transparent));
+  --app-grad-section: linear-gradient(180deg, color-mix(in srgb, var(--app-text) 2.8%, transparent), color-mix(in srgb, var(--app-text) 1%, transparent));
+  --app-grad-section-soft: linear-gradient(180deg, color-mix(in srgb, var(--app-text) 2%, transparent), color-mix(in srgb, var(--app-text) 0.8%, transparent));
+  --app-grad-danger: linear-gradient(180deg, color-mix(in srgb, var(--color-error) 44%, var(--app-layer-1) 56%), color-mix(in srgb, var(--color-error) 58%, var(--app-layer-0) 42%));
+  --app-grad-danger-hover: linear-gradient(180deg, color-mix(in srgb, var(--color-error) 55%, var(--app-layer-1) 45%), color-mix(in srgb, var(--color-error) 68%, var(--app-layer-0) 32%));
+  --app-grad-danger-active: linear-gradient(180deg, color-mix(in srgb, var(--color-error) 62%, var(--app-layer-1) 38%), color-mix(in srgb, var(--color-error) 78%, var(--app-layer-0) 22%));
+  --app-grad-panel-soft: linear-gradient(180deg, color-mix(in srgb, var(--app-layer-3) 68%, transparent), color-mix(in srgb, var(--app-layer-2) 74%, transparent));
+  --app-debug-panel-bg: color-mix(in srgb, var(--app-layer-0) 90%, black 10%);
+  --app-debug-panel-border: color-mix(in srgb, var(--app-layer-0) 38%, white 62%);
+  --app-overlay-scrim: color-mix(in srgb, var(--app-layer-0) 38%, transparent);
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr) auto auto;
+  height: calc((var(--app-vh, 1dvh) * 100) + var(--app-safe-bottom, 0px));
+  min-height: calc((var(--app-vh, 1dvh) * 100) + var(--app-safe-bottom, 0px));
+  width: 100%;
+  box-sizing: border-box;
+  overflow: hidden;
+  overscroll-behavior: none;
+  background:
+    radial-gradient(circle at top, rgb(114 133 166 / 0.2), transparent 38%),
+    linear-gradient(180deg, #232a33 0%, var(--app-bg) 100%);
+  color: var(--app-text);
+}
+
+.app-layout.is-debug-viewport {
+  width: min(100%, var(--app-debug-width));
+  max-width: var(--app-debug-width);
+  margin: 0 auto;
+  outline: 1px dashed rgb(255 255 255 / 28%);
+  outline-offset: -1px;
+}
+
+.app-footer {
+  display: flex;
+  align-items: center;
+  height: 31px;
+  padding: 0 14px;
+  border-top: 1px solid var(--app-border);
+  background: linear-gradient(180deg, color-mix(in srgb, var(--app-layer-2) 90%, transparent), color-mix(in srgb, var(--app-layer-1) 94%, transparent));
+  color: var(--app-text-muted);
+}
+
+.app-content {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  overflow: hidden;
+  overscroll-behavior: none;
+  padding-left: var(--app-left-rail-w);
+  position: relative;
+  z-index: 1;
+}
+
+.app-transport-wrap {
+  flex: 0 0 auto;
+  min-height: 0;
+  width: 100%;
+  padding-bottom: 0;
+  position: relative;
+  z-index: 1;
+}
+
+.app-window-manager {
+  height: 100%;
+  min-height: 0;
+}
+
+.app-layout :deep(.timeline-main) {
+  margin-top: 0;
+  flex: 1 1 auto;
+  min-height: 0;
+}
+
+.dot-group-context-menu {
+  position: fixed;
+  z-index: 1800;
+  min-width: 168px;
+  padding: 6px;
+  border: 1px solid var(--app-border);
+  border-radius: 10px;
+  background: linear-gradient(180deg, var(--app-bg-panel-2), var(--app-bg-panel));
+  box-shadow: var(--app-shadow-lg);
+}
+
+.dot-group-context-item {
+  display: flex;
+  align-items: center;
+  width: 100%;
+  min-height: 34px;
+  padding: 0 10px;
+  border: 0;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--app-text);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.dot-group-context-item:hover {
+  background: var(--app-glass-3);
+}
+
+.app-layout :deep(.v-btn) {
+  border-radius: 10px;
+}
+
+.app-layout :deep(.v-btn--variant-tonal) {
+  border: 1px solid var(--app-border);
+  background: var(--app-grad-control);
+  color: var(--app-text);
+  box-shadow: none;
+}
+
+.app-layout :deep(.v-btn--variant-text) {
+  color: var(--app-text-muted);
+}
+
+.app-layout :deep(.v-btn--variant-flat) {
+  background: linear-gradient(
+    180deg,
+    color-mix(in srgb, var(--app-accent) 82%, #f5c27a 18%),
+    color-mix(in srgb, var(--app-accent) 92%, #a85f24 8%)
+  );
+  color: #16130f;
+}
+
+.app-layout :deep(.v-field) {
+  border-radius: 12px;
+}
+
+.app-layout :deep(.v-field--variant-outlined .v-field__outline) {
+  color: var(--app-border);
+}
+
+.app-layout :deep(.v-field) {
+  background: linear-gradient(180deg, color-mix(in srgb, var(--app-layer-1) 98%, transparent), color-mix(in srgb, var(--app-layer-0) 98%, transparent));
+  color: var(--app-text);
+}
+
+.app-layout :deep(.v-field-label),
+.app-layout :deep(.v-select__selection),
+.app-layout :deep(.v-field__input),
+.app-layout :deep(.v-input input) {
+  color: var(--app-text) !important;
+}
+
+.app-layout :deep(.v-field--focused .v-field__outline) {
+  color: color-mix(in srgb, var(--app-accent) 78%, var(--app-border));
+}
+
+.app-layout :deep(.v-switch .v-label),
+.app-layout :deep(.v-input .v-label) {
+  color: var(--app-text-muted);
+}
+
+.app-layout :deep(.v-card) {
+  background: linear-gradient(180deg, var(--app-bg-panel-2), var(--app-bg-panel));
+  color: var(--app-text);
+  border: 1px solid var(--app-border);
+  box-shadow: var(--app-shadow-md);
+}
+
+.app-layout :deep(.v-list) {
+  background: linear-gradient(180deg, var(--app-bg-panel-2), var(--app-bg-panel));
+  color: var(--app-text);
+  border: 1px solid var(--app-border);
+}
+
+.app-layout :deep(.v-list-item-title),
+.app-layout :deep(.v-list-item__prepend),
+.app-layout :deep(.v-list-item__append) {
+  color: var(--app-text);
+}
+
+.app-layout.is-compact-view :deep(.layout-manager) {
+  grid-template-columns: minmax(0, 1fr);
+  grid-template-rows: minmax(0, 1fr);
+}
+
+.app-layout.is-compact-view :deep(.layout-sidebar) {
+  display: none;
+}
+
+.app-layout.is-compact-view :deep(.layout-sidebar-resizer) {
+  display: none;
+}
+
+.app-layout.is-compact-view :deep(.wm-pane-b),
+.app-layout.is-compact-view :deep(.wm-divider) {
+  display: none;
+}
+
+.app-layout.is-compact-view :deep(.wm-pane-a) {
+  flex-basis: 100% !important;
+}
+
+.app-layout.is-compact-view .app-footer {
+  display: none;
+}
+
+.app-layout.is-compact-view .app-menu-bar {
+  min-height: 38px;
+  padding: 4px 8px;
+}
+
+.app-layout.is-compact-view .app-transport-wrap {
+  padding-bottom: var(--app-safe-bottom);
+}
+
+.app-layout.is-comment-mode .app-menu-bar,
+.app-layout.is-comment-mode .app-transport-wrap,
+.app-layout.is-comment-mode :deep(.app-dashboard-main),
+.app-layout.is-comment-mode :deep(.wm-pane-b),
+.app-layout.is-comment-mode :deep(.layout-sidebar),
+.app-layout.is-comment-mode :deep(.timeline-main),
+.app-layout.is-comment-mode :deep(.library-panel),
+.app-layout.is-comment-mode :deep(.detail-card),
+.app-layout.is-comment-mode :deep(.user-dashboard-main) {
+  opacity: 0.4;
+  filter: grayscale(0.22);
+  transition: opacity var(--ui-fast), filter var(--ui-fast);
+}
+
+.app-layout.is-comment-mode :deep(.fretboard-main),
+.app-layout.is-comment-mode :deep(.fretboard-main .fretboard-body) {
+  opacity: 1;
+  filter: none;
+}
+
+.app-layout.is-sidebar-hidden :deep(.layout-manager) {
+  grid-template-columns: minmax(0, 1fr);
+}
+
+.app-layout.is-sidebar-hidden :deep(.layout-sidebar) {
+  display: none;
+}
+
+.app-layout.is-sidebar-hidden :deep(.layout-sidebar-resizer) {
+  display: none;
+}
+
+.app-phone-rotate-lock {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #101010;
+  color: #f3f3f3;
+  padding: 20px;
+}

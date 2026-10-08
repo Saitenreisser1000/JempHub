@@ -1,0 +1,37 @@
+{
+  "GuitarJemp": {
+    "head": "04825685a2227993d4e88bfe6bbc0e8bc79401bc",
+    "history_branch": "history/guitar",
+    "archived_refs": [
+      "refs/heads/RedesignUI",
+      "refs/heads/TestUI",
+      "refs/heads/guitarjemp",
+      "refs/heads/main"
+    ]
+  },
+  "earjemp-master": {
+    "head": "5c2f2933f7f733265211b31534de67d5886a0004",
+    "history_branch": "history/ear",
+    "archived_refs": [
+      "refs/heads/main",
+      "refs/remotes/origin/main",
+      "refs/remotes/origin/toneChain"
+    ]
+  },
+  "NoteJemp": {
+    "head": "bd0da7fadc27dfb3fa6da89d31ef8fb5b1430256",
+    "history_branch": "history/note",
+    "archived_refs": [
+      "refs/agents/42cd9f9a-32f4-42b8-a373-b38404e60f5e/checkpoints/turn/0",
+      "refs/agents/42cd9f9a-32f4-42b8-a373-b38404e60f5e/checkpoints/turn/1",
+      "refs/heads/main"
+    ]
+  },
+  "StemPlayer": {
+    "head": "6362e212d45c03f83a830f6f2c561a70b8c4ff1d",
+    "history_branch": "history/stemplayer",
+    "archived_refs": [
+      "refs/heads/main"
+    ]
+  }
+}

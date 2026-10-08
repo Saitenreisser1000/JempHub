@@ -1,0 +1,22 @@
+{
+  "name": "jemphub-monorepo",
+  "version": "1.0.0",
+  "private": true,
+  "workspaces": [
+    "apps/*",
+    "apps/stemplayer/backend",
+    "packages/*"
+  ],
+  "engines": {
+    "node": ">=22.12.0"
+  },
+  "scripts": {
+    "build": "npm run build --workspaces --if-present",
+    "build:hub": "npm run build --workspace @jemphub/hub",
+    "build:guitar": "npm run build --workspace guitarjemp",
+    "build:ear": "npm run build --workspace earjemp",
+    "build:note": "npm run build --workspace notejemp",
+    "build:stemplayer": "npm run build --workspace @jemphub/stemplayer && npm run build --workspace stemplayer-backend",
+    "build:design-system": "npm run build --workspace jemp-design-system"
+  }
+}

@@ -1,0 +1,53 @@
+{
+  "GuitarJemp": [],
+  "earjemp-master": [
+    {
+      "oid": "715572320b93595f44390f140eb1c4c3cd92f63a",
+      "bytes": 12293205,
+      "path": "src/assets/audio/pianoSounds.mp3"
+    }
+  ],
+  "NoteJemp": [],
+  "StemPlayer": [
+    {
+      "oid": "55d361f093ca38e263d61ed1f7760e005996ac39",
+      "bytes": 54635960,
+      "path": "audio/song-01/Eric Clapton - Layla (acoustic) [Q_L-0Ryhmic].1 (Notenhals).aif"
+    },
+    {
+      "oid": "f661061a75c7613538a351830988cb594d77e736",
+      "bytes": 54373292,
+      "path": "audio/song-01/bass.aif"
+    },
+    {
+      "oid": "aa2ae7072fcbc30327342acacb207fe417569298",
+      "bytes": 54263886,
+      "path": "audio/song-01/converted/bass.wav"
+    },
+    {
+      "oid": "d85ea62bbaf5c4cb720ab6fb7114eb6003d19271",
+      "bytes": 54373292,
+      "path": "audio/song-01/drums.aif"
+    },
+    {
+      "oid": "6ada1f907cf4bbbd32e90f3fd0eadd31e0ee48e2",
+      "bytes": 54635960,
+      "path": "audio/song-01/guitar.aif"
+    },
+    {
+      "oid": "9bda667cae299a6e43cd2c635a5c44b2fa2f2d48",
+      "bytes": 54504624,
+      "path": "audio/song-01/others.aif"
+    },
+    {
+      "oid": "f6a5b9bfbb7dcc1fcab53f9ba6036a98f256fefe",
+      "bytes": 50695926,
+      "path": "audio/song-01/piano.aif"
+    },
+    {
+      "oid": "7c2dc43755b9c928f70fdcfc5e65ba995de1d626",
+      "bytes": 54373292,
+      "path": "audio/song-01/vocals.aif"
+    }
+  ]
+}

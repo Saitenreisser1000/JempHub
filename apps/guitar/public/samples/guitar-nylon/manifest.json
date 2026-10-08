@@ -1,0 +1,12 @@
+{
+  "name": "Nylon Guitar (Example)",
+  "description": "Example manifest for the built-in sampler. Provide the referenced audio files under /public/samples/guitar-nylon/.",
+  "samples": [
+    { "midi": 40, "note": "E2", "url": "/samples/guitar-nylon/E2.mp3" },
+    { "midi": 45, "note": "A2", "url": "/samples/guitar-nylon/A2.mp3" },
+    { "midi": 50, "note": "D3", "url": "/samples/guitar-nylon/D3.mp3" },
+    { "midi": 55, "note": "G3", "url": "/samples/guitar-nylon/G3.mp3" },
+    { "midi": 59, "note": "B3", "url": "/samples/guitar-nylon/B3.mp3" },
+    { "midi": 64, "note": "E4", "url": "/samples/guitar-nylon/E4.mp3" }
+  ]
+}

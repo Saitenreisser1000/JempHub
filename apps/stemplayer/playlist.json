@@ -1,0 +1,46 @@
+{
+  "songs": [
+    {
+      "id": "song-01",
+      "title": "Beispiel Song 1",
+      "artist": "Deine Klasse",
+      "stems": [
+        {
+          "id": "bass",
+          "name": "bass",
+          "url": "audio/_generated/song-01/bass.mp3"
+        },
+        {
+          "id": "drums",
+          "name": "drums",
+          "url": "audio/_generated/song-01/drums.mp3"
+        },
+        {
+          "id": "eric-clapton-layla-acoustic-q-l-0ryhmic-1-notenhals",
+          "name": "Eric Clapton   Layla (acoustic) [Q L 0Ryhmic].1 (Notenhals)",
+          "url": "audio/_generated/song-01/eric-clapton-layla-acoustic-q-l-0ryhmic-1-notenhals.mp3"
+        },
+        {
+          "id": "guitar",
+          "name": "guitar",
+          "url": "audio/_generated/song-01/guitar.mp3"
+        },
+        {
+          "id": "others",
+          "name": "others",
+          "url": "audio/_generated/song-01/others.mp3"
+        },
+        {
+          "id": "piano",
+          "name": "piano",
+          "url": "audio/_generated/song-01/piano.mp3"
+        },
+        {
+          "id": "vocals",
+          "name": "vocals",
+          "url": "audio/_generated/song-01/vocals.mp3"
+        }
+      ]
+    }
+  ]
+}

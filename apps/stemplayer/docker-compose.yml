@@ -1,0 +1,35 @@
+version: "3.9"
+
+services:
+  db:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: stemplayer
+      POSTGRES_USER: stemplayer
+      POSTGRES_PASSWORD: stemplayer
+    volumes:
+      - pg_data:/var/lib/postgresql/data
+      - ./backend/sql/init.sql:/docker-entrypoint-initdb.d/init.sql:ro
+    ports:
+      - "5432:5432"
+
+  api:
+    build:
+      context: ./backend
+    restart: unless-stopped
+    depends_on:
+      - db
+    environment:
+      PORT: 3000
+      DATABASE_URL: postgres://stemplayer:stemplayer@db:5432/stemplayer
+      JWT_SECRET: change-me-in-production
+      ADMIN_BOOTSTRAP_TOKEN: change-admin-bootstrap-token
+      FRONTEND_ORIGIN: http://localhost:8080
+    volumes:
+      - ./backend/uploads:/app/uploads
+    ports:
+      - "3000:3000"
+
+volumes:
+  pg_data:

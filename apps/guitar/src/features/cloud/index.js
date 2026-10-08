@@ -1,0 +1,8 @@
+export { default as AuthDialog } from './components/AuthDialog.vue'
+export { default as ConnectionsDialog } from './components/ConnectionsDialog.vue'
+export { default as LibraryDialog } from './components/LibraryDialog.vue'
+export { default as LibraryPanel } from './components/LibraryPanel.vue'
+export { default as SocialConnectPanel } from './components/SocialConnectPanel.vue'
+export { default as DashboardDetailPanel } from './components/DashboardDetailPanel.vue'
+export { default as UserDashboardDialog } from './components/UserDashboardDialog.vue'
+export { default as UserDashboardMain } from './components/UserDashboardMain.vue'

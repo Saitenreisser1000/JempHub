@@ -1,0 +1,10 @@
+{
+  "songs": [
+    {
+      "id": "song-01",
+      "title": "Beispiel Song 1",
+      "artist": "Deine Klasse",
+      "folder": "audio/song-01"
+    }
+  ]
+}

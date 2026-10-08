@@ -1,0 +1,205 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE score-partwise PUBLIC
+  "-//Recordare//DTD MusicXML 3.1 Partwise//EN"
+  "http://www.musicxml.org/dtds/partwise.dtd">
+<score-partwise version="3.1">
+  <work>
+    <work-title>Ballad Picking Study</work-title>
+  </work>
+  <identification>
+    <creator type="composer">Generated for GuitarJemp</creator>
+  </identification>
+  <part-list>
+    <score-part id="P1">
+      <part-name>Acoustic Guitar</part-name>
+    </score-part>
+  </part-list>
+  <part id="P1">
+    <measure number="1">
+      <attributes>
+        <divisions>48</divisions>
+        <key><fifths>0</fifths></key>
+        <time><beats>4</beats><beat-type>4</beat-type></time>
+        <clef><sign>G</sign><line>2</line></clef>
+      </attributes>
+      <direction placement="above">
+        <direction-type>
+          <metronome><beat-unit>quarter</beat-unit><per-minute>90</per-minute></metronome>
+        </direction-type>
+        <sound tempo="90"/>
+      </direction>
+
+      <note>
+        <pitch><step>E</step><octave>3</octave></pitch>
+        <duration>48</duration><voice>1</voice><type>quarter</type>
+        <notations><technical><string>4</string><fret>2</fret></technical></notations>
+      </note>
+      <note>
+        <pitch><step>B</step><octave>3</octave></pitch>
+        <duration>48</duration><voice>1</voice><type>quarter</type>
+        <notations><technical><string>2</string><fret>0</fret></technical></notations>
+      </note>
+      <note>
+        <pitch><step>E</step><octave>4</octave></pitch>
+        <duration>48</duration><voice>1</voice><type>quarter</type>
+        <notations><technical><string>1</string><fret>0</fret></technical></notations>
+      </note>
+      <note>
+        <pitch><step>G</step><octave>4</octave></pitch>
+        <duration>48</duration><voice>1</voice><type>quarter</type>
+        <notations><technical><string>1</string><fret>3</fret></technical></notations>
+      </note>
+    </measure>
+
+    <measure number="2">
+      <note>
+        <pitch><step>C</step><octave>3</octave></pitch>
+        <duration>48</duration><voice>1</voice><type>quarter</type>
+        <notations><technical><string>5</string><fret>3</fret></technical></notations>
+      </note>
+      <note>
+        <pitch><step>G</step><octave>3</octave></pitch>
+        <duration>48</duration><voice>1</voice><type>quarter</type>
+        <notations><technical><string>3</string><fret>0</fret></technical></notations>
+      </note>
+      <note>
+        <pitch><step>E</step><octave>4</octave></pitch>
+        <duration>48</duration><voice>1</voice><type>quarter</type>
+        <notations><technical><string>1</string><fret>0</fret></technical></notations>
+      </note>
+      <note>
+        <pitch><step>G</step><octave>4</octave></pitch>
+        <duration>48</duration><voice>1</voice><type>quarter</type>
+        <notations><technical><string>1</string><fret>3</fret></technical></notations>
+      </note>
+    </measure>
+
+    <measure number="3">
+      <note>
+        <pitch><step>G</step><octave>2</octave></pitch>
+        <duration>48</duration><voice>1</voice><type>quarter</type>
+        <notations><technical><string>6</string><fret>3</fret></technical></notations>
+      </note>
+      <note>
+        <pitch><step>D</step><octave>3</octave></pitch>
+        <duration>48</duration><voice>1</voice><type>quarter</type>
+        <notations><technical><string>4</string><fret>0</fret></technical></notations>
+      </note>
+      <note>
+        <pitch><step>G</step><octave>3</octave></pitch>
+        <duration>48</duration><voice>1</voice><type>quarter</type>
+        <notations><technical><string>3</string><fret>0</fret></technical></notations>
+      </note>
+      <note>
+        <pitch><step>B</step><octave>3</octave></pitch>
+        <duration>48</duration><voice>1</voice><type>quarter</type>
+        <notations><technical><string>2</string><fret>0</fret></technical></notations>
+      </note>
+    </measure>
+
+    <measure number="4">
+      <note>
+        <pitch><step>D</step><octave>3</octave></pitch>
+        <duration>48</duration><voice>1</voice><type>quarter</type>
+        <notations><technical><string>4</string><fret>0</fret></technical></notations>
+      </note>
+      <note>
+        <pitch><step>A</step><octave>3</octave></pitch>
+        <duration>48</duration><voice>1</voice><type>quarter</type>
+        <notations><technical><string>3</string><fret>2</fret></technical></notations>
+      </note>
+      <note>
+        <pitch><step>D</step><octave>4</octave></pitch>
+        <duration>48</duration><voice>1</voice><type>quarter</type>
+        <notations><technical><string>2</string><fret>3</fret></technical></notations>
+      </note>
+      <note>
+        <pitch><step>F</step><alter>1</alter><octave>4</octave></pitch>
+        <duration>48</duration><voice>1</voice><type>quarter</type>
+        <notations><technical><string>1</string><fret>2</fret></technical></notations>
+      </note>
+    </measure>
+
+    <measure number="5">
+      <note>
+        <pitch><step>E</step><octave>3</octave></pitch>
+        <duration>48</duration><voice>1</voice><type>quarter</type>
+        <notations><technical><string>4</string><fret>2</fret></technical></notations>
+      </note>
+      <note>
+        <pitch><step>B</step><octave>3</octave></pitch>
+        <duration>48</duration><voice>1</voice><type>quarter</type>
+        <notations><technical><string>2</string><fret>0</fret></technical></notations>
+      </note>
+      <note>
+        <pitch><step>E</step><octave>4</octave></pitch>
+        <duration>48</duration><voice>1</voice><type>quarter</type>
+        <notations><technical><string>1</string><fret>0</fret></technical></notations>
+      </note>
+      <note>
+        <pitch><step>B</step><octave>4</octave></pitch>
+        <duration>48</duration><voice>1</voice><type>quarter</type>
+        <notations><technical><string>1</string><fret>7</fret></technical></notations>
+      </note>
+    </measure>
+
+    <measure number="6">
+      <note>
+        <pitch><step>C</step><octave>3</octave></pitch>
+        <duration>48</duration><voice>1</voice><type>quarter</type>
+        <notations><technical><string>5</string><fret>3</fret></technical></notations>
+      </note>
+      <note>
+        <pitch><step>G</step><octave>3</octave></pitch>
+        <duration>48</duration><voice>1</voice><type>quarter</type>
+        <notations><technical><string>3</string><fret>0</fret></technical></notations>
+      </note>
+      <note>
+        <pitch><step>E</step><octave>4</octave></pitch>
+        <duration>48</duration><voice>1</voice><type>quarter</type>
+        <notations><technical><string>1</string><fret>0</fret></technical></notations>
+      </note>
+      <note>
+        <pitch><step>G</step><octave>4</octave></pitch>
+        <duration>48</duration><voice>1</voice><type>quarter</type>
+        <notations><technical><string>1</string><fret>3</fret></technical></notations>
+      </note>
+    </measure>
+
+    <measure number="7">
+      <note>
+        <pitch><step>G</step><octave>2</octave></pitch>
+        <duration>48</duration><voice>1</voice><type>quarter</type>
+        <notations><technical><string>6</string><fret>3</fret></technical></notations>
+      </note>
+      <note>
+        <pitch><step>D</step><octave>3</octave></pitch>
+        <duration>48</duration><voice>1</voice><type>quarter</type>
+        <notations><technical><string>4</string><fret>0</fret></technical></notations>
+      </note>
+      <note>
+        <pitch><step>G</step><octave>3</octave></pitch>
+        <duration>48</duration><voice>1</voice><type>quarter</type>
+        <notations><technical><string>3</string><fret>0</fret></technical></notations>
+      </note>
+      <note>
+        <pitch><step>B</step><octave>3</octave></pitch>
+        <duration>48</duration><voice>1</voice><type>quarter</type>
+        <notations><technical><string>2</string><fret>0</fret></technical></notations>
+      </note>
+    </measure>
+
+    <measure number="8">
+      <note>
+        <pitch><step>E</step><octave>3</octave></pitch>
+        <duration>96</duration><voice>1</voice><type>half</type>
+        <notations><technical><string>4</string><fret>2</fret></technical></notations>
+      </note>
+      <note>
+        <pitch><step>E</step><octave>4</octave></pitch>
+        <duration>96</duration><voice>1</voice><type>half</type>
+        <notations><technical><string>1</string><fret>0</fret></technical></notations>
+      </note>
+    </measure>
+  </part>
+</score-partwise>
