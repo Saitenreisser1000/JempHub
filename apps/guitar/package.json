@@ -7,7 +7,7 @@
     "node": "^20.19.0 || >=22.12.0"
   },
   "scripts": {
-    "dev": "node scripts/check-node.mjs && vite",
+    "dev": "node scripts/check-node.mjs && vite --host 127.0.0.1 --port 5180 --strictPort",
     "build": "node scripts/check-node.mjs && vite build",
     "preview": "node scripts/check-node.mjs && vite preview",
     "test": "node scripts/check-node.mjs && vitest",

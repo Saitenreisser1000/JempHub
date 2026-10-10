@@ -18,6 +18,14 @@ Node >=22.12 (geprüfte Version siehe Migrationsbericht), npm:
 ```sh
 npm ci
 npm run build
+npm run dev
+```
+
+Der lokale Einstieg ist **http://127.0.0.1:4173**. Der Root-Dev-Befehl startet JempHub sowie GuitarJemp, EarJemp, NoteJemp und StemPlayer auf getrennten lokalen Ports; die Projektkarten im Hub öffnen die jeweiligen lokalen Dev-Server. Mit `Ctrl+C` werden alle gestarteten Server beendet. Das StemPlayer-Backend wird nicht automatisch gestartet, da es eine lokale Datenbank-Konfiguration benötigt.
+
+Apps können bei Bedarf weiterhin einzeln gestartet werden:
+
+```sh
 npm run dev --workspace guitarjemp
 npm run dev --workspace earjemp
 npm run dev --workspace notejemp

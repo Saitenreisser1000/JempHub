@@ -3,6 +3,7 @@
   "private": true,
   "version": "0.1.0",
   "scripts": {
+    "dev": "node ../../scripts/serve-static.mjs . --port 5183",
     "build": "node --check app.js && node ../../scripts/build-static.mjs stemplayer"
   }
 }

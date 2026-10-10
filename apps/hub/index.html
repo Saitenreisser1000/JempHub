@@ -44,7 +44,7 @@
           <p>
             Train your ear with interactive exercises for intervals, chords, and scales.
           </p>
-          <a class="project-link" href="https://earjemp.jemphub.com/" target="_blank" rel="noreferrer"
+          <a class="project-link" href="https://earjemp.jemphub.com/" data-local-url="http://127.0.0.1:5181/" target="_blank" rel="noreferrer"
             >Open EarJemp</a
           >
         </article>
@@ -54,7 +54,7 @@
           <p>
             Play with music stems and create your own mixes.
           </p>
-          <a class="project-link" href="https://stemplayer.jemphub.com" target="_blank" rel="noreferrer"
+          <a class="project-link" href="https://stemplayer.jemphub.com" data-local-url="http://127.0.0.1:5183/" target="_blank" rel="noreferrer"
             >Open StemPlayer</a
           >
         </article>
@@ -64,7 +64,7 @@
           <p>
             Capture and organize your notes.
           </p>
-          <a class="project-link" href="https://notejemp.jemphub.com/" target="_blank" rel="noreferrer"
+          <a class="project-link" href="https://notejemp.jemphub.com/" data-local-url="http://127.0.0.1:5182/" target="_blank" rel="noreferrer"
             >Open NoteJemp</a
           >
         </article>
@@ -74,7 +74,7 @@
           <p>
             Explore the fretboard and practice guitar with interactive tools.
           </p>
-          <a class="project-link" href="https://guitarjemp.jemphub.com/" target="_blank" rel="noreferrer"
+          <a class="project-link" href="https://guitarjemp.jemphub.com/" data-local-url="http://127.0.0.1:5180/" target="_blank" rel="noreferrer"
             >Open GuitarJemp</a
           >
         </article>
@@ -122,5 +122,12 @@
         </p>
       </div>
     </section>
+    <script>
+      if (['localhost', '127.0.0.1'].includes(location.hostname)) {
+        document.querySelectorAll('[data-local-url]').forEach((link) => {
+          link.href = link.dataset.localUrl;
+        });
+      }
+    </script>
   </body>
 </html>
