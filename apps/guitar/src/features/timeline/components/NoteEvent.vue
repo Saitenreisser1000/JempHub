@@ -17,7 +17,7 @@
 
   <Teleport to="body">
     <div
-      v-if="contextMenu.open"
+      v-if="contextMenu.open && !isDisabled"
       class="note-context-menu"
       :style="contextMenuStyle"
       @pointerdown.stop
@@ -306,6 +306,7 @@ function onContextMenu(event) {
 }
 
 function onDeleteFromContextMenu() {
+  if (isDisabled.value) return
   const key = String(props.note?.key ?? '')
   if (!key) {
     closeContextMenu()

@@ -1,15 +1,16 @@
 <template>
   <div ref="rootEl" class="window-manager">
-    <section class="wm-pane wm-pane-a" :style="paneAStyle">
+    <section class="wm-pane wm-pane-a" :style="presentation ? { flexBasis: '100%' } : paneAStyle">
       <slot name="pane-a" />
     </section>
     <button
+      v-if="!presentation"
       class="wm-divider"
       type="button"
       aria-label="Resize split panes"
       @pointerdown="onDividerPointerDown"
     />
-    <section class="wm-pane wm-pane-b" :style="paneBStyle">
+    <section v-show="!presentation" :inert="presentation" class="wm-pane wm-pane-b" :style="paneBStyle">
       <slot name="pane-b" />
     </section>
   </div>
@@ -17,6 +18,8 @@
 
 <script setup>
 import { computed, onBeforeUnmount, ref } from 'vue'
+
+defineProps({ presentation: { type: Boolean, default: false } })
 
 const rootEl = ref(null)
 const splitRatio = ref(0.5)

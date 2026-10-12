@@ -7,10 +7,17 @@ const STORAGE_KEY = 'guitarjemp.uiMode.v1'
 
 export const SURFACE_MODES = Object.freeze({
   COMPOSE: 'compose',
+  VIEW: 'view',
   COMMENT: 'comment',
 })
 
 export const SURFACE_MODE_POLICY = Object.freeze({
+  [SURFACE_MODES.VIEW]: Object.freeze({
+    canEditNotes: false,
+    canCreateComments: false,
+    dimNoteEvents: false,
+    showCommentEditor: false,
+  }),
   [SURFACE_MODES.COMPOSE]: Object.freeze({
     canEditNotes: true,
     canCreateComments: false,

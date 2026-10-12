@@ -41,7 +41,7 @@
             <v-icon icon="mdi-shuffle-variant" />
           </v-btn>
           <v-btn-toggle
-            v-if="isPhoneView"
+            v-if="isPhoneView && !readOnly"
             class="phone-pane-switch"
             :model-value="phonePane"
             mandatory
@@ -85,7 +85,7 @@
               >
                 <v-radio label="Off" value="off" />
                 <v-radio label="Microphone" value="microphone" />
-                <v-radio label="Record" value="record" />
+                <v-radio v-if="!readOnly" label="Record" value="record" />
               </v-radio-group>
               <v-switch
                 density="compact"
@@ -128,6 +128,7 @@ const TEMPO_MIN = 30
 const TEMPO_MAX = 200
 
 const props = defineProps({
+  readOnly: { type: Boolean, default: false },
   isPlaying: { type: Boolean, required: true },
   tempo: { type: Number, required: true },
   clickEnabled: { type: Boolean, default: false },
@@ -191,12 +192,10 @@ function onTempoInput(v) {
 }
 
 function togglePlayPause() {
-  void initAudioEngine({ instrumentType: props.instrumentType })
   emit('toggle-play')
 }
 
 function seekStart() {
-  void initAudioEngine({ instrumentType: props.instrumentType })
   emit('seek-start')
 }
 
@@ -245,7 +244,7 @@ function onInputModeChange(v) {
     return
   }
 
-  if (next === 'record') {
+  if (next === 'record' && !props.readOnly) {
     if (practiceOn) emit('toggle-practice')
     if (!recordOn) emit('toggle-record')
   }

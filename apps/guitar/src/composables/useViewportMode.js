@@ -80,7 +80,7 @@ export function useViewportMode() {
 
   function shouldDefaultToPhoneView() {
     if (typeof window === 'undefined' || typeof window.matchMedia !== 'function') return false
-    const narrow = window.matchMedia(`(max-width: ${PHONE_VIEW_BREAKPOINT_PX}px)`).matches
+    const narrow = window.matchMedia(`(max-width: ${PHONE_VIEW_BREAKPOINT_PX}px), (max-height: 600px)`).matches
     const coarse = window.matchMedia('(pointer: coarse)').matches
     return narrow && coarse
   }

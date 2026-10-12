@@ -1,4 +1,5 @@
 import { computed, ref } from 'vue'
+import { useUiModeStore } from '@/store/useUiMode'
 
 const DOT_GROUP_NAMES_STORAGE_KEY = 'guitarjemp.dotGroupNames.v1'
 
@@ -12,7 +13,8 @@ function readStoredDotGroupNames() {
   }
 }
 
-export function useAppDotGroups({ notes, timelineSettings, timelineRef }) {
+export function useAppDotGroups({ notes, selection, timelineSettings, timelineRef }) {
+  const uiMode = useUiModeStore()
   const dotGroupNames = ref(readStoredDotGroupNames())
   const dotGroupMenu = ref({
     open: false,
@@ -64,6 +66,7 @@ export function useAppDotGroups({ notes, timelineSettings, timelineRef }) {
   }
 
   function openDotGroupMenu(event, group) {
+    if (!uiMode.surfacePolicy.canEditNotes) return
     event?.preventDefault?.()
     dotGroupMenu.value = {
       open: true,
@@ -83,6 +86,7 @@ export function useAppDotGroups({ notes, timelineSettings, timelineRef }) {
   }
 
   function renameDotGroup() {
+    if (!uiMode.surfacePolicy.canEditNotes) return
     const color = String(dotGroupMenu.value.color || '').trim()
     if (!color) return
     const group = usedDotGroups.value.find((item) => item.color === color)
@@ -98,6 +102,21 @@ export function useAppDotGroups({ notes, timelineSettings, timelineRef }) {
     else updated[color] = trimmed
     dotGroupNames.value = updated
     persistDotGroupNames()
+    closeDotGroupMenu()
+  }
+
+  function deleteDotGroup(color = dotGroupMenu.value.color) {
+    if (!uiMode.surfacePolicy.canEditNotes) return
+    const target = String(color || '').trim()
+    if (!target) return
+    const removedKeys = new Set(notes.removeNotesByColor(target))
+    if (removedKeys.size) {
+      selection.setSelectedNotes(selection.selectedNoteKeys.filter((key) => !removedKeys.has(key)))
+      if (String(timelineSettings.activeDotGroupColor || '').trim() === target) {
+        timelineSettings.setActiveDotGroupColor('')
+      }
+    }
+    // Keep the custom name so Undo restores the group with its label.
     closeDotGroupMenu()
   }
 
@@ -143,6 +162,7 @@ export function useAppDotGroups({ notes, timelineSettings, timelineRef }) {
     openDotGroupMenu,
     closeDotGroupMenu,
     renameDotGroup,
+    deleteDotGroup,
     onWindowPointerDown,
     activateAllDotGroups,
     activateDotGroup,

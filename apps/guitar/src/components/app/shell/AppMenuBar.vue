@@ -1,6 +1,16 @@
 <template>
   <div class="app-menu-bar" aria-label="Main menu">
     <div class="app-menu-brand">GuitarJemp</div>
+    <v-menu v-if="readOnly" location="bottom start">
+      <template #activator="{ props: menuProps }">
+        <v-btn v-bind="menuProps" variant="text" size="small" class="app-menu-btn">View</v-btn>
+      </template>
+      <v-list density="compact" min-width="220">
+        <v-list-item title="Anzeigemodus" prepend-icon="mdi-eye-outline" active @click="emit('update:readOnly', true)" />
+        <v-list-item title="Bearbeitungsmodus" prepend-icon="mdi-pencil-outline" @click="emit('update:readOnly', false)" />
+      </v-list>
+    </v-menu>
+    <template v-if="!readOnly">
     <v-menu v-if="isPhoneView" location="bottom start">
       <template #activator="{ props: menuProps }">
         <v-btn v-bind="menuProps" icon="mdi-menu" variant="text" size="small" class="app-menu-btn app-hamburger-btn"
@@ -53,6 +63,8 @@
         <v-list-item v-if="mainView !== 'dashboard' && shareContactsForMenu.length === 0" title="Keine Kontakte" />
         <v-divider class="my-1" />
         <v-list-subheader>View</v-list-subheader>
+        <v-list-item title="Anzeigemodus" prepend-icon="mdi-eye-outline" @click="emit('update:readOnly', true)" />
+        <v-list-item title="Bearbeitungsmodus" prepend-icon="mdi-pencil-outline" active @click="emit('update:readOnly', false)" />
         <v-list-item title="Desktop" @click="emit('update:viewMode', 'desktop')" />
         <v-list-item title="Phone" @click="emit('update:viewMode', 'phone')" />
         <v-list-item title="Watch" @click="emit('update:viewMode', 'watch')" />
@@ -106,6 +118,8 @@
           <v-btn v-bind="menuProps" variant="text" size="small" class="app-menu-btn">View</v-btn>
         </template>
         <v-card class="pa-3 d-flex flex-column ga-2" min-width="280">
+          <v-switch label="Anzeigemodus" :model-value="readOnly" hide-details density="compact"
+            @update:model-value="(value) => emit('update:readOnly', Boolean(value))" />
           <div class="text-caption">Viewport</div>
           <v-btn-toggle :model-value="viewMode" mandatory divided
             @update:model-value="(v) => emit('update:viewMode', String(v || 'desktop'))">
@@ -191,6 +205,7 @@
         </v-list>
       </v-menu>
     </div>
+    </template>
   </div>
 </template>
 
@@ -198,6 +213,7 @@
 import FretboardContextMenu from '@/features/fretboard/components/FretboardContextMenu.vue'
 
 defineProps({
+  readOnly: { type: Boolean, default: false },
   isPhoneView: { type: Boolean, default: false },
   isCompactView: { type: Boolean, default: false },
   isWatchView: { type: Boolean, default: false },
@@ -213,6 +229,7 @@ defineProps({
 })
 
 const emit = defineEmits([
+  'update:readOnly',
   'update:viewMode',
   'update:sidebarVisible',
   'open-auth',

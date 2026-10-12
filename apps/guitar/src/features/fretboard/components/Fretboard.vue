@@ -356,7 +356,7 @@
         </div>
       </div>
     </div>
-    <div v-if="settings.showChordShapePanel" class="fb-chord-shape-panel">
+    <div v-if="props.editable && surfacePolicy.canEditNotes && settings.showChordShapePanel" class="fb-chord-shape-panel">
       <span class="fb-chord-detected">{{ t('fretboardShow.chord') }}: {{ detectedChordLabel }}</span>
       <button class="fb-shape-btn" type="button" :disabled="!canNudgeSelection" @click="() => nudgeSelection(1, 0)">
         {{ t('fretboardShow.plusFret') }}
@@ -391,7 +391,7 @@
     <div v-if="tooltip.visible" class="fb-tooltip" :style="{ left: `${tooltip.x}px`, top: `${tooltip.y}px` }">
       {{ tooltip.text }}
     </div>
-    <FretboardToneDotContextMenu :open="toneDotContextMenu.open" :x="toneDotContextMenu.x" :y="toneDotContextMenu.y"
+    <FretboardToneDotContextMenu :open="toneDotContextMenu.open && noteEditingEnabled" :x="toneDotContextMenu.x" :y="toneDotContextMenu.y"
       :string="toneDotContextMenu.string" :fret="toneDotContextMenu.fret" :items="toneDotContextMenu.items"
       :delete-label="t('fretboardShow.delete')" @delete-item="onDeleteToneDotContextItem" />
   </div>
@@ -2045,6 +2045,7 @@ function onToneDotContextMenu(d, event) {
 }
 
 function onDeleteToneDotContextItem(noteKey) {
+  if (!noteEditingEnabled.value) return
   const key = String(noteKey || '')
   if (!key) return
   store.removeNote(key)
@@ -2870,6 +2871,7 @@ function onToneDotLeave(d) {
 }
 
 function onToneDotClick(d, event) {
+  if (surfaceMode.value === SURFACE_MODES.VIEW) return
   if (isCommentMode.value) {
     event?.stopPropagation?.()
     return
@@ -3003,6 +3005,10 @@ function onToneDotPointerMove(event) {
 }
 
 function onToneDotPointerUp(event) {
+  if (!noteEditingEnabled.value) {
+    clearLongPressTimer()
+    return
+  }
   const s = dragState.value
   if (!s?.noteKey) return
   if (event?.pointerId !== s.pointerId) return

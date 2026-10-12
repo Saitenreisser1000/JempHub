@@ -1,3 +1,4 @@
+import { canSchedule, trackAudioSource } from './audioSchedule'
 import { ensureAudioContextRunning, getSharedAudioContext } from './audioContext'
 
 function safeJsonClone(v) {
@@ -71,7 +72,7 @@ async function fetchWithRetry(url, readBody, label, retries = 2) {
   let lastError = null
   for (let attempt = 0; attempt <= retries; attempt += 1) {
     try {
-      const res = await fetch(url, { cache })
+      const res = await fetch(url, { cache, signal: AbortSignal.timeout(15000) })
       if (!res.ok) throw new Error(`${label} not found (${res.status}): ${url}`)
       return await readBody(res)
     } catch (err) {
@@ -117,13 +118,8 @@ async function loadPresetInternal(manifestUrl) {
     .filter((result) => result.status === 'fulfilled')
     .map((result) => result.value)
 
-  if (import.meta?.env?.DEV) {
-    for (const result of results) {
-      if (result.status === 'rejected') {
-        console.warn('[audio] Failed to load one sample, continuing with remaining files', result.reason)
-      }
-    }
-  }
+  const failure = results.find((result) => result.status === 'rejected')
+  if (failure) throw failure.reason
 
   if (decoded.length === 0) throw new Error('No samples in manifest')
   return { manifestUrl: resolvedManifestUrl, samples: decoded }
@@ -146,13 +142,16 @@ export function preloadSamplerPreset(manifestUrl) {
 export async function playMidiWithSampler(
   manifestUrl,
   midi,
-  { durationMs = 250, gain = 0.25, startDelayMs = 0 } = {},
+  { durationMs = 250, gain = 0.25, startDelayMs = 0, startAt: requestedStartAt, signal } = {},
 ) {
   const ctx = getSharedAudioContext()
   if (!ctx) return false
+  const startAt = Number.isFinite(requestedStartAt)
+    ? requestedStartAt : ctx.currentTime + Math.max(0, Number(startDelayMs) || 0) / 1000
   await ensureAudioContextRunning(ctx)
 
   const preset = await preloadSamplerPreset(manifestUrl)
+  if (!canSchedule(ctx, { signal, startAt })) return true
   const sample = pickNearestSample(preset.samples, midi)
   if (!sample?.buffer) return false
 
@@ -163,9 +162,6 @@ export async function playMidiWithSampler(
   const playbackRate = midiToPlaybackRate(midi, sample.midi)
   src.playbackRate.value = playbackRate
 
-  const now = ctx.currentTime
-  const startDelaySec = Math.max(0, Number(startDelayMs) || 0) / 1000
-  const startAt = now + startDelaySec
   const requestedDur = Math.max(0.09, (Number(durationMs) || 250) / 1000)
   const sampleSeconds = Number(sample.buffer?.duration) || 0
   const playableSeconds = playbackRate > 0 ? sampleSeconds / playbackRate : sampleSeconds
@@ -202,12 +198,13 @@ export async function playMidiWithSampler(
   src.connect(g)
   g.connect(ctx.destination)
 
+  trackAudioSource(src, g, signal)
   src.start(startAt)
   src.stop(startAt + totalDur + 0.02)
   return true
 }
 
-export async function initSamplerEngine(manifestUrl) {
+export async function initSamplerEngine(manifestUrl, { strict = false } = {}) {
   const ctx = getSharedAudioContext()
   if (!ctx) return
   await ensureAudioContextRunning(ctx)
@@ -215,7 +212,7 @@ export async function initSamplerEngine(manifestUrl) {
   if (!url) return
   try {
     await preloadSamplerPreset(url)
-  } catch {
-    // keep runtime fallback behavior
+  } catch (error) {
+    if (strict) throw error
   }
 }

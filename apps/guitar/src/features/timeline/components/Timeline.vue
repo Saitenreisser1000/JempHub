@@ -1,4 +1,9 @@
 <template>
+  <v-alert v-if="audioLoading || audioError" class="ma-2" density="compact"
+    :type="audioError ? 'error' : 'info'" role="status">
+    {{ audioLoading ? 'Sounds werden geladen …' : audioError }}
+    <v-btn v-if="audioLoading" size="small" variant="text" @click="cancelAudioStart">Abbrechen</v-btn>
+  </v-alert>
   <TimelineView :is-playing="isPlaying" :tempo="tempo" :selected-mode="selectedMode" :snap-enabled="snapEnabled"
     :sound-preview-enabled="soundPreviewEnabled" :beat-top="beatTop" :beat-bottom="beatBottom"
     :click-enabled="clickEnabled" :count-in-enabled="countInEnabled"
@@ -71,7 +76,9 @@ import { normalizeNoteValue } from '@/config/noteValues'
 import { getTuning } from '@/domain/music/tunings'
 import { midiToNoteName } from '@/domain/music/notes'
 import { midiForNote } from '@/domain/music/pitch'
-import { playMetronomeClick, playMidi } from '@/domain/audio/simpleSynth'
+import { initAudioEngine, playMetronomeClick, playMidi } from '@/domain/audio/simpleSynth'
+import { createAudioRun } from '@/domain/audio/audioSchedule'
+import { getSharedAudioContext } from '@/domain/audio/audioContext'
 import { createNoteKey } from '@/domain/note'
 import {
   gridIndexToStartMs,
@@ -115,7 +122,7 @@ const selection = useSelectionStore()
 const handPositionsStore = useHandPositionsStore()
 const uiMode = useUiModeStore()
 const { t } = useI18n()
-const PLAYBACK_START_LEAD_IN_MS = 800
+const PLAYBACK_START_LEAD_IN_MS = 0
 
 const { tempo } = storeToRefs(transport)
 const { playheadMs } = storeToRefs(transport)
@@ -637,7 +644,8 @@ watch(
 watch(
   () => surfaceMode.value,
   (mode) => {
-    if (mode !== SURFACE_MODES.COMMENT) return
+    if (mode === SURFACE_MODES.VIEW) stopPractice(false)
+    if (mode !== SURFACE_MODES.COMMENT && mode !== SURFACE_MODES.VIEW) return
     selection.clearGroupTransforms()
     selection.clearSelection()
   },
@@ -680,17 +688,56 @@ onMounted(() => {
 })
 
 onBeforeUnmount(() => {
+  cancelAudioStart()
+  playback.stop()
   clearCountInOverlay()
   stopPractice()
   window.removeEventListener('keydown', onGlobalKeyDown)
 })
-function togglePlay() {
+const audioLoading = ref(false)
+const audioError = ref('')
+let startRequest = 0
+let audioRun = createAudioRun()
+
+function invalidateAudioRun() {
+  audioRun.cancel()
+  audioRun = createAudioRun()
+}
+
+function cancelAudioStart() {
+  startRequest += 1
+  audioLoading.value = false
+  invalidateAudioRun()
+}
+
+async function togglePlay() {
+  if (audioLoading.value) {
+    cancelAudioStart()
+    return
+  }
   if (practiceActive.value || recordActive.value) stopPractice()
   if (playback.isPlaying.value) {
     clearCountInOverlay()
     playback.pause()
     return
   }
+
+  const request = ++startRequest
+  const instrumentType = instrument.instrumentType
+  audioLoading.value = true
+  audioError.value = ''
+  try {
+    await initAudioEngine({ instrumentType, strict: true })
+  } catch {
+    if (request === startRequest) {
+      audioLoading.value = false
+      audioError.value = 'Sounds konnten nicht geladen werden. Bitte erneut Play drücken.'
+    }
+    return
+  }
+  if (request !== startRequest || instrumentType !== instrument.instrumentType) return
+  audioLoading.value = false
+  invalidateAudioRun()
 
   // When starting playback, remove any UI markings (selection / drag previews / leftover pulses).
   selection.clearGroupTransforms()
@@ -709,6 +756,8 @@ function togglePlay() {
     playbackVisuals.clear()
   }
 
+  triggeredNoteKeys = new Set()
+
   // Ensure note events exactly at the current playhead get triggered on the first tick.
   // Example: first note at 0ms when starting from the beginning.
   const ph = Number(playhead.value)
@@ -723,10 +772,11 @@ function togglePlay() {
     ? Math.max(0, (60000 / tempoValue) * beatsPerBar)
     : 0
   const startLeadInMs = shouldCountIn ? 0 : PLAYBACK_START_LEAD_IN_MS
-  if (shouldCountIn) startCountInOverlay(tempoValue, beatsPerBar)
+  const startAt = getSharedAudioContext().currentTime + 0.04
+  if (shouldCountIn) startCountInOverlay(tempoValue, beatsPerBar, { startAt, signal: audioRun.signal })
   else clearCountInOverlay()
 
-  playback.start(totalDuration.value, transport.tempo, { delayMs: countInMs + startLeadInMs })
+  playback.start(totalDuration.value, transport.tempo, { delayMs: countInMs + startLeadInMs, startAt })
 }
 
 function seekStart() {
@@ -753,12 +803,14 @@ function seekStart() {
 }
 
 function seekPlayhead(tMs) {
+  cancelAudioStart()
+  clearCountInOverlay()
   const total = Number(totalDuration.value) || 0
   const t = Math.min(total, Math.max(0, Number(tMs) || 0))
 
   // Keep audio triggering consistent after scrubbing/auto-seeking.
-  lastAudioTickMs = t
-  lastClickTickMs = t
+  lastAudioTickMs = t - 0.0001
+  lastClickTickMs = t - 0.0001
   triggeredNoteKeys = new Set()
   playbackVisuals.clear()
 
@@ -1118,6 +1170,10 @@ function runPracticeFrame() {
     : ''
 
   if (recordActive.value) {
+    if (!surfacePolicy.value.canEditNotes) {
+      stopPractice(false)
+      return
+    }
     if (!Number.isFinite(detectedMidi)) {
       recordConsecutiveHits.value = 0
     } else {
@@ -1187,6 +1243,7 @@ function runPracticeFrame() {
 }
 
 async function startPractice() {
+  cancelAudioStart()
   if (!globalThis.navigator?.mediaDevices?.getUserMedia) {
     practiceMatchState.value = 'error'
     practiceHintText.value = 'Microphone API not available'
@@ -1252,6 +1309,8 @@ function togglePractice() {
 }
 
 async function startRecord() {
+  if (!surfacePolicy.value.canEditNotes) return
+  cancelAudioStart()
   if (!globalThis.navigator?.mediaDevices?.getUserMedia) {
     practiceMatchState.value = 'error'
     practiceHintText.value = 'Microphone API not available'
@@ -1283,6 +1342,10 @@ async function startRecord() {
     practiceAnalyser.fftSize = 2048
     practiceData = new Float32Array(practiceAnalyser.fftSize)
     source.connect(practiceAnalyser)
+    if (!surfacePolicy.value.canEditNotes) {
+      stopPractice(false)
+      return
+    }
     recordActive.value = true
     practiceActive.value = false
     runPracticeFrame()
@@ -1294,6 +1357,7 @@ async function startRecord() {
 }
 
 function toggleRecord() {
+  if (!surfacePolicy.value.canEditNotes) return
   if (recordActive.value) {
     stopPractice(false)
     practiceHintText.value = ''
@@ -1318,12 +1382,18 @@ function isBarStartBeat(beatIndex) {
   return (beatIndex - pickup) % beatsPerBar === 0
 }
 
+function playbackAudioEndMs() {
+  return loopEnabled.value
+    ? loopRangeBlocks.value.end * safeTimePerBlockMs(grid.grid.value.timePerBlock)
+    : effectivePlaybackRangeMs.value.end
+}
+
 function maybePlayClickAt(tMs) {
   if (!clickEnabled.value) return
 
   const t0Raw = lastClickTickMs
   const nowPlayheadMs = Number(tMs) || 0
-  const t1Raw = nowPlayheadMs + PLAYBACK_LOOKAHEAD_MS
+  const t1Raw = Math.min(playbackAudioEndMs(), nowPlayheadMs + PLAYBACK_LOOKAHEAD_MS * ((Number(tempo.value) || 120) / 120))
   lastClickTickMs = t1Raw
 
   const t0 = Number.isFinite(t0Raw) ? t0Raw : -0.0001
@@ -1340,13 +1410,13 @@ function maybePlayClickAt(tMs) {
   const lastBeat = Math.floor(t1 / msPerBeat)
   if (lastBeat < firstBeat) return
 
-  const tempoValue = Number(tempo.value) || 120
-  const tempoScale = 120 / tempoValue
   for (let b = firstBeat; b <= lastBeat; b += 1) {
     if (b < 0) continue
     const beatTimeMs = b * msPerBeat
-    const startDelayMs = Math.max(0, (beatTimeMs - nowPlayheadMs) * tempoScale)
-    void playMetronomeClick({ accent: isBarStartBeat(b), startDelayMs })
+    if (beatTimeMs >= playbackAudioEndMs()) continue
+    void playMetronomeClick({
+      accent: isBarStartBeat(b), startAt: playback.audioTimeFor(beatTimeMs), signal: audioRun.signal,
+    })
   }
 }
 
@@ -1355,7 +1425,7 @@ function maybePlayNotesAt(tMs) {
 
   const t0 = lastAudioTickMs
   const nowPlayheadMs = Number(tMs) || 0
-  const t1 = nowPlayheadMs + PLAYBACK_LOOKAHEAD_MS
+  const t1 = Math.min(playbackAudioEndMs(), nowPlayheadMs + PLAYBACK_LOOKAHEAD_MS * ((Number(tempo.value) || 120) / 120))
   lastAudioTickMs = t1
 
   const t = tuning.value
@@ -1373,7 +1443,7 @@ function maybePlayNotesAt(tMs) {
     if (!Number.isFinite(gridIndex)) continue
 
     const startMs = playbackStartMsForNote(note, timePerBlock)
-    if (!(startMs > t0 && startMs <= t1)) continue
+    if (!(startMs > t0 && startMs <= t1) || startMs >= playbackAudioEndMs()) continue
 
     const midi = midiForNote(note, t)
     if (!Number.isFinite(Number(midi))) continue
@@ -1384,7 +1454,8 @@ function maybePlayNotesAt(tMs) {
     const durScale = Number(soundDurationScale.value)
     const safeScale = Number.isFinite(durScale) && durScale > 0 ? durScale : 1
     const durationAudioMs = Math.max(30, durationPlayheadMs * tempoScale * safeScale)
-    const startDelayMs = Math.max(0, (startMs - nowPlayheadMs) * tempoScale)
+    const startAt = playback.audioTimeFor(startMs)
+    if (startAt < getSharedAudioContext().currentTime - 0.025) continue
 
     triggeredNoteKeys.add(key)
     // Keep the dot "active" for the exact timeline duration (playhead time)
@@ -1392,7 +1463,8 @@ function maybePlayNotesAt(tMs) {
     // But let the audio duration respect tempo (real time)
     void playMidi(midi, {
       durationMs: durationAudioMs,
-      startDelayMs,
+      startAt,
+      signal: audioRun.signal,
       instrumentType: instrument.instrumentType,
     })
   }
@@ -1424,6 +1496,11 @@ function playbackStartMsForNote(note, timePerBlock) {
 }
 
 const playback = usePlayback({
+  onInvalidate: invalidateAudioRun,
+  onInterrupted: () => {
+    clearCountInOverlay()
+    audioError.value = 'Wiedergabe unterbrochen. Bitte erneut Play drücken.'
+  },
   onTick: (t) => {
     // Loop wrap (or any backwards jump) should reset triggering state.
     if (t < playhead.value) {
@@ -1443,9 +1520,8 @@ const playback = usePlayback({
           lastClickTickMs = loopStartMs - 0.0001
           triggeredNoteKeys = new Set()
           playbackVisuals.clear()
-          playback.seek(loopStartMs, { emitTick: false })
-          playhead.value = loopStartMs
-          transport.setPlayheadMs(loopStartMs)
+          const loopStartAt = playback.audioTimeFor(loopEndMs)
+          playback.seek(loopStartMs, { startAt: loopStartAt })
           return
         }
       }
@@ -1469,6 +1545,12 @@ const playback = usePlayback({
   },
 })
 const isPlaying = computed(() => playback.isPlaying.value)
+
+watch(() => [instrument.instrumentType, tempo.value, loopEnabled.value, clickEnabled.value, soundPreviewEnabled.value, shuffleEnabled.value, loopStartBlock.value, loopEndBlock.value], () => {
+  cancelAudioStart()
+  clearCountInOverlay()
+  if (playback.isPlaying.value) playback.pause()
+}, { flush: 'sync' })
 
 // Keep local timeline state in sync with the transport store.
 // This allows external UI actions (e.g. clearing notes) to reset the playhead.

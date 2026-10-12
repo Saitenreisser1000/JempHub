@@ -1,7 +1,7 @@
 <template>
   <div v-if="visible" class="timeline-transport" :aria-label="t('timelineView.transport')">
     <div class="timeline-transport-inner">
-      <PlaybackControls :is-playing="isPlaying" :tempo="tempo" :click-enabled="clickEnabled"
+      <PlaybackControls :read-only="readOnly" :is-playing="isPlaying" :tempo="tempo" :click-enabled="clickEnabled"
         :count-in-enabled="countInEnabled" :auto-follow-enabled="autoFollowEnabled" :loop-enabled="loopEnabled"
         :shuffle-enabled="shuffleEnabled"
         :instrument-type="instrumentType"
@@ -28,6 +28,7 @@ import { useI18n } from '@/i18n'
 import PlaybackControls from './PlaybackControls.vue'
 
 defineProps({
+  readOnly: { type: Boolean, default: false },
   visible: { type: Boolean, default: true },
   isPlaying: { type: Boolean, required: true },
   tempo: { type: Number, required: true },

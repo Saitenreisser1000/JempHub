@@ -1,8 +1,8 @@
 <template>
-  <div class="fretboard-main">
+  <div class="fretboard-main" :class="{ 'is-read-only': !editable }">
     <div class="fretboard-pane-row">
       <div class="fretboard-pane-body">
-        <div class="fretboard-pane-corner-tools">
+        <div v-if="editable" class="fretboard-pane-corner-tools">
           <v-menu location="bottom end" :close-on-content-click="false">
             <template #activator="{ props: menuProps }">
               <v-btn v-bind="menuProps" class="fretboard-options-btn" size="small" variant="tonal" title="Options"
@@ -31,12 +31,12 @@
             </div>
           </v-menu>
         </div>
-        <Fretboard :num-frets="numFrets" :editable="editable" :core-resize-px="coreResizePx"
+        <Fretboard :inert="!editable" :num-frets="numFrets" :editable="editable" :core-resize-px="coreResizePx"
           :is-phone-view="isPhoneView" :style="fretboardStyleVars" />
       </div>
       <div class="fretboard-pane-side">
         <div class="fretboard-pane-side-stack">
-          <div class="fretboard-side-toolbar">
+          <div v-if="editable" class="fretboard-side-toolbar">
             <v-menu location="bottom end" :close-on-content-click="false">
               <template #activator="{ props: menuProps }">
                 <v-btn v-bind="menuProps" size="x-small" variant="tonal" class="fretboard-color-btn">
@@ -55,14 +55,20 @@
                 :disabled="!hasDotGroups" @click="emit('activate-all-dot-groups')">
                 All
               </v-btn>
-              <v-btn v-for="group in usedDotGroups" :key="group.id" variant="tonal" size="small"
-                class="justify-start fretboard-dot-group-btn"
-                :class="{ 'is-active': String(timelineSettings.activeDotGroupColor || '') === group.color }"
-                :style="{ borderLeft: `12px solid ${group.color}` }" :title="group.label"
-                @contextmenu="(event) => emit('open-dot-group-menu', { event, group })"
-                @click="emit('activate-dot-group', group.color)">
-                {{ group.label }}
-              </v-btn>
+              <div v-for="group in usedDotGroups" :key="group.color" class="fretboard-dot-group-row">
+                <v-btn variant="tonal" size="small"
+                  class="justify-start fretboard-dot-group-btn"
+                  :class="{ 'is-active': String(timelineSettings.activeDotGroupColor || '') === group.color }"
+                  :style="{ borderLeft: `12px solid ${group.color}` }" :title="group.label"
+                  @contextmenu.prevent="(event) => editable && emit('open-dot-group-menu', { event, group })"
+                  @click="emit('activate-dot-group', group.color)">
+                  {{ group.label }}
+                </v-btn>
+                <v-btn v-if="editable" variant="text" size="small" icon="mdi-trash-can-outline"
+                  class="fretboard-dot-group-delete" :aria-label="`${group.label} löschen`"
+                  :title="`${group.label} samt Noten löschen (Undo möglich)`"
+                  @click.stop="emit('delete-dot-group', group.color)" />
+              </div>
             </div>
           </div>
         </div>
@@ -100,6 +106,7 @@ const emit = defineEmits([
   'open-dot-group-menu',
   'activate-all-dot-groups',
   'activate-dot-group',
+  'delete-dot-group',
 ])
 
 const instrument = useInstrumentStore()
@@ -271,6 +278,24 @@ const playOrderScopeModel = computed({
   overflow: auto;
 }
 
+.fretboard-dot-group-row {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+}
+
+.fretboard-dot-group-row .fretboard-dot-group-btn {
+  flex: 1 1 0;
+  min-width: 0;
+  width: 0;
+}
+
+.fretboard-dot-group-delete {
+  flex: 0 0 32px;
+  width: 32px;
+  height: 36px;
+}
+
 .fretboard-dot-group-btn {
   min-height: 36px;
   width: 100%;
@@ -299,5 +324,20 @@ const playOrderScopeModel = computed({
 
 .fretboard-dot-groups.is-empty .fretboard-dot-groups-list {
   overflow: hidden;
+}
+.is-read-only {
+  padding: 4px;
+}
+.is-read-only .fretboard-pane-row {
+  gap: 4px;
+}
+.is-read-only .fretboard-pane-side,
+.is-read-only .fretboard-pane-side-stack {
+  width: clamp(100px, 16vw, 178px);
+  min-width: 100px;
+  max-width: 178px;
+}
+.is-read-only .fretboard-pane-side-stack {
+  padding: 4px;
 }
 </style>

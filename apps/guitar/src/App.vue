@@ -8,7 +8,6 @@ import Timeline from '@/features/timeline'
 import { TransportBar } from '@/features/transport'
 import { AuthDialog, ConnectionsDialog, LibraryPanel } from '@/features/cloud'
 import WorkspaceLeftRail from '@/components/app/workspace/WorkspaceLeftRail.vue'
-import WorkspaceSidebarPanels from '@/components/app/workspace/WorkspaceSidebarPanels.vue'
 import WorkspacePaneB from '@/components/app/workspace/WorkspacePaneB.vue'
 import WorkspaceFretboardPane from '@/components/app/workspace/WorkspaceFretboardPane.vue'
 import WorkspaceDashboardView from '@/components/app/workspace/WorkspaceDashboardView.vue'
@@ -25,12 +24,7 @@ import { useShareContactsStore } from '@/store/useShareContacts'
 import { useHarmonyMenuStore } from '@/store/useHarmonyMenu'
 import { useFretboardOverlayStore } from '@/store/useFretboardOverlay'
 import { SURFACE_MODES, useUiModeStore } from '@/store/useUiMode'
-import { normalizeNoteValue } from '@/config/noteValues'
-import { createNoteKey } from '@/domain/note'
-import { defaultLengthBlocksForMode, nextGridIndexFromNotes } from '@/domain/timelinePlacement'
-import { snapStepBlocksForMode } from '@/domain/timelineInteractions'
 import { TIMELINE_LAYOUT } from '@/features/timeline/config/timelineLayout'
-import { DEFAULT_TIME_PER_BLOCK_MS, TIMELINE_SNAP_STEP_BLOCKS } from '@/features/timeline/config/grid'
 import { initAudioEngine, installAudioAutoWarmup } from '@/domain/audio/simpleSynth'
 import { useI18n } from '@/i18n'
 import { useTheme } from 'vuetify'
@@ -42,7 +36,8 @@ import { useSongEditorActions } from '@/composables/useSongEditorActions'
 const numFrets = ref(12)
 const corePadResizePx = ref(0)
 const fretboardMainEl = ref(null)
-const timelineRef = ref(null)
+const workspaceTimelineRef = ref(null)
+const compactTimelineRef = ref(null)
 const importFilesInputEl = ref(null)
 const timelineUndoTick = ref(0)
 const timelineRedoTick = ref(0)
@@ -51,7 +46,6 @@ const showFretboard = ref(true)
 const showTimeline = ref(true)
 const showTransportBar = ref(true)
 const workspacePanelTab = ref('timeline')
-const sidebarTab = ref('shapes')
 const sidebarVisible = ref(true)
 const mainView = ref('workspace')
 const dashboardPanel = ref('library')
@@ -93,22 +87,6 @@ const SONG_KEY_OPTIONS = [
   { title: 'A#/Bb', value: 'A#' },
   { title: 'B', value: 'B' },
 ]
-const CHORD_TYPE_OPTIONS = [
-  'major',
-  'minor',
-  'diminished',
-  'augmented',
-  'sus2',
-  'sus4',
-  'dominant 7',
-  'major 7',
-  'minor 7',
-  'half-diminished 7',
-  'diminished 7',
-  'add9',
-  'major 6',
-  'minor 6',
-]
 const DOT_LABEL_MODE_OPTIONS = [
   { title: 'Rhythm', value: 'rhythm' },
   { title: 'Intervals', value: 'intervals' },
@@ -119,36 +97,6 @@ const PLAY_ORDER_SCOPE_OPTIONS = [
   { title: 'Per Song', value: 'song' },
   { title: 'Per Dotgroup', value: 'dotgroup' },
 ]
-const SCALE_TYPE_OPTIONS = [
-  'major (ionian)',
-  'natural minor (aeolian)',
-  'harmonic minor',
-  'melodic minor',
-  'dorian',
-  'phrygian',
-  'lydian',
-  'mixolydian',
-  'locrian',
-  'major pentatonic',
-  'minor pentatonic',
-  'blues',
-  'chromatic',
-  'whole tone',
-  'diminished (whole-half)',
-]
-const SCALE_POSITION_OPTIONS = ['Open', '3', '5', '7', '9', '12']
-const SCALE_PATTERN_OPTIONS = [
-  'CAGED 1',
-  'CAGED 2',
-  'CAGED 3',
-  'CAGED 4',
-  'CAGED 5',
-  '3 Notes Per String',
-  'Box Pattern 1',
-  'Box Pattern 2',
-  'Box Pattern 3',
-]
-
 const isDarkTheme = computed(() => Boolean(theme.global.current.value.dark))
 const preferenceToneDuration = computed({
   get: () => Number(timelineSettings.soundDurationScale) || 1,
@@ -202,13 +150,35 @@ const {
   isWatchView,
   isCompactView,
   effectiveIsPortrait,
-  showPhoneRotateOverlay,
+  isDevMode,
   appLayoutStyle,
   updateViewportOrientationFlag,
   updateViewportHeightUnit,
   applyViewportDebugPreset,
   shouldDefaultToPhoneView,
 } = useViewportMode()
+const isReadOnly = computed(() => uiMode.surfaceMode === SURFACE_MODES.VIEW)
+const timelineRef = computed(() =>
+  isCompactView.value && !isReadOnly.value && phonePane.value === 'timeline'
+    ? compactTimelineRef.value
+    : workspaceTimelineRef.value,
+)
+const showPhoneRotateOverlay = computed(() => isPhoneView.value && isReadOnly.value && effectiveIsPortrait.value)
+
+function setReadOnly(value) {
+  closeDotGroupMenu()
+  if (value) {
+    mainView.value = 'workspace'
+    phonePane.value = 'fretboard'
+    workspacePanelTab.value = 'timeline'
+  }
+  uiMode.setSurfaceMode(value ? SURFACE_MODES.VIEW : SURFACE_MODES.COMPOSE)
+}
+
+watch(isPhoneView, (phone) => {
+  if (phone) setReadOnly(true)
+})
+
 const isCommentMode = computed(() => uiMode.surfaceMode === SURFACE_MODES.COMMENT)
 
 const {
@@ -275,10 +245,11 @@ const {
   openDotGroupMenu,
   closeDotGroupMenu,
   renameDotGroup,
+  deleteDotGroup,
   onWindowPointerDown,
   activateAllDotGroups,
   activateDotGroup,
-} = useAppDotGroups({ notes, timelineSettings, timelineRef })
+} = useAppDotGroups({ notes, selection, timelineSettings, timelineRef })
 
 function applyTheme(name) {
   const next = name === 'guitarjempDark' ? 'guitarjempDark' : 'guitarjemp'
@@ -319,6 +290,7 @@ function timelineTogglePractice() {
 }
 
 function timelineToggleRecord() {
+  if (isReadOnly.value) return
   timelineRef.value?.toggleRecord?.()
 }
 
@@ -369,14 +341,17 @@ async function saveDashboardProfile(payload) {
 }
 
 function triggerUndo() {
+  if (isReadOnly.value) return
   timelineUndoTick.value += 1
 }
 
 function triggerRedo() {
+  if (isReadOnly.value) return
   timelineRedoTick.value += 1
 }
 
 function clearFretboardFromLeftRail() {
+  if (isReadOnly.value) return
   const noteCount = Array.isArray(notes.activeNotes) ? notes.activeNotes.length : 0
   if (noteCount > 15) {
     const confirmed = window.confirm(`${noteCount} Elemente löschen?`)
@@ -397,75 +372,6 @@ async function handleSaveAsNewToCloud() {
     return
   }
   await saveAsNewToCloud()
-}
-
-function currentTimelineInsertConfig() {
-  let gridIndex = nextGridIndexFromNotes(notes.activeNotes, { mode: timelineSettings.selectedMode })
-
-  const tMs = Number(transport.playheadMs)
-  if (Number.isFinite(tMs) && tMs > 0) {
-    const idx = tMs / DEFAULT_TIME_PER_BLOCK_MS + 1
-    if (Number.isFinite(idx) && idx > 0) {
-      if (timelineSettings.snapEnabled && transport.playState !== 'playing') {
-        const snapStep = snapStepBlocksForMode(timelineSettings.simGroupMode, TIMELINE_SNAP_STEP_BLOCKS)
-        const snappedBlocks = Math.round((idx - 1) / snapStep) * snapStep
-        gridIndex = Math.max(1, snappedBlocks + 1)
-      } else {
-        gridIndex = idx
-      }
-    }
-  }
-
-  const lengthMode = timelineSettings.selectedMode === 'sim'
-    ? timelineSettings.lastRhythmMode
-    : timelineSettings.selectedMode
-  const noteValue = normalizeNoteValue(lengthMode) || '1/4'
-
-  let lengthBlocks = defaultLengthBlocksForMode(noteValue)
-  const rawSimGroupMode = String(timelineSettings.simGroupMode || '')
-  const simGroupMode = rawSimGroupMode === 'dot' ? 'dotted' : rawSimGroupMode
-  const subdivision = simGroupMode === '3' ? 3 : 2
-  if (simGroupMode === 'dotted' && Number(lengthBlocks) > 0.25) {
-    lengthBlocks = Number(lengthBlocks) * 1.5
-  } else if (simGroupMode === '3') {
-    lengthBlocks = Number((Number(lengthBlocks) * (2 / 3)).toFixed(4))
-  }
-
-  return {
-    gridIndex,
-    noteValue,
-    lengthBlocks,
-    subdivision,
-    color: timelineSettings.selectedColor,
-  }
-}
-
-function addActiveChordToTimeline() {
-  const positions = Array.isArray(harmony.activeChordShape?.positions) ? harmony.activeChordShape.positions : []
-  if (!positions.length) return
-
-  const insert = currentTimelineInsertConfig()
-  const placedAtMs = Date.now()
-  const notesToAdd = positions.map((pos) => ({
-    key: createNoteKey(),
-    fret: Number(pos?.fret),
-    string: Number(pos?.string),
-    color: insert.color,
-    noteValue: insert.noteValue,
-    gridIndex: insert.gridIndex,
-    lengthBlocks: insert.lengthBlocks,
-    subdivision: insert.subdivision,
-    placedAtMs,
-  }))
-
-  const added = notes.addNotes(notesToAdd, { tag: 'addChord' })
-  if (!added.length) return
-
-  selection.setSelectedNotes(added.map((note) => String(note?.key || '')).filter(Boolean))
-
-  const chordEnd = insert.gridIndex - 1 + insert.lengthBlocks
-  const nextTimelineLength = Math.max(Number(timelineSettings.timelineLengthBlocks) || 0, chordEnd)
-  if (nextTimelineLength > 0) timelineSettings.setTimelineLengthBlocks(nextTimelineLength)
 }
 
 function updateNumFrets(value) {
@@ -518,6 +424,7 @@ onBeforeUnmount(() => {
 
 <template>
   <div class="app-layout" :style="appLayoutStyle" :class="{
+    'is-read-only': isReadOnly,
     'is-phone-view': isPhoneView,
     'is-watch-view': isWatchView,
     'is-compact-view': isCompactView,
@@ -532,6 +439,8 @@ onBeforeUnmount(() => {
       @change="onImportFilesChange" />
 
     <AppMenuBar
+      :read-only="isReadOnly"
+      @update:read-only="setReadOnly"
       :is-phone-view="isPhoneView"
       :is-compact-view="isCompactView"
       :is-watch-view="isWatchView"
@@ -567,15 +476,18 @@ onBeforeUnmount(() => {
       @share-contact="shareContact"
     />
 
-    <div v-if="dotGroupMenu.open" class="dot-group-context-menu"
+    <div v-if="dotGroupMenu.open && !isReadOnly" class="dot-group-context-menu"
       :style="{ left: `${dotGroupMenu.x}px`, top: `${dotGroupMenu.y}px` }">
       <button type="button" class="dot-group-context-item" @click="renameDotGroup">
         Umbenennen
       </button>
+      <button type="button" class="dot-group-context-item" @click="deleteDotGroup()">
+        Löschen
+      </button>
     </div>
 
-    <main v-if="!showPhoneRotateOverlay || mainView === 'dashboard'" class="app-content">
-      <WorkspaceLeftRail v-if="mainView !== 'dashboard' && !isCompactView" @clear="clearFretboardFromLeftRail" />
+    <main v-show="!showPhoneRotateOverlay || mainView === 'dashboard'" class="app-content">
+      <WorkspaceLeftRail v-if="mainView !== 'dashboard' && !isCompactView && !isReadOnly" @clear="clearFretboardFromLeftRail" />
       <WorkspaceDashboardView
         v-if="mainView === 'dashboard'"
         :signed-in="auth.isSignedIn"
@@ -602,15 +514,15 @@ onBeforeUnmount(() => {
         @save-profile="saveDashboardProfile"
         @update-required-frets="(value) => { if (Number(value) > Number(numFrets) || 0) updateNumFrets(value) }"
       />
-      <LayoutManager v-else class="app-window-manager">
+      <LayoutManager v-else class="app-window-manager" :presentation="isReadOnly">
         <template #pane-a>
           <WorkspaceFretboardPane
-            v-if="!isCompactView && showFretboard"
+            v-if="isReadOnly || (!isCompactView && showFretboard)"
             ref="fretboardMainEl"
             :num-frets="numFrets"
-            :editable="true"
+            :editable="!isReadOnly"
             :core-resize-px="corePadResizePx"
-            :is-phone-view="false"
+            :is-phone-view="isPhoneView"
             :fretboard-style-vars="fretboardStyleVars"
             :has-dot-groups="hasDotGroups"
             :all-dot-groups-selected="allDotGroupsSelected"
@@ -625,6 +537,7 @@ onBeforeUnmount(() => {
             @open-dot-group-menu="({ event, group }) => openDotGroupMenu(event, group)"
             @activate-all-dot-groups="activateAllDotGroups"
             @activate-dot-group="activateDotGroup"
+            @delete-dot-group="deleteDotGroup"
           />
           <WorkspaceFretboardPane
             v-else-if="isCompactView && phonePane === 'fretboard' && showFretboard"
@@ -647,8 +560,9 @@ onBeforeUnmount(() => {
             @open-dot-group-menu="({ event, group }) => openDotGroupMenu(event, group)"
             @activate-all-dot-groups="activateAllDotGroups"
             @activate-dot-group="activateDotGroup"
+            @delete-dot-group="deleteDotGroup"
           />
-          <Timeline v-else-if="isCompactView && phonePane === 'timeline' && showTimeline" ref="timelineRef"
+          <Timeline v-else-if="!isReadOnly && isCompactView && phonePane === 'timeline' && showTimeline" ref="compactTimelineRef"
             :num-frets="numFrets" :compact="isCompactView" :library-panel-visible="false"
             :transport-visible="transportVisible" :external-undo-tick="timelineUndoTick"
             :external-redo-tick="timelineRedoTick" @update-transport-visible="(v) => (transportVisible = Boolean(v))" />
@@ -657,7 +571,7 @@ onBeforeUnmount(() => {
         </template>
         <template #pane-b>
           <WorkspacePaneB
-            ref="timelineRef"
+            ref="workspaceTimelineRef"
             :show-timeline="showTimeline"
             :num-frets="numFrets"
             :compact="isCompactView"
@@ -670,27 +584,16 @@ onBeforeUnmount(() => {
             @update-required-frets="(value) => { if (Number(value) > Number(numFrets) || 0) updateNumFrets(value) }"
           />
         </template>
-        <template #sidebar>
-          <WorkspaceSidebarPanels
-            v-model="sidebarTab"
-            :song-key-options="SONG_KEY_OPTIONS"
-            :chord-type-options="CHORD_TYPE_OPTIONS"
-            :scale-type-options="SCALE_TYPE_OPTIONS"
-            :scale-position-options="SCALE_POSITION_OPTIONS"
-            :scale-pattern-options="SCALE_PATTERN_OPTIONS"
-            @add-active-chord="addActiveChordToTimeline"
-          />
-        </template>
       </LayoutManager>
     </main>
-    <main v-else class="app-content app-phone-rotate-lock" aria-live="polite">
+    <main v-if="showPhoneRotateOverlay && mainView !== 'dashboard'" class="app-content app-phone-rotate-lock" aria-live="polite">
       <div class="app-phone-rotate-card">
-        <div class="app-phone-rotate-title">Landscape Required</div>
-        <div class="app-phone-rotate-text">Bitte Gerät drehen, um den Phone-View zu nutzen.</div>
+        <div class="app-phone-rotate-title">Querformat</div>
+        <div class="app-phone-rotate-text">Bitte Gerät drehen, um Griffbrett, Tonegroups und Player im Querformat anzuzeigen.</div>
       </div>
     </main>
-    <div v-if="showTransportBar && mainView !== 'dashboard'" class="app-transport-wrap">
-      <TransportBar :visible="transportVisible" :is-playing="timelineIsPlaying" :tempo="transport.tempo"
+    <div v-if="(isReadOnly || showTransportBar) && mainView !== 'dashboard' && !showPhoneRotateOverlay" class="app-transport-wrap">
+      <TransportBar :read-only="isReadOnly" :visible="isReadOnly || transportVisible" :is-playing="timelineIsPlaying" :tempo="transport.tempo"
         :click-enabled="timelineSettings.clickEnabled" :count-in-enabled="timelineSettings.countInEnabled"
         :auto-follow-enabled="timelineSettings.autoFollowEnabled" :loop-enabled="timelineSettings.loopEnabled"
         :shuffle-enabled="timelineSettings.shuffleEnabled" :instrument-type="instrument.instrumentType"
@@ -760,12 +663,12 @@ onBeforeUnmount(() => {
       @update:preference-language="(v) => (preferenceLanguage = String(v || 'en'))"
     />
 
-    <footer class="app-footer">
+    <footer v-if="!isReadOnly" class="app-footer">
       <span>GuitarJemp ©</span>
     </footer>
 
     <AppViewportDebug
-      v-if="isDevMode"
+      v-if="isDevMode && !isReadOnly"
       :open="debugViewportOpen"
       :preset="debugViewportPreset"
       :presets="VIEWPORT_DEBUG_PRESETS"
@@ -779,3 +682,15 @@ onBeforeUnmount(() => {
 </template>
 
 <style scoped src="jemp-design-system/app-shell.css"></style>
+
+<style scoped>
+.app-layout.is-read-only {
+  --app-left-rail-w: 0px;
+  grid-template-rows: auto minmax(0, 1fr) auto;
+  height: 100dvh;
+  min-height: 0;
+  padding-left: env(safe-area-inset-left, 0px);
+  padding-right: env(safe-area-inset-right, 0px);
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+}
+</style>

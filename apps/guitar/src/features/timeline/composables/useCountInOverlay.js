@@ -1,4 +1,5 @@
 import { ref } from 'vue'
+import { getSharedAudioContext } from '@/domain/audio/audioContext'
 
 export function useCountInOverlay({
   pickupEnabled,
@@ -19,7 +20,7 @@ export function useCountInOverlay({
     countInBeat.value = 0
   }
 
-  function startCountInOverlay(tempoValue, beatsPerBar) {
+  function startCountInOverlay(tempoValue, beatsPerBar, { startAt, signal } = {}) {
     clearCountInOverlay()
     const beatMs = Math.max(1, 60000 / (Number(tempoValue) || 120))
     const beats = Math.max(1, Number.parseInt(String(beatsPerBar), 10) || 4)
@@ -35,22 +36,22 @@ export function useCountInOverlay({
       sequence.push(((startBeat - 1 + i) % beats) + 1)
     }
 
-    let idx = 0
-    const playCountInClick = (beatNumber) => {
-      if (!clickEnabled.value) return
-      void playMetronomeClick({ accent: Number(beatNumber) === 1 })
+    const origin = Number.isFinite(startAt) ? startAt : getSharedAudioContext().currentTime
+    if (clickEnabled.value) {
+      sequence.forEach((beat, index) => {
+        void playMetronomeClick({ accent: beat === 1, startAt: origin + index * beatMs / 1000, signal })
+      })
     }
-    countInBeat.value = sequence[idx]
-    playCountInClick(countInBeat.value)
-    countInTimerId = setInterval(() => {
-      idx += 1
-      if (idx >= sequence.length) {
+    const update = () => {
+      const idx = Math.max(0, Math.floor((getSharedAudioContext().currentTime - origin) * 1000 / beatMs))
+      if (signal?.aborted || idx >= sequence.length) {
         clearCountInOverlay()
         return
       }
       countInBeat.value = sequence[idx]
-      playCountInClick(countInBeat.value)
-    }, beatMs)
+    }
+    update()
+    countInTimerId = setInterval(update, 25)
   }
 
   return {

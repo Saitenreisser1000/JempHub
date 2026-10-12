@@ -328,6 +328,16 @@ export const useNotesStore = defineStore('notes', () => {
     if (i > -1) activeNotes.value.splice(i, 1)
   }
 
+  function removeNotesByColor(color) {
+    const target = String(color || '').trim()
+    if (!target) return []
+    const removed = activeNotes.value.filter((note) => String(note?.color || '').trim() === target)
+    if (!removed.length) return []
+    pushUndoPoint('deleteDotGroup', { coalesceMs: 0 })
+    activeNotes.value = activeNotes.value.filter((note) => String(note?.color || '').trim() !== target)
+    return removed.map((note) => note.key)
+  }
+
   function clearNotes() {
     if (activeNotes.value.length) pushUndoPoint('clear')
     activeNotes.value = []
@@ -351,6 +361,7 @@ export const useNotesStore = defineStore('notes', () => {
     addNote,
     addNotes,
     removeNote,
+    removeNotesByColor,
     clearNotes,
     setNoteGridIndex,
     setNoteLength,
