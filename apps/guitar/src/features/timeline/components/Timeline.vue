@@ -434,6 +434,7 @@ function handleGroupResizeNotes(anchorKey, deltaBlocks) {
 
 function handleCopySelection() {
   if (!surfacePolicy.value.canEditNotes) return
+  settings.setActiveTool('arrow')
   const keys = Array.isArray(selection.selectedNoteKeys) ? selection.selectedNoteKeys : []
   if (!keys.length) {
     selection.setClipboardNotes([])

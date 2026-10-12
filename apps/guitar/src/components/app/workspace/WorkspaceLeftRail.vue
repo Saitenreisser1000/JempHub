@@ -4,7 +4,7 @@
       <button v-for="item in leftRailNoteItems" :key="item.value" type="button" class="app-left-rail-note-btn"
         :class="{ 'is-active': leftRailNoteValue === item.value }" :title="item.title"
         @click="leftRailNoteValue = item.value">
-        <span class="app-left-rail-note-glyph" aria-hidden="true">{{ item.glyph }}</span>
+        <span class="app-left-rail-note-icon" :style="{ maskImage: `url(${item.icon})` }" aria-hidden="true"></span>
       </button>
 
       <div class="app-left-rail-divider" aria-hidden="true"></div>
@@ -12,13 +12,13 @@
       <button type="button" class="app-left-rail-note-btn app-left-rail-small-btn"
         :class="{ 'is-active': leftRailModifier === 'dotted' }" :title="t('modeSelector.dotted')"
         @click="leftRailModifier = leftRailModifier === 'dotted' ? '' : 'dotted'">
-        <span class="app-left-rail-note-glyph" aria-hidden="true">.</span>
+        <span class="app-left-rail-note-icon" :style="{ maskImage: `url(${NOTE_MODIFIER_ICONS.dotted})` }" aria-hidden="true"></span>
       </button>
 
       <button type="button" class="app-left-rail-note-btn app-left-rail-small-btn"
         :class="{ 'is-active': leftRailModifier === '3' }" :title="t('modeSelector.triplets')"
         @click="leftRailModifier = leftRailModifier === '3' ? '' : '3'">
-        <span class="app-left-rail-note-glyph" aria-hidden="true">3</span>
+        <span class="app-left-rail-note-icon" :style="{ maskImage: `url(${NOTE_MODIFIER_ICONS.triplet})` }" aria-hidden="true"></span>
       </button>
 
       <div class="app-left-rail-divider" aria-hidden="true"></div>
@@ -27,13 +27,7 @@
         :class="{ 'is-active': leftRailChordEnabled }"
         :title="leftRailChordEnabled ? t('modeSelector.disableChord') : t('modeSelector.enableChord')"
         @click="timelineSettings.setSelectedMode(leftRailChordEnabled ? String(timelineSettings.lastRhythmMode || '1/4') : 'sim')">
-        <span class="app-left-rail-chord-icon" aria-hidden="true">
-          <svg viewBox="0 0 24 24" role="presentation" focusable="false">
-            <line x1="7.75" y1="2" x2="7.75" y2="22" />
-            <ellipse cx="12.4" cy="7.1" rx="5.1" ry="3.6" transform="rotate(-34 12.4 7.1)" />
-            <ellipse cx="12.4" cy="15.4" rx="5.1" ry="3.6" transform="rotate(-34 12.4 15.4)" />
-          </svg>
-        </span>
+        <span class="app-left-rail-note-icon" :style="{ maskImage: `url(${TRIAD_ICON})` }" aria-hidden="true"></span>
       </button>
 
       <div class="app-left-rail-spacer" aria-hidden="true"></div>
@@ -53,7 +47,7 @@
 
 <script setup>
 import { computed } from 'vue'
-import { NOTE_VALUE_ITEMS, noteValueFallbackSymbol } from '@/config/noteValues'
+import { NOTE_MODIFIER_ICONS, NOTE_VALUE_ITEMS, TRIAD_ICON } from '@/config/noteValues'
 import { useI18n } from '@/i18n'
 import { useTimelineSettingsStore } from '@/store/useTimelineSettings'
 import { SURFACE_MODES, useUiModeStore } from '@/store/useUiMode'
@@ -78,7 +72,6 @@ const leftRailNoteItems = computed(() =>
   NOTE_VALUE_ITEMS.map((item) => ({
     ...item,
     title: t(`noteValues.${item.value.replace('/', '_')}`, item.title),
-    glyph: noteValueFallbackSymbol(item.value),
   })),
 )
 
@@ -160,9 +153,13 @@ const isCommentMode = computed(() => uiMode.surfaceMode === SURFACE_MODES.COMMEN
     0 1px 0 rgb(255 255 255 / 0.14);
 }
 
-.app-left-rail-note-glyph {
-  font-size: 18px;
-  line-height: 1;
+.app-left-rail-note-icon {
+  width: 28px;
+  height: 28px;
+  background-color: currentColor;
+  mask-size: contain;
+  mask-position: center;
+  mask-repeat: no-repeat;
 }
 
 .app-left-rail-small-btn {
@@ -210,22 +207,4 @@ const isCommentMode = computed(() => uiMode.surfaceMode === SURFACE_MODES.COMMEN
   font-size: 6px;
 }
 
-
-.app-left-rail-chord-icon {
-  width: 18px;
-  height: 18px;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.app-left-rail-chord-icon svg {
-  width: 18px;
-  height: 18px;
-  fill: none;
-  stroke: currentColor;
-  stroke-width: 1.8;
-  stroke-linecap: round;
-  stroke-linejoin: round;
-}
 </style>

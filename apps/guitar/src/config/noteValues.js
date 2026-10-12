@@ -1,5 +1,12 @@
 const APP_BASE = String(import.meta?.env?.BASE_URL || '/')
-const NOTE_ICON_BASE = `${APP_BASE.replace(/\/+$/, '')}/assets/notes`
+const NOTE_ICON_BASE = `${APP_BASE.replace(/\/+$/, '')}/assets/notes/bravura`
+
+export const TRIAD_ICON = `${NOTE_ICON_BASE}/triad.svg`
+
+export const NOTE_MODIFIER_ICONS = {
+  dotted: `${NOTE_ICON_BASE}/dotted-quarter.svg`,
+  triplet: `${NOTE_ICON_BASE}/triplet.svg`,
+}
 
 export const NOTE_VALUE_ITEMS = [
   {
@@ -31,7 +38,7 @@ export const NOTE_VALUE_ITEMS = [
   },
   {
     value: '1/2',
-    icon: `${NOTE_ICON_BASE}/half.png`,
+    icon: `${NOTE_ICON_BASE}/half.svg`,
     title: 'Half Note',
     label: '1/2',
     dotSymbol: '𝅗𝅥',
@@ -40,7 +47,7 @@ export const NOTE_VALUE_ITEMS = [
   },
   {
     value: '1',
-    icon: `${NOTE_ICON_BASE}/whole.png`,
+    icon: `${NOTE_ICON_BASE}/whole.svg`,
     title: 'Whole Note',
     label: '1',
     dotSymbol: '𝅝',

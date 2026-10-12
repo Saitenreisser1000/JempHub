@@ -240,10 +240,10 @@
                   <image
                     v-if="toneDotIcon(d)"
                     class="fb-tone-dot-symbol-icon"
-                    :x="toneDotX(d) - 7"
-                    :y="toneDotY(d) - 7"
-                    width="14"
-                    height="14"
+                    :x="toneDotX(d) - 9"
+                    :y="toneDotY(d) - 9"
+                    width="18"
+                    height="18"
                     :href="toneDotIcon(d)"
                   />
                   <text v-else-if="toneDotSymbol(d)" class="fb-tone-dot-symbol" :x="toneDotX(d)" :y="toneDotY(d)">
@@ -3234,7 +3234,7 @@ function toneDotIcon(d) {
   const mode = String(settings.dotLabelMode || (settings.showIntervalsOnDots ? 'intervals' : 'rhythm'))
   if (mode !== 'rhythm') return ''
   const value = noteValueForToneDot(d)
-  if (!(value === '1/2' || value === '1')) return ''
+  if (!value) return ''
   const item = noteValueItem(value)
   return String(item?.icon || '')
 }

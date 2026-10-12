@@ -13,15 +13,11 @@
             :title="item.title"
           >
             <span class="fb-note-glyph">
-              <img
-                v-if="hasNoteIcon(item)"
+              <span
                 class="fb-note-glyph-img"
-                :src="item.icon"
-                alt=""
+                :style="{ maskImage: `url(${item.icon})` }"
                 aria-hidden="true"
-                @error="markNoteIconError(item.icon)"
-              />
-              <span v-else>{{ noteGlyphText(item) }}</span>
+              ></span>
             </span>
           </v-btn>
         </v-btn-toggle>
@@ -83,7 +79,6 @@ defineOptions({ name: 'FretboardContextMenu' })
 
 const settings = useTimelineSettingsStore()
 const { t } = useI18n()
-const iconErrorBySrc = ref({})
 
 const modeItems = computed(() =>
   NOTE_VALUE_ITEMS.map((item) => ({
@@ -133,23 +128,6 @@ watch(noteModifierLocal, (val) => {
 })
 
 const isSimOn = computed(() => settings.selectedMode === 'sim')
-
-function hasNoteIcon(item) {
-  const src = String(item?.icon || '').trim()
-  if (!src) return false
-  return !iconErrorBySrc.value[src]
-}
-
-function markNoteIconError(src) {
-  const key = String(src || '').trim()
-  if (!key) return
-  if (iconErrorBySrc.value[key]) return
-  iconErrorBySrc.value = { ...iconErrorBySrc.value, [key]: true }
-}
-
-function noteGlyphText(item) {
-  return String(item?.fallbackSymbol || item?.dotSymbol || item?.label || '')
-}
 
 function toggleSim() {
   if (isSimOn.value) {
@@ -311,9 +289,12 @@ function toggleEraseMode() {
 }
 
 .fb-note-glyph-img {
-  width: 16px;
-  height: 16px;
-  object-fit: contain;
+  width: 24px;
+  height: 24px;
+  background-color: currentColor;
+  mask-size: contain;
+  mask-position: center;
+  mask-repeat: no-repeat;
 }
 
 .fb-note-toggle-row {
