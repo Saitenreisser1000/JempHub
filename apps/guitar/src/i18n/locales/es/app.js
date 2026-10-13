@@ -165,7 +165,9 @@ export default {
     disableCountIn: 'Desactivar cuenta previa',
     enableCountIn: 'Activar cuenta previa',
     countIn: 'Count In',
-    tapTempoHint: 'Pulsa TAB para marcar el BPM',
+    tap: "Tap",
+    tempo: "Tempo (BPM)",
+    tapTempoHint: "Pulsa este botón al ritmo; usa Intro o Espacio cuando tenga el foco",
   },
   recordingSelector: {
     search: 'Buscar (título/categoría)',

@@ -164,7 +164,9 @@ export default {
     disableCountIn: 'Désactiver le compte à rebours',
     enableCountIn: 'Activer le compte à rebours',
     countIn: 'Count In',
-    tapTempoHint: 'Appuyez sur TAB pour définir le BPM',
+    tap: "Tap",
+    tempo: "Tempo (BPM)",
+    tapTempoHint: "Cliquez en rythme ; utilisez Entrée ou Espace lorsque le bouton a le focus",
   },
   recordingSelector: {
     search: 'Rechercher (titre/catégorie)',

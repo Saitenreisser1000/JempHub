@@ -164,7 +164,9 @@ export default {
     disableCountIn: 'Disattiva count in',
     enableCountIn: 'Attiva count in',
     countIn: 'Count In',
-    tapTempoHint: 'Premi TAB per impostare il BPM',
+    tap: "Tap",
+    tempo: "Tempo (BPM)",
+    tapTempoHint: "Premi a tempo; usa Invio o Spazio quando il pulsante ha il focus",
   },
   recordingSelector: {
     search: 'Cerca (titolo/categoria)',

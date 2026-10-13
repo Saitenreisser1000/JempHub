@@ -161,7 +161,9 @@ export default {
     disableCountIn: 'Count-in ausschalten',
     enableCountIn: 'Count-in einschalten',
     countIn: 'Count In',
-    tapTempoHint: 'TAB tippen, um BPM zu setzen',
+    tap: "Tap",
+    tempo: "Tempo (BPM)",
+    tapTempoHint: "Im Takt klicken; bei Fokus Enter oder Leertaste verwenden",
   },
   recordingSelector: {
     search: 'Suche (Titel/Kategorie)',

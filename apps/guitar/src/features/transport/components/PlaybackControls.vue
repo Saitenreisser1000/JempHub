@@ -3,8 +3,6 @@
     class="transport-controls ui-panel pa-3"
     :class="{ 'is-phone-view': isPhoneView }"
     variant="flat"
-    tabindex="0"
-    @keydown.tab.prevent="onTapTempo"
   >
     <div class="transport-row transport-row-primary">
       <div class="transport-primary-controls">
@@ -25,6 +23,7 @@
             :color="loopEnabled ? 'primary' : undefined"
             :title="t('playback.loop')"
             :aria-label="t('playback.loop')"
+            :aria-pressed="loopEnabled"
             @click="emit('update-loop', !loopEnabled)"
           >
             <v-icon icon="mdi-repeat" />
@@ -36,6 +35,7 @@
             :color="shuffleEnabled ? 'primary' : undefined"
             title="Shuffle"
             aria-label="Shuffle"
+            :aria-pressed="shuffleEnabled"
             @click="emit('update-shuffle', !shuffleEnabled)"
           >
             <v-icon icon="mdi-shuffle-variant" />
@@ -58,10 +58,12 @@
 
         <div class="transport-col transport-col-right d-flex align-center ga-2 flex-wrap">
           <v-btn class="tap-btn" size="small" variant="tonal" :title="t('playback.tapTempoHint')" @click="onTapTempo">
-            TAB
+            {{ t('playback.tap') }}
           </v-btn>
           <v-text-field class="tempo-input" density="compact" hide-details variant="outlined" type="number" :min="TEMPO_MIN"
-            :max="TEMPO_MAX" step="1" suffix="BPM" :model-value="String(tempoLocal)" @update:model-value="onTempoInput" />
+            :max="TEMPO_MAX" step="1" suffix="BPM" :aria-label="t('playback.tempo')"
+            v-model="tempoDraft" @focus="beginTempoEdit" @blur="commitTempo"
+            @keydown.enter.prevent="$event.target.blur()" @keydown.esc.stop.prevent="cancelTempoEdit" />
           <v-menu location="top end" :close-on-content-click="false">
             <template #activator="{ props: menuProps }">
               <v-btn
@@ -122,10 +124,9 @@
 <script setup>
 import { computed, ref } from 'vue'
 import { useI18n } from '@/i18n'
+import { useTempoInput, TEMPO_MIN, TEMPO_MAX, clampTempo } from '../composables/useTempoInput'
 import { initAudioEngine } from '@/domain/audio/simpleSynth'
 
-const TEMPO_MIN = 30
-const TEMPO_MAX = 200
 
 const props = defineProps({
   readOnly: { type: Boolean, default: false },
@@ -167,29 +168,16 @@ const { t } = useI18n()
 
 const tapTimesMs = ref([])
 
-const tempoLocal = computed({
-  get: () => props.tempo,
-  set: (v) => {
-    const next = clampTempo(v)
-    emit('update-tempo', next)
-  },
-})
+const { tempoDraft, beginTempoEdit, commitTempo, cancelTempoEdit } = useTempoInput(
+  () => props.tempo,
+  (tempo) => emit('update-tempo', tempo),
+)
 
 const inputMode = computed(() => {
   if (props.recordActive) return 'record'
   if (props.practiceActive) return 'microphone'
   return 'off'
 })
-
-function clampTempo(v) {
-  const n = typeof v === 'string' ? Number(v.replace(',', '.')) : Number(v)
-  if (!Number.isFinite(n)) return TEMPO_MIN
-  return Math.min(TEMPO_MAX, Math.max(TEMPO_MIN, Math.round(n)))
-}
-
-function onTempoInput(v) {
-  tempoLocal.value = v
-}
 
 function togglePlayPause() {
   emit('toggle-play')
