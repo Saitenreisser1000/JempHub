@@ -1,4 +1,8 @@
 export default {
+  layout: {
+    resizePanes: "Redimensionner le manche et la timeline",
+    resizeHint: "Flèches : taille · Maj : grands pas · Entrée ou double-clic : réinitialiser",
+  },
   app: {
     cloudNotConfigured: 'Cloud: non configuré',
     account: 'Compte',

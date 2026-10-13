@@ -1,4 +1,8 @@
 export default {
+  layout: {
+    resizePanes: "Griffbrett und Timeline aufteilen",
+    resizeHint: "Pfeiltasten: Größe ändern · Shift: größere Schritte · Enter oder Doppelklick: zurücksetzen",
+  },
   app: {
     cloudNotConfigured: 'Cloud: nicht konfiguriert',
     account: 'Konto',

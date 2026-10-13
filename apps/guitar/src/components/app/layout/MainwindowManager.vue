@@ -1,13 +1,22 @@
 <template>
   <div ref="rootEl" class="window-manager">
-    <section class="wm-pane wm-pane-a" :style="presentation ? { flexBasis: '100%' } : paneAStyle">
+    <section :id="paneAId" class="wm-pane wm-pane-a" :style="presentation ? { flexBasis: '100%' } : paneAStyle">
       <slot name="pane-a" />
     </section>
     <button
       v-if="!presentation"
       class="wm-divider"
       type="button"
-      aria-label="Resize split panes"
+      role="separator"
+      aria-orientation="horizontal"
+      :aria-label="t('layout.resizePanes')"
+      :aria-controls="paneAId"
+      :aria-valuemin="20"
+      :aria-valuemax="80"
+      :aria-valuenow="Math.round(splitRatio * 100)"
+      :title="t('layout.resizeHint')"
+      @keydown="onDividerKeyDown"
+      @dblclick="resetSplit"
       @pointerdown="onDividerPointerDown"
     />
     <section v-show="!presentation" :inert="presentation" class="wm-pane wm-pane-b" :style="paneBStyle">
@@ -17,18 +26,20 @@
 </template>
 
 <script setup>
-import { computed, onBeforeUnmount, ref } from 'vue'
+import { computed, onBeforeUnmount, ref, useId } from 'vue'
+import { usePaneSplit } from '@/composables/usePaneSplit'
+import { useI18n } from '@/i18n'
 
 defineProps({ presentation: { type: Boolean, default: false } })
 
 const rootEl = ref(null)
-const splitRatio = ref(0.5)
+const { t } = useI18n()
+const paneAId = useId()
+const { splitRatio, clampRatio, onDividerKeyDown, resetSplit } = usePaneSplit()
 let activePointerId = null
 let snappedToMax = false
 let snapAnchorRatio = null
 
-const MIN_RATIO = 0.2
-const MAX_RATIO = 0.8
 const SNAP_RELEASE_RATIO_DELTA = 0.05
 const SNAP_HEIGHT_EPSILON_PX = 1.5
 
@@ -39,10 +50,6 @@ const paneAStyle = computed(() => ({
 const paneBStyle = computed(() => ({
   flexBasis: `${Math.round((1 - splitRatio.value) * 10000) / 100}%`,
 }))
-
-function clampRatio(value) {
-  return Math.max(MIN_RATIO, Math.min(MAX_RATIO, value))
-}
 
 function readFretboardSvgMaxState() {
   const root = rootEl.value
@@ -158,11 +165,20 @@ onBeforeUnmount(() => {
 .wm-divider {
   display: block;
   width: 100%;
-  flex: 0 0 5px;
+  flex: 0 0 12px;
   border: 0;
   padding: 0;
   background: linear-gradient(180deg, color-mix(in srgb, var(--app-text) 4%, transparent), color-mix(in srgb, var(--app-layer-0) 18%, transparent));
   cursor: ns-resize;
   touch-action: none;
+}
+.wm-divider:hover,
+.wm-divider:focus-visible {
+  background: var(--color-primary);
+}
+
+.wm-divider:focus-visible {
+  outline: 2px solid var(--color-primary);
+  outline-offset: -2px;
 }
 </style>

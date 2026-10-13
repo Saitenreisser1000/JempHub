@@ -1,5 +1,5 @@
 <template>
-  <div class="layout-manager" :style="layoutStyle" :class="{ 'is-presentation': presentation }">
+  <div class="layout-manager" :style="layoutStyle" :class="{ 'is-presentation': presentation, 'has-no-sidebar': !$slots.sidebar }">
     <MainwindowManager class="layout-manager-main" :presentation="presentation">
       <template #pane-a>
         <slot name="pane-a" />
@@ -8,7 +8,7 @@
         <slot name="pane-b" />
       </template>
     </MainwindowManager>
-    <aside v-show="!presentation" class="layout-sidebar" :class="{ 'is-collapsed': sidebarCollapsed }" aria-label="Right sidebar" @pointerdown="startSidebarResize">
+    <aside v-if="$slots.sidebar" v-show="!presentation" class="layout-sidebar" :class="{ 'is-collapsed': sidebarCollapsed }" aria-label="Right sidebar" @pointerdown="startSidebarResize">
       <div class="layout-sidebar-toolbar">
         <button
           type="button"
@@ -32,6 +32,7 @@
 
 <script setup>
 import { computed, onBeforeUnmount, ref, useId } from 'vue'
+import { readJson, writeJson } from '@/infra/storage/jsonStorage'
 import MainwindowManager from '@/components/app/layout/MainwindowManager.vue'
 
 defineProps({ presentation: { type: Boolean, default: false } })
@@ -46,8 +47,7 @@ function clamp(value, min, max) {
 }
 
 function readStoredSidebarWidth() {
-  if (typeof window === 'undefined') return DEFAULT_SIDEBAR_WIDTH
-  const raw = Number(window.localStorage.getItem(SIDEBAR_WIDTH_KEY))
+  const raw = readJson(SIDEBAR_WIDTH_KEY)
   if (!Number.isFinite(raw)) return DEFAULT_SIDEBAR_WIDTH
   return clamp(raw, SIDEBAR_MIN_WIDTH, SIDEBAR_MAX_WIDTH)
 }
@@ -68,9 +68,7 @@ function toggleSidebar() {
 function updateSidebarWidth(nextWidth) {
   const safe = clamp(Math.round(Number(nextWidth) || DEFAULT_SIDEBAR_WIDTH), SIDEBAR_MIN_WIDTH, SIDEBAR_MAX_WIDTH)
   sidebarWidthPx.value = safe
-  if (typeof window !== 'undefined') {
-    window.localStorage.setItem(SIDEBAR_WIDTH_KEY, String(safe))
-  }
+  writeJson(SIDEBAR_WIDTH_KEY, safe)
 }
 
 function shouldStartSidebarResize(event) {
@@ -121,7 +119,8 @@ onBeforeUnmount(() => {
   min-height: 0;
 }
 
-.layout-manager.is-presentation {
+.layout-manager.is-presentation,
+.layout-manager.has-no-sidebar {
   grid-template-columns: minmax(0, 1fr);
 }
 

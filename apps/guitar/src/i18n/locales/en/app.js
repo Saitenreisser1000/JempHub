@@ -1,4 +1,8 @@
 export default {
+  layout: {
+    resizePanes: "Resize fretboard and timeline",
+    resizeHint: "Arrow keys: resize · Shift: larger steps · Enter or double-click: reset",
+  },
   app: {
     cloudNotConfigured: 'Cloud: not configured',
     account: 'Account',

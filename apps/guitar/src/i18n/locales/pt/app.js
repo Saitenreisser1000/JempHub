@@ -1,4 +1,8 @@
 export default {
+  layout: {
+    resizePanes: "Redimensionar braço e linha do tempo",
+    resizeHint: "Setas: tamanho · Shift: passos maiores · Enter ou clique duplo: redefinir",
+  },
   app: {
     cloudNotConfigured: 'Nuvem: não configurada',
     account: 'Conta',

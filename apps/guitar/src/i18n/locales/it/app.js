@@ -1,4 +1,8 @@
 export default {
+  layout: {
+    resizePanes: "Ridimensiona tastiera e timeline",
+    resizeHint: "Frecce: dimensioni · Maiusc: passi maggiori · Invio o doppio clic: ripristina",
+  },
   app: {
     cloudNotConfigured: 'Cloud: non configurato',
     account: 'Account',

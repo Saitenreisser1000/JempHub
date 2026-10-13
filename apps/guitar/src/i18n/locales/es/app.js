@@ -1,4 +1,8 @@
 export default {
+  layout: {
+    resizePanes: "Redimensionar diapasón y línea de tiempo",
+    resizeHint: "Flechas: tamaño · Mayús: pasos mayores · Intro o doble clic: restablecer",
+  },
   app: {
     cloudNotConfigured: 'Nube: no configurada',
     account: 'Cuenta',
