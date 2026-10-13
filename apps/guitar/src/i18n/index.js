@@ -63,49 +63,62 @@ function interpolate(template, params) {
 function detectInitialLocale() {
   if (typeof window === 'undefined') return FALLBACK_LOCALE
 
-  const stored = String(window.localStorage.getItem(LOCALE_STORAGE_KEY) || '').trim()
-  if (languageExists(stored)) return stored
+  try {
+    const stored = String(window.localStorage.getItem(LOCALE_STORAGE_KEY) || '').trim()
+    if (languageExists(stored)) return stored
+  } catch {
+    // Browser privacy settings may block storage; language selection still works.
+  }
 
   const raw = String(window.navigator?.language || FALLBACK_LOCALE).toLowerCase()
   const prefix = raw.split('-')[0]
   return languageExists(prefix) ? prefix : FALLBACK_LOCALE
 }
 
+const initialLocale = detectInitialLocale()
 const loadedCatalogs = new Map([[FALLBACK_LOCALE, enCatalog]])
-const locale = ref(detectInitialLocale())
+const pendingCatalogs = new Map()
+const locale = ref(FALLBACK_LOCALE)
 const catalog = ref(enCatalog)
+const localeLoading = ref(false)
+const localeError = ref(false)
+let localeRequest = 0
 
 async function loadCatalog(code) {
-  const safeCode = String(code || '').toLowerCase()
-  if (!languageExists(safeCode)) return null
-  if (loadedCatalogs.has(safeCode)) return loadedCatalogs.get(safeCode)
-
-  const loader = LOCALE_LOADERS[safeCode]
-  if (!loader) return null
-
-  const mod = await loader()
-  const loaded = mod?.default ?? {}
-  loadedCatalogs.set(safeCode, loaded)
-  return loaded
+  if (loadedCatalogs.has(code)) return loadedCatalogs.get(code)
+  if (!pendingCatalogs.has(code)) {
+    const pending = LOCALE_LOADERS[code]().then((mod) => {
+      const loaded = mod?.default ?? {}
+      loadedCatalogs.set(code, loaded)
+      return loaded
+    }).finally(() => pendingCatalogs.delete(code))
+    pendingCatalogs.set(code, pending)
+  }
+  return pendingCatalogs.get(code)
 }
 
-async function hydrateCatalog(code) {
-  const safeCode = languageExists(code) ? code : FALLBACK_LOCALE
-  const fallback = (await loadCatalog(FALLBACK_LOCALE)) || {}
-  const local = safeCode === FALLBACK_LOCALE ? {} : (await loadCatalog(safeCode)) || {}
-  catalog.value = deepMerge(fallback, local)
-}
-
-async function setLocale(next) {
+async function setLocale(next, { persist = true } = {}) {
   const code = String(next || '').toLowerCase()
-  if (!languageExists(code)) return
-
-  locale.value = code
-  await hydrateCatalog(code)
-
-  if (typeof window !== 'undefined') {
-    window.localStorage.setItem(LOCALE_STORAGE_KEY, code)
-    document.documentElement.setAttribute('lang', code)
+  if (!languageExists(code)) return false
+  const request = ++localeRequest
+  localeLoading.value = true
+  localeError.value = false
+  try {
+    const local = await loadCatalog(code)
+    if (request !== localeRequest) return false
+    // Commit language, catalog and document metadata together, only after loading.
+    catalog.value = deepMerge(enCatalog, local)
+    locale.value = code
+    if (typeof document !== 'undefined') document.documentElement.setAttribute('lang', code)
+    if (persist && typeof window !== 'undefined') {
+      try { window.localStorage.setItem(LOCALE_STORAGE_KEY, code) } catch { /* optional persistence */ }
+    }
+    return true
+  } catch {
+    if (request === localeRequest) localeError.value = true
+    return false
+  } finally {
+    if (request === localeRequest) localeLoading.value = false
   }
 }
 
@@ -131,13 +144,15 @@ if (typeof window !== 'undefined') {
   document.documentElement.setAttribute('lang', locale.value)
 }
 
-void hydrateCatalog(locale.value)
+void setLocale(initialLocale, { persist: false })
 
 export function useI18n() {
   return {
     locale,
     languages: SUPPORTED_LANGUAGES,
     setLocale,
+    localeLoading,
+    localeError,
     t,
   }
 }

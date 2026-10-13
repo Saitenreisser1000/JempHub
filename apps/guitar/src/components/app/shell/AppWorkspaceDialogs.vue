@@ -97,8 +97,9 @@
           <v-slider :model-value="idleDotConnectionsOpacity" min="0" max="1" step="0.01" thumb-label hide-details
             density="compact" :disabled="!idleDotConnectionsVisible" label="Idle dot opacity"
             @update:model-value="(v) => emit('update:idle-dot-connections-opacity', Number(v || 0))" />
-          <v-select :model-value="preferenceLanguage" :items="languageItems" label="Language" density="compact"
+          <v-select :model-value="preferenceLanguage" :items="languageItems" :label="t('menu.language')" :loading="localeLoading" density="compact"
             variant="outlined" @update:model-value="(v) => emit('update:preference-language', String(v || 'en'))" />
+          <p v-if="localeError" role="alert" class="text-error">{{ t('languageLoadError') }}</p>
         </v-card-text>
         <v-card-actions class="justify-end">
           <v-btn variant="text" @click="emit('update:preferences-open', false)">Close</v-btn>
@@ -109,6 +110,9 @@
 </template>
 
 <script setup>
+import { useI18n } from '@/i18n'
+const { t, localeLoading, localeError } = useI18n()
+
 defineProps({
   saveAsNewOpen: { type: Boolean, default: false },
   saveAsNewTitle: { type: String, default: '' },

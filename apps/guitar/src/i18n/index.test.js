@@ -1,0 +1,92 @@
+import { afterEach, beforeEach, expect, it, vi } from 'vitest'
+
+const deferred = () => {
+  let resolve, reject
+  const promise = new Promise((yes, no) => { resolve = yes; reject = no })
+  return { promise, resolve, reject }
+}
+let setItem, setAttribute
+beforeEach(() => {
+  vi.resetModules()
+  setItem = vi.fn()
+  setAttribute = vi.fn()
+  vi.stubGlobal('window', { navigator: { language: 'en' }, localStorage: { getItem: () => null, setItem } })
+  vi.stubGlobal('document', { createElement: () => ({}), documentElement: { setAttribute } })
+})
+afterEach(() => {
+  vi.doUnmock('./locales/de/index.js')
+  vi.doUnmock('./locales/fr/index.js')
+  vi.unstubAllGlobals()
+})
+const setup = async () => {
+  const { useI18n } = await import('./index.js')
+  const api = useI18n()
+  await api.setLocale('en')
+  setItem.mockClear()
+  return api
+}
+it('keeps the newest requested language when downloads finish out of order', async () => {
+  const de = deferred()
+  const fr = deferred()
+  vi.doMock('./locales/de/index.js', () => de.promise)
+  vi.doMock('./locales/fr/index.js', () => fr.promise)
+  const api = await setup()
+  const first = api.setLocale('de')
+  const second = api.setLocale('fr')
+  expect(api.localeLoading.value).toBe(true)
+  expect(api.locale.value).toBe('en')
+  fr.resolve({ default: { playback: { play: 'Lecture' } } })
+  expect(await second).toBe(true)
+  de.resolve({ default: { playback: { play: 'Wiedergabe' } } })
+  expect(await first).toBe(false)
+  expect(api.locale.value).toBe('fr')
+  expect(api.t('playback.play')).toBe('Lecture')
+  expect(setAttribute).toHaveBeenLastCalledWith('lang', 'fr')
+  expect(setItem).toHaveBeenCalledExactlyOnceWith('guitarjemp.ui.locale', 'fr')
+  expect(api.localeLoading.value).toBe(false)
+})
+it('retains the working language on download failure and permits retry', async () => {
+  vi.doMock('./locales/de/index.js', () => { throw new Error('offline') })
+  const api = await setup()
+  expect(await api.setLocale('de')).toBe(false)
+  expect(api.locale.value).toBe('en')
+  expect(api.localeError.value).toBe(true)
+  expect(api.localeLoading.value).toBe(false)
+  expect(setItem).not.toHaveBeenCalled()
+  vi.doMock('./locales/de/index.js', () => ({ default: { playback: { play: 'Wiedergabe' } } }))
+  expect(await api.setLocale('de')).toBe(true)
+  expect(api.t('playback.play')).toBe('Wiedergabe')
+  expect(api.localeError.value).toBe(false)
+})
+it('ignores obsolete failures after a newer selection succeeds', async () => {
+  const de = deferred()
+  vi.doMock('./locales/de/index.js', () => de.promise)
+  const api = await setup()
+  const old = api.setLocale('de')
+  await api.setLocale('en')
+  de.reject(new Error('offline'))
+  expect(await old).toBe(false)
+  expect(api.localeError.value).toBe(false)
+})
+it('survives a blocked localStorage getter at startup and during selection', async () => {
+  Object.defineProperty(window, 'localStorage', { get() { throw new Error('blocked') } })
+  const { useI18n } = await import('./index.js')
+  const api = useI18n()
+  expect(await api.setLocale('en')).toBe(true)
+  expect(api.localeError.value).toBe(false)
+  expect(setAttribute).toHaveBeenLastCalledWith('lang', 'en')
+})
+it('deduplicates downloads, keeps fallback translations and rejects unknown languages', async () => {
+  const de = deferred()
+  const load = vi.fn(() => de.promise)
+  vi.doMock('./locales/de/index.js', load)
+  const api = await setup()
+  const first = api.setLocale('de')
+  const second = api.setLocale('de')
+  de.resolve({ default: { playback: { play: 'Wiedergabe' } } })
+  await Promise.all([first, second])
+  expect(load).toHaveBeenCalledOnce()
+  expect(api.t('playback.pause')).toBe('Pause')
+  expect(await api.setLocale('xx')).toBe(false)
+  expect(api.locale.value).toBe('de')
+})

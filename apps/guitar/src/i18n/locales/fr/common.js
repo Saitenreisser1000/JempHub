@@ -1,4 +1,5 @@
 export default {
+  languageLoadError: "Impossible de charger la langue. Vérifiez votre connexion et sélectionnez-la à nouveau.",
   menu: {
     file: 'Fichier',
     edit: 'Édition',
