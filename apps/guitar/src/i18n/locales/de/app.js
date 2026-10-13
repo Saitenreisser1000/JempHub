@@ -153,6 +153,8 @@ export default {
     dark: 'Dunkel',
   },
   playback: {
+    position: "Wiedergabeposition",
+    positionValue: "{current} von {total}",
     play: 'Wiedergabe',
     pause: 'Pause',
     fromStart: 'Von vorne',

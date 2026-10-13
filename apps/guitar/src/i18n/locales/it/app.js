@@ -156,6 +156,8 @@ export default {
     dark: 'Scuro',
   },
   playback: {
+    position: "Posizione di riproduzione",
+    positionValue: "{current} di {total}",
     play: 'Riproduci',
     pause: 'Pausa',
     fromStart: 'Dall’inizio',

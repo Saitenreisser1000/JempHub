@@ -4,6 +4,15 @@
     :class="{ 'is-phone-view': isPhoneView }"
     variant="flat"
   >
+    <div class="transport-position">
+      <span class="transport-time" aria-hidden="true">{{ positionLabel }}</span>
+      <input class="transport-seek" type="range" min="0" :max="positionTotal || 1" step="1"
+        :value="position" :disabled="positionTotal <= 0 || recordActive || practiceActive"
+        :aria-label="t('playback.position')" :aria-valuetext="t('playback.positionValue', { current: positionLabel, total: durationLabel })"
+        @input="previewPosition($event.target.value)" @change="commitPosition()"
+        @keydown.esc.stop.prevent="cancelPosition" @pointercancel="cancelPosition" @blur="cancelPosition" />
+      <span class="transport-time" aria-hidden="true">{{ durationLabel }}</span>
+    </div>
     <div class="transport-row transport-row-primary">
       <div class="transport-primary-controls">
         <div class="transport-col transport-col-left d-flex align-center ga-2 flex-wrap">
@@ -125,6 +134,7 @@
 import { computed, ref } from 'vue'
 import { useI18n } from '@/i18n'
 import { useTempoInput, TEMPO_MIN, TEMPO_MAX, clampTempo } from '../composables/useTempoInput'
+import { usePlaybackPosition, formatPlaybackTime } from '../composables/usePlaybackPosition'
 import { initAudioEngine } from '@/domain/audio/simpleSynth'
 
 
@@ -154,6 +164,7 @@ const props = defineProps({
 const emit = defineEmits([
   'toggle-play',
   'seek-start',
+  'seek-playhead',
   'update-tempo',
   'update-click',
   'update-count-in-enabled',
@@ -165,6 +176,12 @@ const emit = defineEmits([
   'toggle-record',
 ])
 const { t } = useI18n()
+
+const { total: positionTotal, position, preview: previewPosition, commit: commitPosition, cancel: cancelPosition } = usePlaybackPosition(
+  () => props.playhead, () => props.totalDuration, (value) => emit('seek-playhead', value),
+)
+const positionLabel = computed(() => formatPlaybackTime(position.value, props.tempo))
+const durationLabel = computed(() => formatPlaybackTime(positionTotal.value, props.tempo))
 
 const tapTimesMs = ref([])
 
@@ -241,6 +258,29 @@ function onInputModeChange(v) {
 </script>
 
 <style scoped>
+.transport-position {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  margin-bottom: 4px;
+}
+.transport-time {
+  font-size: 12px;
+  font-variant-numeric: tabular-nums;
+  color: var(--color-text-muted);
+  white-space: nowrap;
+}
+.transport-seek {
+  flex: 1;
+  min-width: 0;
+  height: 28px;
+  accent-color: var(--color-primary);
+  cursor: pointer;
+}
+.transport-seek:disabled { cursor: default; opacity: 0.5; }
+.transport-seek:focus-visible { outline: 2px solid var(--color-primary); outline-offset: 2px; }
+
 .transport-row {
   display: flex;
   align-items: center;

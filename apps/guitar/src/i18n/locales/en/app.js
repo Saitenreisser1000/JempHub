@@ -155,6 +155,8 @@ export default {
     dark: 'Dark',
   },
   playback: {
+    position: "Playback position",
+    positionValue: "{current} of {total}",
     play: 'Play',
     pause: 'Pause',
     fromStart: 'From start',

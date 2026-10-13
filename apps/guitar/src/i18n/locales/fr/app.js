@@ -156,6 +156,8 @@ export default {
     dark: 'Sombre',
   },
   playback: {
+    position: "Position de lecture",
+    positionValue: "{current} sur {total}",
     play: 'Lecture',
     pause: 'Pause',
     fromStart: 'Depuis le début',
