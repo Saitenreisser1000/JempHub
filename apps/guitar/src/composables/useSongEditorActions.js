@@ -193,6 +193,7 @@ export function useSongEditorActions({
       })
       notes.setNotes(layout.notes)
       applyImportedClipSettings(clips[0], layout.notes, layout)
+      library.clearCurrentItem()
     } catch (error) {
       const message = String(error?.message || error || t('app.importFailed'))
       window.alert(`${t('app.importFailed')} ${message}`.trim())
@@ -240,17 +241,18 @@ export function useSongEditorActions({
     }
 
     saveBusy.value = true
-    const updated = await library.updateItem({ id, content: snapshot })
-    saveBusy.value = false
-
-    if (!updated) {
-      const msg = String(library.error?.message ?? library.error ?? 'Save failed')
-      window.alert(msg)
+    try {
+      const updated = await library.updateItem({ id, content: snapshot })
+      if (!updated) throw library.error || new Error('Save failed')
+    } catch (error) {
+      window.alert(String(error?.message ?? error ?? 'Save failed'))
+    } finally {
+      saveBusy.value = false
     }
   }
 
   async function saveAsNewToCloud() {
-    if (saveAsNewBusy.value) return
+    if (saveAsNewBusy.value || saveBusy.value) return false
     if (!auth.isSignedIn) return false
     if (!hasNotes.value) return false
 
@@ -262,31 +264,31 @@ export function useSongEditorActions({
     const visibility = String(saveAsNewVisibility.value ?? 'private')
 
     saveAsNewBusy.value = true
-    const created = await library.createItem({
-      kind,
-      title,
-      visibility,
-      category,
-      content: buildSongSnapshot({
-        name: songName.value,
-        instrument,
-        transport,
-        timelineSettings,
-        notes,
-        handPositions,
-        fretboardOverlay,
-      }),
-    })
-    saveAsNewBusy.value = false
-
-    if (!created) {
-      const msg = String(library.error?.message ?? library.error ?? 'Save As New failed')
-      window.alert(msg)
+    try {
+      const created = await library.createItem({
+        kind,
+        title,
+        visibility,
+        category,
+        content: buildSongSnapshot({
+          name: songName.value,
+          instrument,
+          transport,
+          timelineSettings,
+          notes,
+          handPositions,
+          fretboardOverlay,
+        }),
+      })
+      if (!created) throw library.error || new Error('Save As New failed')
+      saveAsNewOpen.value = false
+      return true
+    } catch (error) {
+      window.alert(String(error?.message ?? error ?? 'Save As New failed'))
       return false
+    } finally {
+      saveAsNewBusy.value = false
     }
-
-    saveAsNewOpen.value = false
-    return true
   }
 
   function openSaveAsNew() {
@@ -344,6 +346,7 @@ export function useSongEditorActions({
     const key = String(newSongKey.value || 'C').toUpperCase()
 
     if (songDialogMode.value === 'new') {
+      library.clearCurrentItem()
       notes.clearNotes()
       selection.clearSelection()
       handPositions.setHandPositions([])
