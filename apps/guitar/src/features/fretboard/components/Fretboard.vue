@@ -412,7 +412,6 @@ import { useHarmonyMenuStore } from '@/store/useHarmonyMenu'
 import { useFretboardOverlayStore } from '@/store/useFretboardOverlay'
 import { SURFACE_MODES, useUiModeStore } from '@/store/useUiMode'
 import {
-  FRETBOARD_SHOW_DOT_BASE_OPACITY_WHILE_PLAYING,
   FRETBOARD_SHOW_DOT_PULSE_MS,
   FRETBOARD_SHOW_DOT_PULSE_RADIUS_FACTOR,
 } from '@/features/fretboard/config/fretboardVisuals'
@@ -550,13 +549,6 @@ let suppressClicksUntilMs = 0
 const CHORD_SHAPES_STORAGE_KEY = FRETBOARD_SHAPES.storageKey
 const savedShapes = ref([])
 const selectedShapeId = ref('')
-
-function posKeyForNote(note) {
-  const string = Number(note?.string)
-  const fret = Number(note?.fret)
-  if (!Number.isFinite(string) || !Number.isFinite(fret)) return null
-  return `${string}-${fret}`
-}
 
 const highlightedNoteKeySet = computed(() => {
   const keys = Array.isArray(highlightedNoteKeys.value) ? highlightedNoteKeys.value : []
@@ -1784,18 +1776,6 @@ const currentPlayheadGridIndex = computed(() => {
   return t / DEFAULT_TIME_PER_BLOCK_MS + 1
 })
 
-function textItemStartBar(item) {
-  const blocks = Number(blocksPerBar.value) || 1
-  const gridIndex = Number(item?.gridIndex) || 1
-  return Math.max(1, Math.floor((gridIndex - 1) / blocks) + 1)
-}
-
-function textItemLengthBars(item) {
-  const blocks = Number(blocksPerBar.value) || 1
-  const len = Number(item?.lengthBlocks) || blocks
-  return Math.max(1, Math.round(len / blocks))
-}
-
 const renderedTextItems = computed(() => {
   const currentGrid = Number(currentPlayheadGridIndex.value) || 1
   return (Array.isArray(textItems.value) ? textItems.value : [])
@@ -1811,22 +1791,6 @@ const renderedTextItems = computed(() => {
 function onTextItemInput(id, event) {
   const text = String(event?.target?.value ?? '')
   overlay.updateTextItemText(id, text)
-}
-
-function onTextItemStartBarInput(id, event) {
-  const bar = Math.max(1, Number.parseInt(String(event?.target?.value ?? ''), 10) || 1)
-  const blocks = Number(blocksPerBar.value) || 1
-  overlay.updateTextItemTiming(id, {
-    gridIndex: (bar - 1) * blocks + 1,
-  })
-}
-
-function onTextItemLengthBarsInput(id, event) {
-  const bars = Math.max(1, Number.parseInt(String(event?.target?.value ?? ''), 10) || 1)
-  const blocks = Number(blocksPerBar.value) || 1
-  overlay.updateTextItemTiming(id, {
-    lengthBlocks: bars * blocks,
-  })
 }
 
 function onTextItemDelete(id) {
@@ -2332,7 +2296,6 @@ const harmonyGuideDots = computed(() => {
   const toFret = Math.min(toFretByPattern, fretViewRange.value.to)
 
   const maxFret = Math.max(0, Number(props.numFrets) || 12)
-  const out = []
   for (const s of strings.value) {
     const string = Number(s?.string)
     if (!Number.isFinite(string)) continue
@@ -2356,18 +2319,6 @@ const harmonyGuideDots = computed(() => {
   }
   return [...byKey.values()]
 })
-
-function parseFretRange(rawLabel) {
-  const text = String(rawLabel ?? '').trim()
-  const m = text.match(/^(\d+)\s*-\s*(\d+)$/)
-  if (!m) return { fromFret: 1, toFret: 4 }
-  const a = Number(m[1])
-  const b = Number(m[2])
-  if (!Number.isFinite(a) || !Number.isFinite(b)) return { fromFret: 1, toFret: 4 }
-  const min = Math.max(1, Math.min(a, b))
-  const max = Math.max(min, Math.max(a, b))
-  return { fromFret: min, toFret: max }
-}
 
 const activeHandPosition = computed(() => {
   const t = Number(playheadMs.value)
@@ -2489,30 +2440,6 @@ const suggestedHandPositionRange = computed(() => {
   return { fromFret, toFret }
 })
 
-const handPositionOverlayRect = computed(() => {
-  const hp = activeHandPosition.value
-  if (!hp) return null
-
-  const { fromFret, toFret } = parseFretRange(hp?.fret)
-  const maxFret = Math.max(1, Number(props.numFrets) || 12)
-  const startFret = Math.min(maxFret, Math.max(1, fromFret))
-  const endFret = Math.min(maxFret, Math.max(startFret, toFret))
-
-  const topY = Number(strings.value[0]?.y)
-  const bottomY = Number(strings.value[strings.value.length - 1]?.y)
-  if (!Number.isFinite(topY) || !Number.isFinite(bottomY)) return null
-
-  const lines = fretLinesPx.value
-  const xLeft = startFret <= 1 ? NUT_WIDTH : Number(lines[startFret - 1] ?? NUT_WIDTH)
-  const xRight = Number(lines[endFret] ?? FB_WIDTH)
-  if (!(xRight > xLeft)) return null
-
-  const padY = FRETBOARD_HAND_POSITION.activePadYPx
-  const y = topY - padY
-  const height = bottomY - topY + padY * 2
-  return { x: xLeft, y, width: xRight - xLeft, height, rx: 10 }
-})
-
 const suggestedHandPositionOverlayRect = computed(() => {
   const range = suggestedHandPositionRange.value
   if (!range) return null
@@ -2541,30 +2468,6 @@ const suggestedHandPositionOverlayRect = computed(() => {
     labelX: xLeft + FRETBOARD_HAND_POSITION.suggestedLabelOffsetXPx,
     labelY: y + FRETBOARD_HAND_POSITION.suggestedLabelOffsetYPx,
   }
-})
-
-const handModeInfoText = computed(() => {
-  const range = settings.showSuggestedPosition ? suggestedHandPositionRange.value : null
-  if (range)
-    return t('fretboardShow.suggestedHandPosition', { from: range.fromFret, to: range.toFret })
-  const hp = activeHandPosition.value
-  if (!hp) return ''
-  return t('fretboardShow.activeHandPosition', { fret: String(hp?.fret ?? '') })
-})
-
-const handModeWarningText = computed(() => {
-  const idx = playbackTimelineIndex.value
-  if (idx <= 0) return ''
-  const entries = timelineNoteEntries.value
-  const cur = entries[idx]?.note
-  const prev = entries[idx - 1]?.note
-  if (!cur || !prev) return ''
-  const df = Math.abs((Number(cur?.fret) || 0) - (Number(prev?.fret) || 0))
-  const ds = Math.abs((Number(cur?.string) || 0) - (Number(prev?.string) || 0))
-  const hardJump = df >= 6 || (df >= 4 && ds >= 2)
-  if (!hardJump) return ''
-  const tail = ds ? t('fretboardShow.warningStringsPart', { strings: ds }) : ''
-  return t('fretboardShow.warningLargeJump', { frets: df, tail })
 })
 
 const fretLabels = computed(() => {
@@ -3123,7 +3026,7 @@ function harmonyGuideRadius(d) {
   return 6
 }
 
-function toneDotOffset(d) {
+function toneDotOffset() {
   return { dx: 0, dy: 0 }
 }
 

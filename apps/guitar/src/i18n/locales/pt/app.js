@@ -63,6 +63,7 @@ export default {
     },
   },
   libraryDialog: {
+    delete: 'Excluir',
     title: 'Biblioteca na nuvem',
     signInHint: 'Faça login para salvar e compartilhar músicas/exercícios.',
     song: 'Música',

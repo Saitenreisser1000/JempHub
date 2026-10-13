@@ -63,6 +63,7 @@ export default {
     },
   },
   libraryDialog: {
+    delete: 'Elimina',
     title: 'Libreria cloud',
     signInHint: 'Accedi per salvare e condividere brani/esercizi.',
     song: 'Brano',

@@ -63,6 +63,7 @@ export default {
     },
   },
   libraryDialog: {
+    delete: 'Supprimer',
     title: 'Bibliothèque cloud',
     signInHint: 'Connectez-vous pour enregistrer et partager des chansons/exercices.',
     song: 'Chanson',

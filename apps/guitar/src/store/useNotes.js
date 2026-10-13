@@ -24,12 +24,6 @@ export const useNotesStore = defineStore('notes', () => {
 
   const TIME_PER_BLOCK_MS = DEFAULT_TIME_PER_BLOCK_MS
 
-  function gridIndexToTimeMs(gridIndex) {
-    const i = Number(gridIndex)
-    const safe = Number.isFinite(i) && i > 0 ? i : 1
-    return (safe - 1) * TIME_PER_BLOCK_MS
-  }
-
   function lengthBlocksToDurationMs(lengthBlocks) {
     const n = Number(lengthBlocks)
     const safe = Number.isFinite(n) && n > 0 ? n : 1

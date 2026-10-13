@@ -62,6 +62,7 @@ export default {
     },
   },
   libraryDialog: {
+    delete: 'Löschen',
     title: 'Cloud-Bibliothek',
     signInHint: 'Bitte anmelden, um Songs/Übungen zu speichern und zu teilen.',
     song: 'Song',

@@ -110,10 +110,6 @@ const preferenceDarkMode = computed({
   get: () => isDarkTheme.value,
   set: (v) => applyTheme(v ? 'guitarjempDark' : 'guitarjemp'),
 })
-const preferenceIntervalsOnDots = computed({
-  get: () => Boolean(timelineSettings.showIntervalsOnDots),
-  set: (v) => timelineSettings.setShowIntervalsOnDots(Boolean(v)),
-})
 const fretboardDotLabelMode = computed({
   get: () => String(timelineSettings.dotLabelMode || 'rhythm'),
   set: (v) => timelineSettings.setDotLabelMode(String(v || 'rhythm')),
@@ -121,10 +117,6 @@ const fretboardDotLabelMode = computed({
 const fretboardPlayOrderScope = computed({
   get: () => String(timelineSettings.playOrderScope || 'song'),
   set: (v) => timelineSettings.setPlayOrderScope(String(v || 'song')),
-})
-const preferenceLeftHanded = computed({
-  get: () => Boolean(timelineSettings.leftHanded),
-  set: (v) => timelineSettings.setLeftHanded(Boolean(v)),
 })
 const languageItems = computed(() => languages.map((l) => ({ title: l.label, value: l.code })))
 const preferenceLanguage = computed({
@@ -134,15 +126,11 @@ const preferenceLanguage = computed({
   },
 })
 const {
-  PHONE_VIEW_BREAKPOINT_PX,
   VIEWPORT_DEBUG_PRESETS,
   viewMode,
-  isPortraitViewport,
   viewportHeightUnitPx,
   debugViewportOpen,
   debugViewportPreset,
-  debugViewportWidthPx,
-  debugViewportHeightPx,
   debugViewportFrameActive,
   effectiveViewportHeightPx,
   effectiveViewportWidthPx,
@@ -206,7 +194,6 @@ const {
   saveAsNewVisibility,
   saveAsNewCategory,
   saveAsNewBusy,
-  saveBusy,
   saveCurrentSong,
   exportMusicXml,
   exportMidi,

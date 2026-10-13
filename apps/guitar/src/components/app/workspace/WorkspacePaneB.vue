@@ -33,7 +33,7 @@ import { computed, ref } from 'vue'
 import Timeline from '@/features/timeline'
 import { LibraryPanel } from '@/features/cloud'
 
-const props = defineProps({
+defineProps({
   showTimeline: { type: Boolean, default: true },
   numFrets: { type: Number, required: true },
   compact: { type: Boolean, default: false },
