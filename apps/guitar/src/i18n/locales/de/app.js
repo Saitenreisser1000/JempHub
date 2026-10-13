@@ -153,6 +153,7 @@ export default {
     dark: 'Dunkel',
   },
   playback: {
+    seekLocked: "Zum Spulen Mikrofonübung oder Aufnahme beenden.",
     practice: "Mikrofonübung",
     recording: "Aufnahme",
     target: "Zielton",

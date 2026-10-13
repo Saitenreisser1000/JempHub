@@ -155,6 +155,7 @@ export default {
     dark: 'Dark',
   },
   playback: {
+    seekLocked: "Stop microphone practice or recording to seek.",
     practice: "Microphone practice",
     recording: "Recording",
     target: "Target",

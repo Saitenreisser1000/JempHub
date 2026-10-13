@@ -156,6 +156,7 @@ export default {
     dark: 'Oscuro',
   },
   playback: {
+    seekLocked: "Detén la práctica con micrófono o la grabación para cambiar de posición.",
     practice: "Práctica con micrófono",
     recording: "Grabación",
     target: "Objetivo",

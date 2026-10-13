@@ -1,5 +1,5 @@
 <template>
-  <div v-if="visible" class="timeline-transport" :aria-label="t('timelineView.transport')">
+  <div v-if="visible" class="timeline-transport" role="region" :aria-label="t('timelineView.transport')">
     <div class="timeline-transport-inner">
       <PlaybackControls :read-only="readOnly" :is-playing="isPlaying" :tempo="tempo" :click-enabled="clickEnabled"
         :count-in-enabled="countInEnabled" :auto-follow-enabled="autoFollowEnabled" :loop-enabled="loopEnabled"

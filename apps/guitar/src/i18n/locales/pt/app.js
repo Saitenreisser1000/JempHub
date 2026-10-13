@@ -156,6 +156,7 @@ export default {
     dark: 'Escuro',
   },
   playback: {
+    seekLocked: "Pare a prática com microfone ou a gravação para mudar de posição.",
     practice: "Prática com microfone",
     recording: "Gravação",
     target: "Alvo",

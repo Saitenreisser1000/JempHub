@@ -156,6 +156,7 @@ export default {
     dark: 'Sombre',
   },
   playback: {
+    seekLocked: "Arrêtez l’exercice au microphone ou l’enregistrement pour changer de position.",
     practice: "Exercice au microphone",
     recording: "Enregistrement",
     target: "Cible",

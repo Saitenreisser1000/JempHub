@@ -8,6 +8,7 @@
       <span class="transport-time" aria-hidden="true">{{ positionLabel }}</span>
       <input class="transport-seek" type="range" min="0" :max="positionTotal || 1" step="1"
         :value="position" :disabled="positionTotal <= 0 || recordActive || practiceActive"
+        :title="recordActive || practiceActive ? t('playback.seekLocked') : t('playback.position')"
         :aria-label="t('playback.position')" :aria-valuetext="t('playback.positionValue', { current: positionLabel, total: durationLabel })"
         @input="previewPosition($event.target.value)" @change="commitPosition()"
         @keydown.esc.stop.prevent="cancelPosition" @pointercancel="cancelPosition" @blur="cancelPosition" />
@@ -15,18 +16,18 @@
     </div>
     <div class="transport-row transport-row-primary">
       <div class="transport-primary-controls">
-        <div class="transport-col transport-col-left d-flex align-center ga-2 flex-wrap">
-          <v-btn color="primary" variant="flat" icon :title="isPlaying ? t('playback.pause') : t('playback.play')"
+        <div class="transport-col transport-col-left d-flex align-center ga-2 flex-wrap" role="group" :aria-label="t('timelineView.transport')">
+          <v-btn class="transport-play" color="primary" variant="flat" :title="isPlaying ? t('playback.pause') : t('playback.play')"
             :aria-label="isPlaying ? t('playback.pause') : t('playback.play')" @click="togglePlayPause">
-            <v-icon :icon="isPlaying ? 'mdi-pause' : 'mdi-play'" />
+            <v-icon start :icon="isPlaying ? 'mdi-pause' : 'mdi-play'" />
+            {{ isPlaying ? t('playback.pause') : t('playback.play') }}
           </v-btn>
 
-          <v-btn color="primary" variant="flat" icon :title="t('playback.fromStart')" :aria-label="t('playback.fromStart')" @click="seekStart">
+          <v-btn variant="text" icon :title="t('playback.fromStart')" :aria-label="t('playback.fromStart')" @click="seekStart">
             <v-icon icon="mdi-skip-backward" />
           </v-btn>
 
           <v-btn
-            icon
             size="small"
             :variant="loopEnabled ? 'flat' : 'tonal'"
             :color="loopEnabled ? 'primary' : undefined"
@@ -35,7 +36,8 @@
             :aria-pressed="loopEnabled"
             @click="emit('update-loop', !loopEnabled)"
           >
-            <v-icon icon="mdi-repeat" />
+            <v-icon start icon="mdi-repeat" />
+            {{ t('playback.loop') }}
           </v-btn>
           <v-btn
             icon
@@ -49,23 +51,9 @@
           >
             <v-icon icon="mdi-shuffle-variant" />
           </v-btn>
-          <v-btn-toggle
-            v-if="isPhoneView && !readOnly"
-            class="phone-pane-switch"
-            :model-value="phonePane"
-            mandatory
-            divided
-            @update:model-value="(v) => emit('update-phone-pane', String(v || 'fretboard'))"
-          >
-            <v-btn value="fretboard" size="x-small" variant="tonal">Fretboard</v-btn>
-            <v-btn value="timeline" size="x-small" variant="tonal">Timeline</v-btn>
-            <v-btn value="library" size="x-small" variant="tonal">Library</v-btn>
-          </v-btn-toggle>
         </div>
 
-        <div class="transport-col transport-col-middle" aria-hidden="true" />
-
-        <div class="transport-col transport-col-right d-flex align-center ga-2 flex-wrap">
+        <div class="transport-col transport-col-right d-flex align-center ga-2 flex-wrap" role="group" :aria-label="t('playback.tempo')">
           <v-btn class="tap-btn" size="small" variant="tonal" :title="t('playback.tapTempoHint')" @click="onTapTempo">
             {{ t('playback.tap') }}
           </v-btn>
@@ -83,10 +71,11 @@
                 :title="t('modeSelector.options')"
                 :aria-label="t('modeSelector.options')"
               >
-                <v-icon icon="mdi-cog-outline" size="16" />
+                <v-icon start icon="mdi-tune-variant" size="18" />
+                {{ t('modeSelector.options') }}
               </v-btn>
             </template>
-            <v-card class="pa-3 d-flex flex-column ga-2" min-width="220" variant="flat" border>
+            <v-card class="transport-options-menu pa-3 d-flex flex-column ga-2" min-width="220" variant="flat" border>
               <div class="text-caption option-section-label">{{ t('playback.input') }}</div>
               <v-radio-group
                 density="compact"
@@ -128,6 +117,15 @@
         </div>
       </div>
     </div>
+    <p v-if="recordActive || practiceActive" class="transport-seek-hint">{{ t('playback.seekLocked') }}</p>
+    <nav v-if="isPhoneView && !readOnly" :aria-label="t('menu.view')" class="phone-pane-navigation">
+      <v-btn-toggle class="phone-pane-switch" :model-value="phonePane" mandatory divided
+        @update:model-value="(v) => emit('update-phone-pane', String(v || 'fretboard'))">
+        <v-btn value="fretboard" variant="tonal">{{ t('modeSelector.fretboard') }}</v-btn>
+        <v-btn value="timeline" variant="tonal">{{ t('modeSelector.timeline') }}</v-btn>
+        <v-btn value="library" variant="tonal">{{ t('libraryDialog.title') }}</v-btn>
+      </v-btn-toggle>
+    </nav>
     <PracticeFeedback :practice-active="practiceActive" :record-active="recordActive"
       :target="practiceTargetLabel" :detected="practiceDetectedLabel" :hint="practiceHintText"
       :match-state="practiceMatchState" @stop="onInputModeChange('off')" />
@@ -278,7 +276,7 @@ function onInputModeChange(v) {
 .transport-seek {
   flex: 1;
   min-width: 0;
-  height: 28px;
+  height: 44px;
   accent-color: var(--color-primary);
   cursor: pointer;
 }
@@ -292,20 +290,17 @@ function onInputModeChange(v) {
 }
 
 .transport-primary-controls {
-  display: grid;
-  grid-template-columns: auto 1fr auto;
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
   align-items: center;
-  column-gap: 8px;
+  gap: 12px 24px;
   width: 100%;
   min-width: 0;
 }
 
 .transport-col {
   min-width: 0;
-}
-
-.transport-col-middle {
-  min-height: 1px;
 }
 
 .transport-col-right {
@@ -322,8 +317,37 @@ function onInputModeChange(v) {
 }
 
 .transport-options-btn {
-  min-width: 32px;
-  padding-inline: 0;
+  padding-inline: 12px;
+}
+
+.transport-options-menu {
+  max-height: 70dvh;
+  overflow-y: auto;
+}
+
+.transport-play {
+  min-width: 112px;
+}
+
+.transport-controls :deep(.v-btn) {
+  min-height: 44px;
+  text-transform: none;
+  letter-spacing: 0;
+}
+
+.transport-controls :deep(.v-btn--icon) {
+  min-width: 44px;
+}
+
+.transport-controls :deep(.v-btn:focus-visible) {
+  outline: 2px solid var(--color-primary);
+  outline-offset: 3px;
+}
+
+.transport-seek-hint {
+  margin-top: 8px;
+  font-size: 12px;
+  color: var(--color-text-muted);
 }
 
 .option-section-label {
@@ -347,40 +371,42 @@ function onInputModeChange(v) {
 }
 
 .transport-controls.is-phone-view .transport-primary-controls {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  flex-wrap: nowrap;
-  overflow-x: auto;
-  overflow-y: hidden;
-}
-
-.transport-controls.is-phone-view .transport-col-middle {
-  display: none;
+  gap: 8px;
 }
 
 .transport-controls.is-phone-view .transport-col-left,
 .transport-controls.is-phone-view .transport-col-right {
-  display: inline-flex;
-  align-items: center;
   gap: 6px;
-  flex-wrap: nowrap !important;
+  flex-wrap: wrap !important;
 }
 
 .transport-controls.is-phone-view .transport-col-right {
-  margin-left: auto;
+  justify-content: flex-start;
+}
+
+.phone-pane-navigation {
+  margin-top: 12px;
+  border-top: 1px solid var(--app-border);
+  padding-top: 8px;
 }
 
 .phone-pane-switch {
-  margin-left: 2px;
-  color: var(--color-text-muted);
+  display: flex;
+  width: 100%;
+  height: auto;
 }
 
 .phone-pane-switch :deep(.v-btn) {
+  flex: 1 1 0;
   text-transform: none;
-  font-size: 11px;
+  font-size: 12px;
   min-width: 0;
-  padding-inline: 8px;
+  padding-inline: 6px;
+  white-space: normal;
+}
+
+.phone-pane-switch :deep(.v-btn__content) {
+  white-space: normal;
 }
 
 .transport-controls :deep(.v-slider-track__background) {
@@ -429,18 +455,8 @@ function onInputModeChange(v) {
 }
 
 @media (max-width: 860px) {
-  .transport-primary-controls {
-    grid-template-columns: 1fr;
-    row-gap: 8px;
-  }
-
   .transport-col-right {
     justify-content: flex-start;
-  }
-
-  .transport-controls.is-phone-view .transport-primary-controls {
-    row-gap: 0;
-    grid-template-columns: none;
   }
 }
 </style>
