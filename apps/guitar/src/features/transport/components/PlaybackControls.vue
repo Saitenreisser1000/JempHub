@@ -87,17 +87,18 @@
               </v-btn>
             </template>
             <v-card class="pa-3 d-flex flex-column ga-2" min-width="220" variant="flat" border>
-              <div class="text-caption option-section-label">Input</div>
+              <div class="text-caption option-section-label">{{ t('playback.input') }}</div>
               <v-radio-group
                 density="compact"
                 hide-details
                 :model-value="inputMode"
                 @update:model-value="onInputModeChange"
               >
-                <v-radio label="Off" value="off" />
-                <v-radio label="Microphone" value="microphone" />
-                <v-radio v-if="!readOnly" label="Record" value="record" />
+                <v-radio :label="t('playback.off')" value="off" />
+                <v-radio :label="t('playback.microphone')" value="microphone" :disabled="!practiceAvailable && !practiceActive" />
+                <v-radio v-if="!readOnly" :label="t('playback.record')" value="record" />
               </v-radio-group>
+              <p v-if="!practiceAvailable" class="text-caption">{{ t('playback.noPracticeNotes') }}</p>
               <v-switch
                 density="compact"
                 hide-details
@@ -127,6 +128,9 @@
         </div>
       </div>
     </div>
+    <PracticeFeedback :practice-active="practiceActive" :record-active="recordActive"
+      :target="practiceTargetLabel" :detected="practiceDetectedLabel" :hint="practiceHintText"
+      :match-state="practiceMatchState" @stop="onInputModeChange('off')" />
   </v-card>
 </template>
 
@@ -135,6 +139,7 @@ import { computed, ref } from 'vue'
 import { useI18n } from '@/i18n'
 import { useTempoInput, TEMPO_MIN, TEMPO_MAX, clampTempo } from '../composables/useTempoInput'
 import { usePlaybackPosition, formatPlaybackTime } from '../composables/usePlaybackPosition'
+import PracticeFeedback from './PracticeFeedback.vue'
 import { initAudioEngine } from '@/domain/audio/simpleSynth'
 
 
@@ -232,7 +237,6 @@ function onTapTempo() {
 }
 
 function onInputModeChange(v) {
-  void initAudioEngine({ instrumentType: props.instrumentType })
   const next = String(v || 'off')
   const practiceOn = Boolean(props.practiceActive)
   const recordOn = Boolean(props.recordActive)

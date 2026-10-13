@@ -1140,7 +1140,7 @@ function advancePracticeTarget() {
   const next = Number(practiceTargetIndex.value) + 1
   if (next >= practiceTargets.value.length) {
     stopPractice(false)
-    practiceHintText.value = 'Done'
+    practiceHintText.value = t('playback.complete')
     return
   }
   practiceTargetIndex.value = next
@@ -1157,7 +1157,7 @@ function runPracticeFrame() {
     practiceConsecutiveHits.value = 0
     recordConsecutiveHits.value = 0
     practiceDetectedLabel.value = ''
-    practiceHintText.value = 'Listening...'
+    practiceHintText.value = t('playback.listening')
     practiceMatchState.value = ''
     practiceRafId = requestAnimationFrame(runPracticeFrame)
     return
@@ -1201,7 +1201,7 @@ function runPracticeFrame() {
             recordCooldownUntil = now + RECORD_MIN_GAP_MS
             recordConsecutiveHits.value = 0
             practiceMatchState.value = 'ok'
-            practiceHintText.value = `${practiceDetectedLabel.value || detectedMidi} recorded`
+            practiceHintText.value = t('playback.noteRecorded', { note: practiceDetectedLabel.value || detectedMidi })
           }
         }
       }
@@ -1246,12 +1246,12 @@ async function startPractice() {
   cancelAudioStart()
   if (!globalThis.navigator?.mediaDevices?.getUserMedia) {
     practiceMatchState.value = 'error'
-    practiceHintText.value = 'Microphone API not available'
+    practiceHintText.value = t('playback.micUnavailable')
     return
   }
   if (!practiceAvailable.value) {
     practiceMatchState.value = 'error'
-    practiceHintText.value = 'No notes in timeline'
+    practiceHintText.value = t('playback.noPracticeNotes')
     return
   }
   if (playback.isPlaying.value) playback.pause()
@@ -1267,7 +1267,7 @@ async function startPractice() {
   practiceCooldownUntil = 0
   const target = practiceTargets.value[practiceTargetIndex.value]
   if (target) seekPlayhead(target.startMs)
-  practiceHintText.value = 'Listening...'
+  practiceHintText.value = t('playback.listening')
   practiceMatchState.value = ''
 
   try {
@@ -1294,7 +1294,7 @@ async function startPractice() {
   } catch {
     stopPractice(false)
     practiceMatchState.value = 'error'
-    practiceHintText.value = 'Mic denied or unavailable'
+    practiceHintText.value = t('playback.micDenied')
   }
 }
 
@@ -1313,13 +1313,13 @@ async function startRecord() {
   cancelAudioStart()
   if (!globalThis.navigator?.mediaDevices?.getUserMedia) {
     practiceMatchState.value = 'error'
-    practiceHintText.value = 'Microphone API not available'
+    practiceHintText.value = t('playback.micUnavailable')
     return
   }
   clearCountInOverlay()
   if (playback.isPlaying.value) playback.pause()
   practiceDetectedLabel.value = ''
-  practiceHintText.value = 'Listening...'
+  practiceHintText.value = t('playback.listening')
   practiceMatchState.value = ''
   recordConsecutiveHits.value = 0
   recordCooldownUntil = 0
@@ -1352,7 +1352,7 @@ async function startRecord() {
   } catch {
     stopPractice(false)
     practiceMatchState.value = 'error'
-    practiceHintText.value = 'Mic denied or unavailable'
+    practiceHintText.value = t('playback.micDenied')
   }
 }
 
