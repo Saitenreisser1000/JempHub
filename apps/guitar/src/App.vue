@@ -434,6 +434,7 @@ onBeforeUnmount(() => {
       :main-view="mainView"
       :sidebar-visible="sidebarVisible"
       :app-version-label="APP_VERSION_LABEL"
+      :song-title="library.currentItem?.title || songName || t('recordingSelector.untitled')"
       :has-notes="hasNotes"
       :auth-is-signed-in="auth.isSignedIn"
       :current-user-display-name="currentUserDisplayName"

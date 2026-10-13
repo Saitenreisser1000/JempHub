@@ -1,4 +1,5 @@
 export default {
+  ux: {"workspaceMode":"Arbeitsmodus","viewMode":"Ansehen","editMode":"Bearbeiten","backToSong":"Zurück zum Song","comment":"Kommentar","toneGroups":"Tongruppen","color":"Notenfarbe","startHint":"Wähle einen Notenwert in der Werkzeugleiste und klicke auf eine Saite im Griffbrett, um eine Note hinzuzufügen."},
   layout: {
     resizePanes: "Griffbrett und Timeline aufteilen",
     resizeHint: "Pfeiltasten: Größe ändern · Shift: größere Schritte · Enter oder Doppelklick: zurücksetzen",

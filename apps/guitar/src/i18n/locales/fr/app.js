@@ -1,4 +1,5 @@
 export default {
+  ux: {"workspaceMode":"Mode de travail","viewMode":"Voir","editMode":"Modifier","backToSong":"Retour au morceau","comment":"Commentaire","toneGroups":"Groupes de notes","color":"Couleur de note","startHint":"Choisissez une durée dans la barre d’outils, puis cliquez sur une corde du manche pour ajouter une note."},
   layout: {
     resizePanes: "Redimensionner le manche et la timeline",
     resizeHint: "Flèches : taille · Maj : grands pas · Entrée ou double-clic : réinitialiser",

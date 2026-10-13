@@ -1,15 +1,11 @@
 <template>
-  <div class="app-menu-bar" aria-label="Main menu">
-    <div class="app-menu-brand">GuitarJemp</div>
-    <v-menu v-if="readOnly" location="bottom start">
-      <template #activator="{ props: menuProps }">
-        <v-btn v-bind="menuProps" variant="text" size="small" class="app-menu-btn">View</v-btn>
-      </template>
-      <v-list density="compact" min-width="220">
-        <v-list-item title="Anzeigemodus" prepend-icon="mdi-eye-outline" active @click="emit('update:readOnly', true)" />
-        <v-list-item title="Bearbeitungsmodus" prepend-icon="mdi-pencil-outline" @click="emit('update:readOnly', false)" />
-      </v-list>
-    </v-menu>
+  <nav class="app-menu-bar" :aria-label="t('timelineView.mainMenu')">
+    <div class="app-menu-brand" :title="appVersionLabel">GuitarJemp</div>
+    <div class="app-song-title" :title="songTitle">{{ songTitle }}</div>
+    <v-btn v-if="mainView === 'dashboard'" variant="tonal" prepend-icon="mdi-arrow-left"
+      class="app-menu-btn" @click="emit('toggle-dashboard')">{{ t('ux.backToSong') }}</v-btn>
+    <v-btn v-else-if="readOnly" variant="text" prepend-icon="mdi-bookshelf" class="app-menu-btn"
+      @click="emit('open-dashboard')">{{ t('libraryDialog.title') }}</v-btn>
     <template v-if="!readOnly">
     <v-menu v-if="isPhoneView" location="bottom start">
       <template #activator="{ props: menuProps }">
@@ -70,7 +66,6 @@
         <v-list-item title="Watch" @click="emit('update:viewMode', 'watch')" />
       </v-list>
     </v-menu>
-    <span class="app-version-label">{{ appVersionLabel }}</span>
 
     <template v-if="!isPhoneView">
       <v-menu location="bottom start">
@@ -206,11 +201,19 @@
       </v-menu>
     </div>
     </template>
-  </div>
+    <v-btn-toggle class="app-mode-switch" :model-value="readOnly" mandatory divided
+      :aria-label="t('ux.workspaceMode')" @update:model-value="(value) => emit('update:readOnly', value)">
+      <v-btn :value="true" size="small" prepend-icon="mdi-eye-outline">{{ t('ux.viewMode') }}</v-btn>
+      <v-btn :value="false" size="small" prepend-icon="mdi-pencil-outline">{{ t('ux.editMode') }}</v-btn>
+    </v-btn-toggle>
+  </nav>
 </template>
 
 <script setup>
 import FretboardContextMenu from '@/features/fretboard/components/FretboardContextMenu.vue'
+import { useI18n } from '@/i18n'
+
+const { t } = useI18n()
 
 defineProps({
   readOnly: { type: Boolean, default: false },
@@ -220,6 +223,7 @@ defineProps({
   mainView: { type: String, default: 'workspace' },
   sidebarVisible: { type: Boolean, default: true },
   appVersionLabel: { type: String, required: true },
+  songTitle: { type: String, default: '' },
   hasNotes: { type: Boolean, default: false },
   authIsSignedIn: { type: Boolean, default: false },
   currentUserDisplayName: { type: String, default: '' },
@@ -258,6 +262,7 @@ const emit = defineEmits([
 .app-menu-bar {
   position: relative;
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
   gap: 4px;
   min-height: 42px;
@@ -269,6 +274,7 @@ const emit = defineEmits([
 }
 
 .app-menu-brand {
+  flex-shrink: 0;
   font-size: 1.1rem;
   font-weight: 900;
   letter-spacing: 0.02em;
@@ -332,5 +338,39 @@ const emit = defineEmits([
 
 .app-hamburger-btn {
   margin-left: 2px;
+}
+
+.app-song-title {
+  flex: 0 1 180px;
+  min-width: 64px;
+  font-size: 14px;
+  font-weight: 600;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  margin-right: 8px;
+}
+
+.app-mode-switch {
+  flex: 0 0 auto;
+  height: auto;
+  margin-left: auto;
+}
+
+.app-menu-bar :deep(.v-btn) {
+  min-height: 40px;
+  text-transform: none;
+  letter-spacing: 0;
+}
+
+.app-menu-bar :deep(.v-btn:focus-visible) {
+  outline: 2px solid var(--color-primary);
+  outline-offset: 2px;
+}
+
+@media (max-width: 600px) {
+  .app-song-title { flex: 1 1 100px; }
+  .app-menu-bar { gap: 6px; padding: 6px 8px; }
+  .app-menu-bar :deep(.v-btn) { min-height: 44px; }
 }
 </style>

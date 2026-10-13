@@ -5,18 +5,18 @@
         <div v-if="editable" class="fretboard-pane-corner-tools">
           <v-menu location="bottom end" :close-on-content-click="false">
             <template #activator="{ props: menuProps }">
-              <v-btn v-bind="menuProps" class="fretboard-options-btn" size="small" variant="tonal" title="Options"
-                aria-label="Options">
+              <v-btn v-bind="menuProps" class="fretboard-options-btn" size="small" variant="tonal" :title="t('modeSelector.options')"
+                :aria-label="t('modeSelector.options')">
                 <v-icon icon="mdi-cog-outline" size="16" />
               </v-btn>
             </template>
             <div class="fretboard-options-menu pa-3 d-flex flex-column ga-2">
               <div class="d-flex ga-2">
                 <v-text-field :model-value="instrument.numStrings" density="compact" hide-details type="number" min="1"
-                  step="1" label="Strings" style="width: 96px"
+                  step="1" :label="t('modeSelector.strings')" style="width: 96px"
                   @update:model-value="(v) => instrument.setNumStrings(v)" />
                 <v-text-field :model-value="numFrets" density="compact" hide-details type="number" min="1" step="1"
-                  label="Frets" style="width: 96px" @update:model-value="(v) => emit('update-num-frets', v)" />
+                  :label="t('modeSelector.frets')" style="width: 96px" @update:model-value="(v) => emit('update-num-frets', v)" />
               </div>
               <v-select v-model="dotLabelModeModel" :items="dotLabelModeOptions" density="compact" hide-details
                 label="Dot Labels" variant="outlined" :menu-props="{ contentClass: 'fretboard-options-select-menu' }" />
@@ -36,11 +36,12 @@
       </div>
       <div class="fretboard-pane-side">
         <div class="fretboard-pane-side-stack">
+          <h2 class="fretboard-groups-heading">{{ t('ux.toneGroups') }}</h2>
           <div v-if="editable" class="fretboard-side-toolbar">
             <v-menu location="bottom end" :close-on-content-click="false">
               <template #activator="{ props: menuProps }">
                 <v-btn v-bind="menuProps" size="x-small" variant="tonal" class="fretboard-color-btn">
-                  Color
+                  {{ t('ux.color') }}
                 </v-btn>
               </template>
               <div class="fretboard-color-menu pa-2">
@@ -50,15 +51,18 @@
           </div>
           <div class="fretboard-dot-groups" :class="{ 'is-empty': !hasDotGroups }">
             <div class="fretboard-dot-groups-list">
-              <v-btn variant="tonal" size="small" class="justify-start fretboard-dot-group-btn"
+              <p v-if="!hasDotGroups" class="fretboard-empty-hint">{{ editable ? t('ux.startHint') : t('activeTones.empty') }}</p>
+              <v-btn v-else variant="tonal" size="small" class="justify-start fretboard-dot-group-btn"
                 :class="{ 'is-active': hasDotGroups && allDotGroupsSelected, 'is-disabled': !hasDotGroups }"
+                :aria-pressed="hasDotGroups && allDotGroupsSelected"
                 :disabled="!hasDotGroups" @click="emit('activate-all-dot-groups')">
-                All
+                {{ t('recordingSelector.all') }}
               </v-btn>
               <div v-for="group in usedDotGroups" :key="group.color" class="fretboard-dot-group-row">
                 <v-btn variant="tonal" size="small"
                   class="justify-start fretboard-dot-group-btn"
                   :class="{ 'is-active': String(timelineSettings.activeDotGroupColor || '') === group.color }"
+                  :aria-pressed="String(timelineSettings.activeDotGroupColor || '') === group.color"
                   :style="{ borderLeft: `12px solid ${group.color}` }" :title="group.label"
                   @contextmenu.prevent="(event) => editable && emit('open-dot-group-menu', { event, group })"
                   @click="emit('activate-dot-group', group.color)">
@@ -83,6 +87,9 @@ import Fretboard from '@/features/fretboard'
 import ColorPalette from '@/features/fretboard/components/ColorPalette.vue'
 import { useInstrumentStore } from '@/store/useInstrument'
 import { useTimelineSettingsStore } from '@/store/useTimelineSettings'
+import { useI18n } from '@/i18n'
+
+const { t } = useI18n()
 
 const props = defineProps({
   numFrets: { type: Number, required: true },
@@ -213,16 +220,16 @@ const playOrderScopeModel = computed({
 }
 
 .fretboard-options-btn {
-  min-width: 32px;
-  width: 32px;
-  height: 32px;
+  min-width: 44px;
+  width: 44px;
+  height: 44px;
   padding-inline: 0;
 }
 
 .fretboard-color-btn {
   width: 100%;
   min-width: 0;
-  height: 30px;
+  min-height: 44px;
   border-radius: 10px;
   text-transform: none;
   font-size: 11px;
@@ -297,7 +304,7 @@ const playOrderScopeModel = computed({
 }
 
 .fretboard-dot-group-btn {
-  min-height: 36px;
+  min-height: 44px;
   width: 100%;
   max-width: 100%;
   justify-content: flex-start;
@@ -339,5 +346,24 @@ const playOrderScopeModel = computed({
 }
 .is-read-only .fretboard-pane-side-stack {
   padding: 4px;
+}
+
+.fretboard-groups-heading {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--color-text);
+  padding: 4px 0;
+}
+
+.fretboard-empty-hint {
+  font-size: 13px;
+  line-height: 1.6;
+  color: var(--color-text-muted);
+  padding: 8px 0;
+}
+
+.fretboard-main :deep(.v-btn:focus-visible) {
+  outline: 2px solid var(--color-primary);
+  outline-offset: 2px;
 }
 </style>

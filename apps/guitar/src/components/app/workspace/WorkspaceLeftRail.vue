@@ -1,8 +1,9 @@
 <template>
-  <aside class="app-left-rail" aria-label="Note value rail">
+  <aside class="app-left-rail" :aria-label="t('modeSelector.noteValues')">
     <div class="app-left-rail-inner">
       <button v-for="item in leftRailNoteItems" :key="item.value" type="button" class="app-left-rail-note-btn"
         :class="{ 'is-active': leftRailNoteValue === item.value }" :title="item.title"
+        :aria-label="item.title" :aria-pressed="leftRailNoteValue === item.value"
         @click="leftRailNoteValue = item.value">
         <span class="app-left-rail-note-icon" :style="{ maskImage: `url(${item.icon})` }" aria-hidden="true"></span>
       </button>
@@ -11,12 +12,14 @@
 
       <button type="button" class="app-left-rail-note-btn app-left-rail-small-btn"
         :class="{ 'is-active': leftRailModifier === 'dotted' }" :title="t('modeSelector.dotted')"
+        :aria-label="t('modeSelector.dotted')" :aria-pressed="leftRailModifier === 'dotted'"
         @click="leftRailModifier = leftRailModifier === 'dotted' ? '' : 'dotted'">
         <span class="app-left-rail-note-icon" :style="{ maskImage: `url(${NOTE_MODIFIER_ICONS.dotted})` }" aria-hidden="true"></span>
       </button>
 
       <button type="button" class="app-left-rail-note-btn app-left-rail-small-btn"
         :class="{ 'is-active': leftRailModifier === '3' }" :title="t('modeSelector.triplets')"
+        :aria-label="t('modeSelector.triplets')" :aria-pressed="leftRailModifier === '3'"
         @click="leftRailModifier = leftRailModifier === '3' ? '' : '3'">
         <span class="app-left-rail-note-icon" :style="{ maskImage: `url(${NOTE_MODIFIER_ICONS.triplet})` }" aria-hidden="true"></span>
       </button>
@@ -25,6 +28,8 @@
 
       <button type="button" class="app-left-rail-note-btn app-left-rail-chord-btn"
         :class="{ 'is-active': leftRailChordEnabled }"
+        :aria-pressed="leftRailChordEnabled"
+        :aria-label="leftRailChordEnabled ? t('modeSelector.disableChord') : t('modeSelector.enableChord')"
         :title="leftRailChordEnabled ? t('modeSelector.disableChord') : t('modeSelector.enableChord')"
         @click="timelineSettings.setSelectedMode(leftRailChordEnabled ? String(timelineSettings.lastRhythmMode || '1/4') : 'sim')">
         <span class="app-left-rail-note-icon" :style="{ maskImage: `url(${TRIAD_ICON})` }" aria-hidden="true"></span>
@@ -33,13 +38,14 @@
       <div class="app-left-rail-spacer" aria-hidden="true"></div>
 
       <button type="button" class="app-left-rail-note-btn app-left-rail-comment-btn"
-        :class="{ 'is-active': isCommentMode }" title="Comment"
+        :class="{ 'is-active': isCommentMode }" :title="t('ux.comment')" :aria-label="t('ux.comment')" :aria-pressed="isCommentMode"
         @click="uiMode.setSurfaceMode(isCommentMode ? SURFACE_MODES.COMPOSE : SURFACE_MODES.COMMENT)">
-        <span class="app-left-rail-comment-label app-left-rail-clear-label">Comment</span>
+        <v-icon icon="mdi-comment-text-outline" size="22" aria-hidden="true" />
       </button>
 
-      <button type="button" class="app-left-rail-note-btn app-left-rail-clear-btn" title="Clear" @click="emit('clear')">
-        <span class="app-left-rail-clear-label">Clear</span>
+      <button type="button" class="app-left-rail-note-btn app-left-rail-clear-btn" :title="t('activeTones.clear')"
+        :aria-label="t('activeTones.clear')" @click="emit('clear')">
+        <v-icon icon="mdi-eraser" size="22" aria-hidden="true" />
       </button>
     </div>
   </aside>
@@ -91,8 +97,7 @@ const isCommentMode = computed(() => uiMode.surfaceMode === SURFACE_MODES.COMMEN
   top: 0;
   bottom: 0;
   width: var(--app-left-rail-w);
-  background:
-    linear-gradient(180deg, rgb(39 47 58 / 0.98), rgb(28 34 43 / 0.98));
+  background: var(--color-surface);
   border-right: 1px solid rgb(255 255 255 / 0.08);
   box-shadow:
     inset -1px 0 0 rgb(0 0 0 / 0.26),
@@ -104,9 +109,10 @@ const isCommentMode = computed(() => uiMode.surfaceMode === SURFACE_MODES.COMMEN
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 10px;
+  gap: 6px;
   height: 100%;
-  padding: 8px 8px 12px;
+  padding: 8px 4px 12px;
+  overflow-y: auto;
   box-sizing: border-box;
 }
 
@@ -122,8 +128,9 @@ const isCommentMode = computed(() => uiMode.surfaceMode === SURFACE_MODES.COMMEN
 }
 
 .app-left-rail-note-btn {
-  width: 38px;
-  height: 38px;
+  width: 44px;
+  min-height: 44px;
+  flex-shrink: 0;
   border: 1px solid rgb(255 255 255 / 0.08);
   border-radius: 10px;
   background: var(--app-grad-control);
@@ -141,7 +148,11 @@ const isCommentMode = computed(() => uiMode.surfaceMode === SURFACE_MODES.COMMEN
 
 .app-left-rail-note-btn:hover {
   background: var(--app-grad-control-hover);
-  transform: scale(1.06);
+}
+
+.app-left-rail-note-btn:focus-visible {
+  outline: 2px solid var(--color-primary);
+  outline-offset: 2px;
 }
 
 .app-left-rail-note-btn.is-active {
@@ -163,7 +174,7 @@ const isCommentMode = computed(() => uiMode.surfaceMode === SURFACE_MODES.COMMEN
 }
 
 .app-left-rail-small-btn {
-  height: 32px;
+  min-height: 44px;
 }
 
 .app-left-rail-chord-btn {
@@ -171,14 +182,10 @@ const isCommentMode = computed(() => uiMode.surfaceMode === SURFACE_MODES.COMMEN
 }
 
 .app-left-rail-comment-btn {
-  height: 34px;
-  width: 38px;
   padding: 0;
 }
 
 .app-left-rail-clear-btn {
-  height: 34px;
-  width: 38px;
   padding: 0;
   border-color: rgb(207 86 86 / 0.82);
   background: var(--app-grad-danger);
@@ -196,15 +203,8 @@ const isCommentMode = computed(() => uiMode.surfaceMode === SURFACE_MODES.COMMEN
   background: var(--app-grad-danger-active);
 }
 
-.app-left-rail-clear-label {
-  font-size: 10px;
-  line-height: 1;
-  font-weight: 800;
-  letter-spacing: 0.02em;
-}
-
-.app-left-rail-comment-label {
-  font-size: 6px;
+@media (prefers-reduced-motion: reduce) {
+  .app-left-rail-note-btn { transition: none; }
 }
 
 </style>

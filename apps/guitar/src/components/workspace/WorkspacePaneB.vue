@@ -1,10 +1,10 @@
-höh<template>
+<template>
   <div class="pane-b-stack">
     <div class="pane-b-tabs">
       <v-tabs :model-value="workspacePanelTab" density="compact" class="browser-tabs"
         @update:model-value="(v) => emit('update:workspacePanelTab', String(v || 'timeline'))">
-        <v-tab value="timeline" class="browser-tab">Timeline</v-tab>
-        <v-tab value="library" class="browser-tab">Library</v-tab>
+        <v-tab value="timeline" class="browser-tab">{{ t('modeSelector.timeline') }}</v-tab>
+        <v-tab value="library" class="browser-tab">{{ t('libraryDialog.title') }}</v-tab>
       </v-tabs>
     </div>
     <div class="pane-b-content">
@@ -32,6 +32,9 @@ höh<template>
 import { computed, ref } from 'vue'
 import Timeline from '@/features/timeline'
 import { LibraryPanel } from '@/features/cloud'
+import { useI18n } from '@/i18n'
+
+const { t } = useI18n()
 
 defineProps({
   showTimeline: { type: Boolean, default: true },
@@ -132,7 +135,7 @@ defineExpose({
 }
 
 .pane-b-tabs :deep(.browser-tab) {
-  min-height: 25px;
+  min-height: 44px;
   min-width: 88px;
   border: 1px solid rgb(255 255 255 / 0.05);
   border-bottom: 0;

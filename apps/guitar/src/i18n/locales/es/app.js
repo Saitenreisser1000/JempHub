@@ -1,4 +1,5 @@
 export default {
+  ux: {"workspaceMode":"Modo de trabajo","viewMode":"Ver","editMode":"Editar","backToSong":"Volver a la canción","comment":"Comentario","toneGroups":"Grupos de notas","color":"Color de nota","startHint":"Elige una figura en la barra de herramientas y pulsa una cuerda del diapasón para añadir una nota."},
   layout: {
     resizePanes: "Redimensionar diapasón y línea de tiempo",
     resizeHint: "Flechas: tamaño · Mayús: pasos mayores · Intro o doble clic: restablecer",

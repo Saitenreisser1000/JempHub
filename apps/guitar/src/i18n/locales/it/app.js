@@ -1,4 +1,5 @@
 export default {
+  ux: {"workspaceMode":"Modalità di lavoro","viewMode":"Visualizza","editMode":"Modifica","backToSong":"Torna al brano","comment":"Commento","toneGroups":"Gruppi di note","color":"Colore della nota","startHint":"Scegli un valore nella barra degli strumenti, poi premi una corda sulla tastiera per aggiungere una nota."},
   layout: {
     resizePanes: "Ridimensiona tastiera e timeline",
     resizeHint: "Frecce: dimensioni · Maiusc: passi maggiori · Invio o doppio clic: ripristina",

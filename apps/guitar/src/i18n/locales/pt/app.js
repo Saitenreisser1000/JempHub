@@ -1,4 +1,5 @@
 export default {
+  ux: {"workspaceMode":"Modo de trabalho","viewMode":"Ver","editMode":"Editar","backToSong":"Voltar à música","comment":"Comentário","toneGroups":"Grupos de notas","color":"Cor da nota","startHint":"Escolha uma duração na barra de ferramentas e clique numa corda do braço para adicionar uma nota."},
   layout: {
     resizePanes: "Redimensionar braço e linha do tempo",
     resizeHint: "Setas: tamanho · Shift: passos maiores · Enter ou clique duplo: redefinir",

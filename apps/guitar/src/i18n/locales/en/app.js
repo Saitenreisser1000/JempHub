@@ -1,4 +1,5 @@
 export default {
+  ux: {"workspaceMode":"Workspace mode","viewMode":"View","editMode":"Edit","backToSong":"Back to song","comment":"Comment","toneGroups":"Tone groups","color":"Note color","startHint":"Choose a note value in the toolbar, then click a string on the fretboard to add a note."},
   layout: {
     resizePanes: "Resize fretboard and timeline",
     resizeHint: "Arrow keys: resize · Shift: larger steps · Enter or double-click: reset",
