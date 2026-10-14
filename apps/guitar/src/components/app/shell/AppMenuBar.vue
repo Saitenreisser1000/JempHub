@@ -167,12 +167,13 @@
       </v-list>
     </v-menu>
 
+    </template>
     <div class="app-menu-right">
       <v-chip v-if="authIsSignedIn && !isPhoneView" size="small" color="success" variant="tonal"
         :prepend-avatar="currentUserAvatarUrl" class="app-user-chip" @click="emit('toggle-dashboard')">
         {{ currentUserDisplayName }}
       </v-chip>
-      <v-menu v-if="isCompactView && !isWatchView" location="bottom end" :close-on-content-click="false">
+      <v-menu v-if="!readOnly && isCompactView && !isWatchView" location="bottom end" :close-on-content-click="false">
         <template #activator="{ props: menuProps }">
           <v-btn v-bind="menuProps" variant="tonal" size="small" class="app-menu-tools-btn" prepend-icon="mdi-tools">
             Tools
@@ -182,14 +183,15 @@
           <FretboardContextMenu />
         </v-card>
       </v-menu>
-      <v-btn v-else-if="isWatchView" variant="tonal" size="small" class="app-menu-tools-btn" prepend-icon="mdi-tools"
+      <v-btn v-else-if="!readOnly && isWatchView" variant="tonal" size="small" class="app-menu-tools-btn" prepend-icon="mdi-tools"
         disabled>
         Tools
       </v-btn>
       <v-menu location="bottom end">
         <template #activator="{ props: menuProps }">
-          <v-btn v-bind="menuProps" size="small" variant="tonal" prepend-icon="mdi-account">
-            Account
+          <v-btn v-bind="menuProps" size="small" variant="tonal" prepend-icon="mdi-account"
+            :aria-label="t('app.account')">
+            {{ t('app.account') }}
           </v-btn>
         </template>
         <v-list density="compact" min-width="180">
@@ -201,7 +203,6 @@
         </v-list>
       </v-menu>
     </div>
-    </template>
     <v-btn-toggle class="app-mode-switch" :model-value="readOnly" mandatory divided
       :aria-label="t('ux.workspaceMode')" @update:model-value="(value) => emit('update:readOnly', value)">
       <v-btn :value="true" size="small" prepend-icon="mdi-eye-outline">{{ t('ux.viewMode') }}</v-btn>
