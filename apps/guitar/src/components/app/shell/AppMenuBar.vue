@@ -1,6 +1,7 @@
 <template>
   <nav class="app-menu-bar" :aria-label="t('timelineView.mainMenu')">
-    <div class="app-menu-brand" :title="appVersionLabel">GuitarJemp</div>
+    <div class="app-menu-brand">GuitarJemp</div>
+    <span class="app-version-label">{{ appVersionLabel }}</span>
     <div class="app-song-title" :title="songTitle">{{ songTitle }}</div>
     <v-btn v-if="mainView === 'dashboard'" variant="tonal" prepend-icon="mdi-arrow-left"
       class="app-menu-btn" @click="emit('toggle-dashboard')">{{ t('ux.backToSong') }}</v-btn>

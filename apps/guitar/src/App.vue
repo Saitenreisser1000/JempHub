@@ -32,6 +32,7 @@ import { useViewportMode } from '@/composables/useViewportMode'
 import { useAppDotGroups } from '@/composables/useAppDotGroups'
 import { useShareActions } from '@/composables/useShareActions'
 import { useSongEditorActions } from '@/composables/useSongEditorActions'
+import guitarPackage from '../package.json'
 
 const numFrets = ref(12)
 const corePadResizePx = ref(0)
@@ -56,7 +57,7 @@ const preferencesOpen = ref(false)
 const profileSaveBusy = ref(false)
 const songName = ref('')
 const THEME_STORAGE_KEY = 'guitarjemp.ui.theme'
-const APP_VERSION_LABEL = 'v.0.0.1'
+const APP_VERSION_LABEL = `Experimental v${guitarPackage.version}`
 
 const instrument = useInstrumentStore()
 const auth = useAuthStore()
