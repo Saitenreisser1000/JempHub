@@ -27,7 +27,7 @@ async function renderMenu(props = {}) {
   const app = createSSRApp({
     render: () => h(AppMenuBar, {
       readOnly: true,
-      appVersionLabel: 'Experimental v0.0.2',
+      appVersionLabel: 'Experimental v-test',
       songTitle: 'Test song',
       ...props,
     }),
@@ -54,11 +54,21 @@ describe('AppMenuBar', () => {
 
     expect(html).toContain('aria-label="Account"')
     expect(html).toContain('Account</button>')
+    expect(html).toContain('title="Login"')
+    expect(html).toContain('title="Friends"')
+    expect(html).toContain('title="Dashboard"')
   })
 
   it('renders a single account control in edit mode', async () => {
     const html = await renderMenu({ readOnly: false })
 
     expect(html.match(/aria-label="Account"/g)).toHaveLength(1)
+  })
+
+  it('labels the signed-in account action as logout', async () => {
+    const html = await renderMenu({ authIsSignedIn: true })
+
+    expect(html).toContain('title="Logout"')
+    expect(html).not.toContain('title="Login"')
   })
 })

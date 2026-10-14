@@ -27,6 +27,7 @@ export default {
   app: {
     cloudNotConfigured: 'Cloud: nicht konfiguriert',
     account: 'Konto',
+    dashboard: 'Dashboard',
     login: 'Anmelden',
     logout: 'Abmelden',
     friends: 'Freunde',

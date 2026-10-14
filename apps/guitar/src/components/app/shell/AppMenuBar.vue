@@ -30,8 +30,8 @@
         <v-list-subheader>Song</v-list-subheader>
         <v-list-item title="Song Settings" @click="emit('open-song-settings')" />
         <v-divider class="my-1" />
-        <v-list-subheader>Account</v-list-subheader>
-        <v-list-item prepend-icon="mdi-view-dashboard-outline" title="Dashboard" @click="emit('open-dashboard')" />
+        <v-list-subheader>{{ t('app.account') }}</v-list-subheader>
+        <v-list-item prepend-icon="mdi-view-dashboard-outline" :title="t('app.dashboard')" @click="emit('open-dashboard')" />
         <v-divider v-if="mainView !== 'dashboard'" class="my-1" />
         <v-list-subheader v-if="mainView !== 'dashboard'">Share</v-list-subheader>
         <v-list-item v-if="mainView !== 'dashboard'" prepend-icon="mdi-account-edit-outline"
@@ -196,10 +196,10 @@
         </template>
         <v-list density="compact" min-width="180">
           <v-list-item :prepend-icon="authIsSignedIn ? 'mdi-logout' : 'mdi-login'"
-            :title="authIsSignedIn ? 'Logout' : 'Login'" @click="emit(authIsSignedIn ? 'sign-out' : 'open-auth')" />
-          <v-list-item prepend-icon="mdi-account-multiple" title="Friends" :disabled="!authIsSignedIn"
+            :title="authIsSignedIn ? t('app.logout') : t('app.login')" @click="emit(authIsSignedIn ? 'sign-out' : 'open-auth')" />
+          <v-list-item prepend-icon="mdi-account-multiple" :title="t('app.friends')" :disabled="!authIsSignedIn"
             @click="emit('open-connections')" />
-          <v-list-item prepend-icon="mdi-view-dashboard-outline" title="Dashboard" @click="emit('open-dashboard')" />
+          <v-list-item prepend-icon="mdi-view-dashboard-outline" :title="t('app.dashboard')" @click="emit('open-dashboard')" />
         </v-list>
       </v-menu>
     </div>

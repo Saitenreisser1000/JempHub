@@ -27,6 +27,7 @@ export default {
   app: {
     cloudNotConfigured: 'Nuvem: não configurada',
     account: 'Conta',
+    dashboard: 'Painel',
     login: 'Entrar',
     logout: 'Sair',
     friends: 'Amigos',
