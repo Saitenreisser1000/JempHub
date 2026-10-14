@@ -1,5 +1,5 @@
 <script setup>
-import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
+import { computed, onBeforeUnmount, onMounted, ref, useId, watch } from 'vue'
 import { useAuthStore } from '@/store/useAuth'
 import { useLibraryStore } from '@/store/useLibrary'
 import { useNotesStore } from '@/store/useNotes'
@@ -10,6 +10,9 @@ import { usePlaybackVisualsStore } from '@/store/usePlaybackVisuals'
 import { useFretboardOverlayStore } from '@/store/useFretboardOverlay'
 import { useI18n } from '@/i18n'
 import { supabase, isSupabaseConfigured } from '@/infra/supabase/client'
+import AuthDialog from './AuthDialog.vue'
+import LibrarySongRow from './LibrarySongRow.vue'
+import { useLibraryDeletion } from '../composables/useLibraryDeletion'
 
 defineOptions({ name: 'LibraryPanel' })
 const emit = defineEmits(['update-required-frets'])
@@ -27,7 +30,29 @@ const { t } = useI18n()
 const listTab = ref('mine')
 const ownerNamesById = ref({})
 const search = ref('')
-const deletingItemId = ref('')
+const authOpen = ref(false)
+const refreshBusy = ref(false)
+const refreshFailed = ref(false)
+const refreshButton = ref(null)
+const deleteHeadingId = useId()
+let deleteTrigger = null
+const { pendingItem, busy: deleteBusy, failed: deleteFailed, canDelete, request: requestDeletion, cancel: cancelDeletion, confirm: confirmDeletion } = useLibraryDeletion({ library, auth })
+const deleteDialogOpen = computed({
+  get: () => Boolean(pendingItem.value),
+  set: (open) => { if (!open) cancelDeletion() },
+})
+const isLoading = computed(() => refreshBusy.value || library.loading)
+
+function requestDelete(item, event) {
+  deleteTrigger = event?.currentTarget
+  requestDeletion(item)
+}
+
+function restoreDeleteFocus() {
+  const target = deleteTrigger?.isConnected ? deleteTrigger : refreshButton.value?.$el
+  target?.focus?.()
+  deleteTrigger = null
+}
 const selectedCategory = ref('')
 let dotGroupLoopTimer = null
 const DOT_GROUP_PREVIEW_MS = 2000
@@ -71,32 +96,6 @@ const visibleItems = computed(() => {
       return myItems.value
   }
 })
-
-const tabItemsByKey = computed(() => ({
-  mine: myItems.value,
-  public: publicItems.value,
-  connections: connectionsItems.value,
-  shared: sharedItems.value,
-}))
-
-function firstAvailableTab() {
-  const order = ['mine', 'public', 'connections', 'shared']
-  for (const key of order) {
-    const items = tabItemsByKey.value?.[key]
-    if (Array.isArray(items) && items.length) return key
-  }
-  return 'mine'
-}
-
-function ensureUsableTab() {
-  if (!auth.isSignedIn) {
-    listTab.value = 'mine'
-    return
-  }
-  const currentItems = tabItemsByKey.value?.[listTab.value]
-  if (Array.isArray(currentItems) && currentItems.length) return
-  listTab.value = firstAvailableTab()
-}
 
 const filteredItems = computed(() => {
   const q = String(search.value || '').trim().toLowerCase()
@@ -278,25 +277,6 @@ function onLoad(item) {
   applySnapshot(item?.content)
 }
 
-function canDeleteItem(item) {
-  const ownerId = String(item?.owner_id ?? '').trim()
-  const meId = String(auth.user?.id ?? '').trim()
-  return Boolean(ownerId && meId && ownerId === meId)
-}
-
-async function onDelete(item) {
-  const itemId = String(item?.id ?? '').trim()
-  if (!itemId || !canDeleteItem(item)) return
-  if (deletingItemId.value === itemId) return
-
-  deletingItemId.value = itemId
-  try {
-    await library.deleteItem(itemId)
-  } finally {
-    if (deletingItemId.value === itemId) deletingItemId.value = ''
-  }
-}
-
 async function refreshOwnerNames() {
   ownerNamesById.value = {}
   if (!isSupabaseConfigured || !supabase) return
@@ -320,10 +300,19 @@ async function refreshOwnerNames() {
 }
 
 async function handleRefresh() {
-  await library.refresh()
-  await refreshOwnerNames()
-  ensureUsableTab()
-  ensureSelectedCategory()
+  if (isLoading.value || !auth.isSignedIn) return
+  refreshBusy.value = true
+  refreshFailed.value = false
+  try {
+    await library.refresh()
+    refreshFailed.value = Boolean(library.error)
+    await refreshOwnerNames()
+    ensureSelectedCategory()
+  } catch {
+    refreshFailed.value = true
+  } finally {
+    refreshBusy.value = false
+  }
 }
 
 function ownerDisplayNameFor(item) {
@@ -354,20 +343,18 @@ watch(
       listTab.value = 'mine'
       ownerNamesById.value = {}
       selectedCategory.value = ''
+      search.value = ''
+      library.items = []
+      refreshFailed.value = false
+      cancelDeletion()
       return
     }
     if (!wasSignedIn || !Array.isArray(library.items) || library.items.length === 0) {
-      await library.refresh()
+      await handleRefresh()
     }
-    await refreshOwnerNames()
-    ensureUsableTab()
     ensureSelectedCategory()
   },
 )
-
-watch(tabItemsByKey, () => {
-  ensureUsableTab()
-}, { deep: true })
 
 watch(categoryRows, () => {
   ensureSelectedCategory()
@@ -376,12 +363,14 @@ watch(categoryRows, () => {
 
 <template>
   <div class="library-panel">
+    <AuthDialog v-model="authOpen" />
     <v-alert v-if="!auth.isSignedIn" type="info" variant="tonal" class="mb-2" density="compact">
       {{ t('libraryDialog.signInHint') }}
+      <div class="mt-3"><v-btn variant="flat" color="primary" @click="authOpen = true">{{ t('app.login') }}</v-btn></div>
     </v-alert>
 
-    <v-alert v-if="library.error" type="error" variant="tonal" class="mb-2" density="compact">
-      {{ String(library.error?.message ?? library.error) }}
+    <v-alert v-if="auth.isSignedIn && refreshFailed" type="error" variant="tonal" class="mb-2" density="compact">
+      {{ t('ux.refreshFailed') }}
     </v-alert>
 
     <template v-if="auth.isSignedIn">
@@ -401,13 +390,24 @@ watch(categoryRows, () => {
             class="library-search"
             prepend-inner-icon="mdi-magnify"
             :label="t('recordingSelector.search')"
+            clearable
           />
-          <v-btn variant="tonal" size="small" @click="handleRefresh">{{ t('libraryDialog.refresh') }}</v-btn>
+          <v-btn ref="refreshButton" variant="tonal" size="small" prepend-icon="mdi-refresh"
+            :loading="isLoading" :disabled="isLoading" @click="handleRefresh">{{ t('libraryDialog.refresh') }}</v-btn>
         </div>
       </div>
 
-      <div class="library-shell">
-        <section class="library-categories">
+      <div class="library-result-status" role="status">
+        {{ isLoading ? t('ux.loading') : t('recordingSelector.items', { count: filteredItems.length }) }}
+      </div>
+      <div v-if="!filteredItems.length" class="library-empty-state">
+        <v-icon :icon="search?.trim() ? 'mdi-magnify' : 'mdi-bookshelf'" size="32" aria-hidden="true" />
+        <h3>{{ isLoading ? t('ux.loading') : search?.trim() ? t('ux.noSearchResults') : t('libraryDialog.noItems') }}</h3>
+        <p v-if="!isLoading">{{ search?.trim() ? t('recordingSelector.adjustFilter') : t('ux.emptyLibraryHint') }}</p>
+        <v-btn v-if="search?.trim() && !isLoading" variant="tonal" @click="search = ''">{{ t('ux.clearSearch') }}</v-btn>
+      </div>
+      <div v-else class="library-shell" :aria-busy="isLoading">
+        <section class="library-categories" :aria-label="t('libraryDialog.category')">
           <div v-if="categoryRows.length" class="library-list">
             <button
               v-for="row in categoryRows"
@@ -415,6 +415,7 @@ watch(categoryRows, () => {
               type="button"
               class="library-list-item"
               :class="{ 'is-active': selectedCategory === row.label }"
+              :aria-pressed="selectedCategory === row.label"
               @click="selectedCategory = row.label"
             >
               <div class="library-list-top">
@@ -424,51 +425,34 @@ watch(categoryRows, () => {
             </button>
           </div>
 
-          <div v-else class="text-medium-emphasis library-empty-state">
-            {{ t('libraryDialog.noItems') }}
-          </div>
         </section>
 
-        <section class="library-items">
+        <section class="library-items" :aria-label="t('libraryDialog.title')">
           <div v-if="selectedCategoryItems.length" class="library-list">
-            <button
-              v-for="item in selectedCategoryItems"
-              :key="item.id"
-              type="button"
-              class="library-list-item"
-              :class="{ 'is-active': String(library.currentItem?.id || '') === String(item.id || '') }"
-              @click="onLoad(item)"
-            >
-              <div class="library-list-row">
-                <div class="library-list-title">{{ item.title || 'Untitled' }}</div>
-                <span>{{ ownerDisplayNameFor(item) }}</span>
-                <span>{{ item.kind }}</span>
-                <span
-                  v-if="String(library.currentItem?.id || '') === String(item.id || '')"
-                  class="library-current-indicator"
-                >
-                  {{ t('libraryDialog.load') }}
-                </span>
-                <span class="library-list-meta-spacer" />
-                <v-btn
-                  icon="mdi-delete-outline"
-                  size="x-small"
-                  variant="text"
-                  color="error"
-                  :disabled="!canDeleteItem(item)"
-                  :loading="deletingItemId === String(item.id || '')"
-                  @click.stop="onDelete(item)"
-                />
-              </div>
-            </button>
+            <LibrarySongRow v-for="item in selectedCategoryItems" :key="item.id" :item="item"
+              :owner="ownerDisplayNameFor(item)" :can-delete="canDelete(item)" :busy="deleteBusy"
+              :selected="String(library.currentItem?.id || '') === String(item.id || '')"
+              @load="onLoad" @delete="requestDelete" />
           </div>
 
-          <div v-else class="text-medium-emphasis library-empty-state">
-            {{ t('libraryDialog.noItems') }}
-          </div>
         </section>
       </div>
     </template>
+    <v-dialog v-model="deleteDialogOpen" max-width="440" :persistent="deleteBusy"
+      :aria-labelledby="deleteHeadingId" @after-leave="restoreDeleteFocus">
+      <v-card>
+        <v-card-title :id="deleteHeadingId">{{ t('ux.confirmDelete') }}</v-card-title>
+        <v-card-text>
+          <p>{{ t('ux.deleteWarning', { title: pendingItem?.title || t('recordingSelector.untitled') }) }}</p>
+          <v-alert v-if="deleteFailed" type="error" variant="tonal" class="mt-3">{{ t('ux.deleteFailed') }}</v-alert>
+        </v-card-text>
+        <v-card-actions class="pa-4">
+          <v-spacer />
+          <v-btn variant="text" :disabled="deleteBusy" @click="cancelDeletion">{{ t('app.cancel') }}</v-btn>
+          <v-btn color="error" variant="flat" :loading="deleteBusy" :disabled="deleteBusy" @click="confirmDeletion">{{ t('libraryDialog.delete') }}</v-btn>
+        </v-card-actions>
+      </v-card>
+    </v-dialog>
   </div>
 </template>
 
@@ -540,7 +524,7 @@ watch(categoryRows, () => {
 
 .library-shell {
   display: grid;
-  grid-template-columns: minmax(220px, 0.8fr) minmax(320px, 1.2fr);
+  grid-template-columns: minmax(140px, 0.5fr) minmax(0, 1.5fr);
   flex: 1 1 auto;
   gap: 14px;
   min-height: 0;
@@ -550,6 +534,7 @@ watch(categoryRows, () => {
 
 .library-categories,
 .library-items {
+  min-width: 0;
   display: flex;
   flex-direction: column;
   min-height: 0;
@@ -576,29 +561,29 @@ watch(categoryRows, () => {
 }
 
 .library-list-item {
+  flex-shrink: 0;
   display: flex;
   align-items: center;
   width: 100%;
   border: 1px solid rgb(255 255 255 / 0.06);
   border-radius: 12px;
   background: color-mix(in srgb, var(--app-text) 4%, transparent);
-  min-height: 38px;
+  min-height: 44px;
   padding: 5px 10px;
   text-align: left;
   cursor: pointer;
-  transition: border-color 120ms ease, transform 120ms ease, box-shadow 120ms ease;
+  transition: border-color 120ms ease;
   box-shadow: none;
 }
 
 .library-list-item:hover {
   border-color: rgb(208 138 67 / 0.32);
-  transform: translateY(-1px);
   box-shadow: 0 6px 14px rgb(0 0 0 / 0.12);
 }
 
 .library-list-item:focus-visible {
-  outline: 2px solid rgb(208 138 67 / 0.45);
-  outline-offset: 2px;
+  outline: 2px solid var(--color-primary);
+  outline-offset: -2px;
 }
 
 .library-list-item.is-active {
@@ -644,12 +629,18 @@ watch(categoryRows, () => {
 }
 
 .library-empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: safe center;
+  text-align: center;
+  gap: 12px;
   border: 1px dashed rgb(255 255 255 / 0.12);
   border-radius: 14px;
   padding: 18px;
   flex: 1 1 auto;
   overflow: auto;
-  color: rgb(157 170 189 / 0.82);
+  color: var(--color-text-muted);
   background: transparent;
 }
 
@@ -705,5 +696,56 @@ watch(categoryRows, () => {
   .library-categories .library-list-title {
     font-size: 11px;
   }
+}
+
+.library-result-status {
+  flex: 0 0 auto;
+  font-size: 12px;
+  color: var(--color-text-muted);
+  padding-inline: 10px;
+}
+
+.library-list-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  width: 100%;
+}
+
+.library-panel :deep(.v-btn) { min-height: 44px; text-transform: none; }
+.library-panel :deep(.v-tab) { min-height: 44px; }
+.library-panel :deep(.v-btn:focus-visible) { outline: 2px solid var(--color-primary); outline-offset: -2px; }
+
+@media (max-width: 600px) {
+  .library-header { padding: 4px 0; }
+  .library-header-actions { flex-wrap: wrap; }
+  .library-search { min-width: 0; flex-basis: 160px; }
+  .library-shell { grid-template-columns: minmax(0, 1fr); grid-template-rows: auto minmax(0, 1fr); }
+  .library-categories .library-list { flex-direction: row; overflow-x: auto; padding-bottom: 6px; }
+  .library-categories .library-list-item { width: auto; max-width: 220px; }
+  .library-items { border-left: 0; padding: 0; }
+}
+
+@media (max-height: 500px) and (min-width: 601px) {
+  .library-header {
+    flex-wrap: nowrap;
+    padding-block: 4px;
+  }
+  .library-header-tabs {
+    flex: 0 1 auto;
+    overflow: hidden;
+  }
+  .library-header-actions {
+    flex: 1 1 auto;
+    min-width: 260px;
+  }
+  .library-search {
+    min-width: 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .library-list-item { transition: none; }
 }
 </style>

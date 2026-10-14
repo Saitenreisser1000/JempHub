@@ -1,7 +1,7 @@
 <template>
   <div class="fretboard-main" :class="{ 'is-read-only': !editable }">
     <div class="fretboard-pane-row">
-      <div class="fretboard-pane-body">
+      <div class="fretboard-pane-body" tabindex="0" role="region" :aria-label="t('modeSelector.fretboard')">
         <div v-if="editable" class="fretboard-pane-corner-tools">
           <v-menu location="bottom end" :close-on-content-click="false">
             <template #activator="{ props: menuProps }">
@@ -330,7 +330,7 @@ const playOrderScopeModel = computed({
 }
 
 .fretboard-dot-groups.is-empty .fretboard-dot-groups-list {
-  overflow: hidden;
+  overflow: auto;
 }
 .is-read-only {
   padding: 4px;
@@ -365,5 +365,39 @@ const playOrderScopeModel = computed({
 .fretboard-main :deep(.v-btn:focus-visible) {
   outline: 2px solid var(--color-primary);
   outline-offset: 2px;
+}
+
+.fretboard-pane-body:focus-visible {
+  outline: 2px solid var(--color-primary);
+  outline-offset: -2px;
+}
+
+@media (max-width: 600px) {
+  .fretboard-main { padding: 8px; }
+  .fretboard-pane-row { flex-direction: column; gap: 8px; }
+  .fretboard-pane-body {
+    flex: 0 0 220px;
+    min-height: 220px;
+    overflow-x: auto;
+    overflow-y: hidden;
+  }
+  .fretboard-pane-body :deep(.fretboard-body) {
+    flex-shrink: 0;
+    min-width: 680px;
+  }
+  .fretboard-pane-side,
+  .fretboard-pane-side-stack,
+  .is-read-only .fretboard-pane-side,
+  .is-read-only .fretboard-pane-side-stack {
+    width: 100%;
+    min-width: 0;
+    max-width: none;
+    height: auto;
+    min-height: 0;
+  }
+  .fretboard-pane-side { flex: 0 0 auto; }
+  .fretboard-dot-groups-list { flex-direction: row; flex-wrap: wrap; overflow: visible; }
+  .fretboard-dot-group-row { flex: 1 1 140px; min-width: 0; }
+  .fretboard-empty-hint { padding: 0; }
 }
 </style>

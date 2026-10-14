@@ -1,16 +1,17 @@
 <template>
   <div class="pane-b-stack">
     <div class="pane-b-tabs">
-      <v-tabs :model-value="workspacePanelTab" density="compact" :height="28" class="browser-tabs"
+      <v-tabs :model-value="workspacePanelTab" density="compact" :height="44" class="browser-tabs"
         @update:model-value="(v) => emit('update:workspacePanelTab', String(v || 'timeline'))">
-        <v-tab value="timeline" class="browser-tab">Timeline</v-tab>
-        <v-tab value="library" class="browser-tab">Library</v-tab>
+        <v-tab :id="`${panelId}-timeline-tab`" :aria-controls="`${panelId}-timeline`" value="timeline" class="browser-tab">{{ t('modeSelector.timeline') }}</v-tab>
+        <v-tab :id="`${panelId}-library-tab`" :aria-controls="`${panelId}-library`" value="library" class="browser-tab">{{ t('libraryDialog.title') }}</v-tab>
       </v-tabs>
     </div>
     <div class="pane-b-content">
+      <div v-show="workspacePanelTab === 'timeline'" :id="`${panelId}-timeline`" class="pane-b-panel"
+        role="tabpanel" :aria-labelledby="`${panelId}-timeline-tab`">
       <Timeline
         v-if="showTimeline"
-        v-show="workspacePanelTab === 'timeline'"
         ref="timelineRef"
         :num-frets="numFrets"
         :compact="compact"
@@ -20,18 +21,25 @@
         :external-redo-tick="externalRedoTick"
         @update-transport-visible="(v) => emit('update:transportVisible', Boolean(v))"
       />
+      </div>
+      <div v-show="workspacePanelTab === 'library'" :id="`${panelId}-library`" class="pane-b-panel"
+        role="tabpanel" :aria-labelledby="`${panelId}-library-tab`">
       <LibraryPanel
-        v-show="workspacePanelTab === 'library'"
         @update-required-frets="(value) => emit('update-required-frets', value)"
       />
+      </div>
     </div>
   </div>
 </template>
 
 <script setup>
-import { computed, ref } from 'vue'
+import { computed, ref, useId } from 'vue'
 import Timeline from '@/features/timeline'
 import { LibraryPanel } from '@/features/cloud'
+import { useI18n } from '@/i18n'
+
+const { t } = useI18n()
+const panelId = useId()
 
 defineProps({
   showTimeline: { type: Boolean, default: true },
@@ -124,21 +132,21 @@ defineExpose({
 
 .pane-b-tabs :deep(.browser-tabs) {
   min-height: 0;
-  --v-tabs-height: 28px;
+  --v-tabs-height: 44px;
 }
 
 .pane-b-tabs :deep(.browser-tabs .v-slide-group__container) {
-  min-height: 28px;
+  min-height: 44px;
 }
 
 .pane-b-tabs :deep(.browser-tabs .v-slide-group__content) {
-  min-height: 28px;
+  min-height: 44px;
   gap: 6px;
   align-items: end;
 }
 
 .pane-b-tabs :deep(.browser-tab) {
-  min-height: 28px;
+  min-height: 44px;
   min-width: 88px;
   border: 1px solid rgb(255 255 255 / 0.05);
   border-bottom: 0;
@@ -194,6 +202,17 @@ defineExpose({
 }
 
 .pane-b-content > * {
+  min-height: 0;
+  flex: 1 1 auto;
+}
+
+.pane-b-panel {
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.pane-b-panel > * {
   min-height: 0;
   flex: 1 1 auto;
 }

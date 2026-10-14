@@ -137,7 +137,6 @@ const {
   isPhoneView,
   isWatchView,
   isCompactView,
-  effectiveIsPortrait,
   isDevMode,
   appLayoutStyle,
   updateViewportOrientationFlag,
@@ -151,7 +150,6 @@ const timelineRef = computed(() =>
     ? compactTimelineRef.value
     : workspaceTimelineRef.value,
 )
-const showPhoneRotateOverlay = computed(() => isPhoneView.value && isReadOnly.value && effectiveIsPortrait.value)
 
 function setReadOnly(value) {
   closeDotGroupMenu()
@@ -474,7 +472,7 @@ onBeforeUnmount(() => {
       </button>
     </div>
 
-    <main v-show="!showPhoneRotateOverlay || mainView === 'dashboard'" class="app-content">
+    <main class="app-content">
       <WorkspaceLeftRail v-if="mainView !== 'dashboard' && !isCompactView && !isReadOnly" @clear="clearFretboardFromLeftRail" />
       <WorkspaceDashboardView
         v-if="mainView === 'dashboard'"
@@ -574,13 +572,7 @@ onBeforeUnmount(() => {
         </template>
       </LayoutManager>
     </main>
-    <main v-if="showPhoneRotateOverlay && mainView !== 'dashboard'" class="app-content app-phone-rotate-lock" aria-live="polite">
-      <div class="app-phone-rotate-card">
-        <div class="app-phone-rotate-title">Querformat</div>
-        <div class="app-phone-rotate-text">Bitte Gerät drehen, um Griffbrett, Tonegroups und Player im Querformat anzuzeigen.</div>
-      </div>
-    </main>
-    <div v-if="(isReadOnly || showTransportBar) && mainView !== 'dashboard' && !showPhoneRotateOverlay" class="app-transport-wrap">
+    <div v-if="(isReadOnly || showTransportBar) && mainView !== 'dashboard'" class="app-transport-wrap">
       <TransportBar :read-only="isReadOnly" :visible="isReadOnly || transportVisible" :is-playing="timelineIsPlaying" :tempo="transport.tempo"
         :click-enabled="timelineSettings.clickEnabled" :count-in-enabled="timelineSettings.countInEnabled"
         :auto-follow-enabled="timelineSettings.autoFollowEnabled" :loop-enabled="timelineSettings.loopEnabled"
@@ -672,6 +664,10 @@ onBeforeUnmount(() => {
 <style scoped src="jemp-design-system/app-shell.css"></style>
 
 <style scoped>
+.app-layout.is-compact-view {
+  --app-left-rail-w: 0px;
+}
+
 .app-layout.is-read-only {
   --app-left-rail-w: 0px;
   grid-template-rows: auto minmax(0, 1fr) auto;

@@ -51,33 +51,43 @@ export const useLibraryStore = defineStore('library', () => {
   }
 
   async function refresh() {
+    if (loading.value) return
     error.value = null
-    items.value = []
 
-    if (!isSupabaseConfigured || !supabase) return
-
-    loading.value = true
-    const { data, error: err } = await supabase
-      .from('library_items')
-      .select('id, kind, title, visibility, category, content, created_at, updated_at, owner_id')
-      .order('updated_at', { ascending: false })
-      .limit(100)
-
-    loading.value = false
-
-    if (err) {
-      if (isMissingTableError(err)) return
-      error.value = err
+    if (!isSupabaseConfigured || !supabase) {
+      items.value = []
       return
     }
 
-    items.value = Array.isArray(data) ? data : []
+    loading.value = true
+    try {
+      const { data, error: err } = await supabase
+        .from('library_items')
+        .select('id, kind, title, visibility, category, content, created_at, updated_at, owner_id')
+        .order('updated_at', { ascending: false })
+        .limit(100)
 
-    // Keep currentItem in sync (title/updated_at etc.) if it still exists.
-    const currentId = currentItem.value?.id
-    if (currentId) {
-      const next = items.value.find((i) => i?.id === currentId)
-      if (next) setCurrentItem(next)
+      if (err) {
+        if (isMissingTableError(err)) {
+          items.value = []
+          return
+        }
+        throw err
+      }
+
+      items.value = Array.isArray(data) ? data : []
+
+      // Keep currentItem in sync (title/updated_at etc.) if it still exists.
+      const currentId = currentItem.value?.id
+      if (currentId) {
+        const next = items.value.find((i) => i?.id === currentId)
+        if (next) setCurrentItem(next)
+      }
+    } catch (err) {
+      // Preserve the visible collection on transient failures so retry is useful.
+      error.value = err
+    } finally {
+      loading.value = false
     }
   }
 
@@ -177,6 +187,7 @@ export const useLibraryStore = defineStore('library', () => {
     }
 
     if (String(currentItem.value?.id ?? '') === itemId) clearCurrentItem()
+    items.value = items.value.filter((item) => String(item?.id ?? '') !== itemId)
     await refresh()
     return true
   }
