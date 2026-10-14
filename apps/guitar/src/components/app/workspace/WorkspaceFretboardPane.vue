@@ -2,6 +2,30 @@
   <div class="fretboard-main" :class="{ 'is-read-only': !editable }">
     <div class="fretboard-pane-row">
       <div class="fretboard-pane-body" tabindex="0" role="region" :aria-label="t('modeSelector.fretboard')">
+        <div v-if="editable && selectedNote" class="fretboard-selection-bar">
+          <span class="fretboard-selection-note">
+            <span class="fretboard-selection-swatch" :style="{ backgroundColor: selectedNote.color || 'currentColor' }" />
+            {{ t('activeTones.fretString', { fret: selectedNote.fret, string: selectedNote.string }) }}
+          </span>
+          <span class="fretboard-selection-timing">
+            {{ t('melodyInput.position', { bar: selectedPosition.bar, beat: formatNumber(selectedPosition.beat) }) }}
+            · {{ t('melodyInput.duration', { value: selectedDuration }) }}
+            <span v-if="selectedStack.total > 1" class="fretboard-selection-stack">
+              · {{ t('melodyInput.stackPosition', { current: selectedStack.current, total: selectedStack.total }) }}
+            </span>
+          </span>
+          <div class="fretboard-selection-actions">
+            <v-btn size="small" variant="tonal" prepend-icon="mdi-repeat" class="fretboard-selection-action"
+              :title="t('melodyInput.repeatHint')" @click="melodyInput.repeatSelected()">
+              {{ t('melodyInput.repeat') }}
+            </v-btn>
+            <v-btn size="small" variant="tonal" color="error" prepend-icon="mdi-trash-can-outline"
+              class="fretboard-selection-action" :title="t('melodyInput.deleteHint')"
+              @click="melodyInput.deleteSelected()">
+              {{ t('melodyInput.delete') }}
+            </v-btn>
+          </div>
+        </div>
         <div v-if="editable" class="fretboard-pane-corner-tools">
           <v-menu location="bottom end" :close-on-content-click="false">
             <template #activator="{ props: menuProps }">
@@ -88,6 +112,10 @@ import ColorPalette from '@/features/fretboard/components/ColorPalette.vue'
 import { useInstrumentStore } from '@/store/useInstrument'
 import { useTimelineSettingsStore } from '@/store/useTimelineSettings'
 import { useI18n } from '@/i18n'
+import {
+  musicalPositionForNote,
+  useSafeMelodyInput,
+} from '@/features/fretboard/composables/useSafeMelodyInput'
 
 const { t } = useI18n()
 
@@ -118,6 +146,35 @@ const emit = defineEmits([
 
 const instrument = useInstrumentStore()
 const timelineSettings = useTimelineSettingsStore()
+const melodyInput = useSafeMelodyInput({ editable: computed(() => props.editable) })
+const selectedNote = melodyInput.selectedNote
+
+const selectedPosition = computed(() =>
+  musicalPositionForNote(selectedNote.value, {
+    beatTop: timelineSettings.beatTop,
+    beatBottom: timelineSettings.beatBottom,
+  }),
+)
+
+const selectedDuration = computed(() => {
+  const noteValue = String(selectedNote.value?.noteValue || '').trim()
+  if (noteValue) return noteValue
+  return `${formatNumber(selectedNote.value?.lengthBlocks)} ${t('melodyInput.blocks')}`
+})
+
+const selectedStack = computed(() => {
+  const note = selectedNote.value
+  if (!note) return { current: 0, total: 0 }
+  const stack = melodyInput.notesAtPosition(note.fret, note.string)
+  const index = stack.findIndex((item) => String(item?.key || '') === String(note.key || ''))
+  return { current: index >= 0 ? index + 1 : 1, total: stack.length }
+})
+
+function formatNumber(value) {
+  const number = Number(value)
+  if (!Number.isFinite(number)) return '1'
+  return Number(number.toFixed(2)).toString()
+}
 
 const dotLabelModeModel = computed({
   get: () => String(props.dotLabelMode || 'rhythm'),
@@ -183,6 +240,65 @@ const playOrderScopeModel = computed({
   display: flex;
   align-items: center;
   justify-content: flex-end;
+}
+
+.fretboard-selection-bar {
+  position: absolute;
+  top: 8px;
+  left: 10px;
+  right: 64px;
+  z-index: 5;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 44px;
+  padding: 5px 6px 5px 10px;
+  border: 1px solid rgb(124 175 233 / 0.22);
+  border-radius: 12px;
+  background: color-mix(in srgb, var(--app-layer-overlay) 88%, transparent);
+  box-shadow: 0 8px 20px rgb(4 8 14 / 0.3);
+  backdrop-filter: blur(14px);
+}
+
+.fretboard-selection-note,
+.fretboard-selection-timing {
+  white-space: nowrap;
+}
+
+.fretboard-selection-note {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.fretboard-selection-swatch {
+  width: 11px;
+  height: 11px;
+  border-radius: 999px;
+  box-shadow: 0 0 0 2px rgb(255 255 255 / 0.28);
+}
+
+.fretboard-selection-timing {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  color: var(--color-text-muted);
+  font-size: 12px;
+}
+
+.fretboard-selection-actions {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-left: auto;
+}
+
+.fretboard-selection-action {
+  min-height: 44px;
+  text-transform: none;
+  font-weight: 700;
 }
 
 .fretboard-pane-side {
@@ -385,6 +501,14 @@ const playOrderScopeModel = computed({
     flex-shrink: 0;
     min-width: 680px;
   }
+  .fretboard-selection-bar {
+    position: sticky;
+    left: 0;
+    right: auto;
+    width: min(100%, 660px);
+    flex-wrap: wrap;
+  }
+  .fretboard-selection-timing { flex: 1 1 220px; }
   .fretboard-pane-side,
   .fretboard-pane-side-stack,
   .is-read-only .fretboard-pane-side,

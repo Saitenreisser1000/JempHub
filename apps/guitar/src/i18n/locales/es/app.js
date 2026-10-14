@@ -20,6 +20,17 @@ export default {
     deleteWarning: "«{title}» se eliminará permanentemente de la biblioteca en la nube. Esta acción no se puede deshacer.",
     deleteFailed: "No se pudo eliminar la canción. Inténtalo de nuevo o cancela.",
   },
+  melodyInput: {
+    select: 'Seleccionar',
+    repeat: 'Repetir',
+    delete: 'Eliminar',
+    repeatHint: 'Repetir esta nota en la siguiente posición de la cuadrícula',
+    deleteHint: 'Eliminar la nota seleccionada (se puede deshacer)',
+    position: 'Compás {bar}, tiempo {beat}',
+    duration: 'Duración {value}',
+    blocks: 'bloques',
+    stackPosition: 'Evento {current}/{total} aquí',
+  },
   layout: {
     resizePanes: "Redimensionar diapasón y línea de tiempo",
     resizeHint: "Flechas: tamaño · Mayús: pasos mayores · Intro o doble clic: restablecer",

@@ -10,16 +10,20 @@
       <div class="fb-tone-dot-context-title">
         S{{ string }} F{{ fret }}
       </div>
-      <button
+      <div
         v-for="item in items"
         :key="`tone-dot-context-${item.noteKey}`"
         class="fb-tone-dot-context-item"
-        type="button"
-        @click="emit('delete-item', item.noteKey)"
       >
-        <span class="item-label">{{ item.label }}</span>
-        <span class="item-action">{{ deleteLabel }}</span>
-      </button>
+        <button class="item-select" type="button" @click="emit('select-item', item.noteKey)">
+          <span class="item-label">{{ item.label }}</span>
+          <span class="item-action">{{ selectLabel }}</span>
+        </button>
+        <button class="item-delete" type="button" :aria-label="`${deleteLabel}: ${item.label}`"
+          :title="deleteLabel" @click="emit('delete-item', item.noteKey)">
+          ×
+        </button>
+      </div>
     </div>
   </Teleport>
 </template>
@@ -34,10 +38,11 @@ defineProps({
   string: { type: Number, default: 0 },
   fret: { type: Number, default: 0 },
   items: { type: Array, default: () => [] },
+  selectLabel: { type: String, default: 'Select' },
   deleteLabel: { type: String, default: 'Delete' },
 })
 
-const emit = defineEmits(['delete-item'])
+const emit = defineEmits(['select-item', 'delete-item'])
 </script>
 
 <style scoped>
@@ -65,22 +70,45 @@ const emit = defineEmits(['delete-item'])
 .fb-tone-dot-context-item {
   width: 100%;
   display: flex;
-  justify-content: space-between;
   align-items: center;
-  gap: 10px;
-  border: 0;
+  gap: 4px;
   border-radius: 7px;
-  padding: 7px 8px;
   background: transparent;
   color: rgba(236, 243, 250, 0.96);
-  text-align: left;
+}
+
+.fb-tone-dot-context-item:hover {
+  background: var(--app-glass-4);
+}
+
+.item-select,
+.item-delete {
+  min-height: 44px;
+  border: 0;
+  background: transparent;
+  color: inherit;
   font: inherit;
   font-size: 12px;
   cursor: pointer;
 }
 
-.fb-tone-dot-context-item:hover {
-  background: var(--app-glass-4);
+.item-select {
+  flex: 1 1 auto;
+  min-width: 0;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 10px;
+  padding: 7px 8px;
+  text-align: left;
+}
+
+.item-delete {
+  flex: 0 0 36px;
+  width: 36px;
+  color: rgba(255, 176, 176, 0.98);
+  font-size: 19px;
+  font-weight: 800;
 }
 
 .fb-tone-dot-context-item .item-label {
@@ -91,7 +119,7 @@ const emit = defineEmits(['delete-item'])
 }
 
 .fb-tone-dot-context-item .item-action {
-  color: rgba(255, 176, 176, 0.98);
+  color: var(--color-primary);
   font-weight: 700;
   flex-shrink: 0;
 }

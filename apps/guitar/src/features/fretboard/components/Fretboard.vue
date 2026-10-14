@@ -252,6 +252,10 @@
                   <text v-if="showPitchLabel(d)" class="fb-tone-dot-pitch" :x="toneDotX(d)" :y="toneDotY(d) + 11">
                     {{ toneDotPitchLabel(d) }}
                   </text>
+                  <g v-if="isToneDotStackFront(d)" class="fb-tone-dot-stack-badge" style="pointer-events: none">
+                    <circle :cx="toneDotX(d) + 11" :cy="toneDotY(d) - 11" r="8" />
+                    <text :x="toneDotX(d) + 11" :y="toneDotY(d) - 11">{{ d._stackCount }}</text>
+                  </g>
                 </g>
 
                 <ellipse v-if="leadInPreviewDot" class="fb-next-note-preview" :cx="toneDotX(leadInPreviewDot)"
@@ -393,7 +397,8 @@
     </div>
     <FretboardToneDotContextMenu :open="toneDotContextMenu.open && noteEditingEnabled" :x="toneDotContextMenu.x" :y="toneDotContextMenu.y"
       :string="toneDotContextMenu.string" :fret="toneDotContextMenu.fret" :items="toneDotContextMenu.items"
-      :delete-label="t('fretboardShow.delete')" @delete-item="onDeleteToneDotContextItem" />
+      :select-label="t('melodyInput.select')" :delete-label="t('fretboardShow.delete')"
+      @select-item="onSelectToneDotContextItem" @delete-item="onDeleteToneDotContextItem" />
   </div>
 </template>
 
@@ -411,6 +416,7 @@ import { useHandPositionsStore } from '@/store/useHandPositions'
 import { useHarmonyMenuStore } from '@/store/useHarmonyMenu'
 import { useFretboardOverlayStore } from '@/store/useFretboardOverlay'
 import { SURFACE_MODES, useUiModeStore } from '@/store/useUiMode'
+import { useSafeMelodyInput } from '@/features/fretboard/composables/useSafeMelodyInput'
 import {
   FRETBOARD_SHOW_DOT_PULSE_MS,
   FRETBOARD_SHOW_DOT_PULSE_RADIUS_FACTOR,
@@ -485,6 +491,7 @@ const { surfaceMode, surfacePolicy } = storeToRefs(uiMode)
 const isPlaying = computed(() => playState.value === 'playing')
 const isCommentMode = computed(() => surfaceMode.value === SURFACE_MODES.COMMENT)
 const noteEditingEnabled = computed(() => props.editable && surfacePolicy.value.canEditNotes)
+const melodyInput = useSafeMelodyInput({ editable: noteEditingEnabled })
 const isLeftHanded = computed(() => Boolean(settings.leftHanded))
 const commentPalette = computed(() =>
   Array.isArray(overlay.COMMENT_COLORS) ? overlay.COMMENT_COLORS : ['#f59e0b'],
@@ -1916,6 +1923,17 @@ function removeSelectionKey(noteKey) {
   else selection.clearSelection()
 }
 
+function promoteToneDotKey(posKey, noteKey) {
+  const position = String(posKey || '')
+  const key = String(noteKey || '')
+  if (!position || !key) return
+  const order = dotQueueByPosKey.value.get(position)
+  if (!Array.isArray(order) || !order.includes(key) || order[0] === key) return
+  const next = new Map(dotQueueByPosKey.value)
+  next.set(position, [key, ...order.filter((item) => String(item) !== key)])
+  dotQueueByPosKey.value = next
+}
+
 function buildToneDotContextItems(posKey) {
   const notes = notesByPosKey.value.get(String(posKey || ''))
   if (!Array.isArray(notes) || !notes.length) return []
@@ -1982,7 +2000,7 @@ function onToneDotContextMenu(d, event) {
   const fret = Number(fretRaw)
   const margin = 8
   const menuWidth = 290
-  const rowHeight = 34
+  const rowHeight = 44
   const menuHeight = 40 + items.length * rowHeight
   const vw = Number(globalThis?.innerWidth) || 0
   const vh = Number(globalThis?.innerHeight) || 0
@@ -2006,6 +2024,13 @@ function onToneDotContextMenu(d, event) {
   window.addEventListener('keydown', onGlobalToneDotContextKeyDown, true)
   window.addEventListener('resize', closeToneDotContextMenu, true)
   window.addEventListener('scroll', closeToneDotContextMenu, true)
+}
+
+function onSelectToneDotContextItem(noteKey) {
+  const selected = melodyInput.selectExistingNote(noteKey)
+  if (!selected?.key) return
+  promoteToneDotKey(`${Number(selected.string)}-${Number(selected.fret)}`, selected.key)
+  closeToneDotContextMenu()
 }
 
 function onDeleteToneDotContextItem(noteKey) {
@@ -2653,9 +2678,14 @@ function onBoardPointerDown(event) {
       }
       return
     }
-    const note = store.addNote(`${fret}-${string}`)
-    if (note?.key) selection.selectNote(note.key)
-    void debugLogToneDotPlacement('board-pointerdown-add', note, { fret, string })
+    const result = melodyInput.addOrSelectAtPosition(fret, string)
+    const note = result?.note
+    if (!note) return
+    if (result.kind === 'selected') {
+      promoteToneDotKey(`${string}-${fret}`, note.key)
+    } else {
+      void debugLogToneDotPlacement('board-pointerdown-add', note, { fret, string })
+    }
 
     if (!settings.soundPreviewEnabled) return
     const t = tuning.value
@@ -2774,7 +2804,6 @@ function onToneDotLeave(d) {
 }
 
 function onToneDotClick(d, event) {
-  if (surfaceMode.value === SURFACE_MODES.VIEW) return
   if (isCommentMode.value) {
     event?.stopPropagation?.()
     return
@@ -2783,9 +2812,7 @@ function onToneDotClick(d, event) {
   if (Date.now() < suppressClicksUntilMs) return
   const noteKey = noteKeyForToneDot(d)
   if (!noteKey) return
-  const groupColor = String(d?._groupColorKey || d?.color || '').trim()
-  if (groupColor) settings.setActiveDotGroupColor(groupColor)
-  if (settings.eraseMode) {
+  if (settings.eraseMode && noteEditingEnabled.value) {
     event?.stopPropagation?.()
     store.removeNote(noteKey)
     const keys = Array.isArray(selection.selectedNoteKeys) ? selection.selectedNoteKeys : []
@@ -2796,52 +2823,27 @@ function onToneDotClick(d, event) {
   }
 
   const isShift = Boolean(event?.shiftKey)
+  event?.stopPropagation?.()
+  const selected = melodyInput.selectExistingNote(noteKey, {
+    shiftKey: isShift,
+    cycleStack: props.editable && !isShift,
+  })
+  if (!selected) return
+  if (!isShift) promoteToneDotKey(posKeyForToneDot(d), selected.key)
 
-  // Shift-click toggles selection without creating a note.
-  // In show mode, clicking a ToneDot should always address exactly this dot.
-  if (!props.editable || isShift) event?.stopPropagation?.()
-
-  if (props.editable && !isShift) {
-    const fret = Number(d?.fret)
-    const string = Number(d?.string)
-    const added = store.addNote(`${fret}-${string}`)
-    if (added?.key) selection.selectNote(added.key)
-    void debugLogToneDotPlacement('tone-dot-click-stack-add', added, {
-      fret,
-      string,
-      sourceNoteKey: noteKey,
-    })
-
-    if (!settings.soundPreviewEnabled) return
-    const t = tuning.value
-    const midi = midiForFretString({ fret, string }, t)
-    if (!Number.isFinite(Number(midi))) return
-
-    const durationPlayheadMs = store.getNoteDurationMs(added)
-    const tempoValue = Number(transport.tempo) || 120
-    const tempoScale = 120 / tempoValue
-    const durScale = Number(settings.soundDurationScale)
-    const safeScale = Number.isFinite(durScale) && durScale > 0 ? durScale : 1
-    const durationAudioMs = Math.max(30, durationPlayheadMs * tempoScale * safeScale)
-
-    void playMidi(midi, { durationMs: durationAudioMs, instrumentType: instrument.instrumentType })
-    return
-  }
-
-  if (isShift) selection.toggleNoteInSelection(noteKey)
-  else selection.selectNote(noteKey)
+  const groupColor = String(selected?.color || d?._groupColorKey || d?.color || '').trim()
+  if (groupColor) settings.setActiveDotGroupColor(groupColor)
 
   // Preview sound only on normal click (matching existing behavior).
   if (isShift || !settings.soundPreviewEnabled) return
 
-  const fret = Number(d?.fret)
-  const string = Number(d?.string)
+  const fret = Number(selected?.fret)
+  const string = Number(selected?.string)
   const t = tuning.value
   const midi = midiForFretString({ fret, string }, t)
   if (!Number.isFinite(Number(midi))) return
 
-  const note = store.activeNotes.find((n) => String(n?.key ?? '') === String(noteKey))
-  const durationPlayheadMs = store.getNoteDurationMs(note)
+  const durationPlayheadMs = store.getNoteDurationMs(selected)
 
   const tempoValue = Number(transport.tempo) || 120
   const tempoScale = 120 / tempoValue
@@ -3000,6 +3002,10 @@ function toneDotY(d) {
   const string = Number(d?.string)
   const s = strings.value.find((x) => Number(x.string) === string)
   return Number(s?.y) || 0
+}
+
+function isToneDotStackFront(d) {
+  return Number(d?._stackCount) > 1 && Number(d?._stackIndex) === 0
 }
 
 function harmonyGuideFill(d) {
@@ -3759,6 +3765,20 @@ watch(
   transition:
     opacity 140ms cubic-bezier(0.22, 1, 0.36, 1),
     transform 180ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.fb-tone-dot-stack-badge circle {
+  fill: color-mix(in srgb, var(--app-layer-overlay) 88%, black 12%);
+  stroke: rgb(255 255 255 / 0.82);
+  stroke-width: 1.2;
+}
+
+.fb-tone-dot-stack-badge text {
+  fill: white;
+  text-anchor: middle;
+  dominant-baseline: central;
+  font-size: 8px;
+  font-weight: 900;
 }
 
 .fb-next-note-preview {

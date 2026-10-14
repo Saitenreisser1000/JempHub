@@ -20,6 +20,17 @@ export default {
     deleteWarning: "«{title}» verrà eliminato definitivamente dalla libreria cloud. L’operazione non può essere annullata.",
     deleteFailed: "Impossibile eliminare il brano. Riprova o annulla.",
   },
+  melodyInput: {
+    select: 'Seleziona',
+    repeat: 'Ripeti',
+    delete: 'Elimina',
+    repeatHint: 'Ripeti questa nota nella prossima posizione allineata alla griglia',
+    deleteHint: 'Elimina la nota selezionata (annullamento disponibile)',
+    position: 'Battuta {bar}, movimento {beat}',
+    duration: 'Durata {value}',
+    blocks: 'blocchi',
+    stackPosition: 'Evento {current}/{total} qui',
+  },
   layout: {
     resizePanes: "Ridimensiona tastiera e timeline",
     resizeHint: "Frecce: dimensioni · Maiusc: passi maggiori · Invio o doppio clic: ripristina",

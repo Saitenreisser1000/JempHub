@@ -20,6 +20,17 @@ export default {
     deleteWarning: "„{title}“ wird dauerhaft aus der Cloud-Bibliothek gelöscht. Dies lässt sich nicht rückgängig machen.",
     deleteFailed: "Der Song konnte nicht gelöscht werden. Versuche es erneut oder brich ab.",
   },
+  melodyInput: {
+    select: 'Auswählen',
+    repeat: 'Wiederholen',
+    delete: 'Löschen',
+    repeatHint: 'Diese Note an der nächsten rasterkonformen Position wiederholen',
+    deleteHint: 'Ausgewählte Note löschen (Rückgängig möglich)',
+    position: 'Takt {bar}, Schlag {beat}',
+    duration: 'Dauer {value}',
+    blocks: 'Raster',
+    stackPosition: 'Event {current}/{total} hier',
+  },
   layout: {
     resizePanes: "Griffbrett und Timeline aufteilen",
     resizeHint: "Pfeiltasten: Größe ändern · Shift: größere Schritte · Enter oder Doppelklick: zurücksetzen",

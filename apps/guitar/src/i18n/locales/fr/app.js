@@ -20,6 +20,17 @@ export default {
     deleteWarning: "« {title} » sera définitivement supprimé de la bibliothèque cloud. Cette action est irréversible.",
     deleteFailed: "Le morceau n’a pas pu être supprimé. Réessayez ou annulez.",
   },
+  melodyInput: {
+    select: 'Sélectionner',
+    repeat: 'Répéter',
+    delete: 'Supprimer',
+    repeatHint: 'Répéter cette note à la prochaine position alignée sur la grille',
+    deleteHint: 'Supprimer la note sélectionnée (annulation possible)',
+    position: 'Mesure {bar}, temps {beat}',
+    duration: 'Durée {value}',
+    blocks: 'blocs',
+    stackPosition: 'Événement {current}/{total} ici',
+  },
   layout: {
     resizePanes: "Redimensionner le manche et la timeline",
     resizeHint: "Flèches : taille · Maj : grands pas · Entrée ou double-clic : réinitialiser",

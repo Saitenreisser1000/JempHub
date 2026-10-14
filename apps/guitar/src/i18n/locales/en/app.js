@@ -20,6 +20,17 @@ export default {
     deleteWarning: "“{title}” will be permanently deleted from the cloud library. This cannot be undone.",
     deleteFailed: "The song could not be deleted. Try again or cancel.",
   },
+  melodyInput: {
+    select: 'Select',
+    repeat: 'Repeat',
+    delete: 'Delete',
+    repeatHint: 'Repeat this note at its next grid-aligned position',
+    deleteHint: 'Delete the selected note (Undo available)',
+    position: 'Bar {bar}, beat {beat}',
+    duration: 'Duration {value}',
+    blocks: 'blocks',
+    stackPosition: 'Event {current}/{total} here',
+  },
   layout: {
     resizePanes: "Resize fretboard and timeline",
     resizeHint: "Arrow keys: resize · Shift: larger steps · Enter or double-click: reset",
