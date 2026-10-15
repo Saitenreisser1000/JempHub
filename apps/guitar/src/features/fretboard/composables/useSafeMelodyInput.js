@@ -123,7 +123,7 @@ export function useSafeMelodyInput({ editable = true } = {}) {
       gridIndex: nextRepeatGridIndex(source, { snapEnabled: settings.snapEnabled }),
       placedAtMs: Date.now(),
     }
-    const [added] = notes.addNotes([repeated], { tag: 'repeat' })
+    const [added] = notes.addNotes([repeated], { tag: `repeat:${source.key}` })
     if (added?.key) selection.selectNote(added.key)
     return added ?? null
   }

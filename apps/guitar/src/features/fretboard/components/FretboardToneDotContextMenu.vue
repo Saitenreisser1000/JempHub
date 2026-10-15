@@ -104,8 +104,8 @@ const emit = defineEmits(['select-item', 'delete-item'])
 }
 
 .item-delete {
-  flex: 0 0 36px;
-  width: 36px;
+  flex: 0 0 44px;
+  width: 44px;
   color: rgba(255, 176, 176, 0.98);
   font-size: 19px;
   font-weight: 800;

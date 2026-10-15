@@ -104,6 +104,23 @@ describe('safe melody input', () => {
     expect(notes.undoStack).toHaveLength(1)
   })
 
+  it('keeps consecutive repeats as separate Undo steps', () => {
+    const { notes, selection, input } = setup()
+    seed(notes, [
+      { key: 'source', fret: 8, string: 4, gridIndex: 1, lengthBlocks: 1 },
+    ])
+    selection.selectNote('source')
+
+    const first = input.repeatSelected()
+    const second = input.repeatSelected()
+
+    expect(notes.activeNotes.map((note) => note.key)).toEqual(['source', first.key, second.key])
+    expect(notes.undo()).toBe(true)
+    expect(notes.activeNotes.map((note) => note.key)).toEqual(['source', first.key])
+    expect(notes.undo()).toBe(true)
+    expect(notes.activeNotes.map((note) => note.key)).toEqual(['source'])
+  })
+
   it('deletes only the primary selection and Undo restores add, repeat and delete', () => {
     const { notes, selection, input } = setup()
     const added = input.addOrSelectAtPosition(2, 1).note
@@ -153,6 +170,15 @@ describe('safe melody timing helpers', () => {
         { snapEnabled: true },
       ),
     ).toBeCloseTo(1.3333, 4)
+  })
+
+  it('uses the exact event end when snap is disabled', () => {
+    expect(
+      nextRepeatGridIndex(
+        { gridIndex: 2.1, lengthBlocks: 0.55, subdivision: 2 },
+        { snapEnabled: false },
+      ),
+    ).toBe(2.65)
   })
 
   it('formats a grid position as bar and beat', () => {

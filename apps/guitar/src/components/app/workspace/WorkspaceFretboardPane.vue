@@ -219,6 +219,7 @@ const playOrderScopeModel = computed({
   flex: 1 1 auto;
   min-height: 0;
   display: flex;
+  flex-direction: column;
   min-width: 0;
   position: relative;
   padding: 6px 8px 8px;
@@ -243,15 +244,14 @@ const playOrderScopeModel = computed({
 }
 
 .fretboard-selection-bar {
-  position: absolute;
-  top: 8px;
-  left: 10px;
-  right: 64px;
+  position: relative;
   z-index: 5;
+  flex: 0 0 auto;
   display: flex;
   align-items: center;
   gap: 10px;
   min-height: 44px;
+  margin: 0 56px 8px 0;
   padding: 5px 6px 5px 10px;
   border: 1px solid rgb(124 175 233 / 0.22);
   border-radius: 12px;
@@ -502,10 +502,6 @@ const playOrderScopeModel = computed({
     min-width: 680px;
   }
   .fretboard-selection-bar {
-    position: sticky;
-    left: 0;
-    right: auto;
-    width: min(100%, 660px);
     flex-wrap: wrap;
   }
   .fretboard-selection-timing { flex: 1 1 220px; }
