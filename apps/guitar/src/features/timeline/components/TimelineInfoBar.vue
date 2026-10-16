@@ -97,11 +97,7 @@
             <span class="timeline-tool-label">Copy</span>
           </button>
 
-          <button class="timeline-tool timeline-tool-action" type="button" :title="t('timelineView.paste')"
-            @click="emit('paste-at-playhead')">
-            <span class="timeline-tool-icon" aria-hidden="true">⎘</span>
-            <span class="timeline-tool-label">Paste</span>
-          </button>
+          <TimelinePasteButton button-class="timeline-tool-action" @paste="(options) => emit('paste-at-playhead', options)" />
         </div>
       </section>
     </div>
@@ -147,11 +143,7 @@
             <span class="timeline-tool-label">Copy</span>
           </button>
 
-          <button class="timeline-tool timeline-tool-wide" type="button" :title="t('timelineView.paste')"
-            @click="emit('paste-at-playhead')">
-            <span class="timeline-tool-icon" aria-hidden="true">⎘</span>
-            <span class="timeline-tool-label">Paste</span>
-          </button>
+          <TimelinePasteButton button-class="timeline-tool-wide" @paste="(options) => emit('paste-at-playhead', options)" />
         </div>
       </section>
 
@@ -236,6 +228,7 @@
 import { computed, ref, watch } from 'vue'
 import { TIMELINE_LAYOUT } from '@/features/timeline/config/timelineLayout'
 import { useI18n } from '@/i18n'
+import TimelinePasteButton from './TimelinePasteButton.vue'
 
 defineOptions({ name: 'TimelineInfoBar' })
 

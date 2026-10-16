@@ -3,6 +3,7 @@ import {
   buildPastedNotes,
   clampResizeLength,
   computePasteRange,
+  freshToneGroupColor,
   lengthVisualScale,
   snapStepBlocksForMode,
   visualLengthBlocks,
@@ -73,5 +74,50 @@ describe('domain/timelineInteractions', () => {
         placedAtMs: 123,
       },
     ])
+  })
+
+  it('reverse-pastes note events into the original chronological slots', () => {
+    const items = [
+      { fret: 3, string: 1, gridIndex: 2, lengthBlocks: 0.5, color: '#111' },
+      { fret: 5, string: 2, gridIndex: 4, lengthBlocks: 1, color: '#222' },
+      { fret: 7, string: 3, gridIndex: 5, lengthBlocks: 2, color: '#333' },
+    ]
+    const out = buildPastedNotes(items, {
+      baseGridIndex: 10,
+      safeMinGrid: 2,
+      createKey: (() => {
+        let i = 0
+        return () => `reverse-${++i}`
+      })(),
+      nowMs: 456,
+      reverseOrder: true,
+    })
+
+    expect(out.map(({ fret, string, gridIndex, lengthBlocks, color }) => ({
+      fret,
+      string,
+      gridIndex,
+      lengthBlocks,
+      color,
+    }))).toEqual([
+      { fret: 7, string: 3, gridIndex: 10, lengthBlocks: 2, color: '#333' },
+      { fret: 5, string: 2, gridIndex: 12, lengthBlocks: 1, color: '#222' },
+      { fret: 3, string: 1, gridIndex: 13, lengthBlocks: 0.5, color: '#111' },
+    ])
+  })
+
+  it('overrides every pasted note with one fresh tone-group color', () => {
+    const color = freshToneGroupColor(['#FF6B6B'], ['#FF6B6B', '#4ECDC4'])
+    expect(color).toBe('#4ECDC4')
+
+    const out = buildPastedNotes(
+      [
+        { fret: 1, string: 1, gridIndex: 1, color: '#111' },
+        { fret: 2, string: 2, gridIndex: 2, color: '#222' },
+      ],
+      { colorOverride: color },
+    )
+    expect(out.map((note) => note.color)).toEqual(['#4ECDC4', '#4ECDC4'])
+    expect(freshToneGroupColor(['#a'], ['#A'])).toMatch(/^hsl\(/)
   })
 })

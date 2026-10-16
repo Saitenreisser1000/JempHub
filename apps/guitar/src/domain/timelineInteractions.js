@@ -62,16 +62,35 @@ export function computePasteRange(items) {
 
 export function buildPastedNotes(
   items,
-  { baseGridIndex = 1, safeMinGrid = 1, createKey, nowMs = Date.now() } = {},
+  {
+    baseGridIndex = 1,
+    safeMinGrid = 1,
+    createKey,
+    nowMs = Date.now(),
+    reverseOrder = false,
+    colorOverride = '',
+  } = {},
 ) {
   if (!Array.isArray(items) || !items.length) return []
 
   const base = safePositiveNumber(baseGridIndex, 1)
   const minGrid = safePositiveNumber(safeMinGrid, 1)
   const makeKey = typeof createKey === 'function' ? createKey : () => null
+  const overrideColor = typeof colorOverride === 'string' ? colorOverride.trim() : ''
+  const chronological = items
+    .map((item, index) => ({ item, index }))
+    .sort((a, b) => {
+      const gridDelta = safePositiveNumber(a.item?.gridIndex, minGrid)
+        - safePositiveNumber(b.item?.gridIndex, minGrid)
+      return gridDelta || a.index - b.index
+    })
+  const sources = reverseOrder
+    ? chronological.map(({ item }) => item).reverse()
+    : chronological.map(({ item }) => item)
 
-  return items.map((src) => {
-    const offset = safePositiveNumber(src?.gridIndex, minGrid) - minGrid
+  return chronological.map(({ item: slot }, index) => {
+    const src = sources[index]
+    const offset = safePositiveNumber(slot?.gridIndex, minGrid) - minGrid
     const safeLen = safePositiveNumber(src?.lengthBlocks, 1)
     const subdivision = Number(src?.subdivision) === 3 ? 3 : 2
     const noteValue = normalizeNoteValue(src?.noteValue)
@@ -80,7 +99,11 @@ export function buildPastedNotes(
       key: makeKey(),
       fret: Number(src?.fret),
       string: Number(src?.string),
-      ...(typeof src?.color === 'string' && src.color ? { color: src.color } : {}),
+      ...(overrideColor
+        ? { color: overrideColor }
+        : typeof src?.color === 'string' && src.color
+          ? { color: src.color }
+          : {}),
       ...(noteValue ? { noteValue } : {}),
       gridIndex: Number(nextStart.toFixed(2)),
       lengthBlocks: Number(safeLen.toFixed(2)),
@@ -88,4 +111,22 @@ export function buildPastedNotes(
       placedAtMs: nowMs,
     }
   })
+}
+
+export function freshToneGroupColor(existingColors, palette = []) {
+  const used = new Set(
+    (Array.isArray(existingColors) ? existingColors : [])
+      .map((color) => String(color || '').trim().toLowerCase())
+      .filter(Boolean),
+  )
+  const available = (Array.isArray(palette) ? palette : [])
+    .map((color) => String(color || '').trim())
+    .find((color) => color && !used.has(color.toLowerCase()))
+  if (available) return available
+
+  for (let hue = 17; hue < 360; hue += 29) {
+    const candidate = `hsl(${hue} 72% 58%)`
+    if (!used.has(candidate.toLowerCase())) return candidate
+  }
+  return `hsl(${Date.now() % 360} 72% 58%)`
 }

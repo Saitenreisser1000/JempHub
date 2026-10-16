@@ -100,6 +100,7 @@ export const useSelectionStore = defineStore('selection', () => {
       const safeLen = Number.isFinite(lengthBlocks) && lengthBlocks > 0 ? lengthBlocks : 1
       const subdivision = subdivisionRaw === 3 ? 3 : 2
       const color = typeof n.color === 'string' && n.color ? n.color : null
+      const noteValue = typeof n.noteValue === 'string' && n.noteValue ? n.noteValue : null
 
       normalized.push({
         fret,
@@ -107,6 +108,7 @@ export const useSelectionStore = defineStore('selection', () => {
         gridIndex,
         lengthBlocks: safeLen,
         subdivision,
+        ...(noteValue ? { noteValue } : {}),
         ...(color ? { color } : {}),
       })
     }

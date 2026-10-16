@@ -71,7 +71,7 @@ import { useGrid } from '@/composables/useGrid'
 import { useCountInOverlay } from '@/features/timeline/composables/useCountInOverlay'
 import { TIMELINE_SNAP_STEP_BLOCKS } from '@/features/timeline/config/grid'
 import { TIMELINE_LAYOUT } from '@/features/timeline/config/timelineLayout'
-import { DEFAULT_HAND_POSITION_COLOR } from 'jemp-design-system/design-constants'
+import { COMMENT_COLORS, DEFAULT_HAND_POSITION_COLOR } from 'jemp-design-system/design-constants'
 import { normalizeNoteValue } from '@/config/noteValues'
 import { getTuning } from '@/domain/music/tunings'
 import { midiToNoteName } from '@/domain/music/notes'
@@ -89,6 +89,7 @@ import {
 import {
   buildPastedNotes,
   computePasteRange,
+  freshToneGroupColor,
   snapStepBlocksForMode,
 } from '@/domain/timelineInteractions'
 
@@ -486,27 +487,34 @@ function playheadGridIndex() {
   return Number.isFinite(idx) && idx > 0 ? idx : 1
 }
 
-function handlePasteAtPlayhead() {
+function handlePasteAtPlayhead(options = {}) {
   if (!surfacePolicy.value.canEditNotes) return
   if (playback.isPlaying.value) return
   const clip = selection.clipboardNotes
   const items = Array.isArray(clip?.value) ? clip.value : Array.isArray(clip) ? clip : []
   if (!items.length) return
 
-  const { safeMinGrid, endEdge } = computePasteRange(items)
+  const { safeMinGrid } = computePasteRange(items)
 
   const base = Math.max(1, playheadGridIndex())
 
+  const newToneGroup = Boolean(options?.newToneGroup)
+  const colorOverride = newToneGroup
+    ? freshToneGroupColor(store.activeNotes.map((note) => note?.color), COMMENT_COLORS)
+    : ''
   const notesToInsert = buildPastedNotes(items, {
     baseGridIndex: base,
     safeMinGrid,
     createKey: createNoteKey,
     nowMs: Date.now(),
+    reverseOrder: Boolean(options?.reverse),
+    colorOverride,
   })
-  store.addNotes(notesToInsert, { tag: 'paste' })
+  store.addNotes(notesToInsert, { tag: `paste:${notesToInsert[0]?.key || Date.now()}` })
 
   // Move playhead to the end of the pasted group.
   // Do this after reactive totals update so seekPlayhead doesn't get clamped to the old duration.
+  const { endEdge } = computePasteRange(notesToInsert)
   const timePerBlock = safeTimePerBlockMs(grid.grid.value.timePerBlock)
   const endMs = Math.max(
     0,
