@@ -33,24 +33,25 @@ function seed(notes, items) {
 describe('safe melody input', () => {
   it('adds and selects exactly one event on an empty position', () => {
     const { notes, selection, input } = setup()
-    const result = input.addOrSelectAtPosition(5, 2)
+    input.addAtPosition(5, 2)
 
-    expect(result?.kind).toBe('added')
     expect(notes.activeNotes).toHaveLength(1)
     expect(notes.activeNotes[0]).toMatchObject({ fret: 5, string: 2 })
     expect(selection.selectedNoteKey).toBe(notes.activeNotes[0].key)
   })
 
-  it('selects an occupied position without creating a duplicate', () => {
+  it('adds three distinct sequential events on three clicks at the same position', () => {
     const { notes, selection, input } = setup()
-    seed(notes, [{ key: 'first', fret: 3, string: 1, gridIndex: 2, lengthBlocks: 1 }])
 
-    const result = input.addOrSelectAtPosition(3, 1)
+    const first = input.addAtPosition(3, 1)
+    const second = input.addAtPosition(3, 1)
+    const third = input.addAtPosition(3, 1)
 
-    expect(result).toMatchObject({ kind: 'selected', note: { key: 'first' } })
-    expect(notes.activeNotes).toHaveLength(1)
-    expect(notes.undoStack).toHaveLength(0)
-    expect(selection.selectedNoteKey).toBe('first')
+    expect(notes.activeNotes).toHaveLength(3)
+    expect(new Set([first.key, second.key, third.key]).size).toBe(3)
+    expect([first, second, third].map((note) => note.gridIndex)).toEqual([1, 2, 3])
+    expect(notes.activeNotes.every((note) => note.fret === 3 && note.string === 1)).toBe(true)
+    expect(selection.selectedNoteKey).toBe(third.key)
   })
 
   it('cycles chronologically through stacked events while Shift keeps multiselect', () => {
@@ -123,7 +124,7 @@ describe('safe melody input', () => {
 
   it('deletes only the primary selection and Undo restores add, repeat and delete', () => {
     const { notes, selection, input } = setup()
-    const added = input.addOrSelectAtPosition(2, 1).note
+    const added = input.addAtPosition(2, 1)
     expect(notes.undo()).toBe(true)
     expect(notes.activeNotes).toHaveLength(0)
     expect(notes.redo()).toBe(true)
@@ -150,7 +151,7 @@ describe('safe melody input', () => {
 
     input.selectExistingNote('view-note')
     expect(selection.selectedNoteKey).toBe('view-note')
-    expect(input.addOrSelectAtPosition(5, 2)).toBeNull()
+    expect(input.addAtPosition(5, 2)).toBeNull()
     expect(input.repeatSelected()).toBeNull()
     expect(input.deleteSelected()).toBeNull()
     expect(notes.activeNotes.map((note) => note.key)).toEqual(['view-note'])

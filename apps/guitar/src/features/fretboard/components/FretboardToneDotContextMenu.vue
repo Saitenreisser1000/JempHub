@@ -3,23 +3,28 @@
     <div
       v-if="open"
       class="fb-tone-dot-context-menu"
+      role="menu"
+      :aria-label="title"
       :style="{ left: `${x}px`, top: `${y}px` }"
       @pointerdown.stop
       @contextmenu.prevent
     >
       <div class="fb-tone-dot-context-title">
-        S{{ string }} F{{ fret }}
+        {{ title }}
       </div>
       <div
         v-for="item in items"
         :key="`tone-dot-context-${item.noteKey}`"
         class="fb-tone-dot-context-item"
       >
-        <button class="item-select" type="button" @click="emit('select-item', item.noteKey)">
-          <span class="item-label">{{ item.label }}</span>
+        <button class="item-select" type="button" role="menuitem" @click="emit('select-item', item.noteKey)">
+          <span class="item-copy">
+            <span class="item-label">{{ item.label }}</span>
+            <span class="item-timing">{{ item.timing }}</span>
+          </span>
           <span class="item-action">{{ selectLabel }}</span>
         </button>
-        <button class="item-delete" type="button" :aria-label="`${deleteLabel}: ${item.label}`"
+        <button class="item-delete" type="button" role="menuitem" :aria-label="`${deleteLabel}: ${item.label}`"
           :title="deleteLabel" @click="emit('delete-item', item.noteKey)">
           ×
         </button>
@@ -35,8 +40,7 @@ defineProps({
   open: { type: Boolean, default: false },
   x: { type: Number, default: 0 },
   y: { type: Number, default: 0 },
-  string: { type: Number, default: 0 },
-  fret: { type: Number, default: 0 },
+  title: { type: String, default: '' },
   items: { type: Array, default: () => [] },
   selectLabel: { type: String, default: 'Select' },
   deleteLabel: { type: String, default: 'Delete' },
@@ -61,7 +65,7 @@ const emit = defineEmits(['select-item', 'delete-item'])
 }
 
 .fb-tone-dot-context-title {
-  font-size: 11px;
+  font-size: 12px;
   font-weight: 800;
   color: rgba(210, 225, 242, 0.9);
   padding: 4px 6px 6px;
@@ -114,6 +118,21 @@ const emit = defineEmits(['select-item', 'delete-item'])
 .fb-tone-dot-context-item .item-label {
   min-width: 0;
   overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.item-copy {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.item-timing {
+  overflow: hidden;
+  color: var(--app-text-dim);
+  font-size: 11px;
   text-overflow: ellipsis;
   white-space: nowrap;
 }

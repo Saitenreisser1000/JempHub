@@ -21,6 +21,7 @@ export default {
     deleteFailed: "The song could not be deleted. Try again or cancel.",
   },
   melodyInput: {
+    stackEvent: 'Tone {index}',
     select: 'Select',
     repeat: 'Repeat',
     delete: 'Delete',

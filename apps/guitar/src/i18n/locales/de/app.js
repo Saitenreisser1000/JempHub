@@ -21,6 +21,7 @@ export default {
     deleteFailed: "Der Song konnte nicht gelöscht werden. Versuche es erneut oder brich ab.",
   },
   melodyInput: {
+    stackEvent: 'Ton {index}',
     select: 'Auswählen',
     repeat: 'Wiederholen',
     delete: 'Löschen',

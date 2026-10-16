@@ -65,6 +65,16 @@ describe('AppMenuBar', () => {
     expect(html.match(/aria-label="Account"/g)).toHaveLength(1)
   })
 
+  it('marks the current workspace mode as pressed', async () => {
+    const viewHtml = await renderMenu({ readOnly: true })
+    const editHtml = await renderMenu({ readOnly: false })
+
+    expect(viewHtml).toMatch(/aria-pressed="true"[^>]*>View<\/button>/)
+    expect(viewHtml).toMatch(/aria-pressed="false"[^>]*>Edit<\/button>/)
+    expect(editHtml).toMatch(/aria-pressed="false"[^>]*>View<\/button>/)
+    expect(editHtml).toMatch(/aria-pressed="true"[^>]*>Edit<\/button>/)
+  })
+
   it('labels the signed-in account action as logout', async () => {
     const html = await renderMenu({ authIsSignedIn: true })
 

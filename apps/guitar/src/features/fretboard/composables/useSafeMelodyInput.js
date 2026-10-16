@@ -99,17 +99,12 @@ export function useSafeMelodyInput({ editable = true } = {}) {
     return target
   }
 
-  function addOrSelectAtPosition(fret, string) {
-    const stack = notesAtPosition(fret, string)
-    if (stack.length) {
-      const target = selectExistingNote(stack[stack.length - 1]?.key, { cycleStack: true })
-      return target ? { kind: 'selected', note: target } : null
-    }
+  function addAtPosition(fret, string) {
     if (!canEdit.value) return null
 
     const note = notes.addNote(`${Number(fret)}-${Number(string)}`)
     if (note?.key) selection.selectNote(note.key)
-    return note ? { kind: 'added', note } : null
+    return note ?? null
   }
 
   function repeatSelected() {
@@ -149,7 +144,7 @@ export function useSafeMelodyInput({ editable = true } = {}) {
     selectedNote,
     notesAtPosition,
     selectExistingNote,
-    addOrSelectAtPosition,
+    addAtPosition,
     repeatSelected,
     deleteSelected,
   }

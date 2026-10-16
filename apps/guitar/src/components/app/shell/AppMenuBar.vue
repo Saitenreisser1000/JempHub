@@ -203,10 +203,11 @@
         </v-list>
       </v-menu>
     </div>
-    <v-btn-toggle class="app-mode-switch" :model-value="readOnly" mandatory divided
+    <v-btn-toggle class="app-mode-switch" :model-value="readOnly" mandatory
+      density="compact" variant="text" selected-class="app-mode-switch-active"
       :aria-label="t('ux.workspaceMode')" @update:model-value="(value) => emit('update:readOnly', value)">
-      <v-btn :value="true" size="small" prepend-icon="mdi-eye-outline">{{ t('ux.viewMode') }}</v-btn>
-      <v-btn :value="false" size="small" prepend-icon="mdi-pencil-outline">{{ t('ux.editMode') }}</v-btn>
+      <v-btn :value="true" size="small" prepend-icon="mdi-eye-outline" :aria-pressed="readOnly">{{ t('ux.viewMode') }}</v-btn>
+      <v-btn :value="false" size="small" prepend-icon="mdi-pencil-outline" :aria-pressed="!readOnly">{{ t('ux.editMode') }}</v-btn>
     </v-btn-toggle>
   </nav>
 </template>
@@ -357,6 +358,27 @@ const emit = defineEmits([
   flex: 0 0 auto;
   height: auto;
   margin-left: auto;
+  padding: 3px;
+  border: 1px solid var(--app-border);
+  border-radius: 11px;
+  background: color-mix(in srgb, var(--app-layer-0) 70%, transparent);
+  box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.04);
+}
+
+.app-mode-switch :deep(.v-btn) {
+  min-height: 32px;
+  min-width: 0;
+  padding-inline: 10px;
+  border-radius: 8px !important;
+  color: var(--app-text-muted);
+  font-size: 12px;
+  font-weight: 650;
+}
+
+.app-mode-switch :deep(.app-mode-switch-active) {
+  background: color-mix(in srgb, var(--color-primary) 18%, var(--app-layer-2));
+  color: var(--app-text);
+  box-shadow: 0 1px 5px rgb(0 0 0 / 0.2), inset 0 0 0 1px color-mix(in srgb, var(--color-primary) 42%, transparent);
 }
 
 .app-menu-bar :deep(.v-btn) {
@@ -374,5 +396,7 @@ const emit = defineEmits([
   .app-song-title { flex: 1 1 100px; }
   .app-menu-bar { gap: 6px; padding: 6px 8px; }
   .app-menu-bar :deep(.v-btn) { min-height: 44px; }
+  .app-mode-switch { width: 100%; margin-left: 0; }
+  .app-mode-switch :deep(.v-btn) { flex: 1 1 50%; }
 }
 </style>

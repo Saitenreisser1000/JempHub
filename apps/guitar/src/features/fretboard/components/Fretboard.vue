@@ -396,7 +396,7 @@
       {{ tooltip.text }}
     </div>
     <FretboardToneDotContextMenu :open="toneDotContextMenu.open && noteEditingEnabled" :x="toneDotContextMenu.x" :y="toneDotContextMenu.y"
-      :string="toneDotContextMenu.string" :fret="toneDotContextMenu.fret" :items="toneDotContextMenu.items"
+      :title="toneDotContextMenu.title" :items="toneDotContextMenu.items"
       :select-label="t('melodyInput.select')" :delete-label="t('fretboardShow.delete')"
       @select-item="onSelectToneDotContextItem" @delete-item="onDeleteToneDotContextItem" />
   </div>
@@ -1733,8 +1733,7 @@ const toneDotContextMenu = ref({
   x: 0,
   y: 0,
   posKey: '',
-  string: 0,
-  fret: 0,
+  title: '',
   items: [],
 })
 const textDragState = ref({
@@ -1937,27 +1936,26 @@ function promoteToneDotKey(posKey, noteKey) {
 function buildToneDotContextItems(posKey) {
   const notes = notesByPosKey.value.get(String(posKey || ''))
   if (!Array.isArray(notes) || !notes.length) return []
-  const sorted = [...notes]
-  sorted.sort((a, b) => {
-    const ta = Number(a?.placedAtMs) || 0
-    const tb = Number(b?.placedAtMs) || 0
-    if (ta !== tb) return tb - ta
-    return String(a?.key ?? '').localeCompare(String(b?.key ?? ''))
-  })
+  const [stringRaw, fretRaw] = String(posKey || '').split('-')
+  const sorted = melodyInput.notesAtPosition(Number(fretRaw), Number(stringRaw))
   return sorted
-    .map((n) => {
+    .map((n, index) => {
       const noteKey = String(n?.key ?? '')
       if (!noteKey) return null
       const grid = Number(n?.gridIndex)
       const length = Number(n?.lengthBlocks)
       const safeLength = Number.isFinite(length) && length > 0 ? length : 1
-      const label = Number.isFinite(grid)
+      const timing = Number.isFinite(grid)
         ? t('noteEvent.dragTooltip', {
           grid: grid.toFixed(2),
           length: Math.max(0.01, safeLength).toFixed(2),
         })
         : noteKey
-      return { noteKey, label }
+      return {
+        noteKey,
+        label: t('melodyInput.stackEvent', { index: index + 1 }),
+        timing,
+      }
     })
     .filter(Boolean)
 }
@@ -1969,8 +1967,7 @@ function closeToneDotContextMenu() {
     x: 0,
     y: 0,
     posKey: '',
-    string: 0,
-    fret: 0,
+    title: '',
     items: [],
   }
   window.removeEventListener('pointerdown', onGlobalToneDotContextPointerDown, true)
@@ -2016,8 +2013,10 @@ function onToneDotContextMenu(d, event) {
     x,
     y,
     posKey: String(posKey || ''),
-    string: Number.isFinite(string) ? string : 0,
-    fret: Number.isFinite(fret) ? fret : 0,
+    title: t('activeTones.fretString', {
+      fret: Number.isFinite(fret) ? fret : 0,
+      string: Number.isFinite(string) ? string : 0,
+    }),
     items,
   }
   window.addEventListener('pointerdown', onGlobalToneDotContextPointerDown, true)
@@ -2678,14 +2677,9 @@ function onBoardPointerDown(event) {
       }
       return
     }
-    const result = melodyInput.addOrSelectAtPosition(fret, string)
-    const note = result?.note
+    const note = melodyInput.addAtPosition(fret, string)
     if (!note) return
-    if (result.kind === 'selected') {
-      promoteToneDotKey(`${string}-${fret}`, note.key)
-    } else {
-      void debugLogToneDotPlacement('board-pointerdown-add', note, { fret, string })
-    }
+    void debugLogToneDotPlacement('board-pointerdown-add', note, { fret, string })
 
     if (!settings.soundPreviewEnabled) return
     const t = tuning.value
@@ -2822,14 +2816,12 @@ function onToneDotClick(d, event) {
     return
   }
 
-  const isShift = Boolean(event?.shiftKey)
   event?.stopPropagation?.()
-  const selected = melodyInput.selectExistingNote(noteKey, {
-    shiftKey: isShift,
-    cycleStack: props.editable && !isShift,
-  })
+  const isShift = Boolean(event?.shiftKey)
+  const selected = isShift
+    ? melodyInput.selectExistingNote(noteKey, { shiftKey: true })
+    : melodyInput.addAtPosition(d.fret, d.string)
   if (!selected) return
-  if (!isShift) promoteToneDotKey(posKeyForToneDot(d), selected.key)
 
   const groupColor = String(selected?.color || d?._groupColorKey || d?.color || '').trim()
   if (groupColor) settings.setActiveDotGroupColor(groupColor)

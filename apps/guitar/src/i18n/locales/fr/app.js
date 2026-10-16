@@ -21,6 +21,7 @@ export default {
     deleteFailed: "Le morceau n’a pas pu être supprimé. Réessayez ou annulez.",
   },
   melodyInput: {
+    stackEvent: 'Note {index}',
     select: 'Sélectionner',
     repeat: 'Répéter',
     delete: 'Supprimer',
