@@ -57,7 +57,11 @@ const emit = defineEmits(['select-item', 'delete-item'])
   max-width: min(340px, calc(100vw - 16px));
   max-height: min(50vh, 360px);
   overflow: auto;
-  background: linear-gradient(180deg, color-mix(in srgb, var(--app-layer-1) 96%, transparent), color-mix(in srgb, var(--app-layer-0) 96%, transparent));
+  background: linear-gradient(
+    180deg,
+    var(--app-layer-1, #2a313b),
+    color-mix(in srgb, var(--app-layer-0, #1e242c) 90%, black 10%)
+  );
   border: 1px solid rgba(220, 233, 248, 0.2);
   border-radius: 10px;
   box-shadow: 0 10px 26px rgba(0, 0, 0, 0.35);
