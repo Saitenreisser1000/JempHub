@@ -93,6 +93,86 @@ export function chordNotes(root, chord) {
   return chord.tones.map(([semis, steps]) => transpose(root, semis, steps, 1))
 }
 
+// ---------------------------------------------------------------- Umkehrungen
+
+const POS_DE = ['Grundstellung', '1. Umkehrung', '2. Umkehrung', '3. Umkehrung']
+const POS_EN = ['root position', '1st inversion', '2nd inversion', '3rd inversion']
+const FIGURES = { 3: ['', '6', '6/4'], 4: ['7', '6/5', '4/3', '2'] }
+const INV_BASE = { maj: ['Dur', 'major'], min: ['Moll', 'minor'], dom7: ['Dom7', 'dom7'] }
+
+export const INVERSIONS = Object.entries(INV_BASE).flatMap(([chord, [de, en]]) =>
+  CHORD[chord].tones.map((_, inv) => ({
+    id: `${chord}-${inv}`, chord, inv,
+    de: [`${de}, ${POS_DE[inv]}`, FIGURES[CHORD[chord].tones.length][inv]],
+    en: [`${en}, ${POS_EN[inv]}`, FIGURES[CHORD[chord].tones.length][inv]],
+  })))
+export const INVERSION = Object.fromEntries(INVERSIONS.map((i) => [i.id, i]))
+
+export const INVERSION_PRESETS = {
+  1: ['maj-0', 'maj-1', 'maj-2'],
+  2: ['maj-0', 'maj-1', 'maj-2', 'min-0', 'min-1', 'min-2'],
+  3: ['dom7-0', 'dom7-1', 'dom7-2', 'dom7-3'],
+  4: INVERSIONS.map((i) => i.id),
+}
+
+// Akkordtöne von unten nach oben; die untersten inv Töne wandern eine Oktave hinauf.
+export function invertNotes(notes, inv) {
+  return notes.slice(inv).concat(notes.slice(0, inv).map((n) => transpose(n, 12, 7, 1)))
+}
+// Stufen in der Reihenfolge der umgekehrten Töne
+export const inversionDegrees = (item) => {
+  const d = CHORD[item.chord].tones.map((t) => t[2])
+  return d.slice(item.inv).concat(d.slice(0, item.inv))
+}
+
+// ---------------------------------------------------------------- Tonleitern
+// steps: [Halbtöne, Stammtonschritte] je Schritt
+
+const hepta = (semis) => semis.map((x) => [x, 1])
+export const SCALES = [
+  { id: 'ion', steps: hepta([2, 2, 1, 2, 2, 2, 1]), de: ['Dur', 'ionisch'], en: ['major', 'Ionian'] },
+  { id: 'aeo', steps: hepta([2, 1, 2, 2, 1, 2, 2]), de: ['Moll', 'äolisch'], en: ['minor', 'Aeolian'] },
+  { id: 'harm', steps: hepta([2, 1, 2, 2, 1, 3, 1]), de: ['harmonisch Moll', ''], en: ['harmonic minor', ''] },
+  { id: 'mel', steps: hepta([2, 1, 2, 2, 2, 2, 1]), de: ['melodisch Moll', ''], en: ['melodic minor', ''] },
+  { id: 'dor', steps: hepta([2, 1, 2, 2, 2, 1, 2]), de: ['dorisch', ''], en: ['Dorian', ''] },
+  { id: 'phr', steps: hepta([1, 2, 2, 2, 1, 2, 2]), de: ['phrygisch', ''], en: ['Phrygian', ''] },
+  { id: 'lyd', steps: hepta([2, 2, 2, 1, 2, 2, 1]), de: ['lydisch', ''], en: ['Lydian', ''] },
+  { id: 'mix', steps: hepta([2, 2, 1, 2, 2, 1, 2]), de: ['mixolydisch', ''], en: ['Mixolydian', ''] },
+  { id: 'loc', steps: hepta([1, 2, 2, 1, 2, 2, 2]), de: ['lokrisch', ''], en: ['Locrian', ''] },
+  { id: 'pmaj', steps: [[2, 1], [2, 1], [3, 2], [2, 1], [3, 2]], de: ['Dur-Pentatonik', ''], en: ['major pentatonic', ''] },
+  { id: 'pmin', steps: [[3, 2], [2, 1], [2, 1], [3, 2], [2, 1]], de: ['Moll-Pentatonik', ''], en: ['minor pentatonic', ''] },
+]
+export const SCALE = Object.fromEntries(SCALES.map((s) => [s.id, s]))
+
+export const SCALE_PRESETS = {
+  1: ['ion', 'aeo'],
+  2: ['ion', 'aeo', 'harm', 'mel'],
+  3: ['ion', 'aeo', 'dor', 'phr', 'mix', 'pmaj', 'pmin'],
+  4: ['ion', 'aeo', 'dor', 'phr', 'lyd', 'mix', 'loc', 'pmaj', 'pmin'],
+  5: SCALES.map((s) => s.id),
+}
+
+// Töne der Tonleiter aufwärts, mit Grundton oben
+export function scaleNotes(root, scale) {
+  const out = [root]
+  let semis = 0, steps = 0
+  for (const [h, l] of scale.steps) {
+    semis += h
+    steps += l
+    out.push(transpose(root, semis, steps, 1))
+  }
+  return out
+}
+
+// Stufe eines Tons über dem Grundton, z. B. '♭3', '♯4'
+const MAJOR = [0, 2, 4, 5, 7, 9, 11]
+export function degreeLabel(root, note) {
+  const steps = stepOf(note) - stepOf(root)
+  const k = ((steps % 7) + 7) % 7
+  const diff = midiOf(note) - midiOf(root) - 12 * Math.floor(steps / 7) - MAJOR[k]
+  return (diff < 0 ? '♭'.repeat(-diff) : '♯'.repeat(diff)) + (k + 1)
+}
+
 // ---------------------------------------------------------------- Grundtöne
 
 // Grundtöne zwischen lowMidi und highMidi; naturalsOnly: nur Stammtöne.

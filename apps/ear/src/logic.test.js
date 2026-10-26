@@ -1,6 +1,6 @@
 import { describe, it } from 'node:test'
 import assert from 'node:assert/strict'
-import { INTERVALS, INTERVAL, CHORDS, CHORD, transpose, chordNotes, midiOf, noteLabel, rootPool, clefFor, staffPos, guitarPositions } from './theory.js'
+import { INTERVALS, INTERVAL, CHORDS, CHORD, transpose, chordNotes, midiOf, noteLabel, rootPool, clefFor, staffPos, guitarPositions, invertNotes } from './theory.js'
 import { INTERVAL_DEFAULTS, CHORD_DEFAULTS, genInterval, genChord, intervalChoices, check, intervalKey } from './quiz.js'
 import { createStore } from './stats.js'
 
@@ -77,6 +77,49 @@ describe('quiz', () => {
     let hits = 0
     for (let i = 0; i < 1000; i++) if (genInterval(INTERVAL_DEFAULTS, null, (k) => (k === intervalKey('M6') ? 30 : 1)).id === 'M6') hits++
     assert.ok(hits > 500, 'got ' + hits)
+  })
+})
+
+describe('inversions and scales', () => {
+  it('inverts chords and names the degrees', async () => {
+    const { INVERSION, inversionDegrees } = await import('./theory.js')
+    const names = (id) => { const it = INVERSION[id]; return invertNotes(chordNotes(C4, CHORD[it.chord]), it.inv).map((n) => noteLabel(n, 'de') + n.o).join(' ') }
+    assert.equal(names('maj-1'), 'E4 G4 C5')
+    assert.equal(names('min-2'), 'G4 C5 Es5')
+    assert.equal(names('dom7-3'), 'B4 C5 E5 G5')
+    assert.deepEqual(inversionDegrees(INVERSION['dom7-3']), ['♭7', '1', '3', '5'])
+    assert.equal(INVERSION['maj-2'].de[1], '6/4')
+  })
+  it('generates inversions in range with the bass first', async () => {
+    const { genInversion, INVERSION_DEFAULTS } = await import('./quiz.js')
+    const { INVERSIONS } = await import('./theory.js')
+    for (let i = 0; i < 300; i++) {
+      const q = genInversion({ ...INVERSION_DEFAULTS, selected: INVERSIONS.map((x) => x.id), roots: 'all' }, null)
+      const ms = q.notes.map(midiOf)
+      assert.ok(ms.every((m, k) => k === 0 || m > ms[k - 1]))
+      assert.ok(ms[0] >= 48 && ms[ms.length - 1] <= 79)
+      assert.ok(q.notes.every((n) => Math.abs(n.a) <= 1))
+    }
+  })
+  it('spells scales and their degrees', async () => {
+    const { SCALE, SCALES, scaleNotes, degreeLabel } = await import('./theory.js')
+    const de = (id, root = C4) => scaleNotes(root, SCALE[id]).map((n) => noteLabel(n, 'de')).join(' ')
+    assert.equal(de('harm'), 'C D Es F G As H C')
+    assert.equal(de('lyd', { l: 3, a: 0, o: 4 }), 'F G A H C D E F')
+    assert.equal(de('pmin', { l: 5, a: 0, o: 3 }), 'A C D E G A')
+    assert.equal(scaleNotes(C4, SCALE.loc).map((n) => degreeLabel(C4, n)).join(' '), '1 ♭2 ♭3 4 ♭5 ♭6 ♭7 1')
+    for (const s of SCALES) assert.equal(s.steps.reduce((a, [h]) => a + h, 0), 12)
+  })
+  it('generates scales in every direction', async () => {
+    const { genScale, SCALE_DEFAULTS } = await import('./quiz.js')
+    const { SCALES } = await import('./theory.js')
+    for (let i = 0; i < 300; i++) {
+      const q = genScale({ ...SCALE_DEFAULTS, selected: SCALES.map((x) => x.id), dirs: ['up', 'down', 'updown'], roots: 'all' }, null)
+      assert.ok(q.notes.every((n) => Math.abs(n.a) <= 1))
+      assert.equal(midiOf(q.notes[q.notes.length - 1]) - midiOf(q.notes[0]), 12)
+      assert.equal(q.seq.length, q.dir === 'updown' ? q.notes.length * 2 - 1 : q.notes.length)
+      assert.ok(midiOf(q.notes[q.notes.length - 1]) <= 76)
+    }
   })
 })
 

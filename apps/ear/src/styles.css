@@ -239,3 +239,4 @@ h1, h2 { font-family: var(--font-display); letter-spacing: -.015em; margin: 0; t
   .top .seg button { padding: 0 7px; }
 }
 @media (pointer: coarse) { .kbd, .abtn .k { display: none; } }
+@media (max-width: 640px) { .where { overflow-x: auto; -webkit-overflow-scrolling: touch; } .where .fret { min-width: 560px; } }
