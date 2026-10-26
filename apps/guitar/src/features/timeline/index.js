@@ -1,5 +1,0 @@
-export { default } from './components/Timeline.vue'
-export * from './config/grid'
-export * from './config/playbackVisuals'
-export * from './config/timelineLayout'
-export * from './config/timelineBehavior'

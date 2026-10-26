@@ -32,9 +32,11 @@ npm run dev --workspace notejemp
 npm run dev --workspace stemplayer-backend
 ```
 
-Die Frontend-Artefakte liegen jeweils unter `apps/<app>/dist`. Hub und StemPlayer verwenden einen statischen Kopier-Build mit Prüfung der lokalen HTML-Verweise; die Vue-Apps behalten ihre Vite-Builds. Backend und Design-System sind ungebündelte JavaScript-Quellen: deren Build prüft Syntax, Paketabhängigkeiten bzw. Exporte. Backend-Integration mit PostgreSQL wird dadurch nicht geprüft.
+Die Frontend-Artefakte liegen jeweils unter `apps/<app>/dist`. Hub, GuitarJemp und StemPlayer verwenden einen statischen Kopier-Build mit Prüfung der lokalen HTML-Verweise; die Vue-Apps behalten ihre Vite-Builds. Backend und Design-System sind ungebündelte JavaScript-Quellen: deren Build prüft Syntax, Paketabhängigkeiten bzw. Exporte. Backend-Integration mit PostgreSQL wird dadurch nicht geprüft.
 
-Das Root-Lockfile ist für `npm ci` im Monorepo maßgeblich. Die übernommenen App-Lockfiles bleiben als Originalbestand und für eigenständige Deployment-Kontexte erhalten. GuitarJemp verwendet das lokale Design-System über `file:../../packages/design-system`.
+Das Root-Lockfile ist für `npm ci` im Monorepo maßgeblich. Die übernommenen App-Lockfiles bleiben als Originalbestand und für eigenständige Deployment-Kontexte erhalten.
+
+GuitarJemp (ab Version 2) ist eine statische App mit nativen ES-Modulen ohne Paketabhängigkeiten. Ihr Build führt die Tests aus und kopiert die Dateien nach `apps/guitar/dist`; der Dev-Server läuft auf Port 5180. Die frühere Vue/Vuetify-Version ist im Git-Tag `guitarjemp-legacy` erhalten.
 
 ## Historien und lokale Änderungen
 

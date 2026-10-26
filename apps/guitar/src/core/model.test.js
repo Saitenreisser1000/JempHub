@@ -1,0 +1,81 @@
+import { describe, it } from 'node:test'
+import assert from 'node:assert/strict'
+import { n, mo, onsets, barTicks, durFromSpec, decodeDur, posLabel, momentAt, nextSounding, prevSounding, setKey, isValidExercise } from './model.js'
+import { harmony, noteName, useFlats } from './music.js'
+import { examples } from './exercises.js'
+import { STD, DROPD } from './constants.js'
+
+describe('time', () => {
+  it('computes onsets and total length', () => {
+    const on = onsets([mo(12, [n(0, 0)]), mo(24, []), mo(6, [n(1, 1)])])
+    assert.deepEqual([...on], [0, 12, 36])
+    assert.equal(on.total, 42)
+  })
+  it('handles dotted and triplet durations as whole ticks', () => {
+    assert.equal(durFromSpec({ base: 6, dot: true, trip: false }), 9)
+    assert.equal(durFromSpec({ base: 12, dot: false, trip: true }), 8)
+    assert.deepEqual(decodeDur(36), { base: 24, dot: true, trip: false })
+    assert.deepEqual(decodeDur(8), { base: 12, dot: false, trip: true })
+  })
+  it('labels bar and beat positions', () => {
+    assert.equal(barTicks([4, 4]), 96)
+    assert.equal(barTicks([6, 8]), 72)
+    assert.equal(posLabel(0, [4, 4]), '1 · 1')
+    assert.equal(posLabel(96 + 24 + 12, [4, 4]), '2 · 2&')
+    assert.equal(posLabel(8, [4, 4]), '1 · 1trip')
+  })
+  it('finds the moment sounding at a tick', () => {
+    const ms = [mo(12, [n(0, 0)]), mo(12, [])]
+    const on = onsets(ms)
+    assert.equal(momentAt(ms, on, 5), 0)
+    assert.equal(momentAt(ms, on, 12), 1)
+    assert.equal(momentAt(ms, on, 30), -1)
+  })
+})
+
+describe('sequence', () => {
+  const ms = [mo(12, [n(0, 0)]), mo(12, []), mo(12, [n(1, 1)])]
+  const order = [0, 1, 2]
+  it('skips rests when looking ahead and back', () => {
+    assert.equal(nextSounding(ms, 0, order, false), 2)
+    assert.equal(nextSounding(ms, 2, order, false), -1)
+    assert.equal(nextSounding(ms, 2, order, true), 0)
+    assert.equal(prevSounding(ms, 2, order, false), 0)
+  })
+  it('keeps repeated physical dots as separate occurrences', () => {
+    const a = mo(12, [n(5, 0)])
+    const b = mo(12, [n(5, 0)])
+    assert.notEqual(a, b)
+    assert.equal(setKey(a), setKey(b))
+  })
+})
+
+describe('music', () => {
+  it('names notes with the right spelling for the key', () => {
+    assert.equal(noteName(n(4, 3), STD, false, true), 'C3')
+    assert.equal(useFlats({ r: 5, m: 'major' }), true)
+    assert.equal(noteName(n(5, 1), STD, true, false), 'F')
+  })
+  it('recognises chords, power chords and intervals', () => {
+    assert.equal(harmony([n(4, 0), n(3, 2), n(2, 2), n(1, 1), n(0, 0)], STD, false).name, 'Am')
+    assert.equal(harmony([n(5, 0), n(4, 0), n(3, 0)], DROPD, false).name, 'D5')
+    assert.equal(harmony([n(2, 0), n(1, 1), n(0, 0)], STD, false).name, 'C/G')
+    assert.deepEqual(harmony([n(2, 5), n(1, 5)], STD, false), { name: 'C + E', kind: 'major 3rd' })
+  })
+})
+
+describe('sample exercises', () => {
+  it('are valid and fill whole bars', () => {
+    const exs = examples()
+    assert.equal(exs.length, 8)
+    for (const ex of exs) {
+      assert.equal(isValidExercise(ex), true)
+      assert.equal(onsets(ex.moments).total % barTicks(ex.ts), 0)
+      for (const m of ex.moments) {
+        const strings = m.dots.map((d) => d.s)
+        assert.equal(new Set(strings).size, strings.length)
+        for (const d of m.dots) assert.ok(d.s < ex.tuning.length)
+      }
+    }
+  })
+})
