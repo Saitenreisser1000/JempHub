@@ -9,7 +9,7 @@ const root = resolve(import.meta.dirname, '..');
 const target = resolve(root, 'apps', app, 'vendor', 'sounds');
 await rm(target, { recursive: true, force: true });
 await mkdir(target, { recursive: true });
-for (const part of ['piano', 'src']) {
+for (const part of ['piano', 'vpo', 'src']) {
   await cp(resolve(root, 'packages', 'sounds', part), resolve(target, part), { recursive: true, filter: (s) => !s.endsWith('.test.js') });
 }
 console.log(`${app}: shared sounds copied to apps/${app}/vendor/sounds`);

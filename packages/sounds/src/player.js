@@ -1,5 +1,6 @@
-// Gemeinsamer Klang für alle Jemp-Apps: Klavier (Sample-Sprite) und Gitarre
-// (gezupfter Saitenklang, Karplus–Strong), dazu Metronom-Klick.
+// Gemeinsamer Klang für alle Jemp-Apps: Klavier (Sample-Sprite), Gitarre
+// (gezupfter Saitenklang, Karplus–Strong), gehaltene Orchesterklänge
+// (Streicher, Holz, Blech aus Virtual Playing Orchestra) und Metronom-Klick.
 // Wird beim Bauen nach apps/<app>/vendor/sounds/ kopiert (scripts/sync-shared.mjs).
 
 const NAMES = ['C', 'Cs', 'D', 'Ds', 'E', 'F', 'Fs', 'G', 'Gs', 'A', 'As', 'B']
@@ -9,6 +10,17 @@ export function midiFromName(name) {
   const m = /^([A-G]s?)(-?\d)$/.exec(name)
   if (!m) return null
   return 12 * (Number(m[2]) + 1) + NAMES.indexOf(m[1])
+}
+
+export const SUSTAIN = ['strings', 'woodwinds', 'brass']
+
+// Passender Bereich aus dem VPO-Manifest, sonst der nächstgelegene
+export function sustainRegion(regions, midi) {
+  const hit = regions.find((r) => midi >= r.lokeyMidi && midi <= r.hikeyMidi)
+  if (hit) return hit
+  let best = null
+  for (const r of regions) if (!best || Math.abs(r.pitchKeycenterMidi - midi) < Math.abs(best.pitchKeycenterMidi - midi)) best = r
+  return best
 }
 
 // Nächstgelegenes vorhandenes Sample; Abstand wird per Tonhöhenverschiebung ausgeglichen.
@@ -24,6 +36,9 @@ export function createPlayer({ base = new URL('../', import.meta.url).href } = {
   let piano = null
   let pianoLoading = null
   const guitarBuffers = {}
+  let vpoManifest = null
+  const sustain = {}
+  const sustainLoading = {}
   const live = []
 
   function ensure() {
@@ -68,6 +83,58 @@ export function createPlayer({ base = new URL('../', import.meta.url).href } = {
     return pianoLoading
   }
 
+  // Lädt alle Samples einer Orchestergruppe (etwa 2–4 MB)
+  async function loadSustain(group) {
+    if (sustain[group]) return sustain[group]
+    if (sustainLoading[group]) return sustainLoading[group]
+    if (!ensure()) return null
+    sustainLoading[group] = (async () => {
+      if (!vpoManifest) {
+        const res = await fetch(base + 'vpo/manifest.json')
+        if (!res.ok) throw new Error('Orchesterklang konnte nicht geladen werden')
+        vpoManifest = await res.json()
+      }
+      const regions = vpoManifest.instruments[group].regions
+      const urls = [...new Set(regions.map((r) => r.url))]
+      const buffers = {}
+      await Promise.all(urls.map(async (u) => {
+        const res = await fetch(base + 'vpo/' + u)
+        if (!res.ok) throw new Error('Orchesterklang konnte nicht geladen werden')
+        buffers[u] = await ctx.decodeAudioData(await res.arrayBuffer())
+      }))
+      sustain[group] = { regions, buffers }
+      return sustain[group]
+    })().catch((e) => {
+      sustainLoading[group] = null
+      throw e
+    })
+    return sustainLoading[group]
+  }
+
+  function playSustain(group, midi, when, dur, vel, cents) {
+    const set = sustain[group]
+    if (!set) return false
+    const r = sustainRegion(set.regions, midi)
+    const buffer = set.buffers[r.url]
+    const src = ctx.createBufferSource()
+    src.buffer = buffer
+    const rate = Math.pow(2, ((midi - r.pitchKeycenterMidi) * 100 - (r.tuneCents || 0) + cents) / 1200)
+    src.playbackRate.value = rate
+    const len = Math.min(Math.max(dur, 0.3), buffer.duration / rate - 0.15)
+    const peak = vel * 0.7 * Math.pow(10, (r.gainDb || 0) / 20)
+    const gn = ctx.createGain()
+    gn.gain.setValueAtTime(0, when)
+    gn.gain.linearRampToValueAtTime(peak, when + 0.04)
+    gn.gain.setValueAtTime(peak, when + len - 0.12)
+    gn.gain.linearRampToValueAtTime(0, when + len)
+    src.connect(gn)
+    gn.connect(master)
+    src.start(when)
+    src.stop(when + len + 0.05)
+    track(src, gn)
+    return true
+  }
+
   function track(src, gn) {
     const item = { src, gn }
     live.push(item)
@@ -77,13 +144,13 @@ export function createPlayer({ base = new URL('../', import.meta.url).href } = {
     }
   }
 
-  function playPiano(midi, when, dur, vel) {
+  function playPiano(midi, when, dur, vel, cents = 0) {
     if (!piano) return false
     const key = nearestSample(midi, piano.keys)
     const seg = piano.map[key]
     const src = ctx.createBufferSource()
     src.buffer = piano.buffer
-    src.playbackRate.value = Math.pow(2, (midi - key) / 12)
+    src.playbackRate.value = Math.pow(2, (midi - key) / 12 + cents / 1200)
     const gn = ctx.createGain()
     const len = Math.min(Math.max(dur, 0.2), seg.dur / src.playbackRate.value)
     gn.gain.setValueAtTime(vel, when)
@@ -125,9 +192,10 @@ export function createPlayer({ base = new URL('../', import.meta.url).href } = {
     return (guitarBuffers[midi] = b)
   }
 
-  function playGuitar(midi, when, dur, vel) {
+  function playGuitar(midi, when, dur, vel, cents = 0) {
     const src = ctx.createBufferSource()
     src.buffer = guitarBuffer(midi)
+    if (cents) src.playbackRate.value = Math.pow(2, cents / 1200)
     const gn = ctx.createGain()
     gn.gain.setValueAtTime(0, when)
     gn.gain.linearRampToValueAtTime(vel * 0.4, when + 0.004)
@@ -144,12 +212,16 @@ export function createPlayer({ base = new URL('../', import.meta.url).href } = {
     now,
     loadPiano,
     pianoReady: () => !!piano,
-    // instrument: 'piano' | 'guitar'. Fällt auf Gitarre zurück, solange das Klavier lädt.
-    note(midi, when, dur = 1.2, { instrument = 'piano', vel = 0.85 } = {}) {
+    loadSustain,
+    sustainReady: (group) => !!sustain[group],
+    // instrument: 'piano' | 'guitar' | 'strings' | 'woodwinds' | 'brass'; cents: Verstimmung.
+    // Fällt auf Gitarre zurück, solange ein Sample-Klang noch lädt.
+    note(midi, when, dur = 1.2, { instrument = 'piano', vel = 0.85, cents = 0 } = {}) {
       if (!ensure()) return
       const t = Math.max(when ?? now(), now())
-      if (instrument === 'piano' && playPiano(midi, t, dur, vel)) return
-      playGuitar(midi, t, dur, vel)
+      if (instrument === 'piano' && playPiano(midi, t, dur, vel, cents)) return
+      if (SUSTAIN.includes(instrument) && playSustain(instrument, midi, t, dur, vel, cents)) return
+      playGuitar(midi, t, dur, vel, cents)
     },
     click(when, accent = false) {
       if (!ensure()) return

@@ -10,7 +10,7 @@
       "name": "strings",
       "regions": [
         {
-          "url": "/audio/vpo/strings/strings-basses-sus-fsharp2-PB-loop.mp3",
+          "url": "strings/strings-basses-sus-fsharp2-PB-loop.mp3",
           "lokey": "F2",
           "hikey": "G2",
           "pitchKeycenter": "Fs2",
@@ -22,7 +22,7 @@
           "pan": 0
         },
         {
-          "url": "/audio/vpo/strings/strings-basses-sus-a2-PB-loop.mp3",
+          "url": "strings/strings-basses-sus-a2-PB-loop.mp3",
           "lokey": "Gs2",
           "hikey": "As2",
           "pitchKeycenter": "A2",
@@ -34,7 +34,7 @@
           "pan": 0
         },
         {
-          "url": "/audio/vpo/strings/strings-basses-sus-c3-PB-loop.mp3",
+          "url": "strings/strings-basses-sus-c3-PB-loop.mp3",
           "lokey": "B2",
           "hikey": "Cs3",
           "pitchKeycenter": "C3",
@@ -46,7 +46,7 @@
           "pan": 0
         },
         {
-          "url": "/audio/vpo/strings/strings-basses-sus-dsharp3-PB-loop.mp3",
+          "url": "strings/strings-basses-sus-dsharp3-PB-loop.mp3",
           "lokey": "D3",
           "hikey": "E3",
           "pitchKeycenter": "Ds3",
@@ -58,7 +58,7 @@
           "pan": 0
         },
         {
-          "url": "/audio/vpo/strings/strings-basses-sus-fsharp3-PB-loop.mp3",
+          "url": "strings/strings-basses-sus-fsharp3-PB-loop.mp3",
           "lokey": "F3",
           "hikey": "G3",
           "pitchKeycenter": "Fs3",
@@ -70,7 +70,7 @@
           "pan": 0
         },
         {
-          "url": "/audio/vpo/strings/strings-basses-sus-a3-PB-loop.mp3",
+          "url": "strings/strings-basses-sus-a3-PB-loop.mp3",
           "lokey": "Gs3",
           "hikey": "As3",
           "pitchKeycenter": "A3",
@@ -82,7 +82,7 @@
           "pan": 0
         },
         {
-          "url": "/audio/vpo/strings/strings-basses-sus-c4-PB-loop.mp3",
+          "url": "strings/strings-basses-sus-c4-PB-loop.mp3",
           "lokey": "B3",
           "hikey": "G4",
           "pitchKeycenter": "C4",
@@ -94,7 +94,7 @@
           "pan": 0
         },
         {
-          "url": "/audio/vpo/strings/strings-2_G-PB-loop.mp3",
+          "url": "strings/strings-2_G-PB-loop.mp3",
           "lokey": "Fs2",
           "hikey": "Gs2",
           "pitchKeycenter": "G2",
@@ -106,7 +106,7 @@
           "pan": 0
         },
         {
-          "url": "/audio/vpo/strings/strings-2_Bb-PB-loop.mp3",
+          "url": "strings/strings-2_Bb-PB-loop.mp3",
           "lokey": "A2",
           "hikey": "B2",
           "pitchKeycenter": "As2",
@@ -118,7 +118,7 @@
           "pan": 5
         },
         {
-          "url": "/audio/vpo/strings/strings-3_Db-PB-loop.mp3",
+          "url": "strings/strings-3_Db-PB-loop.mp3",
           "lokey": "C3",
           "hikey": "Ds3",
           "pitchKeycenter": "Cs3",
@@ -130,7 +130,7 @@
           "pan": 5
         },
         {
-          "url": "/audio/vpo/strings/strings-3_Bb-PB-loop.mp3",
+          "url": "strings/strings-3_Bb-PB-loop.mp3",
           "lokey": "E3",
           "hikey": "B3",
           "pitchKeycenter": "As3",
@@ -142,7 +142,7 @@
           "pan": 0
         },
         {
-          "url": "/audio/vpo/strings/strings-4_Db-PB-loop.mp3",
+          "url": "strings/strings-4_Db-PB-loop.mp3",
           "lokey": "C4",
           "hikey": "D4",
           "pitchKeycenter": "Cs4",
@@ -154,7 +154,7 @@
           "pan": 0
         },
         {
-          "url": "/audio/vpo/strings/strings-4_E-PB-loop.mp3",
+          "url": "strings/strings-4_E-PB-loop.mp3",
           "lokey": "Ds4",
           "hikey": "F4",
           "pitchKeycenter": "E4",
@@ -166,7 +166,7 @@
           "pan": 0
         },
         {
-          "url": "/audio/vpo/strings/strings-4_G.mp3",
+          "url": "strings/strings-4_G.mp3",
           "lokey": "Fs4",
           "hikey": "Gs4",
           "pitchKeycenter": "G4",
@@ -178,7 +178,7 @@
           "pan": 0
         },
         {
-          "url": "/audio/vpo/strings/strings-4_Bb.mp3",
+          "url": "strings/strings-4_Bb.mp3",
           "lokey": "A4",
           "hikey": "C5",
           "pitchKeycenter": "As4",
@@ -190,7 +190,7 @@
           "pan": 5
         },
         {
-          "url": "/audio/vpo/strings/strings-Violas_c3.mp3",
+          "url": "strings/strings-Violas_c3.mp3",
           "lokey": "C3",
           "hikey": "Cs3",
           "pitchKeycenter": "C3",
@@ -202,7 +202,7 @@
           "pan": 0
         },
         {
-          "url": "/audio/vpo/strings/strings-Violas_dsharp3.mp3",
+          "url": "strings/strings-Violas_dsharp3.mp3",
           "lokey": "D3",
           "hikey": "E3",
           "pitchKeycenter": "Ds3",
@@ -214,7 +214,7 @@
           "pan": 0
         },
         {
-          "url": "/audio/vpo/strings/strings-Violas_fsharp3.mp3",
+          "url": "strings/strings-Violas_fsharp3.mp3",
           "lokey": "F3",
           "hikey": "G3",
           "pitchKeycenter": "Fs3",
@@ -226,7 +226,7 @@
           "pan": 0
         },
         {
-          "url": "/audio/vpo/strings/strings-Violas_a3.mp3",
+          "url": "strings/strings-Violas_a3.mp3",
           "lokey": "Gs3",
           "hikey": "As3",
           "pitchKeycenter": "A3",
@@ -238,7 +238,7 @@
           "pan": 0
         },
         {
-          "url": "/audio/vpo/strings/strings-Violas_dsharp4.mp3",
+          "url": "strings/strings-Violas_dsharp4.mp3",
           "lokey": "D4",
           "hikey": "E4",
           "pitchKeycenter": "Ds4",
@@ -250,7 +250,7 @@
           "pan": 0
         },
         {
-          "url": "/audio/vpo/strings/strings-Violas_fsharp4.mp3",
+          "url": "strings/strings-Violas_fsharp4.mp3",
           "lokey": "F4",
           "hikey": "G4",
           "pitchKeycenter": "Fs4",
@@ -262,7 +262,7 @@
           "pan": 0
         },
         {
-          "url": "/audio/vpo/strings/strings-Violas_a4.mp3",
+          "url": "strings/strings-Violas_a4.mp3",
           "lokey": "Gs4",
           "hikey": "As4",
           "pitchKeycenter": "A4",
@@ -274,7 +274,7 @@
           "pan": 0
         },
         {
-          "url": "/audio/vpo/strings/strings-Violas_c5.mp3",
+          "url": "strings/strings-Violas_c5.mp3",
           "lokey": "B4",
           "hikey": "Cs5",
           "pitchKeycenter": "C5",
@@ -286,7 +286,7 @@
           "pan": 0
         },
         {
-          "url": "/audio/vpo/strings/strings-1st-violins-sus-g3.mp3",
+          "url": "strings/strings-1st-violins-sus-g3.mp3",
           "lokey": "G3",
           "hikey": "Gs3",
           "pitchKeycenter": "G3",
@@ -298,7 +298,7 @@
           "pan": 0
         },
         {
-          "url": "/audio/vpo/strings/strings-1st-violins-sus-asharp3.mp3",
+          "url": "strings/strings-1st-violins-sus-asharp3.mp3",
           "lokey": "A3",
           "hikey": "B3",
           "pitchKeycenter": "As3",
@@ -310,7 +310,7 @@
           "pan": 0
         },
         {
-          "url": "/audio/vpo/strings/strings-1st-violins-sus-csharp4.mp3",
+          "url": "strings/strings-1st-violins-sus-csharp4.mp3",
           "lokey": "C4",
           "hikey": "D4",
           "pitchKeycenter": "Cs4",
@@ -322,7 +322,7 @@
           "pan": 0
         },
         {
-          "url": "/audio/vpo/strings/strings-1st-violins-sus-e4.mp3",
+          "url": "strings/strings-1st-violins-sus-e4.mp3",
           "lokey": "Ds4",
           "hikey": "F4",
           "pitchKeycenter": "E4",
@@ -334,7 +334,7 @@
           "pan": 0
         },
         {
-          "url": "/audio/vpo/strings/strings-1st-violins-sus-g4.mp3",
+          "url": "strings/strings-1st-violins-sus-g4.mp3",
           "lokey": "Fs4",
           "hikey": "Gs4",
           "pitchKeycenter": "G4",
@@ -346,7 +346,7 @@
           "pan": 0
         },
         {
-          "url": "/audio/vpo/strings/strings-1st-violins-sus-asharp4.mp3",
+          "url": "strings/strings-1st-violins-sus-asharp4.mp3",
           "lokey": "A4",
           "hikey": "B4",
           "pitchKeycenter": "As4",
@@ -358,7 +358,7 @@
           "pan": 0
         },
         {
-          "url": "/audio/vpo/strings/strings-1st-violins-sus-csharp5.mp3",
+          "url": "strings/strings-1st-violins-sus-csharp5.mp3",
           "lokey": "C5",
           "hikey": "D5",
           "pitchKeycenter": "Cs5",
@@ -375,7 +375,7 @@
       "name": "brass",
       "regions": [
         {
-          "url": "/audio/vpo/brass/brass-tuba-sus-g2-PB-loop.mp3",
+          "url": "brass/brass-tuba-sus-g2-PB-loop.mp3",
           "lokey": "F2",
           "hikey": "Gs2",
           "pitchKeycenter": "G2",
@@ -387,7 +387,7 @@
           "pan": 0
         },
         {
-          "url": "/audio/vpo/brass/brass-tuba-sus-asharp2-PB-loop.mp3",
+          "url": "brass/brass-tuba-sus-asharp2-PB-loop.mp3",
           "lokey": "A2",
           "hikey": "B2",
           "pitchKeycenter": "As2",
@@ -399,7 +399,7 @@
           "pan": 0
         },
         {
-          "url": "/audio/vpo/brass/brass-tuba-sus-csharp3-PB-loop.mp3",
+          "url": "brass/brass-tuba-sus-csharp3-PB-loop.mp3",
           "lokey": "C3",
           "hikey": "D3",
           "pitchKeycenter": "Cs3",
@@ -411,7 +411,7 @@
           "pan": 0
         },
         {
-          "url": "/audio/vpo/brass/brass-tuba-sus-e3-PB-loop.mp3",
+          "url": "brass/brass-tuba-sus-e3-PB-loop.mp3",
           "lokey": "Ds3",
           "hikey": "D4",
           "pitchKeycenter": "E3",
@@ -423,7 +423,7 @@
           "pan": 0
         },
         {
-          "url": "/audio/vpo/brass/brass-horns-sus-ff-g2-PB-loop.mp3",
+          "url": "brass/brass-horns-sus-ff-g2-PB-loop.mp3",
           "lokey": "Fs2",
           "hikey": "Gs2",
           "pitchKeycenter": "G2",
@@ -435,7 +435,7 @@
           "pan": -5
         },
         {
-          "url": "/audio/vpo/brass/brass-horns-sus-ff-asharp2-PB-loop.mp3",
+          "url": "brass/brass-horns-sus-ff-asharp2-PB-loop.mp3",
           "lokey": "A2",
           "hikey": "B2",
           "pitchKeycenter": "As2",
@@ -447,7 +447,7 @@
           "pan": 5
         },
         {
-          "url": "/audio/vpo/brass/brass-horns-sus-ff-csharp3-PB-loop.mp3",
+          "url": "brass/brass-horns-sus-ff-csharp3-PB-loop.mp3",
           "lokey": "C3",
           "hikey": "D3",
           "pitchKeycenter": "Cs3",
@@ -459,7 +459,7 @@
           "pan": 0
         },
         {
-          "url": "/audio/vpo/brass/brass-horns-sus-ff-e3-PB-loop.mp3",
+          "url": "brass/brass-horns-sus-ff-e3-PB-loop.mp3",
           "lokey": "Ds3",
           "hikey": "F3",
           "pitchKeycenter": "E3",
@@ -471,7 +471,7 @@
           "pan": 5
         },
         {
-          "url": "/audio/vpo/brass/brass-horns-sus-ff-g3-PB-loop.mp3",
+          "url": "brass/brass-horns-sus-ff-g3-PB-loop.mp3",
           "lokey": "Fs3",
           "hikey": "Gs3",
           "pitchKeycenter": "G3",
@@ -483,7 +483,7 @@
           "pan": 5
         },
         {
-          "url": "/audio/vpo/brass/brass-horns-sus-ff-asharp3-PB-loop.mp3",
+          "url": "brass/brass-horns-sus-ff-asharp3-PB-loop.mp3",
           "lokey": "A3",
           "hikey": "B3",
           "pitchKeycenter": "As3",
@@ -495,7 +495,7 @@
           "pan": 5
         },
         {
-          "url": "/audio/vpo/brass/brass-horns-sus-ff-csharp4-PB-loop.mp3",
+          "url": "brass/brass-horns-sus-ff-csharp4-PB-loop.mp3",
           "lokey": "C4",
           "hikey": "D4",
           "pitchKeycenter": "Cs4",
@@ -507,7 +507,7 @@
           "pan": 0
         },
         {
-          "url": "/audio/vpo/brass/brass-horns-sus-ff-e4-PB-loop.mp3",
+          "url": "brass/brass-horns-sus-ff-e4-PB-loop.mp3",
           "lokey": "Ds4",
           "hikey": "F4",
           "pitchKeycenter": "E4",
@@ -519,7 +519,7 @@
           "pan": 10
         },
         {
-          "url": "/audio/vpo/brass/brass-horns-sus-ff-g4-PB-loop.mp3",
+          "url": "brass/brass-horns-sus-ff-g4-PB-loop.mp3",
           "lokey": "Fs4",
           "hikey": "Gs4",
           "pitchKeycenter": "G4",
@@ -531,7 +531,7 @@
           "pan": 0
         },
         {
-          "url": "/audio/vpo/brass/brass-horns-sus-ff-asharp4-PB-loop.mp3",
+          "url": "brass/brass-horns-sus-ff-asharp4-PB-loop.mp3",
           "lokey": "A4",
           "hikey": "B4",
           "pitchKeycenter": "As4",
@@ -543,7 +543,7 @@
           "pan": 0
         },
         {
-          "url": "/audio/vpo/brass/brass-horns-sus-ff-csharp5-PB-loop.mp3",
+          "url": "brass/brass-horns-sus-ff-csharp5-PB-loop.mp3",
           "lokey": "C5",
           "hikey": "D5",
           "pitchKeycenter": "Cs5",
@@ -555,7 +555,7 @@
           "pan": 5
         },
         {
-          "url": "/audio/vpo/brass/brass-horns-sus-mp-g2-PB-loop.mp3",
+          "url": "brass/brass-horns-sus-mp-g2-PB-loop.mp3",
           "lokey": "Fs2",
           "hikey": "Gs2",
           "pitchKeycenter": "G2",
@@ -567,7 +567,7 @@
           "pan": 0
         },
         {
-          "url": "/audio/vpo/brass/brass-horns-sus-mp-asharp2-PB-loop.mp3",
+          "url": "brass/brass-horns-sus-mp-asharp2-PB-loop.mp3",
           "lokey": "A2",
           "hikey": "B2",
           "pitchKeycenter": "As2",
@@ -579,7 +579,7 @@
           "pan": 5
         },
         {
-          "url": "/audio/vpo/brass/brass-horns-sus-mp-csharp3-PB-loop.mp3",
+          "url": "brass/brass-horns-sus-mp-csharp3-PB-loop.mp3",
           "lokey": "C3",
           "hikey": "D3",
           "pitchKeycenter": "Cs3",
@@ -591,7 +591,7 @@
           "pan": -5
         },
         {
-          "url": "/audio/vpo/brass/brass-horns-sus-mp-e3-PB-loop.mp3",
+          "url": "brass/brass-horns-sus-mp-e3-PB-loop.mp3",
           "lokey": "Ds3",
           "hikey": "F3",
           "pitchKeycenter": "E3",
@@ -603,7 +603,7 @@
           "pan": 5
         },
         {
-          "url": "/audio/vpo/brass/brass-horns-sus-mp-g3-PB-loop.mp3",
+          "url": "brass/brass-horns-sus-mp-g3-PB-loop.mp3",
           "lokey": "Fs3",
           "hikey": "Gs3",
           "pitchKeycenter": "G3",
@@ -615,7 +615,7 @@
           "pan": 0
         },
         {
-          "url": "/audio/vpo/brass/brass-horns-sus-mp-asharp3-PB-loop.mp3",
+          "url": "brass/brass-horns-sus-mp-asharp3-PB-loop.mp3",
           "lokey": "A3",
           "hikey": "B3",
           "pitchKeycenter": "As3",
@@ -627,7 +627,7 @@
           "pan": 10
         },
         {
-          "url": "/audio/vpo/brass/brass-horns-sus-mp-csharp4-PB-loop.mp3",
+          "url": "brass/brass-horns-sus-mp-csharp4-PB-loop.mp3",
           "lokey": "C4",
           "hikey": "D4",
           "pitchKeycenter": "Cs4",
@@ -639,7 +639,7 @@
           "pan": 0
         },
         {
-          "url": "/audio/vpo/brass/brass-horns-sus-mp-e4-PB-loop.mp3",
+          "url": "brass/brass-horns-sus-mp-e4-PB-loop.mp3",
           "lokey": "Ds4",
           "hikey": "F4",
           "pitchKeycenter": "E4",
@@ -651,7 +651,7 @@
           "pan": 10
         },
         {
-          "url": "/audio/vpo/brass/brass-horns-sus-mp-g4-PB-loop.mp3",
+          "url": "brass/brass-horns-sus-mp-g4-PB-loop.mp3",
           "lokey": "Fs4",
           "hikey": "Gs4",
           "pitchKeycenter": "G4",
@@ -663,7 +663,7 @@
           "pan": 0
         },
         {
-          "url": "/audio/vpo/brass/brass-horns-sus-mp-asharp4-PB-loop.mp3",
+          "url": "brass/brass-horns-sus-mp-asharp4-PB-loop.mp3",
           "lokey": "A4",
           "hikey": "B4",
           "pitchKeycenter": "As4",
@@ -675,7 +675,7 @@
           "pan": 10
         },
         {
-          "url": "/audio/vpo/brass/brass-horns-sus-mp-csharp5-PB-loop.mp3",
+          "url": "brass/brass-horns-sus-mp-csharp5-PB-loop.mp3",
           "lokey": "C5",
           "hikey": "D5",
           "pitchKeycenter": "Cs5",
@@ -687,7 +687,7 @@
           "pan": 0
         },
         {
-          "url": "/audio/vpo/brass/brass-2_F.mp3",
+          "url": "brass/brass-2_F.mp3",
           "lokey": "E2",
           "hikey": "Fs2",
           "pitchKeycenter": "F2",
@@ -699,7 +699,7 @@
           "pan": 0
         },
         {
-          "url": "/audio/vpo/brass/brass-2_A.mp3",
+          "url": "brass/brass-2_A.mp3",
           "lokey": "G2",
           "hikey": "As2",
           "pitchKeycenter": "A2",
@@ -711,7 +711,7 @@
           "pan": 0
         },
         {
-          "url": "/audio/vpo/brass/brass-3_C.mp3",
+          "url": "brass/brass-3_C.mp3",
           "lokey": "B2",
           "hikey": "Cs3",
           "pitchKeycenter": "C3",
@@ -723,7 +723,7 @@
           "pan": 0
         },
         {
-          "url": "/audio/vpo/brass/brass-3_Eb.mp3",
+          "url": "brass/brass-3_Eb.mp3",
           "lokey": "D3",
           "hikey": "E3",
           "pitchKeycenter": "Ds3",
@@ -735,7 +735,7 @@
           "pan": 0
         },
         {
-          "url": "/audio/vpo/brass/brass-3_Gb.mp3",
+          "url": "brass/brass-3_Gb.mp3",
           "lokey": "F3",
           "hikey": "G3",
           "pitchKeycenter": "Fs3",
@@ -747,7 +747,7 @@
           "pan": 0
         },
         {
-          "url": "/audio/vpo/brass/brass-3_A.mp3",
+          "url": "brass/brass-3_A.mp3",
           "lokey": "Gs3",
           "hikey": "As3",
           "pitchKeycenter": "A3",
@@ -759,7 +759,7 @@
           "pan": 0
         },
         {
-          "url": "/audio/vpo/brass/brass-4_C.mp3",
+          "url": "brass/brass-4_C.mp3",
           "lokey": "B3",
           "hikey": "Cs4",
           "pitchKeycenter": "C4",
@@ -771,7 +771,7 @@
           "pan": 0
         },
         {
-          "url": "/audio/vpo/brass/brass-4_Eb.mp3",
+          "url": "brass/brass-4_Eb.mp3",
           "lokey": "D4",
           "hikey": "E4",
           "pitchKeycenter": "Ds4",
@@ -783,7 +783,7 @@
           "pan": 0
         },
         {
-          "url": "/audio/vpo/brass/brass-4_Gb.mp3",
+          "url": "brass/brass-4_Gb.mp3",
           "lokey": "F4",
           "hikey": "G4",
           "pitchKeycenter": "Fs4",
@@ -795,7 +795,7 @@
           "pan": 0
         },
         {
-          "url": "/audio/vpo/brass/brass-4_A.mp3",
+          "url": "brass/brass-4_A.mp3",
           "lokey": "Gs4",
           "hikey": "As4",
           "pitchKeycenter": "A4",
@@ -807,7 +807,7 @@
           "pan": 0
         },
         {
-          "url": "/audio/vpo/brass/brass-5_C.mp3",
+          "url": "brass/brass-5_C.mp3",
           "lokey": "B4",
           "hikey": "F5",
           "pitchKeycenter": "C5",
@@ -819,7 +819,7 @@
           "pan": 0
         },
         {
-          "url": "/audio/vpo/brass/brass-2_F_p.mp3",
+          "url": "brass/brass-2_F_p.mp3",
           "lokey": "E2",
           "hikey": "G2",
           "pitchKeycenter": "F2",
@@ -831,7 +831,7 @@
           "pan": 0
         },
         {
-          "url": "/audio/vpo/brass/brass-2_Bb_p.mp3",
+          "url": "brass/brass-2_Bb_p.mp3",
           "lokey": "Gs2",
           "hikey": "C3",
           "pitchKeycenter": "As2",
@@ -843,7 +843,7 @@
           "pan": 0
         },
         {
-          "url": "/audio/vpo/brass/brass-3_Eb_p-PB-loop.mp3",
+          "url": "brass/brass-3_Eb_p-PB-loop.mp3",
           "lokey": "Cs3",
           "hikey": "F3",
           "pitchKeycenter": "Ds3",
@@ -855,7 +855,7 @@
           "pan": 0
         },
         {
-          "url": "/audio/vpo/brass/brass-3_Ab_p.mp3",
+          "url": "brass/brass-3_Ab_p.mp3",
           "lokey": "Fs3",
           "hikey": "As3",
           "pitchKeycenter": "Gs3",
@@ -867,7 +867,7 @@
           "pan": 0
         },
         {
-          "url": "/audio/vpo/brass/brass-4_Db_p.mp3",
+          "url": "brass/brass-4_Db_p.mp3",
           "lokey": "B3",
           "hikey": "Ds4",
           "pitchKeycenter": "Cs4",
@@ -879,7 +879,7 @@
           "pan": 0
         },
         {
-          "url": "/audio/vpo/brass/brass-4_Gb_p.mp3",
+          "url": "brass/brass-4_Gb_p.mp3",
           "lokey": "E4",
           "hikey": "Gs4",
           "pitchKeycenter": "Fs4",
@@ -891,7 +891,7 @@
           "pan": 0
         },
         {
-          "url": "/audio/vpo/brass/brass-4_B_p.mp3",
+          "url": "brass/brass-4_B_p.mp3",
           "lokey": "A4",
           "hikey": "F5",
           "pitchKeycenter": "B4",
@@ -903,7 +903,7 @@
           "pan": 0
         },
         {
-          "url": "/audio/vpo/brass/brass-3_G.mp3",
+          "url": "brass/brass-3_G.mp3",
           "lokey": "Fs3",
           "hikey": "G3",
           "pitchKeycenter": "G3",
@@ -915,7 +915,7 @@
           "pan": 0
         },
         {
-          "url": "/audio/vpo/brass/brass-3_Ab.mp3",
+          "url": "brass/brass-3_Ab.mp3",
           "lokey": "Gs3",
           "hikey": "Gs3",
           "pitchKeycenter": "Gs3",
@@ -927,7 +927,7 @@
           "pan": 0
         },
         {
-          "url": "/audio/vpo/brass/brass-3_Bb.mp3",
+          "url": "brass/brass-3_Bb.mp3",
           "lokey": "A3",
           "hikey": "As3",
           "pitchKeycenter": "As3",
@@ -939,7 +939,7 @@
           "pan": 0
         },
         {
-          "url": "/audio/vpo/brass/brass-4_C.mp3",
+          "url": "brass/brass-4_C.mp3",
           "lokey": "B3",
           "hikey": "C4",
           "pitchKeycenter": "C4",
@@ -951,7 +951,7 @@
           "pan": 0
         },
         {
-          "url": "/audio/vpo/brass/brass-4_D.mp3",
+          "url": "brass/brass-4_D.mp3",
           "lokey": "Cs4",
           "hikey": "D4",
           "pitchKeycenter": "D4",
@@ -963,7 +963,7 @@
           "pan": 0
         },
         {
-          "url": "/audio/vpo/brass/brass-4_E.mp3",
+          "url": "brass/brass-4_E.mp3",
           "lokey": "Ds4",
           "hikey": "E4",
           "pitchKeycenter": "E4",
@@ -975,7 +975,7 @@
           "pan": 0
         },
         {
-          "url": "/audio/vpo/brass/brass-4_F.mp3",
+          "url": "brass/brass-4_F.mp3",
           "lokey": "F4",
           "hikey": "F4",
           "pitchKeycenter": "F4",
@@ -987,7 +987,7 @@
           "pan": 0
         },
         {
-          "url": "/audio/vpo/brass/brass-4_G.mp3",
+          "url": "brass/brass-4_G.mp3",
           "lokey": "Fs4",
           "hikey": "G4",
           "pitchKeycenter": "G4",
@@ -999,7 +999,7 @@
           "pan": 0
         },
         {
-          "url": "/audio/vpo/brass/brass-4_A.mp3",
+          "url": "brass/brass-4_A.mp3",
           "lokey": "Gs4",
           "hikey": "A4",
           "pitchKeycenter": "A4",
@@ -1011,7 +1011,7 @@
           "pan": 0
         },
         {
-          "url": "/audio/vpo/brass/brass-4_Bb.mp3",
+          "url": "brass/brass-4_Bb.mp3",
           "lokey": "As4",
           "hikey": "As4",
           "pitchKeycenter": "As4",
@@ -1023,7 +1023,7 @@
           "pan": 0
         },
         {
-          "url": "/audio/vpo/brass/brass-5_C.mp3",
+          "url": "brass/brass-5_C.mp3",
           "lokey": "B4",
           "hikey": "C5",
           "pitchKeycenter": "C5",
@@ -1035,7 +1035,7 @@
           "pan": 0
         },
         {
-          "url": "/audio/vpo/brass/brass-3_Bb_p.mp3",
+          "url": "brass/brass-3_Bb_p.mp3",
           "lokey": "Fs3",
           "hikey": "C4",
           "pitchKeycenter": "As3",
@@ -1047,7 +1047,7 @@
           "pan": 0
         },
         {
-          "url": "/audio/vpo/brass/brass-4_Eb_p.mp3",
+          "url": "brass/brass-4_Eb_p.mp3",
           "lokey": "Cs4",
           "hikey": "F4",
           "pitchKeycenter": "Ds4",
@@ -1059,7 +1059,7 @@
           "pan": 0
         },
         {
-          "url": "/audio/vpo/brass/brass-4_Ab_p.mp3",
+          "url": "brass/brass-4_Ab_p.mp3",
           "lokey": "Fs4",
           "hikey": "As4",
           "pitchKeycenter": "Gs4",
@@ -1071,7 +1071,7 @@
           "pan": 0
         },
         {
-          "url": "/audio/vpo/brass/brass-5_Db_p.mp3",
+          "url": "brass/brass-5_Db_p.mp3",
           "lokey": "B4",
           "hikey": "E5",
           "pitchKeycenter": "Cs5",
@@ -1088,7 +1088,7 @@
       "name": "woodwinds",
       "regions": [
         {
-          "url": "/audio/vpo/woodwinds/woodwinds-contrabassoon-g2-PB-loop.mp3",
+          "url": "woodwinds/woodwinds-contrabassoon-g2-PB-loop.mp3",
           "lokey": "Fs2",
           "hikey": "Gs2",
           "pitchKeycenter": "G2",
@@ -1100,7 +1100,7 @@
           "pan": 0
         },
         {
-          "url": "/audio/vpo/woodwinds/woodwinds-contrabassoon-asharp2-PB-loop.mp3",
+          "url": "woodwinds/woodwinds-contrabassoon-asharp2-PB-loop.mp3",
           "lokey": "A2",
           "hikey": "B2",
           "pitchKeycenter": "As2",
@@ -1112,7 +1112,7 @@
           "pan": 0
         },
         {
-          "url": "/audio/vpo/woodwinds/woodwinds-contrabassoon-csharp3-PB-loop.mp3",
+          "url": "woodwinds/woodwinds-contrabassoon-csharp3-PB-loop.mp3",
           "lokey": "C3",
           "hikey": "D3",
           "pitchKeycenter": "Cs3",
@@ -1124,7 +1124,7 @@
           "pan": 0
         },
         {
-          "url": "/audio/vpo/woodwinds/woodwinds-contrabassoon-e3-PB-loop.mp3",
+          "url": "woodwinds/woodwinds-contrabassoon-e3-PB-loop.mp3",
           "lokey": "Ds3",
           "hikey": "Fs3",
           "pitchKeycenter": "E3",
@@ -1136,7 +1136,7 @@
           "pan": 0
         },
         {
-          "url": "/audio/vpo/woodwinds/woodwinds-contrabassoon-asharp3-PB-loop.mp3",
+          "url": "woodwinds/woodwinds-contrabassoon-asharp3-PB-loop.mp3",
           "lokey": "G3",
           "hikey": "As3",
           "pitchKeycenter": "As3",
@@ -1148,7 +1148,7 @@
           "pan": 0
         },
         {
-          "url": "/audio/vpo/woodwinds/woodwinds-2_F.mp3",
+          "url": "woodwinds/woodwinds-2_F.mp3",
           "lokey": "E2",
           "hikey": "Fs2",
           "pitchKeycenter": "F2",
@@ -1160,7 +1160,7 @@
           "pan": 0
         },
         {
-          "url": "/audio/vpo/woodwinds/woodwinds-2_Ab.mp3",
+          "url": "woodwinds/woodwinds-2_Ab.mp3",
           "lokey": "G2",
           "hikey": "A2",
           "pitchKeycenter": "Gs2",
@@ -1172,7 +1172,7 @@
           "pan": 0
         },
         {
-          "url": "/audio/vpo/woodwinds/woodwinds-3_C.mp3",
+          "url": "woodwinds/woodwinds-3_C.mp3",
           "lokey": "As2",
           "hikey": "D3",
           "pitchKeycenter": "C3",
@@ -1184,7 +1184,7 @@
           "pan": 10
         },
         {
-          "url": "/audio/vpo/woodwinds/woodwinds-3_Gb.mp3",
+          "url": "woodwinds/woodwinds-3_Gb.mp3",
           "lokey": "Ds3",
           "hikey": "G3",
           "pitchKeycenter": "Fs3",
@@ -1196,7 +1196,7 @@
           "pan": 0
         },
         {
-          "url": "/audio/vpo/woodwinds/woodwinds-3_A.mp3",
+          "url": "woodwinds/woodwinds-3_A.mp3",
           "lokey": "Gs3",
           "hikey": "As3",
           "pitchKeycenter": "A3",
@@ -1208,7 +1208,7 @@
           "pan": 0
         },
         {
-          "url": "/audio/vpo/woodwinds/woodwinds-4_C.mp3",
+          "url": "woodwinds/woodwinds-4_C.mp3",
           "lokey": "B3",
           "hikey": "Cs4",
           "pitchKeycenter": "C4",
@@ -1220,7 +1220,7 @@
           "pan": 5
         },
         {
-          "url": "/audio/vpo/woodwinds/woodwinds-4_Eb.mp3",
+          "url": "woodwinds/woodwinds-4_Eb.mp3",
           "lokey": "D4",
           "hikey": "F4",
           "pitchKeycenter": "Ds4",
@@ -1232,7 +1232,7 @@
           "pan": 0
         },
         {
-          "url": "/audio/vpo/woodwinds/woodwinds-4_A.mp3",
+          "url": "woodwinds/woodwinds-4_A.mp3",
           "lokey": "Fs4",
           "hikey": "As4",
           "pitchKeycenter": "A4",
@@ -1244,7 +1244,7 @@
           "pan": 0
         },
         {
-          "url": "/audio/vpo/woodwinds/woodwinds-5_Db.mp3",
+          "url": "woodwinds/woodwinds-5_Db.mp3",
           "lokey": "B4",
           "hikey": "Ds5",
           "pitchKeycenter": "Cs5",
@@ -1256,7 +1256,7 @@
           "pan": 0
         },
         {
-          "url": "/audio/vpo/woodwinds/woodwinds-3_D.mp3",
+          "url": "woodwinds/woodwinds-3_D.mp3",
           "lokey": "D3",
           "hikey": "Ds3",
           "pitchKeycenter": "D3",
@@ -1268,7 +1268,7 @@
           "pan": 0
         },
         {
-          "url": "/audio/vpo/woodwinds/woodwinds-3_Gb.mp3",
+          "url": "woodwinds/woodwinds-3_Gb.mp3",
           "lokey": "E3",
           "hikey": "G3",
           "pitchKeycenter": "Fs3",
@@ -1280,7 +1280,7 @@
           "pan": 0
         },
         {
-          "url": "/audio/vpo/woodwinds/woodwinds-3_Bb.mp3",
+          "url": "woodwinds/woodwinds-3_Bb.mp3",
           "lokey": "Gs3",
           "hikey": "B3",
           "pitchKeycenter": "As3",
@@ -1292,7 +1292,7 @@
           "pan": 15
         },
         {
-          "url": "/audio/vpo/woodwinds/woodwinds-4_D.mp3",
+          "url": "woodwinds/woodwinds-4_D.mp3",
           "lokey": "C4",
           "hikey": "Ds4",
           "pitchKeycenter": "D4",
@@ -1304,7 +1304,7 @@
           "pan": -5
         },
         {
-          "url": "/audio/vpo/woodwinds/woodwinds-4_Gb.mp3",
+          "url": "woodwinds/woodwinds-4_Gb.mp3",
           "lokey": "E4",
           "hikey": "G4",
           "pitchKeycenter": "Fs4",
@@ -1316,7 +1316,7 @@
           "pan": 0
         },
         {
-          "url": "/audio/vpo/woodwinds/woodwinds-4_Bb.mp3",
+          "url": "woodwinds/woodwinds-4_Bb.mp3",
           "lokey": "Gs4",
           "hikey": "B4",
           "pitchKeycenter": "As4",
@@ -1328,7 +1328,7 @@
           "pan": 10
         },
         {
-          "url": "/audio/vpo/woodwinds/woodwinds-5_D.mp3",
+          "url": "woodwinds/woodwinds-5_D.mp3",
           "lokey": "C5",
           "hikey": "Ds5",
           "pitchKeycenter": "D5",
@@ -1340,7 +1340,7 @@
           "pan": 0
         },
         {
-          "url": "/audio/vpo/woodwinds/woodwinds-oboes-sus-asharp3-PB-loop.mp3",
+          "url": "woodwinds/woodwinds-oboes-sus-asharp3-PB-loop.mp3",
           "lokey": "As3",
           "hikey": "B3",
           "pitchKeycenter": "As3",
@@ -1352,7 +1352,7 @@
           "pan": 0
         },
         {
-          "url": "/audio/vpo/woodwinds/woodwinds-oboes-sus-csharp4-PB-loop.mp3",
+          "url": "woodwinds/woodwinds-oboes-sus-csharp4-PB-loop.mp3",
           "lokey": "C4",
           "hikey": "D4",
           "pitchKeycenter": "Cs4",
@@ -1364,7 +1364,7 @@
           "pan": 0
         },
         {
-          "url": "/audio/vpo/woodwinds/woodwinds-oboes-sus-e4-PB-loop.mp3",
+          "url": "woodwinds/woodwinds-oboes-sus-e4-PB-loop.mp3",
           "lokey": "Ds4",
           "hikey": "F4",
           "pitchKeycenter": "E4",
@@ -1376,7 +1376,7 @@
           "pan": 0
         },
         {
-          "url": "/audio/vpo/woodwinds/woodwinds-oboes-sus-g4-PB-loop.mp3",
+          "url": "woodwinds/woodwinds-oboes-sus-g4-PB-loop.mp3",
           "lokey": "Fs4",
           "hikey": "Gs4",
           "pitchKeycenter": "G4",
@@ -1388,7 +1388,7 @@
           "pan": 0
         },
         {
-          "url": "/audio/vpo/woodwinds/woodwinds-oboes-sus-asharp4-PB-loop.mp3",
+          "url": "woodwinds/woodwinds-oboes-sus-asharp4-PB-loop.mp3",
           "lokey": "A4",
           "hikey": "B4",
           "pitchKeycenter": "As4",
@@ -1400,7 +1400,7 @@
           "pan": 0
         },
         {
-          "url": "/audio/vpo/woodwinds/woodwinds-oboes-sus-csharp5-PB-loop.mp3",
+          "url": "woodwinds/woodwinds-oboes-sus-csharp5-PB-loop.mp3",
           "lokey": "C5",
           "hikey": "D5",
           "pitchKeycenter": "Cs5",
@@ -1412,7 +1412,7 @@
           "pan": 0
         },
         {
-          "url": "/audio/vpo/woodwinds/woodwinds-4_Db.mp3",
+          "url": "woodwinds/woodwinds-4_Db.mp3",
           "lokey": "C4",
           "hikey": "D4",
           "pitchKeycenter": "Cs4",
@@ -1424,7 +1424,7 @@
           "pan": 5
         },
         {
-          "url": "/audio/vpo/woodwinds/woodwinds-4_F.mp3",
+          "url": "woodwinds/woodwinds-4_F.mp3",
           "lokey": "Ds4",
           "hikey": "Fs4",
           "pitchKeycenter": "F4",
@@ -1436,7 +1436,7 @@
           "pan": 10
         },
         {
-          "url": "/audio/vpo/woodwinds/woodwinds-4_Ab.mp3",
+          "url": "woodwinds/woodwinds-4_Ab.mp3",
           "lokey": "G4",
           "hikey": "A4",
           "pitchKeycenter": "Gs4",
@@ -1448,7 +1448,7 @@
           "pan": 0
         },
         {
-          "url": "/audio/vpo/woodwinds/woodwinds-4_B.mp3",
+          "url": "woodwinds/woodwinds-4_B.mp3",
           "lokey": "As4",
           "hikey": "C5",
           "pitchKeycenter": "B4",

@@ -1,7 +1,7 @@
 import { describe, it } from 'node:test'
 import assert from 'node:assert/strict'
 import { readFileSync } from 'node:fs'
-import { midiFromName, nearestSample } from './player.js'
+import { midiFromName, nearestSample, sustainRegion } from './player.js'
 
 describe('sounds', () => {
   it('parses sprite note names', () => {
@@ -20,5 +20,20 @@ describe('sounds', () => {
     const keys = Object.keys(sprite).map(midiFromName)
     assert.ok(keys.every((k) => k !== null))
     for (let m = 36; m <= 84; m++) assert.ok(Math.abs(nearestSample(m, keys) - m) <= 4, 'gap at ' + m)
+  })
+})
+
+describe('orchestra samples', () => {
+  const manifest = JSON.parse(readFileSync(new URL('../vpo/manifest.json', import.meta.url)))
+  it('covers the intonation range for every group with existing files', () => {
+    for (const group of ['strings', 'woodwinds', 'brass']) {
+      const regions = manifest.instruments[group].regions
+      for (let m = 45; m <= 72; m++) {
+        const r = sustainRegion(regions, m)
+        assert.ok(m >= r.lokeyMidi && m <= r.hikeyMidi, `${group} ${m}`)
+        assert.ok(!r.url.startsWith('/'))
+        readFileSync(new URL('../vpo/' + r.url, import.meta.url))
+      }
+    }
   })
 })

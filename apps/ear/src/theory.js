@@ -93,6 +93,9 @@ export function chordNotes(root, chord) {
   return chord.tones.map(([semis, steps]) => transpose(root, semis, steps, 1))
 }
 
+// Reine Stimmung (Frequenzverhältnisse) in Cent
+export const JUST_CENTS = { m2: 111.73, M2: 203.91, m3: 315.64, M3: 386.31, P4: 498.04, TT: 590.22, P5: 701.96, m6: 813.69, M6: 884.36, m7: 1017.6, M7: 1088.27, P8: 1200, m9: 1311.73, M9: 1403.91 }
+
 // ---------------------------------------------------------------- Umkehrungen
 
 const POS_DE = ['Grundstellung', '1. Umkehrung', '2. Umkehrung', '3. Umkehrung']
@@ -172,6 +175,16 @@ export function degreeLabel(root, note) {
   const diff = midiOf(note) - midiOf(root) - 12 * Math.floor(steps / 7) - MAJOR[k]
   return (diff < 0 ? '♭'.repeat(-diff) : '♯'.repeat(diff)) + (k + 1)
 }
+
+// ---------------------------------------------------------------- Einzeltöne
+
+// Gebräuchliche Schreibweise eines MIDI-Tons: Cis, Es, Fis, As, B
+const SPELL = [[0, 0], [0, 1], [1, 0], [2, -1], [2, 0], [3, 0], [3, 1], [4, 0], [5, -1], [5, 0], [6, -1], [6, 0]]
+export function spellMidi(midi) {
+  const [l, a] = SPELL[((midi % 12) + 12) % 12]
+  return { l, a, o: Math.floor(midi / 12) - 1 }
+}
+export const isNatural = (midi) => SPELL[((midi % 12) + 12) % 12][1] === 0
 
 // ---------------------------------------------------------------- Grundtöne
 

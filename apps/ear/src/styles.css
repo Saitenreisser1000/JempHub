@@ -240,3 +240,37 @@ h1, h2 { font-family: var(--font-display); letter-spacing: -.015em; margin: 0; t
 }
 @media (pointer: coarse) { .kbd, .abtn .k { display: none; } }
 @media (max-width: 640px) { .where { overflow-x: auto; -webkit-overflow-scrolling: touch; } .where .fret { min-width: 560px; } }
+.about p { margin: 0 0 8px; line-height: 1.5; }
+.about .row.col { flex-direction: column; align-items: flex-start; gap: 2px; }
+.about a { color: var(--brass); }
+.about .copy { margin-top: 18px; font-size: 12.5px; }
+
+/* Melodiediktat: Klaviatur */
+.kbd-wrap { margin-top: 12px; }
+.keys { position: relative; display: flex; height: clamp(120px, 20vh, 170px); user-select: none; -webkit-user-select: none; touch-action: manipulation; }
+.key { -webkit-tap-highlight-color: transparent; cursor: pointer; padding: 0; }
+.key.white { flex: 1; min-width: 0; background: #ebe6da; border: 0; border-right: 1px solid #0f1311; border-radius: 0 0 9px 9px; display: flex; align-items: flex-end; justify-content: center; padding-bottom: 9px; color: #1b221e; font: 600 13px var(--font-mono); }
+.key.white:last-child { border-right: 0; }
+.key.black { position: absolute; top: 0; width: calc(100% / var(--n) * .6); height: 60%; transform: translateX(-50%); background: #151a17; border: 1px solid #000; border-radius: 0 0 6px 6px; z-index: 2; }
+.key sub { font-size: 9px; }
+.key.white:active:not(:disabled) { background: var(--brass); }
+.key.black:active:not(:disabled) { background: #7a6640; }
+.key.white:disabled { background: #bfbab0; color: #5d5d55; cursor: default; }
+.key.black:disabled { background: #2b312d; cursor: default; }
+.key.white.sol { box-shadow: inset 0 -6px 0 var(--ok); }
+.key.black.sol { box-shadow: inset 0 -5px 0 var(--ok); }
+.stagebox.melody .staff + .lbl.sol { margin-top: 6px; }
+.feedback .count { font-family: var(--font-mono); color: var(--brass); margin-left: 6px; }
+.actions button:disabled { opacity: .45; cursor: default; }
+.staff .hint { fill: var(--muted); }
+.kbd-wrap { max-width: 680px; margin-left: auto; margin-right: auto; }
+.kbd-wrap + .actions { margin-top: 12px; }
+
+/* Intonation: drei Fassungen */
+.answers.variants { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
+.variant { position: relative; border-radius: 14px; transition: box-shadow .15s; }
+.variant .abtn { width: 100%; padding-bottom: 34px; }
+.variant .vplay { position: absolute; left: 50%; bottom: 7px; transform: translateX(-50%); width: 30px; height: 24px; border: 0; border-radius: 999px; background: var(--raise); color: var(--muted); display: grid; place-items: center; cursor: pointer; }
+.variant .vplay svg { width: 14px; height: 14px; }
+.variant.sounding { box-shadow: 0 0 0 2px var(--brass); }
+.variant.sounding .vplay { color: var(--brass); }

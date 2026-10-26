@@ -1,5 +1,5 @@
 // Aufgaben für Intervalle und Akkorde. Reine Funktionen, gewichtet nach Schwächen.
-import { INTERVAL, INTERVAL_PRESETS, CHORD, CHORD_PRESETS, INVERSION, INVERSION_PRESETS, SCALE, SCALE_PRESETS, transpose, chordNotes, invertNotes, scaleNotes, rootPool, readable, midiOf } from './theory.js'
+import { JUST_CENTS, spellMidi, isNatural, INTERVAL, INTERVAL_PRESETS, CHORD, CHORD_PRESETS, INVERSION, INVERSION_PRESETS, SCALE, SCALE_PRESETS, transpose, chordNotes, invertNotes, scaleNotes, rootPool, readable, midiOf } from './theory.js'
 
 const rand = (n) => Math.floor(Math.random() * n)
 const pick = (arr) => arr[rand(arr.length)]
@@ -126,4 +126,84 @@ export function genScale(settings, prev, weight = flat) {
   return { type: 'scale', id, dir, root, notes, seq }
 }
 
-export const check = (q, answerId) => answerId === q.id
+// ---------------------------------------------------------------- Melodiediktat
+
+// Tonvorrat und größter Sprung (Halbtöne) je Stufe
+export const MELODY_LEVELS = {
+  1: { low: 60, high: 67, chromatic: false, leap: 4 },
+  2: { low: 60, high: 72, chromatic: false, leap: 7 },
+  3: { low: 60, high: 72, chromatic: true, leap: 7 },
+  4: { low: 57, high: 76, chromatic: true, leap: 12 },
+}
+export const MELODY_DEFAULTS = { level: 1, notes: 5, bpm: 80, hint: true, length: 10 }
+export const melodyKey = (id) => `m:${id}`
+
+export function melodyPool(level) {
+  const L = MELODY_LEVELS[level] || MELODY_LEVELS[1]
+  const out = []
+  for (let m = L.low; m <= L.high; m++) if (L.chromatic || isNatural(m)) out.push(m)
+  return out
+}
+
+export function genMelody(settings) {
+  const level = MELODY_LEVELS[settings.level] ? Number(settings.level) : 1
+  const L = MELODY_LEVELS[level]
+  const pool = melodyPool(level)
+  const count = Math.max(3, Math.min(12, Number(settings.notes) || 5))
+  // Anfang eher in der Mitte, dann vorwiegend kleine Schritte
+  const mid = pool.filter((m) => Math.abs(m - (L.low + L.high) / 2) <= 5)
+  const midis = [pick(mid.length ? mid : pool)]
+  while (midis.length < count) {
+    const last = midis[midis.length - 1]
+    const twice = midis.length > 1 && midis[midis.length - 2] === last
+    const next = weightedPick(pool.filter((m) => Math.abs(m - last) <= L.leap && !(twice && m === last)), (m) => {
+      const d = Math.abs(m - last)
+      return d === 0 ? 0.35 : 1 / d
+    })
+    midis.push(next)
+  }
+  return { type: 'melody', id: String(level), midis, notes: midis.map(spellMidi) }
+}
+
+// Anzahl richtiger Töne (Tonhöhe zählt, Schreibweise nicht)
+export const melodyHits = (q, entry) => q.midis.map((m, k) => entry[k] === m)
+
+// ---------------------------------------------------------------- Intonation
+
+export const INTONATION_PRESETS = {
+  1: ['P8', 'P5', 'P4'],
+  2: ['P8', 'P5', 'P4', 'M3', 'm3'],
+  3: ['P8', 'P5', 'P4', 'M3', 'm3', 'M6', 'm6', 'M2', 'm7'],
+  4: ['m2', 'M2', 'm3', 'M3', 'P4', 'TT', 'P5', 'm6', 'M6', 'm7', 'M7', 'P8'],
+}
+export const INTONATION_DEFAULTS = { preset: 1, selected: INTONATION_PRESETS[1], cents: 20, tuning: 'equal', play: 'melodic', sound: 'strings', roots: 'natural', length: 10, focus: true }
+export const intonationKey = (id) => `n:${id}`
+
+export function intonationChoices(settings) {
+  const ids = (settings.selected || []).filter((id) => INTONATION_PRESETS[4].includes(id))
+  return ids.length >= 1 ? ids : INTONATION_PRESETS[1]
+}
+
+// Sollwert des oberen Tons in Cent über dem Grundton
+export const targetCents = (id, tuning) => (tuning === 'just' ? JUST_CENTS[id] : INTERVAL[id].semis * 100)
+
+export function genIntonation(settings, prev, weight = flat) {
+  const choices = intonationChoices(settings)
+  const pool = prev && choices.length > 2 ? choices.filter((id) => id !== prev.id) : choices
+  const id = weightedPick(pool, (x) => weight(intonationKey(x)))
+  const iv = INTERVAL[id]
+  const naturals = settings.roots !== 'all'
+  const candidates = rootPool(48, 64, naturals).filter((root) => {
+    const other = transpose(root, iv.semis, iv.steps, 1)
+    return readable([root, other]) && midiOf(other) <= 72
+  })
+  const root = pick(candidates.length ? candidates : rootPool(48, 55, true))
+  const other = transpose(root, iv.semis, iv.steps, 1)
+  const c = Math.max(1, Number(settings.cents) || 20)
+  // drei Fassungen: sauber, zu tief, zu hoch – in zufälliger Reihenfolge
+  const offsets = [0, -c, c]
+  for (let i = offsets.length - 1; i > 0; i--) { const j = rand(i + 1); [offsets[i], offsets[j]] = [offsets[j], offsets[i]] }
+  return { type: 'intonation', id, root, other, notes: [root, other], offsets, correct: String(offsets.indexOf(0) + 1) }
+}
+
+export const check = (q, answerId) => answerId === (q.correct ?? q.id)
