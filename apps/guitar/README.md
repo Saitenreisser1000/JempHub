@@ -31,4 +31,4 @@ Build-Werkzeug. Schriften kommen von Google Fonts.
 Übungen werden derzeit im Browser (`localStorage`) gespeichert. Die Anbindung an
 Supabase folgt in einem eigenen Schritt.
 
-Die frühere Vue/Vuetify-Version ist im Git-Tag `guitarjemp-legacy` erhalten.
+Die frühere Vue/Vuetify-Version bleibt in der Git-Historie erhalten (letzter Stand: Commit `a574cd7`).

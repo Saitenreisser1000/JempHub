@@ -36,7 +36,7 @@ Die Frontend-Artefakte liegen jeweils unter `apps/<app>/dist`. Hub, GuitarJemp u
 
 Das Root-Lockfile ist für `npm ci` im Monorepo maßgeblich. Die übernommenen App-Lockfiles bleiben als Originalbestand und für eigenständige Deployment-Kontexte erhalten.
 
-GuitarJemp (ab Version 2) ist eine statische App mit nativen ES-Modulen ohne Paketabhängigkeiten. Ihr Build führt die Tests aus und kopiert die Dateien nach `apps/guitar/dist`; der Dev-Server läuft auf Port 5180. Die frühere Vue/Vuetify-Version ist im Git-Tag `guitarjemp-legacy` erhalten.
+GuitarJemp (ab Version 2) ist eine statische App mit nativen ES-Modulen ohne Paketabhängigkeiten. Ihr Build führt die Tests aus und kopiert die Dateien nach `apps/guitar/dist`; der Dev-Server läuft auf Port 5180. Die frühere Vue/Vuetify-Version bleibt in der Git-Historie erhalten (letzter Stand: Commit `a574cd7`).
 
 ## Historien und lokale Änderungen
 
