@@ -25,6 +25,7 @@ const EX = {
       ['range', 'Tonraum', [['Im System', 0], ['+ Hilfslinien', 1], ['Weit', 2]]],
       ['accidentals', 'Vorzeichen ♯ ♭', [['Aus', false], ['An', true]]],
       ['octaves', 'Oktavlage (c, c1, c2 …)', [['Aus', false], ['An', true]]],
+      ['fretboard', 'Lage auf der Gitarre zeigen', [['Aus', false], ['An', true]]],
     ],
     thumb: () => staffSVG({ clef: 'treble', items: [{ type: 'note', pos: 3, base: 4 }], minWidth: 11 }),
   },
@@ -69,6 +70,13 @@ function route() {
   S.route = EX[h] || h === 'progress' ? h : 'home'
   if (EX[S.route]) {
     S.settings = store.settings(S.route, EX[S.route].defaults)
+    // Einstellungen von vor der Griffbrett-Option: Oktavlage auf den neuen Standard (an) setzen.
+    const saved = store.savedSettings(S.route)
+    if (S.route === 'notes' && saved && saved.fretboard === undefined) {
+      S.settings.octaves = true
+      S.settings.fretboard = false
+      store.saveSettings(S.route, S.settings)
+    }
     S.phase = 'settings'
   }
   render()
@@ -271,7 +279,8 @@ function renderNotes() {
     return `<button class="abtn${c}" data-letter="${i}" ${dis}>${label}<span class="k">${l.toLowerCase()}</span></button>`
   }).join('')}</div>`
   if (S.result) {
-    html += `<div class="reveal"><div class="where"><div class="lbl">So liegt ${esc(q.fullName)} auf ${instrument === 'guitar' ? 'der Gitarre' : 'dem E-Bass'}</div>${fretboardSVG(q.midi, instrument, S.result === 'ok' ? '#8fd3a9' : '#d8b46a')}</div>${nextBtn()}</div>`
+    const where = S.settings.fretboard ? `<div class="where"><div class="lbl">So liegt ${esc(q.fullName)} auf ${instrument === 'guitar' ? 'der Gitarre' : 'dem E-Bass'}</div>${fretboardSVG(q.midi, instrument, S.result === 'ok' ? '#8fd3a9' : '#d8b46a')}</div>` : ''
+    html += `<div class="reveal">${where}${nextBtn()}</div>`
   }
   return html
 }

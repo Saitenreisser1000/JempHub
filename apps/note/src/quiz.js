@@ -9,7 +9,7 @@ const flat = () => 1
 
 // ---------------------------------------------------------------- Noten bestimmen
 
-export const NOTE_DEFAULTS = { clef: 'treble', range: 1, accidentals: false, octaves: false, length: 10, focus: true }
+export const NOTE_DEFAULTS = { clef: 'treble', range: 1, accidentals: false, octaves: true, fretboard: false, length: 10, focus: true }
 export const NOTE_RANGES = { 0: [0, 8], 1: [-2, 10], 2: [-5, 13] }
 
 export const noteKey = (q) => `n:${q.clef}:${q.pos}:${q.acc}`
