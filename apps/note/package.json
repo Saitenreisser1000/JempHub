@@ -1,19 +1,14 @@
 {
   "name": "notejemp",
   "private": true,
-  "version": "1.0.0",
+  "version": "2.0.0",
   "type": "module",
+  "engines": {
+    "node": ">=22.12.0"
+  },
   "scripts": {
-    "dev": "vite --host 127.0.0.1 --port 5182",
-    "build": "vite build",
-    "preview": "vite preview --host"
-  },
-  "dependencies": {
-    "vue": "^3.5.43"
-  },
-  "devDependencies": {
-    "@vexflow-fonts/bravura": "^1.0.2",
-    "@vitejs/plugin-vue": "^6.0.9",
-    "vite": "^8.3.3"
+    "dev": "node ../../scripts/serve-static.mjs . --port 5182",
+    "build": "npm test && node ../../scripts/build-static.mjs note",
+    "test": "node --test \"src/**/*.test.js\""
   }
 }
