@@ -133,3 +133,24 @@ describe('staff', () => {
     assert.ok(gap.includes('class="gap"') && gap.includes('&#xe083;'))
   })
 })
+
+describe('octave names', () => {
+  it('uses German octave designations', async () => {
+    const { germanName } = await import('./music.js')
+    assert.deepEqual(
+      [germanName(0, 0, 4), germanName(0, 0, 5), germanName(0, 0, 3), germanName(0, 0, 2), germanName(0, 0, 1), germanName(6, 0, 1), germanName(0, 1, 5), germanName(6, -1, 4), germanName(2, -1, 2), germanName(5, -1, 6)],
+      ['c1', 'c2', 'c', 'C', 'C1', 'H1', 'cis2', 'b1', 'Es', 'as3'],
+    )
+  })
+  it('asks octaves that fit the clef and checks them', async () => {
+    const { noteOctaves } = await import('./quiz.js')
+    assert.deepEqual(noteOctaves({ ...NOTE_DEFAULTS, range: 0 }, 'treble'), [4, 5])
+    assert.deepEqual(noteOctaves({ ...NOTE_DEFAULTS, range: 2 }, 'bass'), [1, 2, 3, 4])
+    const q = genNote({ ...NOTE_DEFAULTS, octaves: true }, null)
+    assert.ok(checkNote(q, { letter: q.letter, acc: q.acc, oct: q.octave }))
+    assert.ok(!checkNote(q, { letter: q.letter, acc: q.acc, oct: q.octave + 1 }))
+    assert.ok(checkNote(q, { letter: q.letter, acc: q.acc }))
+    // e auf der untersten Linie im Violinschlüssel ist e1
+    assert.equal(genNote({ ...NOTE_DEFAULTS, range: 0 }, null, (k) => (k === 'n:treble:0:0' ? 1e9 : 0)).fullName, 'e1')
+  })
+})

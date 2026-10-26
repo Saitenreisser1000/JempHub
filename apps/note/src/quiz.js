@@ -2,14 +2,14 @@
 // vorige Aufgabe und eine Gewichtung rein, neue Aufgabe raus.
 import {
   CLEFS, LETTERS, SHARPABLE, FLATTABLE, METERS, VALUE_OF_DUR,
-  letterOf, midiOf, noteName, pick, rand, shuffle, weightedPick, valueLabel, beatsText,
+  letterOf, octaveOf, midiOf, noteName, germanName, pick, rand, shuffle, weightedPick, valueLabel, beatsText,
 } from './music.js'
 
 const flat = () => 1
 
 // ---------------------------------------------------------------- Noten bestimmen
 
-export const NOTE_DEFAULTS = { clef: 'treble', range: 1, accidentals: false, length: 10, focus: true }
+export const NOTE_DEFAULTS = { clef: 'treble', range: 1, accidentals: false, octaves: false, length: 10, focus: true }
 export const NOTE_RANGES = { 0: [0, 8], 1: [-2, 10], 2: [-5, 13] }
 
 export const noteKey = (q) => `n:${q.clef}:${q.pos}:${q.acc}`
@@ -39,13 +39,24 @@ export function genNote(settings, prev, weight = flat) {
   const c = weightedPick(pool.length ? pool : all, (x) => x.share * weight(noteKey(x)))
   return {
     type: 'note', clef: c.clef, pos: c.pos, letter: c.letter, acc: c.acc,
+    octave: octaveOf(c.clef, c.pos),
     midi: midiOf(c.clef, c.pos, c.acc),
     name: noteName(c.letter, c.acc),
+    fullName: germanName(c.letter, c.acc, octaveOf(c.clef, c.pos)),
   }
 }
 
+// answer.oct wird nur verglichen, wenn die Oktavlage abgefragt wird.
 export function checkNote(q, answer) {
-  return answer.letter === q.letter && (answer.acc ?? 0) === q.acc
+  return answer.letter === q.letter && (answer.acc ?? 0) === q.acc && (answer.oct === undefined || answer.oct === q.octave)
+}
+
+// Oktaven, die im gewählten Tonraum für einen Schlüssel vorkommen können.
+export function noteOctaves(settings, clef) {
+  const [lo, hi] = NOTE_RANGES[settings.range] ?? NOTE_RANGES[1]
+  const set = new Set()
+  for (let pos = lo; pos <= hi; pos++) set.add(octaveOf(clef, pos))
+  return [...set].sort((a, b) => a - b)
 }
 
 export const NOTE_LETTERS = LETTERS
