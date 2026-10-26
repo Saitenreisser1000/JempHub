@@ -38,6 +38,24 @@ export function noteName(letterIdx, acc = 0) {
   return l + 'es'
 }
 
+// Oktavbezeichnungen nach deutscher Schreibweise (Helmholtz mit Ziffern).
+// Wissenschaftliche Oktave 4 (C4 = eingestrichenes c) -> c1, 5 -> c2, 3 -> c, 2 -> C, 1 -> C1, 0 -> C2
+export const OCTAVE_NAMES = {
+  0: 'Subkontra-Oktave', 1: 'Kontra-Oktave', 2: 'Große Oktave', 3: 'Kleine Oktave',
+  4: 'Eingestrichene Oktave', 5: 'Zweigestrichene Oktave', 6: 'Dreigestrichene Oktave', 7: 'Viergestrichene Oktave',
+}
+export const OCTAVE_SHORT = { 0: 'Subkontra', 1: 'Kontra', 2: 'Groß', 3: 'Klein', 4: '1-gestr.', 5: '2-gestr.', 6: '3-gestr.', 7: '4-gestr.' }
+
+export function germanName(letterIdx, acc, octave) {
+  const base = noteName(letterIdx, acc)
+  if (octave >= 3) {
+    const low = base.toLowerCase()
+    return octave === 3 ? low : low + (octave - 3)
+  }
+  const up = base[0].toUpperCase() + base.slice(1).toLowerCase()
+  return octave === 2 ? up : up + (2 - octave)
+}
+
 // pos 0 = unterste Notenlinie, jede Stufe ein halber Linienabstand.
 // bottomStep: diatonische Stufe der untersten Linie (C0 = 0).
 export const CLEFS = {

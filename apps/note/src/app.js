@@ -1,8 +1,8 @@
 // NoteJemp: Übersicht, Einstellungen, Übung, Ergebnis und Fortschritt.
-import { LETTERS, BASES, CLEFS, VALUE_OF_DUR, midiOf, noteName, valueLabel } from './music.js'
+import { LETTERS, BASES, CLEFS, VALUE_OF_DUR, OCTAVE_NAMES, OCTAVE_SHORT, midiOf, noteName, germanName, valueLabel } from './music.js'
 import {
   NOTE_DEFAULTS, VALUE_DEFAULTS, MEASURE_DEFAULTS, NOTE_RANGES, VALUE_LEVELS,
-  genNote, checkNote, noteKey, genValue, checkValue, valueKey, genMeasure, checkMeasure, measureKey, measureLabel,
+  genNote, checkNote, noteKey, noteOctaves, genValue, checkValue, valueKey, genMeasure, checkMeasure, measureKey, measureLabel,
 } from './quiz.js'
 import { createStore } from './stats.js'
 import { staffSVG } from './staff.js'
@@ -24,6 +24,7 @@ const EX = {
       ['clef', 'Notenschlüssel', [['Violin', 'treble'], ['Bass', 'bass'], ['Beide', 'both']]],
       ['range', 'Tonraum', [['Im System', 0], ['+ Hilfslinien', 1], ['Weit', 2]]],
       ['accidentals', 'Vorzeichen ♯ ♭', [['Aus', false], ['An', true]]],
+      ['octaves', 'Oktavlage (c, c1, c2 …)', [['Aus', false], ['An', true]]],
     ],
     thumb: () => staffSVG({ clef: 'treble', items: [{ type: 'note', pos: 3, base: 4 }], minWidth: 11 }),
   },
@@ -54,7 +55,7 @@ const EX = {
 const S = {
   route: 'home', phase: 'settings', settings: null,
   q: null, i: 0, score: 0, streak: 0, bestStreak: 0,
-  result: null, answer: null, acc: 0, dotted: false,
+  result: null, answer: null, acc: 0, oct: null, needOct: false, dotted: false,
   missed: [], times: [], shownAt: 0, advanceT: 0, resetArmed: false,
 }
 let sound = store.pref('sound', true)
@@ -128,6 +129,8 @@ function nextQuestion() {
   S.result = null
   S.answer = null
   S.acc = 0
+  S.oct = null
+  S.needOct = false
   S.dotted = false
   S.shownAt = performance.now()
   render()
@@ -239,22 +242,46 @@ function cls(isRight, isChosen) {
 function renderNotes() {
   const q = S.q
   const state = S.result || undefined
-  const name = q.name
-  const octave = Math.floor(q.midi / 12) - 1
+  const octs = !!S.settings.octaves
+  const accs = !!S.settings.accidentals
+  const name = octs ? q.fullName : q.name
   const instrument = q.clef === 'treble' ? 'guitar' : 'bass'
+  const dis = S.result ? 'disabled' : ''
   let html = `<div class="stage">${staffSVG({ clef: q.clef, items: [{ type: 'note', pos: q.pos, base: 4, acc: q.acc || undefined, state }], minWidth: 17, label: 'Note im ' + CLEFS[q.clef].label })}</div>`
-  html += feedbackHTML('Welche Note ist das?', name, name, `${CLEFS[q.clef].label} · klingt als ${noteName(q.letter, q.acc)}${octave} am Klavier`)
-  if (S.settings.accidentals) {
-    html += `<div class="accs"><div class="seg" data-accs>${[[0, '♮'], [1, '♯'], [-1, '♭']].map(([v, t]) => `<button data-acc="${v}" aria-pressed="${S.acc === v}" ${S.result ? 'disabled' : ''} aria-label="${v === 0 ? 'ohne Vorzeichen' : v > 0 ? 'Kreuz' : 'Be'}">${t}</button>`).join('')}</div></div>`
+  if (S.needOct && !S.result) html += '<div class="feedback hint">Wähle zuerst die Oktave.</div>'
+  else html += feedbackHTML(octs ? 'Welche Note ist das, mit Oktavlage?' : 'Welche Note ist das?', name, name, `${octs ? '' : q.fullName + ' · '}${OCTAVE_NAMES[q.octave]} · ${CLEFS[q.clef].label}`)
+  if (accs || octs) {
+    html += '<div class="accs">'
+    if (accs) html += `<div class="seg">${[[0, '♮'], [1, '♯'], [-1, '♭']].map(([v, t]) => `<button data-acc="${v}" aria-pressed="${S.acc === v}" ${dis} aria-label="${v === 0 ? 'ohne Vorzeichen' : v > 0 ? 'Kreuz' : 'Be'}">${t}</button>`).join('')}</div>`
+    if (octs) html += `<div class="seg" aria-label="Oktave">${noteOctaves(S.settings, q.clef).map((o, k) => `<button data-oct="${o}" aria-pressed="${S.oct === o}" ${dis} title="${OCTAVE_NAMES[o]}">${OCTAVE_SHORT[o]}<span class="kbd">${k + 1}</span></button>`).join('')}</div>`
+    html += '</div>'
   }
+  const accSel = accs ? S.acc : 0
   html += `<div class="answers letters">${LETTERS.map((l, i) => {
     const chosen = S.answer && S.answer.letter === i
-    return `<button class="abtn${cls(i === q.letter, chosen)}" data-letter="${i}" ${S.result ? 'disabled' : ''}>${l}<span class="k">${l.toLowerCase()}</span></button>`
+    const nameFor = (acc, oct) => (octs && oct !== null && oct !== undefined ? germanName(i, acc, oct) : acc ? noteName(i, acc) : l)
+    let label = nameFor(accSel, S.oct)
+    let c = ''
+    if (S.result) {
+      // Gewählte falsche Antwort rot mit dem gewählten Namen, richtige Antwort grün mit dem vollen Namen.
+      if (S.result === 'bad' && chosen) { c = ' bad'; label = nameFor(S.answer.acc ?? 0, S.answer.oct) }
+      else if (i === q.letter) { c = ' ok'; label = octs ? q.fullName : q.name }
+      else c = ' dim'
+    }
+    return `<button class="abtn${c}" data-letter="${i}" ${dis}>${label}<span class="k">${l.toLowerCase()}</span></button>`
   }).join('')}</div>`
   if (S.result) {
-    html += `<div class="reveal"><div class="where"><div class="lbl">So liegt die Note auf ${instrument === 'guitar' ? 'der Gitarre' : 'dem E-Bass'}</div>${fretboardSVG(q.midi, instrument, S.result === 'ok' ? '#8fd3a9' : '#d8b46a')}</div>${nextBtn()}</div>`
+    html += `<div class="reveal"><div class="where"><div class="lbl">So liegt ${esc(q.fullName)} auf ${instrument === 'guitar' ? 'der Gitarre' : 'dem E-Bass'}</div>${fretboardSVG(q.midi, instrument, S.result === 'ok' ? '#8fd3a9' : '#d8b46a')}</div>${nextBtn()}</div>`
   }
   return html
+}
+
+function answerNote(letter) {
+  if (S.settings.octaves && S.oct === null) {
+    S.needOct = true
+    return render()
+  }
+  submit({ letter, acc: S.settings.accidentals ? S.acc : 0, oct: S.settings.octaves ? S.oct : undefined })
 }
 
 function renderValues() {
@@ -292,7 +319,7 @@ function renderMeasures() {
 }
 
 function missedHTML(q) {
-  if (q.type === 'note') return `<div class="miss">${staffSVG({ clef: q.clef, items: [{ type: 'note', pos: q.pos, base: 4, acc: q.acc || undefined }], minWidth: 13 })}<span>${q.name}</span></div>`
+  if (q.type === 'note') return `<div class="miss">${staffSVG({ clef: q.clef, items: [{ type: 'note', pos: q.pos, base: 4, acc: q.acc || undefined }], minWidth: 13 })}<span>${q.fullName}</span></div>`
   if (q.type === 'value') {
     const it = q.kind === 'rest' ? { type: 'rest', base: q.base, dots: q.dots } : { type: 'note', pos: q.pos, base: q.base, dots: q.dots }
     return `<div class="miss">${staffSVG({ items: [it], minWidth: 9, top: 2, height: 12 })}<span>${q.label}</span></div>`
@@ -348,7 +375,7 @@ function renderProgress() {
       const a = store.accuracy(`n:${clef}:${pos}:0`)
       items.push({ type: 'note', pos, base: 16, state: accClass(a) })
       const it = store.items[`n:${clef}:${pos}:0`]
-      if (a !== null && a < 0.85) weak.push({ name: noteName(midiLetter(clef, pos)) + octaveLabel(clef, pos), a, n: it.n })
+      if (a !== null && a < 0.85) weak.push({ name: germanName(midiLetter(clef, pos), 0, Number(octaveLabel(clef, pos))), a, n: it.n })
     }
     weak.sort((x, y) => x.a - y.a)
     return `<div class="lbl" style="margin-top:6px">${CLEFS[clef].label}</div>
@@ -414,7 +441,8 @@ view.addEventListener('click', (e) => {
   if (t.dataset.toggle === 'auto') { auto = !auto; store.setPref('auto', auto); return render() }
   if (t.dataset.acc !== undefined) { S.acc = Number(t.dataset.acc); return render() }
   if (t.dataset.dot !== undefined) { S.dotted = !S.dotted; return render() }
-  if (t.dataset.letter !== undefined) return submit({ letter: Number(t.dataset.letter), acc: S.settings.accidentals ? S.acc : 0 })
+  if (t.dataset.oct !== undefined) { S.oct = Number(t.dataset.oct); S.needOct = false; return render() }
+  if (t.dataset.letter !== undefined) return answerNote(Number(t.dataset.letter))
   if (t.dataset.base !== undefined) return submit({ base: Number(t.dataset.base), dots: S.settings.dotted && S.dotted ? 1 : 0 })
   if (t.dataset.dur !== undefined) return submit({ dur: Number(t.dataset.dur) })
 })
@@ -436,7 +464,11 @@ document.addEventListener('keydown', (e) => {
   const lower = k.toLowerCase()
   if (S.route === 'notes') {
     const i = LETTERS.findIndex((l) => l.toLowerCase() === lower)
-    if (i >= 0) { e.preventDefault(); return submit({ letter: i, acc: S.settings.accidentals ? S.acc : 0 }) }
+    if (i >= 0) { e.preventDefault(); return answerNote(i) }
+    if (S.settings.octaves) {
+      const octs = noteOctaves(S.settings, S.q.clef), n = Number(k)
+      if (n >= 1 && n <= octs.length) { S.oct = octs[n - 1]; S.needOct = false; return render() }
+    }
     if (S.settings.accidentals && ['#', '+'].includes(k)) { S.acc = 1; return render() }
     if (S.settings.accidentals && k === '-') { S.acc = -1; return render() }
     if (S.settings.accidentals && (lower === 'n' || k === '0')) { S.acc = 0; return render() }
