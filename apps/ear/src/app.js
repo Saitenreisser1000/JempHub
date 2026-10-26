@@ -1,6 +1,6 @@
 // EarJemp: Übersicht, Einstellungen, Übung, Ergebnis und Fortschritt.
-import { INTERVAL, INTERVALS, INTERVAL_PRESETS, CHORD, CHORDS, CHORD_PRESETS, midiOf, noteLabel, clefFor, staffPos, transpose, chordNotes } from './theory.js'
-import { INTERVAL_DEFAULTS, CHORD_DEFAULTS, genInterval, genChord, intervalChoices, chordChoices, check, intervalKey, chordKey } from './quiz.js'
+import { INTERVAL, INTERVALS, INTERVAL_PRESETS, CHORD, CHORDS, CHORD_PRESETS, INVERSION, INVERSIONS, INVERSION_PRESETS, SCALE, SCALES, SCALE_PRESETS, midiOf, noteLabel, clefFor, staffPos, transpose, chordNotes, invertNotes, inversionDegrees, scaleNotes, degreeLabel } from './theory.js'
+import { INTERVAL_DEFAULTS, CHORD_DEFAULTS, INVERSION_DEFAULTS, SCALE_DEFAULTS, SCALE_TEMPO, genInterval, genChord, genInversion, genScale, intervalChoices, chordChoices, inversionChoices, scaleChoices, check, intervalKey, chordKey, inversionKey, scaleKey } from './quiz.js'
 import { createStore } from './stats.js'
 import { staffSVG } from './staff.js'
 import { fretboardSVG } from './fretboard.js'
@@ -45,12 +45,27 @@ const EX = {
     gen: genChord, key: chordKey, choices: chordChoices,
     thumb: () => staffSVG({ clef: 'treble', columns: [{ notes: [{ pos: -2 }, { pos: 0 }, { pos: 2 }] }, { notes: [{ pos: -1 }, { pos: 1, acc: -1 }, { pos: 3 }] }] }),
   },
+  inversions: {
+    title: () => t('inversions'), text: () => t('inversionsText'),
+    defaults: INVERSION_DEFAULTS, items: INVERSIONS, byId: INVERSION, presets: INVERSION_PRESETS,
+    gen: genInversion, key: inversionKey, choices: inversionChoices,
+    thumb: () => staffSVG({ clef: 'treble', columns: [{ notes: [{ pos: -2 }, { pos: 0 }, { pos: 2 }] }, { notes: [{ pos: 0 }, { pos: 2 }, { pos: 5 }] }, { notes: [{ pos: 2 }, { pos: 5 }, { pos: 7 }] }] }),
+  },
+  scales: {
+    title: () => t('scales'), text: () => t('scalesText'),
+    defaults: SCALE_DEFAULTS, items: SCALES, byId: SCALE, presets: SCALE_PRESETS,
+    gen: genScale, key: scaleKey, choices: scaleChoices,
+    thumb: () => staffSVG({ clef: 'treble', columns: [-2, -1, 0, 1, 2].map((pos) => ({ notes: [{ pos }] })) }),
+  },
 }
-const presetLabels = (ex) => ex === 'intervals'
-  ? { 1: '1', 2: '2', 3: '3', 4: '4' }
-  : getLang() === 'de'
-    ? { 1: 'Dur/Moll', 2: '+ verm./überm.', 3: '+ sus', 4: 'Septakkorde', 5: 'Alle' }
-    : { 1: 'Major/minor', 2: '+ dim/aug', 3: '+ sus', 4: 'Sevenths', 5: 'All' }
+const DIRS = { intervals: ['up', 'down', 'harmonic'], scales: ['up', 'down', 'updown'] }
+const PRESET_LABELS = {
+  intervals: { de: ['1', '2', '3', '4'], en: ['1', '2', '3', '4'] },
+  chords: { de: ['Dur/Moll', '+ verm./überm.', '+ sus', 'Septakkorde', 'Alle'], en: ['Major/minor', '+ dim/aug', '+ sus', 'Sevenths', 'All'] },
+  inversions: { de: ['Dur', 'Dur/Moll', 'Dom7', 'Alle'], en: ['Major', 'Major/minor', 'Dom7', 'All'] },
+  scales: { de: ['Dur/Moll', '+ harm./mel.', 'Modi', '+ lyd./lokr.', 'Alle'], en: ['Major/minor', '+ harm./mel.', 'Modes', '+ Lyd./Locr.', 'All'] },
+}
+const presetLabels = (ex) => Object.fromEntries(PRESET_LABELS[ex][getLang()].map((l, i) => [i + 1, l]))
 
 function longName(exId, id) {
   const n = nameOf(EX[exId].byId[id])
@@ -162,6 +177,11 @@ function playNotes(q, notes, offset = 0) {
     player.note(b, t0 + 0.85, 1.3, opts)
     return 2.2
   }
+  if (q.type === 'scale') {
+    const d = SCALE_TEMPO[S.settings.tempo] || SCALE_TEMPO.mid
+    notes.forEach((n, k) => player.note(midiOf(n), t0 + k * d, k === notes.length - 1 ? 1.4 : d * 1.6, opts))
+    return notes.length * d + 1.2
+  }
   const ms = notes.map(midiOf)
   const mode = S.settings.play || 'block'
   let tt = t0
@@ -176,13 +196,28 @@ function playNotes(q, notes, offset = 0) {
 async function playQuestion() {
   await prepareSound()
   player.stopAll()
-  markPlaying(playNotes(S.q, S.q.notes))
+  markPlaying(playNotes(S.q, playOrder(S.q, S.q)))
 }
 
-function notesFor(q, id) {
+// Töne in Abspielreihenfolge, für die Aufgabe selbst oder eine andere Antwort id
+function playOrder(q, alt) {
+  if (alt === q) return q.type === 'scale' ? q.seq : q.notes
+  const id = alt
   if (q.type === 'interval') {
     const iv = INTERVAL[id]
     return [q.root, transpose(q.root, iv.semis, iv.steps, q.dir === 'down' ? -1 : 1)]
+  }
+  if (q.type === 'inversion') {
+    const item = INVERSION[id]
+    // gleicher Basston wie in der Aufgabe, damit der Vergleich fair ist
+    const notes = invertNotes(chordNotes(q.root, CHORD[item.chord]), item.inv)
+    const shift = midiOf(q.notes[0]) - midiOf(notes[0])
+    const oct = Math.round(shift / 12)
+    return oct ? notes.map((n) => ({ ...n, o: n.o + oct })) : notes
+  }
+  if (q.type === 'scale') {
+    const notes = scaleNotes(q.root, SCALE[id])
+    return q.dir === 'down' ? [...notes].reverse() : q.dir === 'updown' ? notes.concat(notes.slice(0, -1).reverse()) : notes
   }
   return chordNotes(q.root, CHORD[id])
 }
@@ -191,8 +226,8 @@ async function compare() {
   if (S.result !== 'bad') return
   await prepareSound()
   player.stopAll()
-  const first = playNotes(S.q, S.q.notes)
-  const second = playNotes(S.q, notesFor(S.q, S.answer), first + 0.4)
+  const first = playNotes(S.q, playOrder(S.q, S.q))
+  const second = playNotes(S.q, playOrder(S.q, S.answer), first + 0.4)
   markPlaying(first + 0.4 + second)
 }
 
@@ -282,9 +317,10 @@ function renderSettings() {
   let rows = `<div class="vrow col"><span>${t('level')}</span>${segHTML('preset', presetOpts, st.preset)}
       <div class="pick" data-pick>${e.items.map((it) => `<button data-item="${it.id}" aria-pressed="${sel.has(it.id)}">${nameOf(it)[0]}${nameOf(it)[1] ? `<small>${nameOf(it)[1]}</small>` : ''}</button>`).join('')}</div>
       <small class="muted">${t('selectHint')}</small></div>`
-  if (id === 'intervals') {
+  if (DIRS[id]) {
     const dirs = new Set(st.dirs || ['up'])
-    rows += `<div class="vrow"><span>${t('direction')}</span><div class="pick" data-dirs style="padding:0">${['up', 'down', 'harmonic'].map((d) => `<button data-dir="${d}" aria-pressed="${dirs.has(d)}">${t(d)}</button>`).join('')}</div></div>`
+    rows += `<div class="vrow"><span>${t('direction')}</span><div class="pick" data-dirs style="padding:0">${DIRS[id].map((d) => `<button data-dir="${d}" aria-pressed="${dirs.has(d)}">${t(d)}</button>`).join('')}</div></div>`
+    if (id === 'scales') rows += `<div class="vrow"><span>${t('tempo')}</span>${segHTML('tempo', [[t('slow'), 'slow'], [t('mid'), 'mid'], [t('fast'), 'fast']], st.tempo || 'mid')}</div>`
   } else {
     rows += `<div class="vrow"><span>${t('playback')}</span>${segHTML('play', [[t('block'), 'block'], [t('arp'), 'arp'], [t('both'), 'both']], st.play)}</div>`
   }
@@ -305,17 +341,24 @@ function staffFor(q) {
   if (q.type === 'interval') {
     if (q.dir === 'harmonic') columns = S.result ? [{ notes: q.notes.map((x) => n(x, shown)) }] : [{ gap: true }]
     else columns = S.result ? q.notes.map((x) => ({ notes: [n(x, shown)] })) : [{ notes: [n(q.notes[0])] }, { gap: true }]
+  } else if (q.type === 'scale') {
+    const line = q.dir === 'down' ? [...q.notes].reverse() : q.notes
+    columns = S.result ? line.map((x) => ({ notes: [n(x, shown)] })) : [{ notes: [n(line[0])] }, { gap: true }]
   } else {
     columns = S.result ? [{ notes: q.notes.map((x) => n(x, shown)) }] : [{ gap: true }]
   }
-  return staffSVG({ clef, columns, label: S.route === 'intervals' ? t('intervals') : t('chords') })
+  return staffSVG({ clef, columns, label: ex().title(), colW: q.type === 'scale' && S.result ? 5.2 : 7.2 })
 }
 
 function fretTones(q) {
   if (q.type === 'interval') {
     return [{ midi: midiOf(q.root), label: '1', color: TONE_COLORS[0] }, { midi: midiOf(q.other), label: shortName('intervals', q.id), color: TONE_COLORS[1] }]
   }
-  return q.notes.map((note, k) => ({ midi: midiOf(note), label: CHORD[q.id].tones[k][2], color: TONE_COLORS[k % TONE_COLORS.length] }))
+  if (q.type === 'scale') {
+    return q.notes.slice(0, -1).map((note, k) => ({ midi: midiOf(note), label: degreeLabel(q.root, note), color: k ? TONE_COLORS[1] : TONE_COLORS[0] }))
+  }
+  const degrees = q.type === 'inversion' ? inversionDegrees(INVERSION[q.id]) : CHORD[q.id].tones.map((x) => x[2])
+  return q.notes.map((note, k) => ({ midi: midiOf(note), label: degrees[k], color: TONE_COLORS[k % TONE_COLORS.length] }))
 }
 
 function renderPlay() {
@@ -323,14 +366,14 @@ function renderPlay() {
   const lang = getLang()
   const choices = ex().choices(S.settings)
   const ordered = ex().items.filter((it) => choices.includes(it.id))
-  const meta = q.type === 'interval' ? t('dir' + q.dir[0].toUpperCase() + q.dir.slice(1)) : t(S.settings.play || 'block')
+  const meta = q.dir ? t('dir' + q.dir[0].toUpperCase() + q.dir.slice(1)) : t(S.settings.play || 'block')
   const noteNames = q.notes.map((x) => noteLabel(x, lang)).join(' – ')
   let html = `<div class="stagebox">
     <div><button class="playbtn" data-act="play" aria-label="${t('replay')}">${S.result || S.i > 0 || S.q ? REPLAY_ICON : PLAY_ICON}</button><span class="playlbl">${t('replay')} <span class="kbd">␣</span></span></div>
     <div>${staffFor(q)}</div>
   </div>
   <div class="qmeta">${esc(meta)}</div><div class="loading" id="loading"></div>`
-  if (!S.result) html += `<div class="feedback">${q.type === 'interval' ? t('qInterval') : t('qChord')}</div>`
+  if (!S.result) html += `<div class="feedback">${t({ interval: 'qInterval', chord: 'qChord', inversion: 'qInversion', scale: 'qScale' }[q.type])}</div>`
   else if (S.result === 'ok') html += `<div class="feedback ok"><span class="ic" aria-hidden="true">✓</span>${t('right', { x: esc(fullName(id, q.id)) })}<small>${esc(noteNames)}</small></div>`
   else html += `<div class="feedback bad"><span class="ic" aria-hidden="true">✕</span>${t('wrong', { x: esc(fullName(id, q.id)) })}<small>${t('chosen', { x: esc(fullName(id, S.answer)) })} · ${esc(noteNames)}</small></div>`
   html += `<div class="answers ivs">${ordered.map((it, k) => {
@@ -437,7 +480,7 @@ view.addEventListener('click', (e) => {
   if (b.dataset.dir) {
     const dirs = new Set(S.settings.dirs || ['up'])
     if (dirs.has(b.dataset.dir)) { if (dirs.size > 1) dirs.delete(b.dataset.dir) } else dirs.add(b.dataset.dir)
-    S.settings.dirs = ['up', 'down', 'harmonic'].filter((d) => dirs.has(d))
+    S.settings.dirs = DIRS[S.route].filter((d) => dirs.has(d))
     saveSettings()
     return render()
   }

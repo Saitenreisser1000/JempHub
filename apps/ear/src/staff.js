@@ -9,11 +9,10 @@ const ACC = { '-2': 0xe264, '-1': 0xe260, 0: 0xe261, 1: 0xe262, 2: 0xe263 }
 const CLEF = { treble: [0xe050, 2], bass: [0xe062, 6] }
 
 // columns: [{ notes: [{ pos, acc, state }] } | { gap: true }]
-export function staffSVG({ clef = 'treble', columns = [], label = 'Notensystem' } = {}) {
+export function staffSVG({ clef = 'treble', columns = [], label = 'Notensystem', colW = 7.2 } = {}) {
   const parts = []
   const [glyph, cpos] = CLEF[clef]
   parts.push(`<text class="glyph" x="${0.6 * S}" y="${yOf(cpos)}">${cp(glyph)}</text>`)
-  const colW = 7.2
   let x = 7
   for (const col of columns) {
     if (col.gap) {

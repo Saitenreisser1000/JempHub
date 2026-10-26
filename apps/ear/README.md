@@ -10,7 +10,10 @@ Gehörbildung im Jemp-Design: Intervalle und Akkorde hören, wahlweise mit Klavi
 - Schwächen gezielt üben: oft Verwechseltes kommt öfter dran. Der Fortschritt zeigt Trefferquoten und häufige Verwechslungen.
 - Tastatur: Leertaste (nochmal hören), 1–9/0 (Antwort), C (vergleichen), Enter (weiter), Esc (Übersicht).
 
-Geplant: Umkehrungen, Tonleitern, Intonation (Samples in `public/audio/vpo`), Melodiediktat.
+- **Umkehrungen**: Dur, Moll und Dominantseptakkord in allen Lagen (Sext-, Quartsext-, Quintsextakkord …).
+- **Tonleitern**: Dur, Moll, harmonisch/melodisch Moll, Kirchentonarten, Pentatonik; aufwärts, abwärts oder auf und ab, drei Tempi.
+
+Geplant: Intonation (Samples in `public/audio/vpo`), Melodiediktat.
 
 ## Klänge
 

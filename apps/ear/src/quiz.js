@@ -1,5 +1,5 @@
 // Aufgaben für Intervalle und Akkorde. Reine Funktionen, gewichtet nach Schwächen.
-import { INTERVAL, INTERVAL_PRESETS, CHORD, CHORD_PRESETS, transpose, chordNotes, rootPool, readable, midiOf } from './theory.js'
+import { INTERVAL, INTERVAL_PRESETS, CHORD, CHORD_PRESETS, INVERSION, INVERSION_PRESETS, SCALE, SCALE_PRESETS, transpose, chordNotes, invertNotes, scaleNotes, rootPool, readable, midiOf } from './theory.js'
 
 const rand = (n) => Math.floor(Math.random() * n)
 const pick = (arr) => arr[rand(arr.length)]
@@ -70,6 +70,60 @@ export function genChord(settings, prev, weight = flat) {
   })
   const root = pick(candidates.length ? candidates : rootPool(48, 55, true))
   return { type: 'chord', id, root, notes: chordNotes(root, chord) }
+}
+
+// ---------------------------------------------------------------- Umkehrungen
+
+export const INVERSION_DEFAULTS = { preset: 2, selected: INVERSION_PRESETS[2], play: 'block', roots: 'natural', length: 10, focus: true, fretboard: false }
+export const inversionKey = (id) => `v:${id}`
+
+export function inversionChoices(settings) {
+  const ids = (settings.selected || []).filter((id) => INVERSION[id])
+  return ids.length >= 2 ? ids : INVERSION_PRESETS[1]
+}
+
+export function genInversion(settings, prev, weight = flat) {
+  const choices = inversionChoices(settings)
+  const pool = prev && choices.length > 2 ? choices.filter((id) => id !== prev.id) : choices
+  const id = weightedPick(pool, (x) => weight(inversionKey(x)))
+  const item = INVERSION[id]
+  const chord = CHORD[item.chord]
+  const naturals = settings.roots !== 'all'
+  // Basston zwischen C3 und G4, oberster Ton höchstens G5
+  const build = (root) => invertNotes(chordNotes(root, chord), item.inv)
+  const candidates = rootPool(36, 67, naturals).filter((root) => {
+    const notes = build(root)
+    const lo = midiOf(notes[0]), hi = midiOf(notes[notes.length - 1])
+    return readable(notes) && lo >= 48 && lo <= 67 && hi <= 79
+  })
+  const root = pick(candidates.length ? candidates : rootPool(48, 55, true))
+  return { type: 'inversion', id, root, notes: build(root) }
+}
+
+// ---------------------------------------------------------------- Tonleitern
+
+export const SCALE_DEFAULTS = { preset: 1, selected: SCALE_PRESETS[1], dirs: ['up'], tempo: 'mid', roots: 'natural', length: 10, focus: true, fretboard: false }
+export const scaleKey = (id) => `s:${id}`
+export const SCALE_TEMPO = { slow: 0.55, mid: 0.38, fast: 0.24 }
+
+export function scaleChoices(settings) {
+  const ids = (settings.selected || []).filter((id) => SCALE[id])
+  return ids.length >= 2 ? ids : SCALE_PRESETS[1]
+}
+
+export function genScale(settings, prev, weight = flat) {
+  const choices = scaleChoices(settings)
+  const dirs = settings.dirs && settings.dirs.length ? settings.dirs : ['up']
+  const pool = prev && choices.length > 2 ? choices.filter((id) => id !== prev.id) : choices
+  const id = weightedPick(pool, (x) => weight(scaleKey(x)))
+  const naturals = settings.roots !== 'all'
+  const candidates = rootPool(48, 62, naturals).filter((root) => readable(scaleNotes(root, SCALE[id])))
+  const root = pick(candidates.length ? candidates : rootPool(48, 55, true))
+  const notes = scaleNotes(root, SCALE[id])
+  const dir = pick(dirs)
+  // Reihenfolge beim Abspielen
+  const seq = dir === 'down' ? [...notes].reverse() : dir === 'updown' ? notes.concat(notes.slice(0, -1).reverse()) : notes
+  return { type: 'scale', id, dir, root, notes, seq }
 }
 
 export const check = (q, answerId) => answerId === q.id
