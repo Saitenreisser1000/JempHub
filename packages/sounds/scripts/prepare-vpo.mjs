@@ -2,10 +2,10 @@ import fs from 'node:fs'
 import path from 'node:path'
 import { execFileSync } from 'node:child_process'
 
-const projectRoot = process.cwd()
+const projectRoot = path.resolve(import.meta.dirname, '..')
 const standardScriptsDir = process.argv[2] || '/private/tmp/vpo-standard/Virtual-Playing-Orchestra3'
 const waveZipPath = process.argv[3] || '/private/tmp/Virtual-Playing-Orchestra3-1-wave-files.zip'
-const outputRoot = path.join(projectRoot, 'public', 'audio', 'vpo')
+const outputRoot = path.join(projectRoot, 'vpo')
 const extractRoot = path.join('/private/tmp', 'vpo-intonation-extract')
 const noteRange = {
     min: noteNameToMidi('f#2'),
@@ -59,7 +59,7 @@ function main() {
         for (const region of uniqueRegions) {
             const extractedWav = extractSample(region.samplePath, instrument)
             const encodedFile = encodeSample(extractedWav, config.outputDir, instrument)
-            region.url = `/audio/vpo/${instrument}/${path.basename(encodedFile)}`
+            region.url = `${instrument}/${path.basename(encodedFile)}`
         }
 
         manifest.instruments[instrument] = {

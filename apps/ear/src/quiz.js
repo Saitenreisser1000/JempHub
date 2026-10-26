@@ -1,5 +1,5 @@
 // Aufgaben für Intervalle und Akkorde. Reine Funktionen, gewichtet nach Schwächen.
-import { spellMidi, isNatural, INTERVAL, INTERVAL_PRESETS, CHORD, CHORD_PRESETS, INVERSION, INVERSION_PRESETS, SCALE, SCALE_PRESETS, transpose, chordNotes, invertNotes, scaleNotes, rootPool, readable, midiOf } from './theory.js'
+import { JUST_CENTS, spellMidi, isNatural, INTERVAL, INTERVAL_PRESETS, CHORD, CHORD_PRESETS, INVERSION, INVERSION_PRESETS, SCALE, SCALE_PRESETS, transpose, chordNotes, invertNotes, scaleNotes, rootPool, readable, midiOf } from './theory.js'
 
 const rand = (n) => Math.floor(Math.random() * n)
 const pick = (arr) => arr[rand(arr.length)]
@@ -168,4 +168,42 @@ export function genMelody(settings) {
 // Anzahl richtiger Töne (Tonhöhe zählt, Schreibweise nicht)
 export const melodyHits = (q, entry) => q.midis.map((m, k) => entry[k] === m)
 
-export const check = (q, answerId) => answerId === q.id
+// ---------------------------------------------------------------- Intonation
+
+export const INTONATION_PRESETS = {
+  1: ['P8', 'P5', 'P4'],
+  2: ['P8', 'P5', 'P4', 'M3', 'm3'],
+  3: ['P8', 'P5', 'P4', 'M3', 'm3', 'M6', 'm6', 'M2', 'm7'],
+  4: ['m2', 'M2', 'm3', 'M3', 'P4', 'TT', 'P5', 'm6', 'M6', 'm7', 'M7', 'P8'],
+}
+export const INTONATION_DEFAULTS = { preset: 1, selected: INTONATION_PRESETS[1], cents: 20, tuning: 'equal', play: 'melodic', sound: 'strings', roots: 'natural', length: 10, focus: true }
+export const intonationKey = (id) => `n:${id}`
+
+export function intonationChoices(settings) {
+  const ids = (settings.selected || []).filter((id) => INTONATION_PRESETS[4].includes(id))
+  return ids.length >= 1 ? ids : INTONATION_PRESETS[1]
+}
+
+// Sollwert des oberen Tons in Cent über dem Grundton
+export const targetCents = (id, tuning) => (tuning === 'just' ? JUST_CENTS[id] : INTERVAL[id].semis * 100)
+
+export function genIntonation(settings, prev, weight = flat) {
+  const choices = intonationChoices(settings)
+  const pool = prev && choices.length > 2 ? choices.filter((id) => id !== prev.id) : choices
+  const id = weightedPick(pool, (x) => weight(intonationKey(x)))
+  const iv = INTERVAL[id]
+  const naturals = settings.roots !== 'all'
+  const candidates = rootPool(48, 64, naturals).filter((root) => {
+    const other = transpose(root, iv.semis, iv.steps, 1)
+    return readable([root, other]) && midiOf(other) <= 72
+  })
+  const root = pick(candidates.length ? candidates : rootPool(48, 55, true))
+  const other = transpose(root, iv.semis, iv.steps, 1)
+  const c = Math.max(1, Number(settings.cents) || 20)
+  // drei Fassungen: sauber, zu tief, zu hoch – in zufälliger Reihenfolge
+  const offsets = [0, -c, c]
+  for (let i = offsets.length - 1; i > 0; i--) { const j = rand(i + 1); [offsets[i], offsets[j]] = [offsets[j], offsets[i]] }
+  return { type: 'intonation', id, root, other, notes: [root, other], offsets, correct: String(offsets.indexOf(0) + 1) }
+}
+
+export const check = (q, answerId) => answerId === (q.correct ?? q.id)

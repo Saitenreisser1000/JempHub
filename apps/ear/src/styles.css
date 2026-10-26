@@ -265,3 +265,12 @@ h1, h2 { font-family: var(--font-display); letter-spacing: -.015em; margin: 0; t
 .staff .hint { fill: var(--muted); }
 .kbd-wrap { max-width: 680px; margin-left: auto; margin-right: auto; }
 .kbd-wrap + .actions { margin-top: 12px; }
+
+/* Intonation: drei Fassungen */
+.answers.variants { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
+.variant { position: relative; border-radius: 14px; transition: box-shadow .15s; }
+.variant .abtn { width: 100%; padding-bottom: 34px; }
+.variant .vplay { position: absolute; left: 50%; bottom: 7px; transform: translateX(-50%); width: 30px; height: 24px; border: 0; border-radius: 999px; background: var(--raise); color: var(--muted); display: grid; place-items: center; cursor: pointer; }
+.variant .vplay svg { width: 14px; height: 14px; }
+.variant.sounding { box-shadow: 0 0 0 2px var(--brass); }
+.variant.sounding .vplay { color: var(--brass); }

@@ -1,6 +1,6 @@
 // EarJemp: Übersicht, Einstellungen, Übung, Ergebnis und Fortschritt.
 import { INTERVAL, INTERVALS, INTERVAL_PRESETS, CHORD, CHORDS, CHORD_PRESETS, INVERSION, INVERSIONS, INVERSION_PRESETS, SCALE, SCALES, SCALE_PRESETS, midiOf, noteLabel, clefFor, staffPos, transpose, chordNotes, invertNotes, inversionDegrees, scaleNotes, degreeLabel, spellMidi } from './theory.js'
-import { INTERVAL_DEFAULTS, CHORD_DEFAULTS, INVERSION_DEFAULTS, SCALE_DEFAULTS, SCALE_TEMPO, genInterval, genChord, genInversion, genScale, intervalChoices, chordChoices, inversionChoices, scaleChoices, check, intervalKey, chordKey, inversionKey, scaleKey, MELODY_DEFAULTS, MELODY_LEVELS, genMelody, melodyKey, melodyHits } from './quiz.js'
+import { INTERVAL_DEFAULTS, CHORD_DEFAULTS, INVERSION_DEFAULTS, SCALE_DEFAULTS, SCALE_TEMPO, genInterval, genChord, genInversion, genScale, intervalChoices, chordChoices, inversionChoices, scaleChoices, check, intervalKey, chordKey, inversionKey, scaleKey, MELODY_DEFAULTS, MELODY_LEVELS, genMelody, melodyKey, melodyHits, INTONATION_DEFAULTS, INTONATION_PRESETS, genIntonation, intonationChoices, intonationKey, targetCents } from './quiz.js'
 import { keyboardHTML } from './keyboard.js'
 import { createStore } from './stats.js'
 import { staffSVG } from './staff.js'
@@ -66,13 +66,22 @@ const EX = {
     gen: genMelody, key: melodyKey,
     thumb: () => staffSVG({ clef: 'treble', columns: [0, 2, 1, 4, 3].map((pos) => ({ notes: [{ pos }] })) }),
   },
+  intonation: {
+    kind: 'intonation',
+    title: () => t('intonation'), text: () => t('intonationText'),
+    defaults: INTONATION_DEFAULTS, items: INTERVALS.filter((i) => INTONATION_PRESETS[4].includes(i.id)), byId: INTERVAL, presets: INTONATION_PRESETS,
+    gen: genIntonation, key: intonationKey, choices: intonationChoices,
+    thumb: () => staffSVG({ clef: 'treble', columns: [{ notes: [{ pos: 0 }, { pos: 4 }] }, { notes: [{ pos: 0 }, { pos: 4, acc: 1 }] }] }),
+  },
 }
+const ORCHESTRA = ['strings', 'woodwinds', 'brass']
 const DIRS = { intervals: ['up', 'down', 'harmonic'], scales: ['up', 'down', 'updown'] }
 const PRESET_LABELS = {
   intervals: { de: ['1', '2', '3', '4'], en: ['1', '2', '3', '4'] },
   chords: { de: ['Dur/Moll', '+ verm./überm.', '+ sus', 'Septakkorde', 'Alle'], en: ['Major/minor', '+ dim/aug', '+ sus', 'Sevenths', 'All'] },
   inversions: { de: ['Dur', 'Dur/Moll', 'Dom7', 'Alle'], en: ['Major', 'Major/minor', 'Dom7', 'All'] },
   scales: { de: ['Dur/Moll', '+ harm./mel.', 'Modi', '+ lyd./lokr.', 'Alle'], en: ['Major/minor', '+ harm./mel.', 'Modes', '+ Lyd./Locr.', 'All'] },
+  intonation: { de: ['8 · 5 · 4', '+ Terzen', '+ Sexten', 'Alle'], en: ['8 · 5 · 4', '+ thirds', '+ sixths', 'All'] },
 }
 const presetLabels = (ex) => Object.fromEntries(PRESET_LABELS[ex][getLang()].map((l, i) => [i + 1, l]))
 
@@ -150,7 +159,6 @@ function renderHome() {
     <div class="ex-list">${Object.entries(EX).map(([id, ex]) => `<button class="ex-card" data-go="${id}">
       <span class="ex-thumb">${ex.thumb()}</span>
       <span class="ex-body"><b>${ex.title()}</b><span>${ex.text()}</span>${statLine(id)}</span></button>`).join('')}</div>
-    <p class="soon">${t('soon')}</p>
     <div class="home-foot"><button class="gbtn" data-go="progress">${t('progressLink')}</button><button class="gbtn" data-go="about">${t('aboutLink')}</button></div>
   </section>`
 }
@@ -165,9 +173,21 @@ function markPlaying(seconds) {
   playT = setTimeout(() => { const x = $('.playbtn'); if (x) x.classList.remove('playing') }, seconds * 1000)
 }
 
+// Klang der aktuellen Übung: Intonation kann Orchesterklänge nutzen
+const soundFor = () => (S.route === 'intonation' && ORCHESTRA.includes(S.settings?.sound) ? S.settings.sound : instrument)
+
 async function prepareSound() {
   if (!player.ensure()) return
-  if (instrument === 'piano' && !player.pianoReady()) {
+  const snd = soundFor()
+  if (ORCHESTRA.includes(snd) && !player.sustainReady(snd)) {
+    const l = $('#loading')
+    if (l) l.textContent = t('loadingOrch')
+    try { await player.loadSustain(snd) } catch { /* fällt auf Gitarre zurück */ }
+    const l2 = $('#loading')
+    if (l2) l2.textContent = ''
+    return
+  }
+  if (snd === 'piano' && !player.pianoReady()) {
     const l = $('#loading')
     if (l) l.textContent = t('loading')
     try { await player.loadPiano() } catch { /* fällt auf Gitarre zurück */ }
@@ -179,7 +199,8 @@ async function prepareSound() {
 // Spielt Töne; Rückgabe: Dauer in Sekunden
 function playNotes(q, notes, offset = 0) {
   const t0 = player.now() + 0.05 + offset
-  const opts = { instrument }
+  const opts = { instrument: soundFor() }
+  if (q.type === 'intonation') return playVariants(q, notes, t0)
   if (q.type === 'interval') {
     const [a, b] = notes.map(midiOf)
     if (q.dir === 'harmonic') { player.note(a, t0, 1.6, opts); player.note(b, t0, 1.6, opts); return 1.7 }
@@ -208,6 +229,42 @@ function playNotes(q, notes, offset = 0) {
   return tt - t0 + 1.7
 }
 
+// Intonation: notes = Liste der Fassungen (Indizes 0–2)
+let variantT = []
+function playVariants(q, which, t0) {
+  const opts = { instrument: soundFor() }
+  const a = midiOf(q.root), b = midiOf(q.other)
+  const base = targetCents(q.id, S.settings.tuning) - (b - a) * 100
+  const harmonic = S.settings.play === 'harmonic'
+  const span = harmonic ? 2.1 : 2.5
+  variantT.forEach(clearTimeout)
+  variantT = []
+  which.forEach((k, n) => {
+    const tt = t0 + n * span
+    if (harmonic) {
+      player.note(a, tt, 1.6, opts)
+      player.note(b, tt, 1.6, { ...opts, cents: base + q.offsets[k] })
+    } else {
+      player.note(a, tt, 0.95, opts)
+      player.note(b, tt + 0.95, 1.2, { ...opts, cents: base + q.offsets[k] })
+    }
+    const delay = (tt - player.now()) * 1000
+    variantT.push(setTimeout(() => markVariant(k, true), delay))
+    variantT.push(setTimeout(() => markVariant(k, false), delay + span * 900))
+  })
+  return which.length * span
+}
+function markVariant(k, on) {
+  const el = document.querySelector(`[data-variant="${k}"]`)
+  if (el) el.classList.toggle('sounding', on)
+}
+
+async function playVariant(k) {
+  await prepareSound()
+  player.stopAll()
+  markPlaying(playVariants(S.q, [k], player.now() + 0.05))
+}
+
 async function playQuestion() {
   await prepareSound()
   player.stopAll()
@@ -216,7 +273,7 @@ async function playQuestion() {
 
 // Töne in Abspielreihenfolge, für die Aufgabe selbst oder eine andere Antwort id
 function playOrder(q, alt) {
-  if (alt === q) return q.type === 'scale' ? q.seq : q.notes
+  if (alt === q) return q.type === 'scale' ? q.seq : q.type === 'intonation' ? [0, 1, 2] : q.notes
   if (Array.isArray(alt)) return alt.map(spellMidi)
   const id = alt
   if (q.type === 'interval') {
@@ -283,7 +340,7 @@ function submit(id) {
   } else {
     S.streak = 0
     S.missed.push(q)
-    store.recordConfusion(ex().key(q.id), ex().key(id))
+    if (q.type !== 'intonation') store.recordConfusion(ex().key(q.id), ex().key(id))
     navigator.vibrate?.(80)
   }
   store.recordAnswer(S.route, ex().key(q.id), ok)
@@ -387,7 +444,12 @@ function renderSettings() {
   let rows = `<div class="vrow col"><span>${t('level')}</span>${segHTML('preset', presetOpts, st.preset)}
       <div class="pick" data-pick>${e.items.map((it) => `<button data-item="${it.id}" aria-pressed="${sel.has(it.id)}">${nameOf(it)[0]}${nameOf(it)[1] ? `<small>${nameOf(it)[1]}</small>` : ''}</button>`).join('')}</div>
       <small class="muted">${t('selectHint')}</small></div>`
-  if (DIRS[id]) {
+  if (id === 'intonation') {
+    rows += `<div class="vrow"><span>${t('playback')}</span>${segHTML('play', [[t('melodic'), 'melodic'], [t('harmonic'), 'harmonic']], st.play)}</div>`
+    rows += `<div class="vrow"><span>${t('cents')}<small>${t('centsHint')}</small></span>${segHTML('cents', [30, 20, 15, 10, 5].map((c) => [`±${c}`, c]), Number(st.cents) || 20)}</div>`
+    rows += `<div class="vrow"><span>${t('tuning')}<small>${t('tuningHint')}</small></span>${segHTML('tuning', [[t('equal'), 'equal'], [t('just'), 'just']], st.tuning)}</div>`
+    rows += `<div class="vrow col"><span>${t('sound')}</span>${segHTML('sound', [[t('strings'), 'strings'], [t('woodwinds'), 'woodwinds'], [t('brass'), 'brass'], [t('headerSound'), 'header']], st.sound)}</div>`
+  } else if (DIRS[id]) {
     const dirs = new Set(st.dirs || ['up'])
     rows += `<div class="vrow"><span>${t('direction')}</span><div class="pick" data-dirs style="padding:0">${DIRS[id].map((d) => `<button data-dir="${d}" aria-pressed="${dirs.has(d)}">${t(d)}</button>`).join('')}</div></div>`
     if (id === 'scales') rows += `<div class="vrow"><span>${t('tempo')}</span>${segHTML('tempo', [[t('slow'), 'slow'], [t('mid'), 'mid'], [t('fast'), 'fast']], st.tempo || 'mid')}</div>`
@@ -398,7 +460,7 @@ function renderSettings() {
   rows += `<div class="vrow"><span>${t('length')}</span>${segHTML('length', [['10', 10], ['20', 20], ['30', 30]], Number(st.length) || 10)}</div>`
   rows += `<div class="vrow"><span>${t('focus')}<small>${t('focusHint')}</small></span><button class="switch" data-toggle="focus" aria-pressed="${!!st.focus}" aria-label="${t('focus')}"></button></div>`
   rows += `<div class="vrow"><span>${t('auto')}<small>${t('autoHint')}</small></span><button class="switch" data-toggle="auto" aria-pressed="${auto}" aria-label="${t('auto')}"></button></div>`
-  rows += `<div class="vrow"><span>${t('fret')}<small>${t('fretHint')}</small></span><button class="switch" data-toggle="fretboard" aria-pressed="${!!st.fretboard}" aria-label="${t('fret')}"></button></div>`
+  if (id !== 'intonation') rows += `<div class="vrow"><span>${t('fret')}<small>${t('fretHint')}</small></span><button class="switch" data-toggle="fretboard" aria-pressed="${!!st.fretboard}" aria-label="${t('fret')}"></button></div>`
   return `<div class="panel">${rows}</div>
     <div style="margin-top:14px"><button class="pbtn big" data-act="start">${t('start')}<span class="kbd">⏎</span></button></div>`
 }
@@ -469,8 +531,38 @@ function renderMelodyPlay() {
   return html
 }
 
+function renderIntonationPlay() {
+  const q = S.q, lang = getLang()
+  const clef = clefFor(q.notes)
+  const n = (note) => ({ pos: staffPos(note, clef), acc: note.a || undefined })
+  const staff = staffSVG({ clef, columns: S.settings.play === 'harmonic' ? [{ notes: q.notes.map(n) }] : q.notes.map((x) => ({ notes: [n(x)] })), label: t('intonation') })
+  const c = Number(S.settings.cents) || 20
+  const meta = `${longName('intonation', q.id)} · ${t(S.settings.tuning === 'just' ? 'just' : 'equal')} · ±${c} ${t('centsUnit')}`
+  let html = `<div class="stagebox">
+    <div><button class="playbtn" data-act="play" aria-label="${t('replay')}">${REPLAY_ICON}</button><span class="playlbl">${t('playAll')} <span class="kbd">␣</span></span></div>
+    <div>${staff}</div>
+  </div>
+  <div class="qmeta">${esc(meta)} · ${q.notes.map((x) => noteLabel(x, lang)).join(' – ')}</div><div class="loading" id="loading"></div>`
+  if (!S.result) html += `<div class="feedback">${t('qIntonation')}</div>`
+  else if (S.result === 'ok') html += `<div class="feedback ok"><span class="ic" aria-hidden="true">✓</span>${t('intoRight', { n: q.correct })}</div>`
+  else html += `<div class="feedback bad"><span class="ic" aria-hidden="true">✕</span>${t('intoWrong', { n: q.correct })}</div>`
+  const fmt = (o) => (o === 0 ? t('clean') : `${o > 0 ? '+' : '−'}${Math.abs(o)} ${t('centsUnit')}`)
+  html += `<div class="answers variants">${q.offsets.map((o, k) => {
+    const id = String(k + 1)
+    let cl = ''
+    if (S.result) cl = id === q.correct ? ' ok' : id === S.answer ? ' bad' : ' dim'
+    return `<div class="variant${cl}" data-variant="${k}"><button class="abtn${cl}" data-ans="${id}" ${S.result ? 'disabled' : ''}><span class="long">${t('variant', { n: id })}</span>${S.result ? `<span class="short">${fmt(o)}</span>` : ''}<span class="k">${id}</span></button><button class="vplay" data-vplay="${k}" aria-label="${t('variant', { n: id })} ${t('listen')}">${PLAY_ICON}</button></div>`
+  }).join('')}</div>`
+  if (S.result) {
+    const last = S.i + 1 >= roundLength()
+    html += `<div class="actions"><button class="pbtn" data-act="next">${last ? t('toResult') : t('next')}<span class="kbd">⏎</span></button></div>`
+  }
+  return html
+}
+
 function renderPlay() {
   if (S.q.type === 'melody') return renderMelodyPlay()
+  if (S.q.type === 'intonation') return renderIntonationPlay()
   const q = S.q, id = S.route
   const lang = getLang()
   const choices = ex().choices(S.settings)
@@ -588,6 +680,7 @@ view.addEventListener('click', (e) => {
   }
   if (b.dataset.ans) return submit(b.dataset.ans)
   if (b.dataset.key) return pressKey(Number(b.dataset.key))
+  if (b.dataset.vplay) return playVariant(Number(b.dataset.vplay))
   if (act === 'undo') return undoKey()
   if (act === 'clear') return undoKey(true)
   if (act === 'check') return submitMelody()
@@ -636,6 +729,10 @@ document.addEventListener('keydown', (e) => {
   if (S.result) return
   if (S.q && S.q.type === 'melody') {
     if (k === 'Backspace') { e.preventDefault(); undoKey() }
+    return
+  }
+  if (S.q && S.q.type === 'intonation') {
+    if (['1', '2', '3'].includes(k)) submit(k)
     return
   }
   if (/^[0-9]$/.test(k)) {

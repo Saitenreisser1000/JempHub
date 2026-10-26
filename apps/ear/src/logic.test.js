@@ -152,6 +152,24 @@ describe('melody', () => {
   })
 })
 
+describe('intonation', () => {
+  it('offers one clean and two detuned versions', async () => {
+    const { genIntonation, INTONATION_DEFAULTS, INTONATION_PRESETS, targetCents, check } = await import('./quiz.js')
+    const seen = new Set()
+    for (let i = 0; i < 300; i++) {
+      const q = genIntonation({ ...INTONATION_DEFAULTS, selected: INTONATION_PRESETS[4], cents: 15, roots: 'all' }, null)
+      assert.deepEqual([...q.offsets].sort((a, b) => a - b), [-15, 0, 15])
+      assert.equal(q.offsets[Number(q.correct) - 1], 0)
+      assert.ok(check(q, q.correct) && !check(q, q.correct === '1' ? '2' : '1'))
+      assert.ok(midiOf(q.other) <= 72 && midiOf(q.root) >= 48)
+      seen.add(q.correct)
+    }
+    assert.equal(seen.size, 3)
+    assert.equal(targetCents('P5', 'equal'), 700)
+    assert.ok(Math.abs(targetCents('M3', 'just') - 386.31) < 0.01)
+  })
+})
+
 describe('store', () => {
   it('records confusions', () => {
     const s = createStore(memory())
