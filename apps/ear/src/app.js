@@ -89,7 +89,7 @@ function route() {
   clearTimeout(S.advanceT)
   player.stopAll()
   const h = location.hash.slice(1)
-  S.route = EX[h] || h === 'progress' ? h : 'home'
+  S.route = EX[h] || h === 'progress' || h === 'about' ? h : 'home'
   if (EX[S.route]) {
     S.settings = store.settings(S.route, EX[S.route].defaults)
     S.phase = 'settings'
@@ -107,6 +107,7 @@ function render() {
   renderChrome()
   if (S.route === 'home') return renderHome()
   if (S.route === 'progress') return renderProgress()
+  if (S.route === 'about') return renderAbout()
   renderQuiz()
 }
 
@@ -141,7 +142,7 @@ function renderHome() {
       <span class="ex-thumb">${ex.thumb()}</span>
       <span class="ex-body"><b>${ex.title()}</b><span>${ex.text()}</span>${statLine(id)}</span></button>`).join('')}</div>
     <p class="soon">${t('soon')}</p>
-    <div class="home-foot"><button class="gbtn" data-go="progress">${t('progressLink')}</button></div>
+    <div class="home-foot"><button class="gbtn" data-go="progress">${t('progressLink')}</button><button class="gbtn" data-go="about">${t('aboutLink')}</button></div>
   </section>`
 }
 
@@ -439,6 +440,23 @@ function renderProgress() {
     <div class="qhead"><button class="gbtn icon-only" data-go="home" aria-label="${t('back')}">${BACK_ICON}</button><h2>${t('progress')}</h2></div>
     <div class="panel">${rows}</div>${sections}
     <div class="home-foot"><span></span><button class="gbtn" data-act="reset">${S.resetArmed ? t('resetConfirm') : t('reset')}</button></div>
+  </section>`
+}
+
+/* ---------------------------------------------------------------- Über und Impressum */
+
+function renderAbout() {
+  view.innerHTML = `<section class="prog about">
+    <div class="qhead"><button class="gbtn icon-only" data-go="home" aria-label="${t('back')}">${BACK_ICON}</button><h2>${t('aboutTitle')}</h2></div>
+    <div class="panel"><p>${t('aboutP1')}</p><p>${t('aboutP2')}</p><p>${t('aboutP3')}</p></div>
+    <section><div class="panel"><b>${t('legalTitle')}</b>
+      <div class="row"><span class="muted">${t('legalOwner')}</span><span>Stefan Leutgeb</span></div>
+      <div class="row"><span class="muted">${t('legalContact')}</span><a href="mailto:office@jemphub.com">office@jemphub.com</a></div>
+      <div class="row"><span class="muted">${t('legalWebsite')}</span><span>earjemp.jemphub.com</span></div>
+      <div class="row col"><span class="muted">${t('legalDirection')}</span><span>${t('legalDirectionText')}</span></div>
+    </div></section>
+    <section><div class="panel"><b>${t('creditsTitle')}</b><p class="muted">${t('credits')}</p></div></section>
+    <p class="muted copy">JEMPCompany © ${new Date().getFullYear()} · office@jemphub.com</p>
   </section>`
 }
 
