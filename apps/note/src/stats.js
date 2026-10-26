@@ -35,6 +35,16 @@ export function createStore(storage = globalThis.localStorage) {
     settings(ex, defaults) {
       return load('settings:' + ex, defaults)
     },
+    // Gespeicherte Einstellungen ohne Standardwerte (null, wenn nie gespeichert)
+    savedSettings(ex) {
+      try {
+        const raw = storage?.getItem(PREFIX + 'settings:' + ex)
+        const v = raw ? JSON.parse(raw) : null
+        return v && typeof v === 'object' ? v : null
+      } catch {
+        return null
+      }
+    },
     saveSettings(ex, value) {
       save('settings:' + ex, value)
     },

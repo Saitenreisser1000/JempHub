@@ -154,3 +154,17 @@ describe('octave names', () => {
     assert.equal(genNote({ ...NOTE_DEFAULTS, range: 0 }, null, (k) => (k === 'n:treble:0:0' ? 1e9 : 0)).fullName, 'e1')
   })
 })
+
+describe('note defaults', () => {
+  it('ask the octave and hide the fretboard by default', () => {
+    assert.equal(NOTE_DEFAULTS.octaves, true)
+    assert.equal(NOTE_DEFAULTS.fretboard, false)
+  })
+  it('reads raw saved settings without defaults', () => {
+    const st = memoryStorage()
+    const s = createStore(st)
+    assert.equal(s.savedSettings('notes'), null)
+    st.setItem('notejemp:settings:notes', JSON.stringify({ clef: 'bass', octaves: false }))
+    assert.deepEqual(s.savedSettings('notes'), { clef: 'bass', octaves: false })
+  })
+})

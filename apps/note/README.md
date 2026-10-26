@@ -6,8 +6,9 @@ Fortschritt und Einstellungen liegen im `localStorage` des Browsers.
 
 ## Übungen
 
-- **Noten bestimmen:** Violin- und Bassschlüssel, Hilfslinien, Vorzeichen. Nach
-  der Antwort zeigt ein Griffbrett, wo die Note auf der Gitarre bzw. dem E-Bass liegt.
+- **Noten bestimmen:** Violin- und Bassschlüssel, Hilfslinien, Vorzeichen,
+  Oktavlage in deutscher Schreibweise (c, c1, c2 …, standardmäßig an). Optional zeigt
+  ein Griffbrett nach der Antwort, wo die Note auf der Gitarre bzw. dem E-Bass liegt.
 - **Notenwerte & Pausen:** Ganze bis Sechzehntel, auch punktiert.
 - **Takte vervollständigen:** 2/4, 3/4, 4/4, 6/8, 3/8 oder gemischt.
 
