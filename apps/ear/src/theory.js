@@ -173,6 +173,16 @@ export function degreeLabel(root, note) {
   return (diff < 0 ? '♭'.repeat(-diff) : '♯'.repeat(diff)) + (k + 1)
 }
 
+// ---------------------------------------------------------------- Einzeltöne
+
+// Gebräuchliche Schreibweise eines MIDI-Tons: Cis, Es, Fis, As, B
+const SPELL = [[0, 0], [0, 1], [1, 0], [2, -1], [2, 0], [3, 0], [3, 1], [4, 0], [5, -1], [5, 0], [6, -1], [6, 0]]
+export function spellMidi(midi) {
+  const [l, a] = SPELL[((midi % 12) + 12) % 12]
+  return { l, a, o: Math.floor(midi / 12) - 1 }
+}
+export const isNatural = (midi) => SPELL[((midi % 12) + 12) % 12][1] === 0
+
 // ---------------------------------------------------------------- Grundtöne
 
 // Grundtöne zwischen lowMidi und highMidi; naturalsOnly: nur Stammtöne.

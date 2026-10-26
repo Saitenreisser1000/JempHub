@@ -1,6 +1,7 @@
 // EarJemp: Übersicht, Einstellungen, Übung, Ergebnis und Fortschritt.
-import { INTERVAL, INTERVALS, INTERVAL_PRESETS, CHORD, CHORDS, CHORD_PRESETS, INVERSION, INVERSIONS, INVERSION_PRESETS, SCALE, SCALES, SCALE_PRESETS, midiOf, noteLabel, clefFor, staffPos, transpose, chordNotes, invertNotes, inversionDegrees, scaleNotes, degreeLabel } from './theory.js'
-import { INTERVAL_DEFAULTS, CHORD_DEFAULTS, INVERSION_DEFAULTS, SCALE_DEFAULTS, SCALE_TEMPO, genInterval, genChord, genInversion, genScale, intervalChoices, chordChoices, inversionChoices, scaleChoices, check, intervalKey, chordKey, inversionKey, scaleKey } from './quiz.js'
+import { INTERVAL, INTERVALS, INTERVAL_PRESETS, CHORD, CHORDS, CHORD_PRESETS, INVERSION, INVERSIONS, INVERSION_PRESETS, SCALE, SCALES, SCALE_PRESETS, midiOf, noteLabel, clefFor, staffPos, transpose, chordNotes, invertNotes, inversionDegrees, scaleNotes, degreeLabel, spellMidi } from './theory.js'
+import { INTERVAL_DEFAULTS, CHORD_DEFAULTS, INVERSION_DEFAULTS, SCALE_DEFAULTS, SCALE_TEMPO, genInterval, genChord, genInversion, genScale, intervalChoices, chordChoices, inversionChoices, scaleChoices, check, intervalKey, chordKey, inversionKey, scaleKey, MELODY_DEFAULTS, MELODY_LEVELS, genMelody, melodyKey, melodyHits } from './quiz.js'
+import { keyboardHTML } from './keyboard.js'
 import { createStore } from './stats.js'
 import { staffSVG } from './staff.js'
 import { fretboardSVG } from './fretboard.js'
@@ -32,6 +33,7 @@ try {
 /* ---------------------------------------------------------------- Übungen */
 
 const nameOf = (item) => item[getLang()]
+const MELODY_ITEMS = Object.keys(MELODY_LEVELS).map((l) => ({ id: l, de: [`Stufe ${l}`, ''], en: [`Level ${l}`, ''] }))
 const EX = {
   intervals: {
     title: () => t('intervals'), text: () => t('intervalsText'),
@@ -56,6 +58,13 @@ const EX = {
     defaults: SCALE_DEFAULTS, items: SCALES, byId: SCALE, presets: SCALE_PRESETS,
     gen: genScale, key: scaleKey, choices: scaleChoices,
     thumb: () => staffSVG({ clef: 'treble', columns: [-2, -1, 0, 1, 2].map((pos) => ({ notes: [{ pos }] })) }),
+  },
+  melody: {
+    kind: 'melody',
+    title: () => t('melody'), text: () => t('melodyText'),
+    defaults: MELODY_DEFAULTS, items: MELODY_ITEMS, byId: Object.fromEntries(MELODY_ITEMS.map((i) => [i.id, i])),
+    gen: genMelody, key: melodyKey,
+    thumb: () => staffSVG({ clef: 'treble', columns: [0, 2, 1, 4, 3].map((pos) => ({ notes: [{ pos }] })) }),
   },
 }
 const DIRS = { intervals: ['up', 'down', 'harmonic'], scales: ['up', 'down', 'updown'] }
@@ -82,7 +91,7 @@ const fullName = (exId, id) => (shortName(exId, id) ? `${longName(exId, id)} (${
 const S = {
   route: 'home', phase: 'settings', settings: null,
   q: null, i: 0, score: 0, streak: 0, bestStreak: 0,
-  result: null, answer: null, missed: [], times: [], shownAt: 0, advanceT: 0, resetArmed: false,
+  result: null, answer: null, entry: [], missed: [], times: [], shownAt: 0, advanceT: 0, resetArmed: false,
 }
 
 function route() {
@@ -123,7 +132,7 @@ function renderChrome() {
   $('#helpBtn').setAttribute('aria-label', t('keys'))
   $('#help').innerHTML = `<h3>${t('keys')}</h3><dl>
     <dt>Space</dt><dd>${t('kSpace')}</dd><dt>1 – 9, 0</dt><dd>${t('kDigits')}</dd>
-    <dt>C</dt><dd>${t('kC')}</dd><dt>Enter</dt><dd>${t('kEnter')}</dd><dt>Esc</dt><dd>${t('kEsc')}</dd></dl>`
+    <dt>C</dt><dd>${t('kC')}</dd><dt>⌫</dt><dd>${t('kBack')}</dd><dt>Enter</dt><dd>${t('kEnter')}</dd><dt>Esc</dt><dd>${t('kEsc')}</dd></dl>`
 }
 
 /* ---------------------------------------------------------------- Übersicht */
@@ -178,6 +187,11 @@ function playNotes(q, notes, offset = 0) {
     player.note(b, t0 + 0.85, 1.3, opts)
     return 2.2
   }
+  if (q.type === 'melody') {
+    const beat = 60 / (Number(S.settings.bpm) || 80)
+    notes.forEach((n, k) => player.note(midiOf(n), t0 + k * beat, Math.max(0.35, beat * 0.92), opts))
+    return notes.length * beat + 0.8
+  }
   if (q.type === 'scale') {
     const d = SCALE_TEMPO[S.settings.tempo] || SCALE_TEMPO.mid
     notes.forEach((n, k) => player.note(midiOf(n), t0 + k * d, k === notes.length - 1 ? 1.4 : d * 1.6, opts))
@@ -203,6 +217,7 @@ async function playQuestion() {
 // Töne in Abspielreihenfolge, für die Aufgabe selbst oder eine andere Antwort id
 function playOrder(q, alt) {
   if (alt === q) return q.type === 'scale' ? q.seq : q.notes
+  if (Array.isArray(alt)) return alt.map(spellMidi)
   const id = alt
   if (q.type === 'interval') {
     const iv = INTERVAL[id]
@@ -248,6 +263,7 @@ function nextQuestion() {
   S.q = ex().gen(S.settings, S.q, weightFn())
   S.result = null
   S.answer = null
+  S.entry = S.q.type === 'melody' && S.settings.hint ? [S.q.midis[0]] : []
   render()
   S.shownAt = performance.now()
   playQuestion()
@@ -273,6 +289,45 @@ function submit(id) {
   store.recordAnswer(S.route, ex().key(q.id), ok)
   render()
   if (ok && auto) S.advanceT = setTimeout(advance, 1300)
+}
+
+function submitMelody() {
+  const q = S.q
+  if (S.result || S.phase !== 'playing' || S.entry.length < q.midis.length) return
+  const ok = melodyHits(q, S.entry).every(Boolean)
+  S.answer = [...S.entry]
+  S.result = ok ? 'ok' : 'bad'
+  S.times.push(performance.now() - S.shownAt)
+  if (ok) {
+    S.score++
+    S.streak++
+    S.bestStreak = Math.max(S.bestStreak, S.streak)
+  } else {
+    S.streak = 0
+    S.missed.push(q)
+    navigator.vibrate?.(80)
+  }
+  store.recordAnswer(S.route, melodyKey(q.id), ok)
+  render()
+  if (ok && auto) S.advanceT = setTimeout(advance, 1600)
+}
+
+const hintCount = () => (S.q && S.q.type === 'melody' && S.settings.hint ? 1 : 0)
+
+async function pressKey(midi) {
+  await prepareSound()
+  player.note(midi, player.now() + 0.01, 0.7, { instrument })
+  if (S.result || !S.q || S.entry.length >= S.q.midis.length) return
+  S.entry.push(midi)
+  render()
+}
+
+function undoKey(all = false) {
+  if (S.result) return
+  const keep = hintCount()
+  if (S.entry.length <= keep) return
+  S.entry = all ? S.entry.slice(0, keep) : S.entry.slice(0, -1)
+  render()
 }
 
 function advance() {
@@ -309,7 +364,21 @@ function segHTML(key, opts, value) {
   return `<div class="seg" data-set="${key}">${opts.map(([l, v]) => `<button data-v='${JSON.stringify(v)}' aria-pressed="${v === value}">${l}</button>`).join('')}</div>`
 }
 
+function renderMelodySettings() {
+  const st = S.settings
+  const lv = Number(st.level) || 1
+  let rows = `<div class="vrow col"><span>${t('level')}</span>${segHTML('level', Object.keys(MELODY_LEVELS).map((l) => [l, Number(l)]), lv)}<small class="muted">${t('mLevel' + lv)}</small></div>`
+  rows += `<div class="vrow"><span>${t('notesCount')}</span>${segHTML('notes', [4, 5, 6, 8, 10, 12].map((n) => [String(n), n]), Number(st.notes) || 5)}</div>`
+  rows += `<div class="vrow"><span>${t('bpm')}</span>${segHTML('bpm', [60, 80, 100, 120, 140].map((n) => [String(n), n]), Number(st.bpm) || 80)}</div>`
+  rows += `<div class="vrow"><span>${t('length')}</span>${segHTML('length', [['5', 5], ['10', 10], ['20', 20]], Number(st.length) || 10)}</div>`
+  rows += `<div class="vrow"><span>${t('hint')}<small>${t('hintHint')}</small></span><button class="switch" data-toggle="hint" aria-pressed="${!!st.hint}" aria-label="${t('hint')}"></button></div>`
+  rows += `<div class="vrow"><span>${t('auto')}<small>${t('autoHint')}</small></span><button class="switch" data-toggle="auto" aria-pressed="${auto}" aria-label="${t('auto')}"></button></div>`
+  return `<div class="panel">${rows}</div>
+    <div style="margin-top:14px"><button class="pbtn big" data-act="start">${t('start')}<span class="kbd">⏎</span></button></div>`
+}
+
 function renderSettings() {
+  if (ex().kind === 'melody') return renderMelodySettings()
   const st = S.settings, id = S.route, e = ex()
   const labels = presetLabels(id)
   const presetOpts = Object.keys(e.presets).map((k) => [labels[k], Number(k)])
@@ -362,7 +431,46 @@ function fretTones(q) {
   return q.notes.map((note, k) => ({ midi: midiOf(note), label: degrees[k], color: TONE_COLORS[k % TONE_COLORS.length] }))
 }
 
+function renderMelodyPlay() {
+  const q = S.q, lang = getLang()
+  const L = MELODY_LEVELS[q.id]
+  const n = q.midis.length
+  const many = n > 5
+  const col = (m, state) => { const s = spellMidi(m); return { notes: [{ pos: staffPos(s, 'treble'), acc: s.a || undefined, state }] } }
+  let staff
+  if (!S.result) {
+    const cols = S.entry.map((m, k) => col(m, k < hintCount() ? 'hint' : null))
+    if (S.entry.length < n) cols.push({ gap: true })
+    staff = staffSVG({ clef: 'treble', columns: cols, label: t('yourEntry'), colW: many ? 5.4 : 7.2 })
+  } else {
+    const hits = melodyHits(q, S.answer)
+    staff = staffSVG({ clef: 'treble', columns: S.answer.map((m, k) => col(m, hits[k] ? 'ok' : 'bad')), label: t('yourEntry'), colW: many ? 5.4 : 7.2 })
+    if (S.result === 'bad') staff += `<div class="lbl sol">${t('solution')}</div>` + staffSVG({ clef: 'treble', columns: q.midis.map((m) => col(m, 'ok')), label: t('solution'), colW: many ? 5.4 : 7.2 })
+  }
+  let html = `<div class="stagebox melody">
+    <div><button class="playbtn" data-act="play" aria-label="${t('replay')}">${REPLAY_ICON}</button><span class="playlbl">${t('replay')} <span class="kbd">␣</span></span></div>
+    <div>${staff}</div>
+  </div>
+  <div class="qmeta">${Number(S.settings.bpm) || 80} BPM · ${t('nNotes', { n })}</div><div class="loading" id="loading"></div>`
+  const names = q.notes.map((x) => noteLabel(x, lang)).join(' – ')
+  if (!S.result) html += `<div class="feedback">${t('qMelody')} <b class="count">${S.entry.length}/${n}</b></div>`
+  else if (S.result === 'ok') html += `<div class="feedback ok"><span class="ic" aria-hidden="true">✓</span>${t('melodyRight', { n })}<small>${esc(names)}</small></div>`
+  else html += `<div class="feedback bad"><span class="ic" aria-hidden="true">✕</span>${t('melodyWrong', { k: melodyHits(q, S.answer).filter(Boolean).length, n })}<small>${t('solution')}: ${esc(names)}</small></div>`
+  const marks = {}
+  if (S.result) q.midis.forEach((m) => { marks[m] = 'sol' })
+  html += keyboardHTML({ low: L.low, high: L.high, lang, enabled: (m) => L.chromatic || spellMidi(m).a === 0, marks })
+  if (!S.result) {
+    const full = S.entry.length >= n
+    html += `<div class="actions"><button class="sbtn" data-act="undo" ${S.entry.length > hintCount() ? '' : 'disabled'}>${t('undo')}<span class="kbd">⌫</span></button><button class="sbtn" data-act="clear" ${S.entry.length > hintCount() ? '' : 'disabled'}>${t('clear')}</button><button class="pbtn" data-act="check" ${full ? '' : 'disabled'}>${t('checkBtn')}<span class="kbd">⏎</span></button></div>`
+  } else {
+    const last = S.i + 1 >= roundLength()
+    html += `<div class="actions">${S.result === 'bad' ? `<button class="sbtn" data-act="compare" title="${t('compareHint')}">${t('compare')}<span class="kbd">C</span></button>` : ''}<button class="pbtn" data-act="next">${last ? t('toResult') : t('next')}<span class="kbd">⏎</span></button></div>`
+  }
+  return html
+}
+
 function renderPlay() {
+  if (S.q.type === 'melody') return renderMelodyPlay()
   const q = S.q, id = S.route
   const lang = getLang()
   const choices = ex().choices(S.settings)
@@ -479,6 +587,10 @@ view.addEventListener('click', (e) => {
     S.resetArmed = false; store.reset(); return render()
   }
   if (b.dataset.ans) return submit(b.dataset.ans)
+  if (b.dataset.key) return pressKey(Number(b.dataset.key))
+  if (act === 'undo') return undoKey()
+  if (act === 'clear') return undoKey(true)
+  if (act === 'check') return submitMelody()
   const seg = b.closest('[data-set]')
   if (seg) {
     const v = JSON.parse(b.dataset.v)
@@ -515,12 +627,17 @@ document.addEventListener('keydown', (e) => {
   if (k === 'Enter') {
     e.preventDefault()
     if (S.phase !== 'playing') { player.ensure(); start() } else if (S.result) advance()
+    else if (S.q && S.q.type === 'melody') submitMelody()
     return
   }
   if (S.phase !== 'playing') return
   if (k === ' ') { e.preventDefault(); return playQuestion() }
   if (k.toLowerCase() === 'c' && S.result === 'bad') return compare()
   if (S.result) return
+  if (S.q && S.q.type === 'melody') {
+    if (k === 'Backspace') { e.preventDefault(); undoKey() }
+    return
+  }
   if (/^[0-9]$/.test(k)) {
     const ordered = ex().items.filter((it) => ex().choices(S.settings).includes(it.id))
     const idx = k === '0' ? 9 : Number(k) - 1

@@ -1,5 +1,5 @@
 // Aufgaben für Intervalle und Akkorde. Reine Funktionen, gewichtet nach Schwächen.
-import { INTERVAL, INTERVAL_PRESETS, CHORD, CHORD_PRESETS, INVERSION, INVERSION_PRESETS, SCALE, SCALE_PRESETS, transpose, chordNotes, invertNotes, scaleNotes, rootPool, readable, midiOf } from './theory.js'
+import { spellMidi, isNatural, INTERVAL, INTERVAL_PRESETS, CHORD, CHORD_PRESETS, INVERSION, INVERSION_PRESETS, SCALE, SCALE_PRESETS, transpose, chordNotes, invertNotes, scaleNotes, rootPool, readable, midiOf } from './theory.js'
 
 const rand = (n) => Math.floor(Math.random() * n)
 const pick = (arr) => arr[rand(arr.length)]
@@ -125,5 +125,47 @@ export function genScale(settings, prev, weight = flat) {
   const seq = dir === 'down' ? [...notes].reverse() : dir === 'updown' ? notes.concat(notes.slice(0, -1).reverse()) : notes
   return { type: 'scale', id, dir, root, notes, seq }
 }
+
+// ---------------------------------------------------------------- Melodiediktat
+
+// Tonvorrat und größter Sprung (Halbtöne) je Stufe
+export const MELODY_LEVELS = {
+  1: { low: 60, high: 67, chromatic: false, leap: 4 },
+  2: { low: 60, high: 72, chromatic: false, leap: 7 },
+  3: { low: 60, high: 72, chromatic: true, leap: 7 },
+  4: { low: 57, high: 76, chromatic: true, leap: 12 },
+}
+export const MELODY_DEFAULTS = { level: 1, notes: 5, bpm: 80, hint: true, length: 10 }
+export const melodyKey = (id) => `m:${id}`
+
+export function melodyPool(level) {
+  const L = MELODY_LEVELS[level] || MELODY_LEVELS[1]
+  const out = []
+  for (let m = L.low; m <= L.high; m++) if (L.chromatic || isNatural(m)) out.push(m)
+  return out
+}
+
+export function genMelody(settings) {
+  const level = MELODY_LEVELS[settings.level] ? Number(settings.level) : 1
+  const L = MELODY_LEVELS[level]
+  const pool = melodyPool(level)
+  const count = Math.max(3, Math.min(12, Number(settings.notes) || 5))
+  // Anfang eher in der Mitte, dann vorwiegend kleine Schritte
+  const mid = pool.filter((m) => Math.abs(m - (L.low + L.high) / 2) <= 5)
+  const midis = [pick(mid.length ? mid : pool)]
+  while (midis.length < count) {
+    const last = midis[midis.length - 1]
+    const twice = midis.length > 1 && midis[midis.length - 2] === last
+    const next = weightedPick(pool.filter((m) => Math.abs(m - last) <= L.leap && !(twice && m === last)), (m) => {
+      const d = Math.abs(m - last)
+      return d === 0 ? 0.35 : 1 / d
+    })
+    midis.push(next)
+  }
+  return { type: 'melody', id: String(level), midis, notes: midis.map(spellMidi) }
+}
+
+// Anzahl richtiger Töne (Tonhöhe zählt, Schreibweise nicht)
+export const melodyHits = (q, entry) => q.midis.map((m, k) => entry[k] === m)
 
 export const check = (q, answerId) => answerId === q.id
