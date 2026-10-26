@@ -24,6 +24,7 @@
     <button data-mode="practice" aria-pressed="false">Practice</button>
   </div>
   <div class="top-r">
+    <button class="gbtn acct" id="acctBtn" hidden aria-label="Account">Sign in</button>
     <button class="gbtn icon-only" id="viewBtn" data-pop="view" aria-expanded="false" title="View options" aria-label="View options"><svg width="17" height="17" viewBox="0 0 24 24"><path d="M4 7h9M17 7h3M4 17h3M11 17h9" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/><circle cx="15" cy="7" r="2.2" fill="none" stroke="currentColor" stroke-width="1.7"/><circle cx="9" cy="17" r="2.2" fill="none" stroke="currentColor" stroke-width="1.7"/></svg></button>
     <button class="gbtn icon-only" id="fsBtn" title="Full screen (F)" aria-label="Full screen"><svg width="16" height="16" viewBox="0 0 24 24"><path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg><span class="sr" id="fsTxt">Full screen</span></button>
     <button class="gbtn icon-only" id="helpBtn" data-pop="help" aria-expanded="false" title="Keyboard shortcuts" aria-label="Keyboard shortcuts"><span style="font:600 14px var(--font-mono)">?</span></button>
@@ -44,9 +45,13 @@
       <div class="ex-id">
         <input class="ex-title" id="exTitle" aria-label="Exercise title" spellcheck="false">
         <div class="meta-line" id="exMeta"></div>
+        <div class="sync" id="syncState"></div>
         <p class="desc" id="exDesc" title="Show full description"></p>
       </div>
+      <div class="ex-right">
+      <div class="hactions" id="exActions"></div>
       <div class="seg" id="horizonSeg" title="How much of the sequence the fretboard shows around the current moment (H)"><button data-v="whole">Whole</button><button data-v="near">Near</button><button data-v="now">Now</button></div>
+      </div>
     </section>
 
     <section class="now" id="now" aria-live="polite">
@@ -124,6 +129,9 @@
   <div class="vrow"><span>Key map</span><button class="switch" id="scaleBtn" aria-pressed="false" aria-label="Key map"></button></div>
   <div class="vrow"><span>Left-handed</span><button class="switch" id="leftyBtn" aria-pressed="false" aria-label="Left-handed"></button></div>
 </div>
+<div class="pop anchor-top" id="account" hidden></div>
+<div class="pop" id="sharePop" data-below="1" hidden></div>
+<div class="toast" id="toast" role="status" hidden></div>
 <div class="pop" id="palette" hidden><div id="swatches" style="display:flex;gap:6px"></div></div>
 
 <div class="pop anchor-top" id="help" hidden>

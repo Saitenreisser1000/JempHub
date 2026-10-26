@@ -3,11 +3,13 @@ import { TPQ, E8, COLORS, SKY, STD, DUR_NAMES, TECH } from './core/constants.js'
 import {
   n, mo, setKey, onsets as coreOnsets, barTicks, durName, durFromSpec, decodeDur,
   posLabel as corePosLabel, momentAt as coreMomentAt, nextSounding as coreNext,
-  prevSounding as corePrev, isValidExercise,
+  prevSounding as corePrev,
 } from './core/model.js'
 import { useFlats, pcName as corePcName, noteName as coreNoteName, harmony as coreHarmony } from './core/music.js'
 import { examples } from './core/exercises.js'
 import { ensureAudio, clock, pluck, click, silence } from './audio/synth.js'
+import { makeRecord, fromStorage, mergeLibrary, libraryAfterSignOut, toCloudRow, content, uuid } from './core/library.js'
+import * as cloud from './cloud.js'
 
 const $ = (s) => document.querySelector(s)
 const R = 12
@@ -15,13 +17,16 @@ const R = 12
 
 
 /* ---------- state ---------- */
-const state={exs:examples(),cur:0,mode:'edit',sel:0,caret:'after',entry:'melody',dur:{base:E8,dot:false,trip:false},
+const exampleRecords=()=>examples().map(e=>makeRecord(e,{id:e.id,origin:'example'}));
+const state={exs:exampleRecords(),cur:0,profile:null,mode:'edit',sel:0,caret:'after',entry:'melody',dur:{base:E8,dot:false,trip:false},
   horizon:{edit:'whole',practice:'near'},labels:'order',scale:false,frame:{edit:'full',practice:'fit'},lefty:false,speed:1,
   metro:false,countIn:true,loop:false,range:null,wait:false,trainer:false,undo:[]};
 const SKEY='guitarjemp.v1';
-try{const raw=localStorage.getItem(SKEY); if(raw){const o=JSON.parse(raw); if(o&&Array.isArray(o.exs)&&o.exs.length&&o.exs.every(isValidExercise)){state.exs=o.exs; state.cur=Math.min(o.cur|0,o.exs.length-1);}}}catch(e){}
+try{const raw=localStorage.getItem(SKEY);if(raw){const o=JSON.parse(raw);const recs=fromStorage(o&&o.exs);if(recs.length){state.exs=recs;state.cur=Math.max(0,Math.min(o.cur|0,recs.length-1))}}}catch(e){}
 let saveT=0;
 function save(){clearTimeout(saveT);saveT=setTimeout(()=>{try{localStorage.setItem(SKEY,JSON.stringify({exs:state.exs,cur:state.cur}))}catch(e){}},300)}
+// Content of the open exercise changed.
+function touched(){const r=cur();if(r.origin==='mine'){r.dirty=true;scheduleSync()}save();renderSyncState()}
 
 const cur=()=>state.exs[state.cur];
 const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
@@ -53,7 +58,7 @@ function describe(m){
 let geo=null;
 function buildGeo(){
   const ex=cur(),nS=ex.tuning.length,maxF=15;
-  const SP=ex.inst==='bass'?42:36,TOP=28,EDGE=17,LEFT=34,OPEN=46,NUT=7,L=1560;
+  const SP=ex.inst==='bass'?42:36,TOP=44,EDGE=17,LEFT=34,OPEN=46,NUT=7,L=1560;
   const nutX=LEFT+OPEN,boardX=nutX+NUT;
   const wire=f=>boardX+L*(1-Math.pow(2,-f/12));
   const endX=wire(maxF)+22,W=endX+14,y0=TOP+EDGE,bottom=y0+SP*(nS-1)+EDGE,H=bottom+30;
@@ -179,6 +184,9 @@ function renderMoments(){
   let s='';const lab=state.labels;
   const drawOrder=Object.keys(lists).map(Number);
   if(!playing){const si=head[sel];if(si!==undefined){drawOrder.splice(drawOrder.indexOf(si),1);drawOrder.push(si)}}
+  const placed=[],dotPts=[];
+  drawOrder.forEach(i=>ms[i].dots.forEach(d=>dotPts.push(g.pos(d.s,d.f))));
+  const free=(x,y,w)=>y>=8&&y<=geo.H-6&&x-w/2>=2&&x+w/2<=geo.W-2&&!placed.some(q=>Math.abs(q.x-x)<(q.w+w)/2+6&&Math.abs(q.y-y)<16)&&!dotPts.some(([px,py])=>Math.abs(px-x)<w/2+R+1&&Math.abs(py-y)<R+8);
   drawOrder.forEach(i=>{
     const m=ms[i],c=colorOf(m),list=lists[i],pts=m.dots.map(d=>g.pos(d.s,d.f));
     const isSel=!playing&&head[sel]===i;
@@ -202,9 +210,15 @@ function renderMoments(){
     else if(list.length>1||pts.length>1){const nums=list.map(j=>j+1);badge=nums.length>4?nums[0]+'…'+nums[nums.length-1]+' ×'+nums.length:nums.join(' · ')}
     if(m.strum&&list.length===1)badge=(badge?badge+' ':'')+(m.strum==='u'?'↑':'↓');
     if(badge&&!(pts.length===1&&list.length===1)){
-      const minY=Math.min(...pts.map(p=>p[1])),top=pts.filter(p=>p[1]===minY),bx=centroid(top)[0],by=minY-R-12;
+      const minY=Math.min(...pts.map(p=>p[1])),maxY=Math.max(...pts.map(p=>p[1])),top=pts.filter(p=>p[1]===minY),bx=centroid(top)[0];
       const w=Math.max(18,badge.length*6+10);
-      s+='<g transform="translate('+bx.toFixed(1)+' '+by+')"><rect x="'+(-w/2)+'" y="-7.5" width="'+w+'" height="15" rx="7.5" fill="#0d110f" fill-opacity=".85" stroke="'+c+'" stroke-opacity=".28"/><text class="badge-t" fill="'+c+'">'+badge+'</text></g>';
+      const xs=pts.map(p=>p[0]),right=Math.max(...xs)+R+8+w/2,left=Math.min(...xs)-R-8-w/2;
+      const cands=[[bx,minY-R-12],[right,minY],[left,minY],[bx,maxY+R+12],[right,maxY],[left,maxY],[bx,minY-R-29],[bx,maxY+R+29]];
+      for(const c of cands)c[0]=clamp(c[0],w/2+2,geo.W-w/2-2);
+      let [bxx,by]=cands[0];
+      for(const [x,y] of cands){if(free(x,y,w)){bxx=x;by=y;break}}
+      placed.push({x:bxx,y:by,w});
+      s+='<g transform="translate('+bxx.toFixed(1)+' '+by+')"><rect x="'+(-w/2)+'" y="-7.5" width="'+w+'" height="15" rx="7.5" fill="#0d110f" fill-opacity=".85" stroke="'+c+'" stroke-opacity=".28"/><text class="badge-t" fill="'+c+'">'+badge+'</text></g>';
     }
     s+='</g>';
   });
@@ -398,6 +412,21 @@ function renderHead(){
   const d=$('#exDesc');d.textContent=ex.desc||'';d.hidden=!ex.desc;d.classList.remove('open');
   segSet('#horizonSeg',hor());segSet('#labelSeg',state.labels);segSet('#frameSeg',frameMode());segSet('#modeSeg',state.mode);
   $('#scaleBtn').setAttribute('aria-pressed',state.scale);$('#leftyBtn').setAttribute('aria-pressed',state.lefty);
+  const eb=$('#modeSeg button[data-mode="edit"]'),ro=ex.origin==='shared';eb.disabled=ro;eb.title=ro?'Shared exercises are read-only. Copy it to edit.':'';
+  const signed=!!cloud.currentUser(),acts=[];
+  if(ex.origin==='mine'){if(signed)acts.push('<button class="gbtn" data-act="share">Share</button>');acts.push('<button class="gbtn" data-act="copy">Duplicate</button>','<button class="gbtn" data-act="delete">Delete</button>')}
+  else{acts.push('<button class="gbtn" data-act="copy">Copy to my exercises</button>');if(ex.origin==='shared')acts.push('<button class="gbtn" data-act="delete">Remove</button>')}
+  $('#exActions').innerHTML=acts.join('');
+  renderSyncState();
+}
+let syncState={kind:'idle',msg:''};
+function renderSyncState(){
+  const ex=cur(),el=$('#syncState'),signed=!!cloud.currentUser();let t='';
+  if(ex.origin==='example')t='Example · changes stay on this device';
+  else if(ex.origin==='shared')t='Shared by '+(ex.ownerName||'another user')+' · read-only';
+  else if(signed){if(syncState.kind==='error')t='Not saved to your account: '+syncState.msg;else if(ex.dirty||!ex.synced)t='Saving…';else t='Saved to your account'}
+  else t=cloud.cloudReady()?'Saved on this device · sign in to keep it in your account':'Saved on this device';
+  el.textContent=t;el.classList.toggle('err',signed&&ex.origin==='mine'&&syncState.kind==='error');
 }
 function miniSVG(ex){
   const nS=ex.tuning.length,seen=new Set();let s='<svg width="46" height="28" viewBox="0 0 46 28">';
@@ -406,7 +435,11 @@ function miniSVG(ex){
   return s+'</svg>';
 }
 function renderLib(){
-  $('#libList').innerHTML=state.exs.map((ex,i)=>'<button class="lib-item" data-i="'+i+'" aria-current="'+(i===state.cur)+'">'+miniSVG(ex)+'<span style="min-width:0"><div class="t">'+esc(ex.title)+'</div><div class="k">'+esc(ex.type)+' · '+esc(ex.tag)+'</div></span></button>').join('');
+  const item=(ex,i)=>'<button class="lib-item" data-i="'+i+'" aria-current="'+(i===state.cur)+'">'+miniSVG(ex)+'<span style="min-width:0"><div class="t">'+esc(ex.title)+'</div><div class="k">'+(ex.origin==='shared'?'from '+esc(ex.ownerName||'another user'):esc(ex.type)+(ex.tag?' · '+esc(ex.tag):''))+'</div></span></button>';
+  const groups=[['mine','My exercises'],['shared','Shared with me'],['example','Examples']];
+  $('#libList').innerHTML=groups.map(([o,label])=>{const items=state.exs.map((ex,i)=>[ex,i]).filter(([ex])=>ex.origin===o);
+    if(!items.length&&o!=='mine')return '';
+    return '<div class="lib-sec">'+label+'</div>'+(items.length?items.map(([ex,i])=>item(ex,i)).join(''):'<div class="lib-empty">Your own exercises live here. Start with + New or copy an example.</div>')}).join('');
 }
 function esc(s){return String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]))}
 function renderTools(){
@@ -461,7 +494,7 @@ function renderAll(){
   const ms=cur().moments;renderNow(clamp(state.sel,0,Math.max(0,ms.length-1)),nextSounding(clamp(state.sel,0,Math.max(0,ms.length-1)),allOrder(),false));updatePos();
 }
 function afterEdit(){
-  renderMoments();if(frameMode()==='fit')updateViewBox();renderStrip();renderInspector();renderTools();renderLib();renderTransport();updatePos();save();
+  renderMoments();if(frameMode()==='fit')updateViewBox();renderStrip();renderInspector();renderTools();renderLib();renderTransport();updatePos();touched();
   const on=onsets();if(cur().moments[state.sel])scrollStripTo(on[state.sel]);
 }
 
@@ -542,7 +575,7 @@ $('#strip').addEventListener('click',e=>{
 /* ---------- controls ---------- */
 $('#playBtn').addEventListener('click',()=>{if(P.on||P.wait)stopPlay();else play()});
 $('#toStartBtn').addEventListener('click',()=>{const was=P.on;if(P.on||P.wait)stopPlay();state.sel=0;state.range=null;renderAll();if(was)play()});
-function tempoStep(dir){if(state.mode==='edit'){const ex=cur();ex.bpm=clamp(ex.bpm+dir*2,30,260);save();renderHead()}else state.speed=clamp(+(state.speed+dir*.05).toFixed(2),.25,2);setTempoLive();renderTransport()}
+function tempoStep(dir){if(state.mode==='edit'){const ex=cur();ex.bpm=clamp(ex.bpm+dir*2,30,260);touched();renderHead()}else state.speed=clamp(+(state.speed+dir*.05).toFixed(2),.25,2);setTempoLive();renderTransport()}
 $('#slowBtn').addEventListener('click',()=>tempoStep(-1));
 $('#fastBtn').addEventListener('click',()=>tempoStep(1));
 $('#metroBtn').addEventListener('click',()=>{state.metro=!state.metro;renderTransport()});
@@ -566,25 +599,27 @@ $('#durs').addEventListener('click',e=>{const b=e.target.closest('button');if(!b
 $('#swatches').addEventListener('click',e=>{const b=e.target.closest('button');if(!b)return;const a=cur().moments[state.sel];if(a){pushUndo();a.color=b.dataset.c;afterEdit()}else{cur().color=b.dataset.c;renderTools()}closePops()});
 $('#insp').addEventListener('change',e=>{
   const a=cur().moments[state.sel];if(!a)return;const t=e.target;
-  if(t.id==='noteIn'){a.note=t.value.trim()||null;save();return}
+  if(t.id==='noteIn'){a.note=t.value.trim()||null;touched();return}
   pushUndo();
   if(t.id==='strumSel')a.strum=t.value||null;
   else if(t.dataset.k!=null){const d=a.dots[+t.dataset.k];if(t.dataset.p==='fg')d.fg=t.value?(t.value==='T'?'T':+t.value):null;else d.t=t.value||null}
   afterEdit();
 });
-$('#exTitle').addEventListener('change',e=>{cur().title=e.target.value.trim()||'Untitled exercise';renderLib();save()});
+$('#exTitle').addEventListener('change',e=>{cur().title=e.target.value.trim().slice(0,200)||'Untitled exercise';renderLib();touched()});
 $('#libList').addEventListener('click',e=>{const b=e.target.closest('.lib-item');if(!b)return;loadEx(+b.dataset.i);document.body.classList.remove('lib-open')});
-function loadEx(i){if(P.on||P.wait)stopPlay();state.cur=i;state.sel=0;state.range=null;state.undo=[];state.caret=caretFor();state.speed=1;renderAll();save()}
-$('#newBtn').addEventListener('click',()=>{state.exs.push({id:'u'+Date.now(),title:'Untitled exercise',type:'Custom',tag:'Your own material',desc:'',inst:'guitar',tuning:STD,tuningName:'Standard',key:{r:0,m:'major'},bpm:80,ts:[4,4],color:SKY,moments:[]});
-  if(state.mode!=='edit')state.mode='edit';loadEx(state.exs.length-1);document.body.classList.remove('lib-open')});
+function loadEx(i){if(P.on||P.wait)stopPlay();state.cur=clamp(i,0,state.exs.length-1);if(cur().origin==='shared'){if(!state.modeBeforeShared)state.modeBeforeShared=state.mode;state.mode='practice'}else if(state.modeBeforeShared){state.mode=state.modeBeforeShared;state.modeBeforeShared=null}state.sel=0;state.range=null;state.undo=[];state.caret=caretFor();state.speed=1;renderAll();save()}
+$('#newBtn').addEventListener('click',()=>{state.exs.push(makeRecord({title:'Untitled exercise',type:'Custom',tag:'',desc:'',inst:'guitar',tuning:STD,tuningName:'Standard',key:{r:0,m:'major'},bpm:80,ts:[4,4],color:SKY,moments:[]},{id:uuid(),origin:'mine',dirty:true}));
+  state.mode='edit';state.modeBeforeShared=null;loadEx(state.exs.length-1);scheduleSync();document.body.classList.remove('lib-open')});
 let resetArmed=false;
 $('#resetBtn').addEventListener('click',e=>{if(!resetArmed){resetArmed=true;e.target.textContent='Click again to reset';setTimeout(()=>{resetArmed=false;e.target.textContent='Reset examples'},3000);return}
-  resetArmed=false;e.target.textContent='Reset examples';const own=state.exs.filter(x=>String(x.id).startsWith('u'));state.exs=examples().concat(own);loadEx(0)});
+  resetArmed=false;e.target.textContent='Reset examples';const curId=cur().id;state.exs=exampleRecords().concat(state.exs.filter(x=>x.origin!=='example'));loadEx(Math.max(0,state.exs.findIndex(x=>x.id===curId)))});
 $('#libBtn').addEventListener('click',()=>document.body.classList.toggle('lib-open'));
 $('#scrim').addEventListener('click',()=>document.body.classList.remove('lib-open'));
 function closePops(except){document.querySelectorAll('.pop').forEach(p=>{if(p.id!==except)p.hidden=true});document.querySelectorAll('[data-pop]').forEach(b=>{if(b.dataset.pop!==except)b.setAttribute('aria-expanded','false')})}
-document.querySelectorAll('[data-pop]').forEach(b=>b.addEventListener('click',e=>{e.stopPropagation();const p=$('#'+b.dataset.pop),open=p.hidden;closePops(b.dataset.pop);p.hidden=!open;b.setAttribute('aria-expanded',String(open));
-  if(open&&!p.classList.contains('anchor-top')){const r=b.getBoundingClientRect();p.style.left=Math.max(16,Math.min(window.innerWidth-p.offsetWidth-16,r.left+r.width/2-p.offsetWidth/2))+'px';const below=r.bottom+8,above=r.top-p.offsetHeight-8;p.style.top=(above>8?above:below)+'px'}}));
+function openPop(id,b,force){const p=$('#'+id),open=force||p.hidden;closePops(id);p.hidden=!open;if(b)b.setAttribute('aria-expanded',String(open));
+  if(open&&b&&!p.classList.contains('anchor-top')){const r=b.getBoundingClientRect();p.style.left=Math.max(16,Math.min(window.innerWidth-p.offsetWidth-16,r.left+r.width/2-p.offsetWidth/2))+'px';const below=r.bottom+8,above=r.top-p.offsetHeight-8;p.style.top=(p.dataset.below?below:(above>8?above:below))+'px'}
+  return open}
+document.querySelectorAll('[data-pop]').forEach(b=>b.addEventListener('click',e=>{e.stopPropagation();openPop(b.dataset.pop,b)}));
 document.addEventListener('click',e=>{if(!e.target.closest('.pop')&&!e.target.closest('[data-pop]'))closePops()});
 $('#exDesc').addEventListener('click',e=>e.currentTarget.classList.toggle('open'));
 
@@ -619,4 +654,119 @@ $('#fsBtn').addEventListener('click',toggleFs);
 document.addEventListener('keydown',e=>{const tg=e.target.tagName;if(tg==='INPUT'||tg==='SELECT'||tg==='TEXTAREA')return;if((e.key==='f'||e.key==='F')&&!e.ctrlKey&&!e.metaKey&&!e.altKey&&fsOk&&!$('#fsBtn').hidden)toggleFs()});
 let rzT=0;window.addEventListener('resize',()=>{clearTimeout(rzT);rzT=setTimeout(()=>{renderStrip();if(P.wait)waitShow()},120)});
 
+/* ---------- library actions ---------- */
+let toastT=0;
+function toast(msg){const t=$('#toast');t.textContent=msg;t.hidden=false;clearTimeout(toastT);toastT=setTimeout(()=>{t.hidden=true},3200)}
+let deleteArmed=false;
+$('#exActions').addEventListener('click',async e=>{
+  const b=e.target.closest('[data-act]');if(!b)return;e.stopPropagation();const r=cur(),act=b.dataset.act;
+  if(act==='copy'){const rec=makeRecord(content(r),{id:uuid(),origin:'mine',dirty:true});if(r.origin==='mine')rec.title=(r.title+' (copy)').slice(0,200);
+    state.exs.push(rec);state.mode='edit';state.modeBeforeShared=null;loadEx(state.exs.length-1);scheduleSync();toast('Added to My exercises');return}
+  if(act==='share'){if(openPop('sharePop',b))renderShare();return}
+  if(act==='delete'){
+    if(!deleteArmed){deleteArmed=true;b.textContent='Click again to confirm';setTimeout(()=>{deleteArmed=false;renderHead()},3000);return}
+    deleteArmed=false;
+    try{if(r.origin==='mine'&&r.synced&&cloud.currentUser())await cloud.deleteExercise(r.id);if(r.origin==='shared')await cloud.leaveShared(r.id)}
+    catch(err){toast('Could not delete: '+err.message);return}
+    const i=state.exs.indexOf(r);if(i>=0)state.exs.splice(i,1);
+    if(!state.exs.length)state.exs=exampleRecords();
+    loadEx(0);toast(r.origin==='shared'?'Removed from your library':'Exercise deleted');
+  }
+});
+
+/* ---------- sharing ---------- */
+async function renderShare(msg){
+  const r=cur(),el=$('#sharePop');
+  el.innerHTML='<h3>Share “'+esc(r.title)+'”</h3><form id="shareForm" class="form"><label class="field"><span>Email of a GuitarJemp account</span><input id="shareEmail" type="email" required autocomplete="off" placeholder="student@example.com"></label><button class="pbtn" type="submit">Share</button></form>'+
+    (msg?'<p class="fmsg'+(msg.err?' err':'')+'">'+esc(msg.text)+'</p>':'')+'<div class="shares" id="shareList"><p class="fmsg">Loading…</p></div>';
+  if(!r.synced){$('#shareList').innerHTML='<p class="fmsg">Saving to your account first…</p>';await syncNow()}
+  try{const list=await cloud.listShares(r.id);$('#shareList').innerHTML=list.length?'<div class="lbl">Shared with</div>'+list.map(u=>'<div class="share-row"><span>'+esc(u.display_name||u.email)+'<small>'+esc(u.email)+'</small></span><button class="gbtn" data-unshare="'+esc(u.user_id)+'">Remove</button></div>').join(''):'<p class="fmsg">Not shared with anyone yet.</p>'}
+  catch(err){$('#shareList').innerHTML='<p class="fmsg err">'+esc(err.message)+'</p>'}
+}
+$('#sharePop').addEventListener('submit',async e=>{
+  e.preventDefault();const r=cur(),email=$('#shareEmail').value.trim();if(!email)return;
+  try{if(!r.synced)await syncNow();const res=await cloud.shareExercise(r.id,email);
+    const text={ok:'Shared with '+email+'.',no_account:'No GuitarJemp account uses this address yet. Ask them to sign up first, then share again.',self:'That is your own address.',not_owner:'Only the owner can share this exercise.'}[res]||res;
+    renderShare({text,err:res!=='ok'})}
+  catch(err){renderShare({text:err.message,err:true})}
+});
+$('#sharePop').addEventListener('click',async e=>{const b=e.target.closest('[data-unshare]');if(!b)return;e.stopPropagation();
+  try{await cloud.unshare(cur().id,b.dataset.unshare);renderShare({text:'Access removed.'})}catch(err){renderShare({text:err.message,err:true})}});
+
+/* ---------- cloud sync ---------- */
+let syncT=0,syncing=false,lastUid=null,lastRefresh=0;
+function scheduleSync(){if(!cloud.currentUser())return;clearTimeout(syncT);syncT=setTimeout(syncNow,1500)}
+async function syncNow(){
+  clearTimeout(syncT);if(!cloud.currentUser())return;
+  if(syncing){scheduleSync();return}
+  const todo=state.exs.filter(r=>r.origin==='mine'&&(r.dirty||!r.synced));if(!todo.length){renderSyncState();return}
+  syncing=true;renderSyncState();
+  try{for(const r of todo){const snap=JSON.stringify(content(r));const res=await cloud.saveExercise(toCloudRow(r));
+      if(JSON.stringify(content(r))===snap)r.dirty=false;r.synced=true;r.updatedAt=res.updated_at}
+    syncState={kind:'ok',msg:''}}
+  catch(err){syncState={kind:'error',msg:err.message||'connection problem'};setTimeout(scheduleSync,15000)}
+  finally{syncing=false;save();renderSyncState()}
+}
+async function refreshLibrary(){
+  const u=cloud.currentUser();if(!u)return;lastRefresh=Date.now();
+  try{const {rows,names}=await cloud.fetchExercises();if(!cloud.currentUser())return;
+    const curId=cur().id,{library}=mergeLibrary(state.exs,rows,u.id,names);
+    if(P.on||P.wait)stopPlay();
+    state.exs=library.length?library:exampleRecords();state.cur=Math.max(0,state.exs.findIndex(r=>r.id===curId));
+    if(cur().origin==='shared')state.mode='practice';
+    save();renderAll();syncNow()}
+  catch(err){syncState={kind:'error',msg:err.message||'connection problem'};renderSyncState()}
+}
+window.addEventListener('focus',()=>{if(cloud.currentUser()&&!P.on&&!P.wait&&Date.now()-lastRefresh>30000)refreshLibrary()});
+window.addEventListener('beforeunload',e=>{if(cloud.currentUser()&&state.exs.some(r=>r.origin==='mine'&&r.dirty)){syncNow();e.preventDefault()}});
+
+/* ---------- account ---------- */
+function renderAcctBtn(){const b=$('#acctBtn'),u=cloud.currentUser();b.hidden=!cloud.cloudReady();
+  const name=state.profile&&state.profile.display_name||(u&&u.email)||'';
+  b.innerHTML=u?'<span class="avatar">'+esc((name[0]||'?').toUpperCase())+'</span><span class="lb2">'+esc(name)+'</span>':'Sign in';b.title=u?'Account':'Sign in to keep exercises in your account and share them'}
+function renderAccount(view,msg){
+  const el=$('#account'),u=cloud.currentUser(),m=msg?'<p class="fmsg'+(msg.err?' err':'')+'">'+esc(msg.text)+'</p>':'';
+  const f=(id,label,type,extra)=>'<label class="field"><span>'+label+'</span><input id="'+id+'" type="'+type+'" '+(extra||'')+'></label>';
+  if(u&&view!=='newpw'){const p=state.profile||{};
+    el.innerHTML='<h3>Your account</h3><p class="fmsg">'+esc(u.email)+'</p><form class="form" data-form="profile">'+f('acName','Display name','text','maxlength="80" value="'+esc(p.display_name||'')+'"')+
+      '<label class="vrow"><span>I teach guitar</span><input type="checkbox" id="acTeacher"'+(p.role==='teacher'?' checked':'')+'></label><button class="pbtn" type="submit">Save</button></form>'+m+'<div class="frow"><button class="gbtn" data-acct="signout">Sign out</button></div>';return}
+  if(view==='newpw'){el.innerHTML='<h3>Set a new password</h3><form class="form" data-form="newpw">'+f('acPw','New password','password','required minlength="8" autocomplete="new-password"')+'<button class="pbtn" type="submit">Save password</button></form>'+m;return}
+  if(view==='signup'){el.innerHTML='<h3>Create account</h3><form class="form" data-form="signup">'+f('acName','Your name','text','maxlength="80" autocomplete="name"')+f('acEmail','Email','email','required autocomplete="email"')+f('acPw','Password (at least 8 characters)','password','required minlength="8" autocomplete="new-password"')+'<button class="pbtn" type="submit">Create account</button></form>'+m+'<div class="frow"><button class="linkbtn" data-acct="signin">I already have an account</button></div>';return}
+  if(view==='reset'){el.innerHTML='<h3>Reset password</h3><form class="form" data-form="reset">'+f('acEmail','Email','email','required autocomplete="email"')+'<button class="pbtn" type="submit">Send reset link</button></form>'+m+'<div class="frow"><button class="linkbtn" data-acct="signin">Back to sign in</button></div>';return}
+  el.innerHTML='<h3>Sign in</h3><p class="fmsg">Keep your exercises in your account and share them with students.</p><form class="form" data-form="signin">'+f('acEmail','Email','email','required autocomplete="email"')+f('acPw','Password','password','required autocomplete="current-password"')+'<button class="pbtn" type="submit">Sign in</button></form>'+m+
+    '<div class="frow"><button class="linkbtn" data-acct="signup">Create account</button><button class="linkbtn" data-acct="reset">Forgot password?</button></div>';
+}
+$('#acctBtn').addEventListener('click',e=>{e.stopPropagation();if(openPop('account',$('#acctBtn')))renderAccount('signin')});
+$('#account').addEventListener('click',async e=>{const b=e.target.closest('[data-acct]');if(!b)return;e.stopPropagation();const v=b.dataset.acct;
+  if(v==='signout'){b.disabled=true;await syncNow();try{await cloud.signOut()}catch(err){renderAccount('profile',{text:err.message,err:true})}return}
+  renderAccount(v)});
+$('#account').addEventListener('submit',async e=>{
+  e.preventDefault();const form=e.target.dataset.form,val=id=>{const x=$('#'+id);return x?x.value.trim():''},btn=e.target.querySelector('button[type=submit]');btn.disabled=true;
+  try{
+    if(form==='signin'){await cloud.signIn(val('acEmail'),$('#acPw').value);closePops();toast('Signed in')}
+    else if(form==='signup'){const r=await cloud.signUp(val('acEmail'),$('#acPw').value,val('acName'));if(r.needsConfirmation)renderAccount('signin',{text:'Check your inbox and confirm your address, then sign in.'});else{closePops();toast('Account created')}}
+    else if(form==='reset'){await cloud.sendPasswordReset(val('acEmail'));renderAccount('signin',{text:'If an account exists for this address, a reset link is on its way.'})}
+    else if(form==='newpw'){await cloud.setNewPassword($('#acPw').value);closePops();toast('Password changed')}
+    else if(form==='profile'){const fields={display_name:val('acName').slice(0,80)||null,role:$('#acTeacher').checked?'teacher':'student'};await cloud.saveProfile(fields);state.profile=Object.assign({},state.profile,fields);renderAcctBtn();renderAccount('profile',{text:'Saved.'})}
+  }catch(err){const v=form==='profile'?'profile':form;renderAccount(v,{text:err.message||'Something went wrong. Please try again.',err:true})}
+  finally{if(btn.isConnected)btn.disabled=false}
+});
+async function afterSignIn(){
+  const u=cloud.currentUser();if(!u||lastUid===u.id)return;lastUid=u.id;renderAcctBtn();
+  try{state.profile=await cloud.loadProfile()}catch{state.profile=null}
+  renderAcctBtn();await refreshLibrary();
+}
+function afterSignOut(){
+  lastUid=null;state.profile=null;syncState={kind:'idle',msg:''};const curId=cur().id;
+  if(P.on||P.wait)stopPlay();
+  state.exs=libraryAfterSignOut(state.exs);if(!state.exs.length)state.exs=exampleRecords();
+  state.cur=Math.max(0,state.exs.findIndex(r=>r.id===curId));save();closePops();renderAcctBtn();renderAll();toast('Signed out');
+}
+cloud.onAuthChange(ev=>{
+  if(ev==='PASSWORD_RECOVERY'){openPop('account',$('#acctBtn'),true);renderAccount('newpw');return}
+  if(ev==='SIGNED_OUT'){afterSignOut();return}
+  if(cloud.currentUser())afterSignIn();
+});
+
 renderAll();
+cloud.initCloud().then(ok=>{renderAcctBtn();if(ok){renderSyncState();if(cloud.currentUser())afterSignIn()}});
