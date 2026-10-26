@@ -11,3 +11,6 @@ coverage/
 apps/stemplayer/audio/
 apps/stemplayer/releases/
 apps/stemplayer/backend/uploads/
+
+# GuitarJemp: Supabase-Zugang nur auf dem Server
+apps/guitar/config.js
