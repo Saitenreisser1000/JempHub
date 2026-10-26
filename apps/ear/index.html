@@ -1,17 +1,38 @@
 <!doctype html>
-<html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <link rel="icon" href="/earjemp.png" />
-    <link
-      rel="stylesheet"
-      href="https://fonts.googleapis.com/css?family=Roboto:100,300,400,500,700,900"
-    />
-    <title>earjemp</title>
-  </head>
-  <body>
-    <div id="app"></div>
-    <script type="module" src="/src/main.js"></script>
-  </body>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#0f1311">
+<meta name="description" content="EarJemp – Gehörbildung: Intervalle und Akkorde hören, mit Klavier- oder Gitarrenklang.">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<title>EarJemp</title>
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="icon.svg">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700&family=Figtree:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap">
+<link rel="stylesheet" href="src/styles.css?v=2">
+</head>
+<body>
+<header class="top">
+  <a class="brand" href="#" aria-label="EarJemp">
+    <svg width="34" height="22" viewBox="0 0 34 22" aria-hidden="true"><g fill="#5fd6cf"><rect x="1" y="9" width="3" height="4" rx="1.5"/><rect x="6" y="6" width="3" height="10" rx="1.5"/><rect x="11" y="3" width="3" height="16" rx="1.5"/><rect x="16" y="7" width="3" height="8" rx="1.5"/></g><path d="M23 15 Q 26 8 30 7" fill="none" stroke="#f2c46d" stroke-width="1.6"/><circle cx="23" cy="15" r="3" fill="#7cc4f2"/><circle cx="30.5" cy="7" r="3" fill="#f2c46d"/></svg>
+    <span>EarJemp</span>
+  </a>
+  <div class="top-r">
+    <div class="seg" id="instSeg" role="group" aria-label="Klang"><button data-inst="piano"></button><button data-inst="guitar"></button></div>
+    <div class="seg" id="langSeg" role="group" aria-label="Sprache / Language"><button data-lang="de">DE</button><button data-lang="en">EN</button></div>
+    <button class="gbtn icon-only" id="helpBtn" aria-expanded="false" aria-label="?"><span style="font:600 14px var(--font-mono)">?</span></button>
+  </div>
+</header>
+
+<main class="view" id="view" aria-live="polite"></main>
+
+<div class="pop" id="help" hidden></div>
+
+<script type="module" src="src/app.js"></script>
+</body>
 </html>

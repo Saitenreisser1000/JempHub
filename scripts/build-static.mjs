@@ -1,13 +1,14 @@
 import { cp, mkdir, rm, access, readFile } from 'node:fs/promises';
 import { resolve } from 'node:path';
 const app = process.argv[2];
-if (!['hub', 'stemplayer', 'guitar', 'note'].includes(app)) throw new Error('Expected hub, stemplayer, guitar or note');
+if (!['hub', 'stemplayer', 'guitar', 'note', 'ear'].includes(app)) throw new Error('Expected hub, stemplayer, guitar, note or ear');
 const root = resolve(import.meta.dirname, '..', 'apps', app);
 const files = {
   hub: ['index.html', 'styles.css', 'design-system'],
   stemplayer: ['index.html', 'styles.css', 'app.js', 'playlist.json'],
   guitar: ['index.html', 'favicon.svg', 'src'],
   note: ['index.html', 'icon.svg', 'manifest.webmanifest', 'src'],
+  ear: ['index.html', 'icon.svg', 'manifest.webmanifest', 'src', 'vendor'],
 }[app];
 await Promise.all(files.map(file => access(resolve(root, file))));
 const html = await readFile(resolve(root, 'index.html'), 'utf8');

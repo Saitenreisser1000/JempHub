@@ -1,0 +1,10 @@
+{
+  "name": "@jemphub/sounds",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Gemeinsame Klänge der Jemp-Apps: Klavier-Sprite, Gitarren-Synth, Web-Audio-Player",
+  "scripts": {
+    "test": "node --test \"src/**/*.test.js\""
+  }
+}

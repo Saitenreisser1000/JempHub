@@ -11,3 +11,6 @@ coverage/
 apps/stemplayer/audio/
 apps/stemplayer/releases/
 apps/stemplayer/backend/uploads/
+
+# Gemeinsame Pakete, beim Bauen in die Apps kopiert (scripts/sync-shared.mjs)
+apps/*/vendor/
