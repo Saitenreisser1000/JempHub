@@ -109,9 +109,13 @@ After adding the `notejemp` DNS record, install or update the Nginx config and r
 
 The hub page currently links to:
 
-- EarJemp: `https://earjemp.jemphub.com/`
-- StemPlayer: `https://stemplayer.jemphub.com`
+- GuitarJemp: `https://guitarjemp.jemphub.com/`
 - NoteJemp: `https://notejemp.jemphub.com/`
+- EarJemp: `https://earjemp.jemphub.com/`
+- StemPlayer: `https://stemplayer.jemphub.com/`
+
+The page uses the shared Jemp look: `design-system/tokens.css` (colours, fonts) and
+`design-system/styles.css` (base controls), the same as GuitarJemp and NoteJemp.
 
 If you want a different URL later, edit `index.html` before uploading.
 
