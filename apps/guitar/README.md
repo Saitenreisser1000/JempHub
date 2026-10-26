@@ -32,3 +32,8 @@ Build-Werkzeug. Schriften kommen von Google Fonts.
 Supabase folgt in einem eigenen Schritt.
 
 Die frühere Vue/Vuetify-Version bleibt in der Git-Historie erhalten (letzter Stand: Commit `a574cd7`).
+
+## Veröffentlichen
+
+Auf dem VPS unter `https://guitarjemp.jemphub.com`: Anleitung und Skript in
+[`deploy/DEPLOY.md`](deploy/DEPLOY.md).
