@@ -1,20 +1,40 @@
 # NoteJemp – Noten üben
 
-Mobile-first Vue-3-Webapp (Vite) zum Üben von Noten und Notenwerten. Notation wird als SVG mit der Schrift Bravura (SIL OFL) gerendert, Fortschritt liegt im `localStorage`.
+Webapp zum Üben von Noten, Notenwerten und Takten, im Erscheinungsbild von
+GuitarJemp. Notation wird als SVG mit der Schrift Bravura (SIL OFL) gezeichnet.
+Fortschritt und Einstellungen liegen im `localStorage` des Browsers.
 
-Übungen: Noten bestimmen (Violin-/Bassschlüssel, Hilfslinien, Vorzeichen), Notenwerte & Pausen (auch punktiert), Takte vervollständigen (2/4, 3/4, 4/4, 6/8, 3/8).
+## Übungen
 
+- **Noten bestimmen:** Violin- und Bassschlüssel, Hilfslinien, Vorzeichen. Nach
+  der Antwort zeigt ein Griffbrett, wo die Note auf der Gitarre bzw. dem E-Bass liegt.
+- **Notenwerte & Pausen:** Ganze bis Sechzehntel, auch punktiert.
+- **Takte vervollständigen:** 2/4, 3/4, 4/4, 6/8, 3/8 oder gemischt.
+
+Für alle Übungen: Schwächen gezielt üben (oft falsch Beantwortetes kommt öfter
+dran), Ton nach der Antwort (Note bzw. ganzer Takt), Rundenlänge 10/20/30,
+„Automatisch weiter“, Tastatursteuerung, Ergebnis mit den Fehlern der Runde und
+eine Fortschrittsansicht mit Notenkarte.
+
+## Befehle
+
+```sh
+npm run dev --workspace notejemp      # http://127.0.0.1:5182
+npm run build --workspace notejemp    # Tests + statischer Build nach apps/note/dist
+npm run test --workspace notejemp
 ```
-npm install
-npm run dev      # Entwicklung (im LAN erreichbar)
-npm run build    # statisches Build nach dist/
-```
 
-## Ähnliche Open-Source-Projekte
-- [BHSPitMonkey/Prelude](https://github.com/BHSPitMonkey/Prelude) – Web-App (TypeScript, PWA) für Blattspiel/Noten lesen
-- [SeeLook/nootka](https://github.com/SeeLook/nootka) – Desktop/Mobile-App (C++) zum Üben von Noten und Gehörbildung
-- [macdonaldr93/ledger-app](https://github.com/macdonaldr93/ledger-app) – Sight-Reading-Karteikarten (TypeScript)
-- [lipd/muse-training](https://github.com/lipd/muse-training) – Notenlesen & Gehörbildung (TypeScript, Web MIDI)
-- [wojciechmalota/hackthepiano](https://github.com/wojciechmalota/hackthepiano) – Noten schnell lesen lernen (JavaScript, MIDI)
+Keine Paketabhängigkeiten: reines JavaScript (ES-Module). Veröffentlichen mit
+`deploy/publish.sh` (unverändert, lädt `dist/` nach `/var/www/notejemp`).
 
-Keines davon deckt Notenwerte/Pausen und das Vervollständigen von Takten ab, daher die Eigenentwicklung.
+## Aufbau
+
+| Datei | Inhalt |
+| --- | --- |
+| `src/music.js` | Notennamen, Schlüssel, Tonhöhen, Notenwerte, Griffbrett-Lagen |
+| `src/quiz.js` | Aufgaben der drei Übungen, gewichtet nach Schwächen |
+| `src/stats.js` | Statistik und Einstellungen (kompatibel mit NoteJemp 1) |
+| `src/staff.js` | Notensystem als SVG |
+| `src/fretboard.js` | Kleines Griffbrett für die Lage einer Note |
+| `src/audio.js` | Klang (aus GuitarJemp übernommen) |
+| `src/app.js` | Oberfläche |

@@ -32,7 +32,7 @@ npm run dev --workspace notejemp
 npm run dev --workspace stemplayer-backend
 ```
 
-Die Frontend-Artefakte liegen jeweils unter `apps/<app>/dist`. Hub, GuitarJemp und StemPlayer verwenden einen statischen Kopier-Build mit Prüfung der lokalen HTML-Verweise; die Vue-Apps behalten ihre Vite-Builds. Backend und Design-System sind ungebündelte JavaScript-Quellen: deren Build prüft Syntax, Paketabhängigkeiten bzw. Exporte. Backend-Integration mit PostgreSQL wird dadurch nicht geprüft.
+Die Frontend-Artefakte liegen jeweils unter `apps/<app>/dist`. Hub, GuitarJemp, NoteJemp und StemPlayer verwenden einen statischen Kopier-Build mit Prüfung der lokalen HTML-Verweise; die Vue-Apps behalten ihre Vite-Builds. Backend und Design-System sind ungebündelte JavaScript-Quellen: deren Build prüft Syntax, Paketabhängigkeiten bzw. Exporte. Backend-Integration mit PostgreSQL wird dadurch nicht geprüft.
 
 Das Root-Lockfile ist für `npm ci` im Monorepo maßgeblich. Die übernommenen App-Lockfiles bleiben als Originalbestand und für eigenständige Deployment-Kontexte erhalten.
 
