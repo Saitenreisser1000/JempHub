@@ -1,40 +1,14 @@
 {
   "name": "guitarjemp",
-  "version": "0.0.0",
+  "version": "2.0.0",
   "private": true,
   "type": "module",
   "engines": {
-    "node": "^20.19.0 || >=22.12.0"
+    "node": ">=22.12.0"
   },
   "scripts": {
-    "dev": "node scripts/check-node.mjs && vite --host 127.0.0.1 --port 5180 --strictPort",
-    "build": "node scripts/check-node.mjs && vite build",
-    "preview": "node scripts/check-node.mjs && vite preview",
-    "test": "node scripts/check-node.mjs && vitest",
-    "test:watch": "node scripts/check-node.mjs && vitest --watch",
-    "i18n:check": "node scripts/check-node.mjs && node scripts/check-i18n.mjs",
-    "lint": "node scripts/check-node.mjs && eslint . --fix --cache",
-    "format": "prettier --write --experimental-cli src/"
-  },
-  "dependencies": {
-    "@mdi/font": "^7.4.47",
-    "@supabase/supabase-js": "^2.93.3",
-    "jemp-design-system": "file:../../packages/design-system",
-    "pinia": "^3.0.4",
-    "sass": "^1.97.2",
-    "vue": "^3.5.26",
-    "vuetify": "^3.11.6"
-  },
-  "devDependencies": {
-    "@eslint/js": "^9.39.2",
-    "@vitejs/plugin-vue": "^6.0.3",
-    "@vue/eslint-config-prettier": "^10.2.0",
-    "eslint": "^9.39.2",
-    "eslint-plugin-vue": "~10.6.2",
-    "globals": "^17.0.0",
-    "prettier": "3.7.4",
-    "vite": "^7.3.0",
-    "vite-plugin-vue-devtools": "^8.0.5",
-    "vitest": "^4.0.18"
+    "dev": "node ../../scripts/serve-static.mjs . --port 5180",
+    "build": "npm test && node ../../scripts/build-static.mjs guitar",
+    "test": "node --test \"src/**/*.test.js\""
   }
 }
