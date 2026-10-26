@@ -11,7 +11,7 @@ const files = {
 }[app];
 await Promise.all(files.map(file => access(resolve(root, file))));
 const html = await readFile(resolve(root, 'index.html'), 'utf8');
-for (const match of html.matchAll(/(?:src|href)="([^"#]+)"/g)) {
+for (const match of html.matchAll(/(?:src|href)="([^"#?]+)/g)) {
   if (/^(https?:|data:|\/)/.test(match[1])) continue;
   await access(resolve(root, match[1]));
 }
