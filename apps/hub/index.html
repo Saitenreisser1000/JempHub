@@ -2,106 +2,154 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <meta
-      name="description"
-      content="Jemphub is the central launchpad for Jemp's online music projects."
-    />
-    <title>Jemphub | Music Project Hub</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <meta name="theme-color" content="#0f1311" />
+    <meta name="description" content="JempHub – one home for developing music skills: GuitarJemp, NoteJemp, EarJemp and StemPlayer." />
+    <title>JempHub</title>
+    <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%230f1311'/%3E%3Cpath d='M8 16h3M21 16h3' stroke='%23d8b46a' stroke-width='1.6' stroke-linecap='round'/%3E%3Ccircle cx='6' cy='16' r='3' fill='%237cc4f2'/%3E%3Crect x='12' y='8' width='8' height='16' rx='4' fill='%238fd3a9' opacity='.3'/%3E%3Ccircle cx='16' cy='12.5' r='2.4' fill='%238fd3a9'/%3E%3Ccircle cx='16' cy='19.5' r='2.4' fill='%238fd3a9'/%3E%3Ccircle cx='26' cy='16' r='3' fill='%23f2c46d'/%3E%3C/svg%3E" />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link
-      href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700&family=Sora:wght@500;700&display=swap"
-      rel="stylesheet"
-    />
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700&family=Figtree:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" />
     <link rel="stylesheet" href="design-system/styles.css" />
     <link rel="stylesheet" href="styles.css" />
   </head>
-  <body class="v-theme--guitarjempDark">
+  <body>
+    <header class="top">
+      <a class="brand" href="#" aria-label="JempHub">
+        <svg width="40" height="20" viewBox="0 0 44 22" aria-hidden="true"><path d="M8 11 L15 11 M29 11 L36 11" stroke="#d8b46a" stroke-width="1.6" stroke-linecap="round" opacity=".7"/><circle cx="5" cy="11" r="4" fill="#7cc4f2"/><rect x="16" y="3" width="12" height="16" rx="6" fill="#8fd3a9" opacity=".25"/><circle cx="22" cy="7.5" r="3" fill="#8fd3a9"/><circle cx="22" cy="14.5" r="3" fill="#8fd3a9"/><circle cx="39" cy="11" r="4" fill="#f2c46d"/></svg>
+        <span>JempHub</span>
+      </a>
+    </header>
+
     <main class="hub">
-      <header class="hero">
-        <h1>JempHub</h1>
-        <p class="lead">One home for developing music skills</p>
-        <div class="pulse-line" aria-hidden="true">
-          <span></span>
-          <span></span>
-          <span></span>
-          <span></span>
-          <span></span>
-          <span></span>
-          <span></span>
-          <span></span>
-          <span></span>
-          <span></span>
-          <span></span>
-          <span></span>
-        </div>
-      </header>
-
-      <section class="projects" aria-label="Project links">
-        <article class="project-card project-card--earjemp">
-          <h2>EarJemp</h2>
-          <p>
-            Train your ear with interactive exercises for intervals, chords, and scales.
-          </p>
-          <a class="project-link" href="https://earjemp.jemphub.com/" data-local-url="http://127.0.0.1:5181/" target="_blank" rel="noreferrer"
-            >Open EarJemp</a
-          >
-        </article>
-
-        <article class="project-card project-card--stemplayer">
-          <h2>StemPlayer</h2>
-          <p>
-            Play with music stems and create your own mixes.
-          </p>
-          <a class="project-link" href="https://stemplayer.jemphub.com" data-local-url="http://127.0.0.1:5183/" target="_blank" rel="noreferrer"
-            >Open StemPlayer</a
-          >
-        </article>
-
-        <article class="project-card project-card--notejemp">
-          <h2>NoteJemp</h2>
-          <p>
-            Capture and organize your notes.
-          </p>
-          <a class="project-link" href="https://notejemp.jemphub.com/" data-local-url="http://127.0.0.1:5182/" target="_blank" rel="noreferrer"
-            >Open NoteJemp</a
-          >
-        </article>
-
-        <article class="project-card project-card--next">
-          <h2>GuitarJemp</h2>
-          <p>
-            Explore the fretboard and practice guitar with interactive tools.
-          </p>
-          <a class="project-link" href="https://guitarjemp.jemphub.com/" data-local-url="http://127.0.0.1:5180/" target="_blank" rel="noreferrer"
-            >Open GuitarJemp</a
-          >
-        </article>
+      <section class="hero">
+        <h1>One home for developing music skills</h1>
+        <p class="lead">Small, focused tools for guitar, reading music, ear training and playing along. Free in the browser, on desktop, tablet and phone.</p>
+        <svg class="trail" viewBox="0 0 640 96" role="img" aria-label="Notes moving across a fretboard">
+          <rect x="0" y="10" width="640" height="76" rx="10" class="t-wood" />
+          <g class="t-frets">
+            <rect x="22" y="10" width="4" height="76" class="t-nut" />
+            <rect x="110" y="10" width="2" height="76" /><rect x="192" y="10" width="2" height="76" /><rect x="270" y="10" width="2" height="76" />
+            <rect x="343" y="10" width="2" height="76" /><rect x="412" y="10" width="2" height="76" /><rect x="477" y="10" width="2" height="76" />
+            <rect x="538" y="10" width="2" height="76" /><rect x="596" y="10" width="2" height="76" />
+          </g>
+          <g class="t-strings">
+            <line x1="0" x2="640" y1="20" y2="20" stroke-width="1" /><line x1="0" x2="640" y1="33" y2="33" stroke-width="1.2" /><line x1="0" x2="640" y1="46" y2="46" stroke-width="1.5" />
+            <line x1="0" x2="640" y1="59" y2="59" stroke-width="1.9" /><line x1="0" x2="640" y1="72" y2="72" stroke-width="2.3" /><line x1="0" x2="640" y1="85" y2="85" stroke-width="2.7" opacity="0" />
+          </g>
+          <g class="t-links" fill="none" stroke-width="1.6" stroke-linecap="round">
+            <path d="M75 72 Q 110 52 145 59" stroke="#8fd3a9" /><path d="M145 46 Q 190 20 231 33" stroke="#f2c46d" />
+            <path d="M231 33 Q 270 40 306 46" stroke="#b9a3f2" /><path d="M306 46 Q 360 64 378 59" stroke="#f28b7c" />
+            <path d="M378 46 Q 410 22 445 20" stroke="#7cc4f2" />
+          </g>
+          <g class="t-dots">
+            <circle class="d1" cx="66" cy="72" r="8" fill="#7cc4f2" />
+            <g class="d2"><rect x="135" y="38" width="20" height="30" rx="10" fill="#8fd3a9" opacity=".22" /><circle cx="145" cy="46" r="8" fill="#8fd3a9" /><circle cx="145" cy="59" r="8" fill="#8fd3a9" /></g>
+            <circle class="d3" cx="231" cy="33" r="8" fill="#f2c46d" />
+            <circle class="d4" cx="306" cy="46" r="8" fill="#b9a3f2" />
+            <g class="d5"><rect x="368" y="38" width="20" height="30" rx="10" fill="#f28b7c" opacity=".22" /><circle cx="378" cy="46" r="8" fill="#f28b7c" /><circle cx="378" cy="59" r="8" fill="#f28b7c" /></g>
+            <circle class="d6" cx="445" cy="20" r="8" fill="#7cc4f2" />
+          </g>
+        </svg>
       </section>
 
-      <footer class="site-footer" aria-label="Legal information">
-        <nav class="legal-links" aria-label="Legal links">
-          <a href="#imprint-modal">Legal Notice</a>
-          <a href="#privacy-modal">Privacy</a>
-        </nav>
-      </footer>
+      <section class="apps" aria-label="Apps">
+        <a class="app" href="https://guitarjemp.jemphub.com/" data-local-url="http://127.0.0.1:5180/" target="_blank" rel="noreferrer">
+          <span class="thumb">
+            <svg viewBox="0 0 240 110" aria-hidden="true">
+              <rect x="10" y="14" width="220" height="82" rx="6" class="wood" />
+              <rect x="30" y="14" width="3" height="82" class="nut" />
+              <g class="frets"><rect x="80" y="14" width="2" height="82" /><rect x="124" y="14" width="2" height="82" /><rect x="164" y="14" width="2" height="82" /><rect x="200" y="14" width="2" height="82" /></g>
+              <g class="strings"><line x1="10" x2="230" y1="24" y2="24" /><line x1="10" x2="230" y1="38" y2="38" /><line x1="10" x2="230" y1="52" y2="52" /><line x1="10" x2="230" y1="66" y2="66" /><line x1="10" x2="230" y1="80" y2="80" /></g>
+              <path d="M62 80 Q 84 62 98 66" fill="none" stroke="#8fd3a9" stroke-width="1.5" /><path d="M102 52 Q 128 30 144 38" fill="none" stroke="#f2c46d" stroke-width="1.5" />
+              <circle cx="55" cy="80" r="7" fill="#7cc4f2" />
+              <rect x="93" y="45" width="18" height="28" rx="9" fill="#8fd3a9" opacity=".22" /><circle cx="102" cy="52" r="7" fill="#8fd3a9" /><circle cx="102" cy="66" r="7" fill="#8fd3a9" />
+              <circle cx="145" cy="38" r="7" fill="#f2c46d" />
+            </svg>
+          </span>
+          <span class="body">
+            <span class="tags"><span>Guitar</span><span>Teaching</span></span>
+            <h2>GuitarJemp</h2>
+            <span class="desc">Write, play and practise exercises right on the fretboard. Melodies, chords and rhythm, with a step-through practice mode.</span>
+            <span class="open">Open GuitarJemp <span aria-hidden="true">→</span></span>
+          </span>
+        </a>
+
+        <a class="app" href="https://notejemp.jemphub.com/" data-local-url="http://127.0.0.1:5182/" target="_blank" rel="noreferrer">
+          <span class="thumb">
+            <svg viewBox="0 0 240 110" aria-hidden="true">
+              <g class="staff"><line x1="16" x2="224" y1="34" y2="34" /><line x1="16" x2="224" y1="46" y2="46" /><line x1="16" x2="224" y1="58" y2="58" /><line x1="16" x2="224" y1="70" y2="70" /><line x1="16" x2="224" y1="82" y2="82" /></g>
+              <ellipse cx="70" cy="76" rx="7" ry="5.5" transform="rotate(-20 70 76)" class="ink" /><line x1="76.5" x2="76.5" y1="74" y2="40" class="stem" />
+              <ellipse cx="120" cy="58" rx="7" ry="5.5" transform="rotate(-20 120 58)" fill="#8fd3a9" /><line x1="126.5" x2="126.5" y1="56" y2="22" stroke="#8fd3a9" stroke-width="1.6" />
+              <ellipse cx="170" cy="40" rx="7" ry="5.5" transform="rotate(-20 170 40)" class="ink" /><line x1="163.5" x2="163.5" y1="42" y2="76" class="stem" />
+              <rect x="104" y="88" width="32" height="16" rx="8" class="chip" /><text x="120" y="99.5" text-anchor="middle" class="chip-t">c2</text>
+            </svg>
+          </span>
+          <span class="body">
+            <span class="tags"><span>Reading</span><span>Theory</span></span>
+            <h2>NoteJemp</h2>
+            <span class="desc">Read notes with octave names, note values and rests, and complete bars. Weak spots come up more often until they stick.</span>
+            <span class="open">Open NoteJemp <span aria-hidden="true">→</span></span>
+          </span>
+        </a>
+
+        <a class="app" href="https://earjemp.jemphub.com/" data-local-url="http://127.0.0.1:5181/" target="_blank" rel="noreferrer">
+          <span class="thumb">
+            <svg viewBox="0 0 240 110" aria-hidden="true">
+              <g class="wave">
+                <rect x="30" y="47" width="6" height="16" rx="3" /><rect x="44" y="38" width="6" height="34" rx="3" /><rect x="58" y="28" width="6" height="54" rx="3" />
+                <rect x="72" y="40" width="6" height="30" rx="3" /><rect x="86" y="22" width="6" height="66" rx="3" /><rect x="100" y="34" width="6" height="42" rx="3" />
+                <rect x="114" y="44" width="6" height="22" rx="3" />
+              </g>
+              <circle cx="160" cy="70" r="8" fill="#7cc4f2" /><circle cx="196" cy="38" r="8" fill="#f2c46d" />
+              <path d="M168 66 Q 186 40 189 40" fill="none" stroke="#f2c46d" stroke-width="1.5" />
+              <rect x="160" y="84" width="48" height="16" rx="8" class="chip" /><text x="184" y="95.5" text-anchor="middle" class="chip-t">5th</text>
+            </svg>
+          </span>
+          <span class="body">
+            <span class="tags"><span>Ear training</span></span>
+            <h2>EarJemp</h2>
+            <span class="desc">Train your ear with interactive exercises for intervals, chords and scales.</span>
+            <span class="open">Open EarJemp <span aria-hidden="true">→</span></span>
+          </span>
+        </a>
+
+        <a class="app" href="https://stemplayer.jemphub.com/" data-local-url="http://127.0.0.1:5183/" target="_blank" rel="noreferrer">
+          <span class="thumb">
+            <svg viewBox="0 0 240 110" aria-hidden="true">
+              <g class="lanes"><rect x="16" y="18" width="208" height="14" rx="4" /><rect x="16" y="38" width="208" height="14" rx="4" /><rect x="16" y="58" width="208" height="14" rx="4" /><rect x="16" y="78" width="208" height="14" rx="4" /></g>
+              <rect x="22" y="21" width="120" height="8" rx="4" fill="#8fd3a9" /><rect x="22" y="41" width="170" height="8" rx="4" fill="#7cc4f2" opacity=".85" />
+              <rect x="22" y="61" width="80" height="8" rx="4" fill="#f2c46d" /><rect x="22" y="81" width="140" height="8" rx="4" fill="#f28b7c" opacity=".5" />
+              <line x1="118" x2="118" y1="12" y2="98" stroke="#d8b46a" stroke-width="2" />
+            </svg>
+          </span>
+          <span class="body">
+            <span class="tags"><span>Play along</span></span>
+            <h2>StemPlayer</h2>
+            <span class="desc">Play with music stems: mute, solo and balance the parts to make your own practice mix.</span>
+            <span class="open">Open StemPlayer <span aria-hidden="true">→</span></span>
+          </span>
+        </a>
+      </section>
     </main>
+
+    <footer class="site-footer" aria-label="Legal information">
+      <span>JempHub</span>
+      <nav class="legal-links" aria-label="Legal links">
+        <a class="gbtn" href="#imprint-modal">Legal notice</a>
+        <a class="gbtn" href="#privacy-modal">Privacy</a>
+      </nav>
+    </footer>
 
     <section id="imprint-modal" class="lightbox" aria-labelledby="imprint-title">
       <a href="#" class="lightbox-backdrop" aria-label="Close legal notice"></a>
       <div class="lightbox-panel" role="dialog" aria-modal="true">
         <div class="lightbox-head">
-          <h2 id="imprint-title">Legal Notice</h2>
-          <a href="#" class="lightbox-close" aria-label="Close">Close</a>
+          <h2 id="imprint-title">Legal notice</h2>
+          <a href="#" class="gbtn" aria-label="Close">Close</a>
         </div>
-        <p>
-          Responsible for content according to Section 5 TMG: Stefan Leutgeb.
-        </p>
-        <p>
-          Add your full postal address, contact details, and all legally
-          required information before publishing.
-        </p>
+        <p>Responsible for content according to Section 5 TMG: Stefan Leutgeb.</p>
+        <p>Add your full postal address, contact details, and all legally required information before publishing.</p>
       </div>
     </section>
 
@@ -109,24 +157,19 @@
       <a href="#" class="lightbox-backdrop" aria-label="Close privacy policy"></a>
       <div class="lightbox-panel" role="dialog" aria-modal="true">
         <div class="lightbox-head">
-          <h2 id="privacy-title">Privacy Policy</h2>
-          <a href="#" class="lightbox-close" aria-label="Close">Close</a>
+          <h2 id="privacy-title">Privacy policy</h2>
+          <a href="#" class="gbtn" aria-label="Close">Close</a>
         </div>
-        <p>
-          This page is a central overview of linked projects. Technically
-          necessary server logs may be processed when the page is accessed.
-        </p>
-        <p>
-          Replace this placeholder with your complete privacy policy for
-          jemphub.com and all connected services.
-        </p>
+        <p>This page is a central overview of linked projects. Technically necessary server logs may be processed when the page is accessed.</p>
+        <p>Replace this placeholder with your complete privacy policy for jemphub.com and all connected services.</p>
       </div>
     </section>
+
     <script>
       if (['localhost', '127.0.0.1'].includes(location.hostname)) {
         document.querySelectorAll('[data-local-url]').forEach((link) => {
-          link.href = link.dataset.localUrl;
-        });
+          link.href = link.dataset.localUrl
+        })
       }
     </script>
   </body>

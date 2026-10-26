@@ -1,97 +1,61 @@
-@import './tokens.css';
+/* Jemp base styles and controls (same as in GuitarJemp and NoteJemp). */
+@import url('tokens.css');
 
-html,
-body,
-#app {
-  margin: 0;
-  height: 100%;
-  min-height: 100%;
-  overflow: hidden;
-  overscroll-behavior: none;
-}
+*, *::before, *::after { box-sizing: border-box; }
+
+html { -webkit-text-size-adjust: 100%; }
 
 body {
-  font-family: var(--font-ui);
-  color: var(--color-text);
-  background: #f7f4ef;
-  overscroll-behavior-x: none;
-  overscroll-behavior-y: none;
+  margin: 0;
+  background: var(--bg);
+  color: var(--fg);
+  font-family: var(--font-body);
+  font-size: 15px;
+  line-height: 1.5;
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
 }
 
-.ui-panel {
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-md);
-  background: var(--color-surface);
-  box-shadow: var(--elev-1);
-}
+[hidden] { display: none !important; }
+:focus-visible { outline: 2px solid var(--brass); outline-offset: 2px; }
+h1, h2, h3 { font-family: var(--font-display); letter-spacing: -0.015em; margin: 0; text-wrap: balance; }
+a { color: inherit; }
 
-.ui-label {
-  font-size: 11px;
-  font-weight: 700;
-  letter-spacing: 0.06em;
+.lbl {
+  font: 600 10px var(--font-body);
+  letter-spacing: 0.12em;
   text-transform: uppercase;
-  color: var(--color-text-muted);
+  color: var(--faint);
 }
 
-.v-btn {
-  transition: filter var(--ui-fast), transform var(--ui-fast), box-shadow var(--ui-fast);
+/* Quiet ghost button */
+.gbtn {
+  display: inline-flex; align-items: center; justify-content: center; gap: 6px;
+  height: 32px; min-width: 32px; padding: 0 10px;
+  border: 0; border-radius: var(--radius-sm);
+  background: transparent; color: var(--muted);
+  font: 500 13px var(--font-body); text-decoration: none; white-space: nowrap; cursor: pointer;
 }
+.gbtn:hover { background: var(--raise); color: var(--fg); }
 
-.v-btn:hover {
-  filter: brightness(1.03);
+/* Primary brass button */
+.pbtn {
+  display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+  height: 40px; padding: 0 18px;
+  border: 0; border-radius: var(--radius-md);
+  background: var(--brass); color: var(--brass-ink);
+  font: 600 14px var(--font-body); text-decoration: none; cursor: pointer;
 }
+.pbtn:hover { filter: brightness(1.07); }
 
-.v-btn:active {
-  transform: translateY(1px);
-}
+/* Segmented control */
+.seg { display: inline-flex; background: var(--bg); border-radius: 10px; padding: 3px; gap: 2px; box-shadow: inset 0 0 0 1px var(--line); }
+.seg > * { border: 0; background: transparent; color: var(--muted); min-height: 30px; padding: 0 12px; border-radius: var(--radius-sm); font: 500 13px var(--font-body); }
+.seg > [aria-pressed='true'] { background: var(--raise); color: var(--fg); box-shadow: inset 0 0 0 1px var(--line2); }
 
-.v-btn:focus-visible,
-.v-field:focus-within,
-.v-selection-control:focus-within {
-  outline: none;
-  box-shadow: var(--shadow-focus);
-}
+/* Surfaces */
+.panel { background: var(--surface); border-radius: var(--radius-lg); }
 
-.radio-button-square {
-  position: relative;
-  display: inline-block;
-  cursor: pointer;
-  user-select: none;
-}
-
-.radio-button-square input[type='radio'] {
-  position: absolute;
-  width: 0;
-  height: 0;
-  opacity: 0;
-  cursor: pointer;
-}
-
-.radio-button-square span {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  min-width: 50px;
-  height: 50px;
-  padding: 0 12px;
-  border: 1px solid var(--color-border-strong);
-  border-radius: var(--radius-sm);
-  background-color: var(--color-surface-2);
-  box-sizing: border-box;
-  color: var(--color-text);
-  font-size: 14px;
-  font-weight: 700;
-  transition: all var(--ui-med);
-}
-
-.radio-button-square input[type='radio']:checked + span {
-  background-color: var(--color-primary);
-  border-color: var(--color-primary);
-  box-shadow: 0 2px 8px rgb(198 106 43 / 35%);
-  color: white;
-}
-
-.radio-button-square input[type='radio']:focus-visible + span {
-  outline: none;
-  box-shadow: var(--shadow-focus);
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation-duration: 0.01ms !important; transition-duration: 0.01ms !important; }
 }
