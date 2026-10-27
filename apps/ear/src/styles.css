@@ -7,64 +7,10 @@
 }
 
 :root {
-  color-scheme: light dark;
-  --bg: #f4efe4;
-  --surface: #fffdf8;
-  --raise: #ffffff;
-  --line: #e7dfcf;
-  --line2: #d8ccb6;
-  --fg: #1f2420;
-  --muted: #625b4f;
-  --faint: #857b6a;
-  --brass: #9a6c1c;
-  --brass-ink: #fffaf0;
-  --ok: #2e8655;
-  --bad: #c0503c;
-  --mid: #a87510;
-  --font-display: 'Bricolage Grotesque', 'Avenir Next', system-ui, sans-serif;
-  --font-body: 'Figtree', system-ui, -apple-system, 'Segoe UI', sans-serif;
-  --font-mono: 'JetBrains Mono', ui-monospace, 'SF Mono', Menlo, Consolas, monospace;
   padding-top: env(safe-area-inset-top, 0px);
   padding-bottom: env(safe-area-inset-bottom, 0px);
-  --shadow-pop: 0 18px 50px #4a3a1a2e;
 }
 
-/* Farben: hell (Papier) als Standard, dunkel (Abend) nach Geräteeinstellung.
-   .on-stage: Instrument und Bühne bleiben in beiden Varianten dunkel. */
-@media (prefers-color-scheme: dark) {
-:root {
-  --bg: #171c1a;
-  --surface: #1d2421;
-  --raise: #252d29;
-  --line: #2c3531;
-  --line2: #3a4640;
-  --fg: #eef2ec;
-  --muted: #a3afa7;
-  --faint: #6f7b74;
-  --brass: #e0bf78;
-  --brass-ink: #1c1609;
-  --ok: #8fd3a9;
-  --bad: #f28b7c;
-  --mid: #f2c46d;
-  --shadow-pop: 0 20px 60px #000a;
-}
-}
-.on-stage {
-  --bg: #171c1a;
-  --surface: #1d2421;
-  --raise: #252d29;
-  --line: #2c3531;
-  --line2: #3a4640;
-  --fg: #eef2ec;
-  --muted: #a3afa7;
-  --faint: #6f7b74;
-  --brass: #e0bf78;
-  --brass-ink: #1c1609;
-  --ok: #8fd3a9;
-  --bad: #f28b7c;
-  --mid: #f2c46d;
-  color: var(--fg);
-}
 
 * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
 html, body { margin: 0; min-height: 100%; }
@@ -183,12 +129,12 @@ h1, h2 { font-family: var(--font-display); letter-spacing: -.015em; margin: 0; t
 .staff .gap.ok { stroke-dasharray: none; }
 
 /* mini fretboard */
-.fret .f-open { fill: #151c18; stroke: #24302a; }
-.fret .f-wood { fill: #271d18; }
-.fret .f-inlay { fill: #d6dcd2; opacity: .15; }
-.fret .f-nut { fill: #e2d8c2; }
-.fret .f-wire { fill: #8d938e; }
-.fret .f-string { stroke: #c4c9c2; }
+.fret .f-open { fill: var(--open); stroke: var(--open-line); }
+.fret .f-wood { fill: var(--wood); }
+.fret .f-inlay { fill: var(--inlay); opacity: .15; }
+.fret .f-nut { fill: var(--nut); }
+.fret .f-wire { fill: var(--fret); }
+.fret .f-string { stroke: var(--string); }
 .fret .f-label { font: 600 9px var(--font-mono); fill: var(--faint); text-anchor: middle; dominant-baseline: central; }
 .fret .f-num { font: 500 8.5px var(--font-mono); fill: var(--faint); text-anchor: middle; }
 
@@ -267,7 +213,7 @@ h1, h2 { font-family: var(--font-display); letter-spacing: -.015em; margin: 0; t
 .pick button[aria-pressed="true"] { background: color-mix(in srgb, var(--brass) 12%, transparent); color: var(--brass); box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--brass) 53%, transparent); }
 .pick button small { font-family: var(--font-mono); opacity: .7; margin-left: 4px; }
 .vrow.col { flex-direction: column; align-items: stretch; }
-.fret .f-deg { font: 700 8.5px var(--font-mono); text-anchor: middle; dominant-baseline: central; fill: #0d110f; }
+.fret .f-deg { font: 700 8.5px var(--font-mono); text-anchor: middle; dominant-baseline: central; fill: var(--dot-ink); }
 .loading { color: var(--faint); font-size: 12px; text-align: center; margin-top: 8px; }
 .soon { color: var(--faint); font-size: 13px; margin: 14px 4px 0; }
 .ex-thumb svg.staff { height: 64px; width: 100%; }
@@ -286,11 +232,11 @@ h1, h2 { font-family: var(--font-display); letter-spacing: -.015em; margin: 0; t
 
 /* Melodiediktat: Klaviatur */
 .kbd-wrap { margin-top: 12px; }
-.keys { position: relative; display: flex; border-top: 6px solid #1f2420; border-radius: 4px 4px 10px 10px; box-shadow: 0 0 0 1px #1f2420; height: clamp(120px, 20vh, 170px); user-select: none; -webkit-user-select: none; touch-action: manipulation; }
+.keys { position: relative; display: flex; border-top: 6px solid var(--key-frame); border-radius: 4px 4px 10px 10px; box-shadow: 0 0 0 1px var(--key-frame); height: clamp(120px, 20vh, 170px); user-select: none; -webkit-user-select: none; touch-action: manipulation; }
 .key { -webkit-tap-highlight-color: transparent; cursor: pointer; padding: 0; }
-.key.white { flex: 1; min-width: 0; background: #ebe6da; border: 0; border-right: 1px solid #0f1311; border-radius: 0 0 9px 9px; display: flex; align-items: flex-end; justify-content: center; padding-bottom: 9px; color: #1b221e; font: 600 13px var(--font-mono); }
+.key.white { flex: 1; min-width: 0; background: var(--key-white); border: 0; border-right: 1px solid var(--key-frame); border-radius: 0 0 9px 9px; display: flex; align-items: flex-end; justify-content: center; padding-bottom: 9px; color: #1b221e; font: 600 13px var(--font-mono); }
 .key.white:last-child { border-right: 0; }
-.key.black { position: absolute; top: 0; width: calc(100% / var(--n) * .6); height: 60%; transform: translateX(-50%); background: #151a17; border: 1px solid #000; border-radius: 0 0 6px 6px; z-index: 2; }
+.key.black { position: absolute; top: 0; width: calc(100% / var(--n) * .6); height: 60%; transform: translateX(-50%); background: var(--key-black); border: 1px solid #000; border-radius: 0 0 6px 6px; z-index: 2; }
 .key sub { font-size: 9px; }
 .key.white:active:not(:disabled) { background: var(--brass); }
 .key.black:active:not(:disabled) { background: #7a6640; }

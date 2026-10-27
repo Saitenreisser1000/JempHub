@@ -30,7 +30,7 @@ export function fretboardSVG(writtenMidi, instrument, color = '#d8b46a') {
   for (const p of fretPositions(writtenMidi, instrument, FRETS)) {
     const cx = fx(p.f), cy = y(p.s)
     s += p.f === 0
-      ? `<circle cx="${cx}" cy="${cy}" r="6.2" fill="#111613" stroke="${color}" stroke-width="2.4"/>`
+      ? `<circle cx="${cx}" cy="${cy}" r="6.2" style="fill:var(--open)" stroke="${color}" stroke-width="2.4"/>`
       : `<circle cx="${cx}" cy="${cy}" r="7" fill="${color}"/>`
   }
   return s + '</svg>'

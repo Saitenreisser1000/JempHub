@@ -5,62 +5,7 @@ img{max-width:100%}
 [hidden]{display:none!important}
 
 /* Layout: instrument stage. Fretboard is the hero; one quiet dock below holds transport and editing; rarely used options live in a View menu. */
-:root{
-  color-scheme: light dark;
-  --bg:#f4efe4;
-  --surface:#fffdf8;
-  --raise:#ffffff;
-  --line:#e7dfcf;
-  --line2:#d8ccb6;
-  --fg:#1f2420;
-  --muted:#625b4f;
-  --faint:#857b6a;
-  --brass:#9a6c1c;
-  --brass-ink:#fffaf0;
-  --ok:#2e8655;
-  --bad:#c0503c;
-  --font-display:"Bricolage Grotesque","Avenir Next",system-ui,sans-serif;
-  --font-body:"Figtree",system-ui,-apple-system,"Segoe UI",sans-serif;
-  --font-mono:"JetBrains Mono",ui-monospace,"SF Mono",Menlo,Consolas,monospace;
-  --shadow-pop: 0 18px 50px #4a3a1a2e;
-}
 
-/* Farben: hell (Papier) als Standard, dunkel (Abend) nach Geräteeinstellung.
-   .on-stage: Instrument und Bühne bleiben in beiden Varianten dunkel. */
-@media (prefers-color-scheme: dark) {
-:root {
-  --bg: #171c1a;
-  --surface: #1d2421;
-  --raise: #252d29;
-  --line: #2c3531;
-  --line2: #3a4640;
-  --fg: #eef2ec;
-  --muted: #a3afa7;
-  --faint: #6f7b74;
-  --brass: #e0bf78;
-  --brass-ink: #1c1609;
-  --ok: #8fd3a9;
-  --bad: #f28b7c;
-  --mid: #f2c46d;
-  --shadow-pop: 0 20px 60px #000a;
-}
-}
-.on-stage {
-  --bg: #171c1a;
-  --surface: #1d2421;
-  --raise: #252d29;
-  --line: #2c3531;
-  --line2: #3a4640;
-  --fg: #eef2ec;
-  --muted: #a3afa7;
-  --faint: #6f7b74;
-  --brass: #e0bf78;
-  --brass-ink: #1c1609;
-  --ok: #8fd3a9;
-  --bad: #f28b7c;
-  --mid: #f2c46d;
-  color: var(--fg);
-}
 
 *{box-sizing:border-box}
 html,body{height:100%}
