@@ -3,7 +3,7 @@ import { TPQ, E8, COLORS, SKY, STD, DUR_NAMES, TECH } from './core/constants.js'
 import {
   n, mo, setKey, onsets as coreOnsets, barTicks, durName, durFromSpec, decodeDur,
   posLabel as corePosLabel, momentAt as coreMomentAt, nextSounding as coreNext,
-  prevSounding as corePrev, isValidExercise,
+  prevSounding as corePrev, isValidExercise, moveMoment, dropIndex, snapDur,
 } from './core/model.js'
 import { useFlats, pcName as corePcName, noteName as coreNoteName, harmony as coreHarmony } from './core/music.js'
 import { examples } from './core/exercises.js'
@@ -18,6 +18,8 @@ const R = 12
 const state={exs:examples(),cur:0,mode:'edit',sel:0,caret:'after',entry:'melody',dur:{base:E8,dot:false,trip:false},
   horizon:{edit:'whole',practice:'near'},labels:'order',scale:false,frame:{edit:'full',practice:'fit'},lefty:false,speed:1,
   metro:false,countIn:true,loop:false,range:null,wait:false,trainer:false,undo:[]};
+// Ziehen in der Zeitleiste und Kontextmenü
+let DRAG=null,ctxOpenT=0;
 const SKEY='guitarjemp.v1';
 try{const raw=localStorage.getItem(SKEY); if(raw){const o=JSON.parse(raw); if(o&&Array.isArray(o.exs)&&o.exs.length&&o.exs.every(isValidExercise)){state.exs=o.exs; state.cur=Math.min(o.cur|0,o.exs.length-1);}}}catch(e){}
 // Beschreibungen der Beispiele sind nicht editierbar: immer die aktuelle Fassung zeigen
@@ -248,12 +250,15 @@ function renderStrip(){
     else{s+='<rect x="'+x+'" y="'+(top+1)+'" width="'+w+'" height="'+(H-top-bot-2)+'" rx="4" fill="'+c+'" fill-opacity=".08"/>';
       s+='<rect x="'+x+'" y="'+(top+1)+'" width="2" height="'+(H-top-bot-2)+'" rx="1" fill="'+c+'" fill-opacity=".8"/>';
       m.dots.forEach(d=>{const y=top+(d.s+.5)*lh;s+='<rect x="'+(x+3)+'" y="'+(y-1.6)+'" width="'+Math.max(2,w-6)+'" height="3.2" rx="1.6" fill="'+c+'" fill-opacity=".55"/><circle cx="'+(x+4.5)+'" cy="'+y+'" r="2.8" fill="'+c+'"/>'})}
+    if(DRAG&&DRAG.mode==='move'&&DRAG.moved&&i===DRAG.i)s+='<rect x="'+(x-1)+'" y="'+(top-1)+'" width="'+(w+2)+'" height="'+(H-top-bot+2)+'" rx="5" fill="#0f1311" fill-opacity=".55"/>';
     if(i===state.sel&&!(P.on))s+='<rect x="'+(x-1.5)+'" y="'+(top-1)+'" width="'+(w+3)+'" height="'+(H-top-bot+2)+'" rx="5" fill="none" stroke="#fff" stroke-opacity=".75" stroke-width="1.3"'+(state.mode==='edit'&&state.caret==='inside'?'':' stroke-dasharray="none"')+'/>';
   });
   if(state.mode==='edit'&&!P.on){
     const sel=state.sel,cx=ms.length?(state.caret==='after'?X(on[sel]+ms[sel].dur):null):X(0);
     if(cx!=null)s+='<line x1="'+(cx+1)+'" x2="'+(cx+1)+'" y1="'+(top-2)+'" y2="'+(H-3)+'" stroke="#d8b46a" stroke-width="2"/><path d="M'+(cx-3)+' '+(top-6)+'h8l-4 5z" fill="#d8b46a"/>';
   }
+  if(DRAG&&DRAG.mode==='move'&&DRAG.moved&&DRAG.to!=null){const tx=DRAG.to>=ms.length?on.total:on[DRAG.to];s+='<line x1="'+(X(tx)+1)+'" x2="'+(X(tx)+1)+'" y1="2" y2="'+(H-2)+'" stroke="#d8b46a" stroke-width="3" stroke-linecap="round"/><circle cx="'+(X(tx)+1)+'" cy="4" r="4" fill="#d8b46a"/>'}
+  if(DRAG&&DRAG.mode==='resize'&&DRAG.moved&&ms[DRAG.i]){const ex2=X(on[DRAG.i]+ms[DRAG.i].dur);s+='<text class="strip-t" x="'+(ex2+4)+'" y="'+(H-8)+'" style="fill:#d8b46a">'+durName(ms[DRAG.i].dur)+'</text>'}
   s+='<line id="ph" x1="0" x2="0" y1="1" y2="'+(H-1)+'" stroke="#d8b46a" stroke-width="2" opacity="0"/>';
   const svg=$('#strip');svg.setAttribute('width',W);svg.setAttribute('height',H);svg.setAttribute('viewBox','0 0 '+W+' '+H);svg.innerHTML=s;
 }
@@ -530,13 +535,117 @@ svg.addEventListener('click',e=>{
 });
 
 /* ---------- strip pointer ---------- */
-$('#strip').addEventListener('click',e=>{
+function stripClick(e){
   const ms=cur().moments;if(!ms.length)return;const t=stripTickAt(e.clientX);let i=momentAt(t);
   if(i<0)i=t<0?0:ms.length-1;
   if(e.shiftKey){state.range=[state.sel,i];if(!state.loop)state.loop=true;renderStrip();renderTransport();if(P.on){stopPlay();play()}return}
   if(P.on){state.sel=i;stopPlay();play();return}
   selectMoment(i);
   if(state.mode==='edit'&&t>=onsets().total){state.caret='after';renderStrip();renderHint()}
+}
+// Ziehen in der Zeitleiste (Bearbeiten): Moment verschieben oder am rechten Rand die Länge ändern.
+// Finger: langes Drücken öffnet das Kontextmenü.
+function stripHit(e){
+  const ms=cur().moments,on=onsets(),t=stripTickAt(e.clientX),px=t*ST.ppt,i=momentAt(t);
+  let edge=-1;
+  if(e.pointerType==='mouse')for(let k=0;k<ms.length;k++){if(Math.abs(px-(on[k]+ms[k].dur)*ST.ppt)<=6){edge=k;break}}
+  return {t,i,edge};
+}
+const strip=$('#strip');
+strip.addEventListener('pointerdown',e=>{
+  if(e.button===2)return;
+  const h=stripHit(e),editing=state.mode==='edit'&&!P.on&&!P.wait;
+  DRAG={id:e.pointerId,x0:e.clientX,y0:e.clientY,i:h.i,mode:null,moved:false,to:null};
+  if(editing&&e.pointerType==='mouse'){if(h.edge>=0){DRAG.mode='resize';DRAG.i=h.edge}else if(h.i>=0)DRAG.mode='move'}
+  if(DRAG.mode){e.preventDefault();strip.setPointerCapture(e.pointerId)}
+  if(editing&&e.pointerType!=='mouse'&&h.i>=0)DRAG.lp=setTimeout(()=>{if(DRAG&&!DRAG.moved){const d=DRAG;DRAG=null;openCtx(d.i,d.x0,d.y0)}},500);
+});
+strip.addEventListener('pointermove',e=>{
+  if(!DRAG&&e.pointerType==='mouse'&&state.mode==='edit'&&!P.on){const h=stripHit(e);strip.style.cursor=h.edge>=0?'col-resize':h.i>=0?'grab':''}
+});
+window.addEventListener('pointermove',e=>{
+  if(!DRAG||e.pointerId!==DRAG.id)return;
+  if(!DRAG.moved&&Math.hypot(e.clientX-DRAG.x0,e.clientY-DRAG.y0)<5)return;
+  if(!DRAG.moved){DRAG.moved=true;clearTimeout(DRAG.lp)}
+  if(!DRAG.mode)return;
+  const ms=cur().moments,on=onsets(),t=stripTickAt(e.clientX);
+  if(DRAG.mode==='resize'){if(!DRAG.undo){pushUndo();DRAG.undo=true}const nd=snapDur(t-on[DRAG.i]);if(nd!==ms[DRAG.i].dur){ms[DRAG.i].dur=nd;renderStrip();renderTools()}}
+  else{const to=dropIndex(ms,on,t);if(to!==DRAG.to){DRAG.to=to;strip.style.cursor='grabbing';renderStrip()}
+    const wrap=$('#stripWrap'),r=wrap.getBoundingClientRect();if(e.clientX<r.left+30)wrap.scrollLeft-=12;else if(e.clientX>r.right-30)wrap.scrollLeft+=12}
+  e.preventDefault();
+});
+window.addEventListener('pointerup',e=>{
+  if(!DRAG||e.pointerId!==DRAG.id)return;
+  const d=DRAG;DRAG=null;clearTimeout(d.lp);
+  if(!d.moved){if(e.target.closest&&e.target.closest('#strip'))stripClick(e);return}
+  if(d.mode==='resize'){state.sel=d.i;afterEdit();return}
+  if(d.mode==='move'&&d.to!=null){const ms=cur().moments;let to=d.to;if(to>d.i)to--;
+    if(to!==d.i){pushUndo();state.sel=moveMoment(ms,d.i,to);state.caret='after';afterEdit();return}}
+  strip.style.cursor='';renderStrip();
+});
+window.addEventListener('pointercancel',()=>{if(DRAG){clearTimeout(DRAG.lp);DRAG=null;renderStrip()}});
+strip.addEventListener('dragstart',e=>e.preventDefault());
+strip.addEventListener('contextmenu',e=>{
+  if(state.mode!=='edit')return;e.preventDefault();
+  const i=momentAt(stripTickAt(e.clientX));if(i>=0)openCtx(i,e.clientX,e.clientY);
+});
+// Rechtsklick / langes Drücken auf einen Moment am Griffbrett
+svg.addEventListener('contextmenu',e=>{
+  if(state.mode!=='edit')return;const g=e.target.closest('.mg');if(!g)return;e.preventDefault();
+  openCtx(+g.id.slice(3),e.clientX,e.clientY);
+});
+let boardLp=0;
+svg.addEventListener('pointerdown',e=>{
+  if(e.pointerType==='mouse'||state.mode!=='edit')return;const g=e.target.closest('.mg');if(!g)return;
+  const x=e.clientX,y=e.clientY;boardLp=setTimeout(()=>{boardLp=-1;openCtx(+g.id.slice(3),x,y)},500);
+});
+['pointerup','pointercancel','pointermove'].forEach(ev=>svg.addEventListener(ev,e=>{if(ev==='pointermove'&&boardLp>0&&e.pointerType==='mouse')return;if(boardLp>0&&ev!=='pointermove'){clearTimeout(boardLp);boardLp=0}}));
+
+/* ---------- Kontextmenü eines Moments ---------- */
+function openCtx(i,x,y){
+  if(P.on||P.wait)stopPlay();
+  closePops();selectMoment(i);ctxOpenT=performance.now();
+  const c=$('#ctx');c.hidden=false;renderCtx();
+  const r=c.getBoundingClientRect(),W=window.innerWidth,H=window.innerHeight;
+  c.style.left=clamp(x,8,W-r.width-8)+'px';c.style.top=clamp(y,8,H-r.height-8)+'px';
+}
+function renderCtx(){
+  const c=$('#ctx');if(c.hidden)return;const ms=cur().moments,i=state.sel,m=ms[i];if(!m){c.hidden=true;return}
+  const dd=decodeDur(m.dur)||{},col=colorOf(m),d=describe(m);
+  const bases=[[6,'1/16'],[12,'1/8'],[24,'¼'],[48,'½'],[96,'1']];
+  let h='<div class="ctx-h"><span class="ctx-n">'+(i+1)+'</span><b>'+d.big+'</b><span class="ctx-d">'+durName(m.dur)+'</span><button class="gbtn icon-only" data-cact="close" aria-label="Close">×</button></div>';
+  h+='<div class="ctx-r"><span>Length</span><div class="seg mono">'+bases.map(([b,l])=>'<button data-cbase="'+b+'" aria-pressed="'+(dd.base===b)+'" title="'+DUR_NAMES[b]+'">'+l+'</button>').join('')+
+    '<button data-cflag="dot" aria-pressed="'+!!dd.dot+'" title="Dotted">.</button><button data-cflag="trip" aria-pressed="'+!!dd.trip+'" title="Triplet">3</button></div></div>';
+  h+='<div class="ctx-r"><span>Colour</span><div class="ctx-sw">'+COLORS.map(cc=>'<button class="sw" data-ccol="'+cc+'" style="background:'+cc+'" aria-pressed="'+(cc===col)+'" aria-label="Colour"></button>').join('')+'</div></div>';
+  if(m.dots.length>1)h+='<div class="ctx-r"><span>Strum</span><div class="seg">'+[['','together'],['d','↓'],['u','↑']].map(([v,l])=>'<button data-cstrum="'+v+'" aria-pressed="'+((m.strum||'')===v)+'">'+l+'</button>').join('')+'</div></div>';
+  m.dots.slice().sort((a,b)=>b.s-a.s).forEach(dt=>{const k=m.dots.indexOf(dt);
+    h+='<div class="ctx-r dot"><span><b>'+noteName(dt,true)+'</b> '+stringName(dt.s)+' '+(dt.f===0?'open':dt.f)+'</span><span class="ctx-sel">'+
+      '<select data-k="'+k+'" data-p="fg" aria-label="Finger">'+['','1','2','3','4','T'].map(v=>'<option value="'+v+'"'+(String(dt.fg||'')===v?' selected':'')+'>'+(v?'finger '+v:'finger –')+'</option>').join('')+'</select>'+
+      '<select data-k="'+k+'" data-p="t" aria-label="Technique">'+[['','plain'],['h','hammer-on'],['p','pull-off'],['sl','slide'],['b','bend'],['~','vibrato']].map(([v,l])=>'<option value="'+v+'"'+((dt.t||'')===v?' selected':'')+'>'+l+'</option>').join('')+'</select></span></div>'});
+  h+='<input type="text" class="ctx-note" id="ctxNote" placeholder="Note for the student…" value="'+esc(m.note||'')+'">';
+  h+='<div class="ctx-a"><button class="gbtn" data-cact="left" '+(i>0?'':'disabled')+' title="Move earlier">←</button><button class="gbtn" data-cact="right" '+(i<ms.length-1?'':'disabled')+' title="Move later">→</button>'+
+    '<button class="gbtn" data-cact="play">Play</button><button class="gbtn" data-cact="dup">Repeat</button><button class="gbtn" data-cact="rest">Rest after</button><button class="gbtn danger" data-cact="del">Delete</button></div>';
+  c.innerHTML=h;
+}
+function ctxEdit(fn){const m=cur().moments[state.sel];if(!m)return;pushUndo();fn(m);afterEdit();renderCtx()}
+$('#ctx').addEventListener('click',e=>{
+  e.stopPropagation();const b=e.target.closest('button');if(!b)return;const ms=cur().moments,i=state.sel;
+  if(b.dataset.cbase)return ctxEdit(m=>{const dd=decodeDur(m.dur)||{};m.dur=durFromSpec({base:+b.dataset.cbase,dot:!!dd.dot,trip:!!dd.trip})});
+  if(b.dataset.cflag)return ctxEdit(m=>{const dd=decodeDur(m.dur)||{base:24};const dot=b.dataset.cflag==='dot'?!dd.dot:false,trip=b.dataset.cflag==='trip'?!dd.trip:false;m.dur=durFromSpec({base:dd.base||24,dot,trip})});
+  if(b.dataset.ccol)return ctxEdit(m=>{m.color=b.dataset.ccol});
+  if(b.dataset.cstrum!=null)return ctxEdit(m=>{m.strum=b.dataset.cstrum||null});
+  const a=b.dataset.cact;
+  if(a==='close'){$('#ctx').hidden=true;return}
+  if(a==='left'||a==='right'){pushUndo();state.sel=moveMoment(ms,i,i+(a==='left'?-1:1));state.caret='after';afterEdit();renderCtx();return}
+  if(a==='play'){if(ms[i].dots.length){ensureAudio();playMoment(i,clock()+.01,spt())}return}
+  if(a==='dup'){repeatMoment();renderCtx();return}
+  if(a==='rest'){state.caret='after';insertRest();renderCtx();return}
+  if(a==='del'){state.caret='inside';deleteMoment();$('#ctx').hidden=true;return}
+});
+$('#ctx').addEventListener('change',e=>{
+  const t=e.target;
+  if(t.id==='ctxNote'){const m=cur().moments[state.sel];if(m){m.note=t.value.trim()||null;save();renderInspector()}return}
+  if(t.dataset.k!=null)ctxEdit(m=>{const d=m.dots[+t.dataset.k];if(t.dataset.p==='fg')d.fg=t.value?(t.value==='T'?'T':+t.value):null;else d.t=t.value||null});
 });
 
 /* ---------- controls ---------- */
@@ -585,7 +694,7 @@ $('#scrim').addEventListener('click',()=>document.body.classList.remove('lib-ope
 function closePops(except){document.querySelectorAll('.pop').forEach(p=>{if(p.id!==except)p.hidden=true});document.querySelectorAll('[data-pop]').forEach(b=>{if(b.dataset.pop!==except)b.setAttribute('aria-expanded','false')})}
 document.querySelectorAll('[data-pop]').forEach(b=>b.addEventListener('click',e=>{e.stopPropagation();const p=$('#'+b.dataset.pop),open=p.hidden;closePops(b.dataset.pop);p.hidden=!open;b.setAttribute('aria-expanded',String(open));
   if(open&&!p.classList.contains('anchor-top')){const r=b.getBoundingClientRect();p.style.left=Math.max(16,Math.min(window.innerWidth-p.offsetWidth-16,r.left+r.width/2-p.offsetWidth/2))+'px';const below=r.bottom+8,above=r.top-p.offsetHeight-8;p.style.top=(above>8?above:below)+'px'}}));
-document.addEventListener('click',e=>{if(!e.target.closest('.pop')&&!e.target.closest('[data-pop]'))closePops()});
+document.addEventListener('click',e=>{if(performance.now()-ctxOpenT<450)return;if(!e.target.closest('.pop')&&!e.target.closest('[data-pop]'))closePops()});
 $('#exDesc').addEventListener('click',e=>e.currentTarget.classList.toggle('open'));
 
 document.addEventListener('keydown',e=>{

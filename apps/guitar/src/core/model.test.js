@@ -1,6 +1,6 @@
 import { describe, it } from 'node:test'
 import assert from 'node:assert/strict'
-import { n, mo, onsets, barTicks, durFromSpec, decodeDur, posLabel, momentAt, nextSounding, prevSounding, setKey, isValidExercise } from './model.js'
+import { n, mo, onsets, barTicks, durFromSpec, decodeDur, posLabel, momentAt, nextSounding, prevSounding, setKey, isValidExercise, moveMoment, dropIndex, snapDur } from './model.js'
 import { harmony, noteName, useFlats } from './music.js'
 import { examples } from './exercises.js'
 import { STD, DROPD } from './constants.js'
@@ -77,5 +77,30 @@ describe('sample exercises', () => {
         for (const d of m.dots) assert.ok(d.s < ex.tuning.length)
       }
     }
+  })
+})
+
+describe('strip editing', () => {
+  const mk = () => [{ dur: 24, id: 'a' }, { dur: 12, id: 'b' }, { dur: 12, id: 'c' }, { dur: 48, id: 'd' }]
+  it('moves a moment', () => {
+    const ms = mk()
+    assert.equal(moveMoment(ms, 0, 2), 2)
+    assert.deepEqual(ms.map((m) => m.id), ['b', 'c', 'a', 'd'])
+    moveMoment(ms, 3, 0)
+    assert.deepEqual(ms.map((m) => m.id), ['d', 'b', 'c', 'a'])
+    assert.equal(moveMoment(ms, 1, 99), 3)
+  })
+  it('finds the drop position', () => {
+    const ms = mk(), on = [0, 24, 36, 48]
+    assert.equal(dropIndex(ms, on, 5), 0)
+    assert.equal(dropIndex(ms, on, 20), 1)
+    assert.equal(dropIndex(ms, on, 31), 2)
+    assert.equal(dropIndex(ms, on, 100), 4)
+  })
+  it('snaps lengths to sixteenths', () => {
+    assert.equal(snapDur(2), 6)
+    assert.equal(snapDur(25), 24)
+    assert.equal(snapDur(29), 30)
+    assert.equal(snapDur(500), 192)
   })
 })
