@@ -81,3 +81,7 @@
   .lead { font-size: 15.5px; }
   .trail { margin-top: 24px; }
 }
+
+/* Pfeil statt „Open …“-Text: rechts neben dem Namen */
+.app { position: relative; }
+.app .open { position: absolute; right: 22px; bottom: 20px; margin: 0; padding: 0; font-size: 20px; color: var(--muted); }

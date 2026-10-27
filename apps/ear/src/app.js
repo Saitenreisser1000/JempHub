@@ -36,39 +36,39 @@ const nameOf = (item) => item[getLang()]
 const MELODY_ITEMS = Object.keys(MELODY_LEVELS).map((l) => ({ id: l, de: [`Stufe ${l}`, ''], en: [`Level ${l}`, ''] }))
 const EX = {
   intervals: {
-    title: () => t('intervals'), text: () => t('intervalsText'),
+    title: () => t('intervals'),
     defaults: INTERVAL_DEFAULTS, items: INTERVALS, byId: INTERVAL, presets: INTERVAL_PRESETS,
     gen: genInterval, key: intervalKey, choices: intervalChoices,
     thumb: () => staffSVG({ clef: 'treble', columns: [{ notes: [{ pos: -2 }] }, { notes: [{ pos: 2 }] }] }),
   },
   chords: {
-    title: () => t('chords'), text: () => t('chordsText'),
+    title: () => t('chords'),
     defaults: CHORD_DEFAULTS, items: CHORDS, byId: CHORD, presets: CHORD_PRESETS,
     gen: genChord, key: chordKey, choices: chordChoices,
     thumb: () => staffSVG({ clef: 'treble', columns: [{ notes: [{ pos: -2 }, { pos: 0 }, { pos: 2 }] }, { notes: [{ pos: -1 }, { pos: 1, acc: -1 }, { pos: 3 }] }] }),
   },
   inversions: {
-    title: () => t('inversions'), text: () => t('inversionsText'),
+    title: () => t('inversions'),
     defaults: INVERSION_DEFAULTS, items: INVERSIONS, byId: INVERSION, presets: INVERSION_PRESETS,
     gen: genInversion, key: inversionKey, choices: inversionChoices,
     thumb: () => staffSVG({ clef: 'treble', columns: [{ notes: [{ pos: -2 }, { pos: 0 }, { pos: 2 }] }, { notes: [{ pos: 0 }, { pos: 2 }, { pos: 5 }] }, { notes: [{ pos: 2 }, { pos: 5 }, { pos: 7 }] }] }),
   },
   scales: {
-    title: () => t('scales'), text: () => t('scalesText'),
+    title: () => t('scales'),
     defaults: SCALE_DEFAULTS, items: SCALES, byId: SCALE, presets: SCALE_PRESETS,
     gen: genScale, key: scaleKey, choices: scaleChoices,
     thumb: () => staffSVG({ clef: 'treble', columns: [-2, -1, 0, 1, 2].map((pos) => ({ notes: [{ pos }] })) }),
   },
   melody: {
     kind: 'melody',
-    title: () => t('melody'), text: () => t('melodyText'),
+    title: () => t('melody'),
     defaults: MELODY_DEFAULTS, items: MELODY_ITEMS, byId: Object.fromEntries(MELODY_ITEMS.map((i) => [i.id, i])),
     gen: genMelody, key: melodyKey,
     thumb: () => staffSVG({ clef: 'treble', columns: [0, 2, 1, 4, 3].map((pos) => ({ notes: [{ pos }] })) }),
   },
   intonation: {
     kind: 'intonation',
-    title: () => t('intonation'), text: () => t('intonationText'),
+    title: () => t('intonation'),
     defaults: INTONATION_DEFAULTS, items: INTERVALS.filter((i) => INTONATION_PRESETS[4].includes(i.id)), byId: INTERVAL, presets: INTONATION_PRESETS,
     gen: genIntonation, key: intonationKey, choices: intonationChoices,
     thumb: () => staffSVG({ clef: 'treble', columns: [{ notes: [{ pos: 0 }, { pos: 4 }] }, { notes: [{ pos: 0 }, { pos: 4, acc: 1 }] }] }),
@@ -155,10 +155,10 @@ function statLine(ex) {
 
 function renderHome() {
   view.innerHTML = `<section class="home">
-    <div class="hero"><h1>${t('homeTitle')}</h1><p>${t('homeText')}</p></div>
+    <div class="hero"><h1>${t('homeTitle')}</h1></div>
     <div class="ex-list">${Object.entries(EX).map(([id, ex]) => `<button class="ex-card" data-go="${id}">
       <span class="ex-thumb">${ex.thumb()}</span>
-      <span class="ex-body"><b>${ex.title()}</b><span>${ex.text()}</span>${statLine(id)}</span></button>`).join('')}</div>
+      <span class="ex-body"><b>${ex.title()}</b>${statLine(id)}</span></button>`).join('')}</div>
     <div class="home-foot"><button class="gbtn" data-go="progress">${t('progressLink')}</button><button class="gbtn" data-go="about">${t('aboutLink')}</button></div>
   </section>`
 }
@@ -424,12 +424,12 @@ function segHTML(key, opts, value) {
 function renderMelodySettings() {
   const st = S.settings
   const lv = Number(st.level) || 1
-  let rows = `<div class="vrow col"><span>${t('level')}</span>${segHTML('level', Object.keys(MELODY_LEVELS).map((l) => [l, Number(l)]), lv)}<small class="muted">${t('mLevel' + lv)}</small></div>`
+  let rows = `<div class="vrow col"><span>${t('level')}</span>${segHTML('level', Object.keys(MELODY_LEVELS).map((l) => [t('mLevel' + l), Number(l)]), lv)}</div>`
   rows += `<div class="vrow"><span>${t('notesCount')}</span>${segHTML('notes', [4, 5, 6, 8, 10, 12].map((n) => [String(n), n]), Number(st.notes) || 5)}</div>`
   rows += `<div class="vrow"><span>${t('bpm')}</span>${segHTML('bpm', [60, 80, 100, 120, 140].map((n) => [String(n), n]), Number(st.bpm) || 80)}</div>`
   rows += `<div class="vrow"><span>${t('length')}</span>${segHTML('length', [['5', 5], ['10', 10], ['20', 20]], Number(st.length) || 10)}</div>`
-  rows += `<div class="vrow"><span>${t('hint')}<small>${t('hintHint')}</small></span><button class="switch" data-toggle="hint" aria-pressed="${!!st.hint}" aria-label="${t('hint')}"></button></div>`
-  rows += `<div class="vrow"><span>${t('auto')}<small>${t('autoHint')}</small></span><button class="switch" data-toggle="auto" aria-pressed="${auto}" aria-label="${t('auto')}"></button></div>`
+  rows += `<div class="vrow"><span>${t('hint')}</span><button class="switch" data-toggle="hint" aria-pressed="${!!st.hint}" aria-label="${t('hint')}"></button></div>`
+  rows += `<div class="vrow"><span>${t('auto')}</span><button class="switch" data-toggle="auto" aria-pressed="${auto}" aria-label="${t('auto')}"></button></div>`
   return `<div class="panel">${rows}</div>
     <div style="margin-top:14px"><button class="pbtn big" data-act="start">${t('start')}<span class="kbd">⏎</span></button></div>`
 }
@@ -442,12 +442,11 @@ function renderSettings() {
   presetOpts.push([t('custom'), 'custom'])
   const sel = new Set(e.choices(st))
   let rows = `<div class="vrow col"><span>${t('level')}</span>${segHTML('preset', presetOpts, st.preset)}
-      <div class="pick" data-pick>${e.items.map((it) => `<button data-item="${it.id}" aria-pressed="${sel.has(it.id)}">${nameOf(it)[0]}${nameOf(it)[1] ? `<small>${nameOf(it)[1]}</small>` : ''}</button>`).join('')}</div>
-      <small class="muted">${t('selectHint')}</small></div>`
+      <div class="pick" data-pick>${e.items.map((it) => `<button data-item="${it.id}" aria-pressed="${sel.has(it.id)}">${nameOf(it)[0]}${nameOf(it)[1] ? `<small>${nameOf(it)[1]}</small>` : ''}</button>`).join('')}</div></div>`
   if (id === 'intonation') {
     rows += `<div class="vrow"><span>${t('playback')}</span>${segHTML('play', [[t('melodic'), 'melodic'], [t('harmonic'), 'harmonic']], st.play)}</div>`
-    rows += `<div class="vrow"><span>${t('cents')}<small>${t('centsHint')}</small></span>${segHTML('cents', [30, 20, 15, 10, 5].map((c) => [`±${c}`, c]), Number(st.cents) || 20)}</div>`
-    rows += `<div class="vrow"><span>${t('tuning')}<small>${t('tuningHint')}</small></span>${segHTML('tuning', [[t('equal'), 'equal'], [t('just'), 'just']], st.tuning)}</div>`
+    rows += `<div class="vrow"><span>${t('cents')}</span>${segHTML('cents', [30, 20, 15, 10, 5].map((c) => [`±${c}`, c]), Number(st.cents) || 20)}</div>`
+    rows += `<div class="vrow"><span>${t('tuning')}</span>${segHTML('tuning', [[t('equal'), 'equal'], [t('just'), 'just']], st.tuning)}</div>`
     rows += `<div class="vrow col"><span>${t('sound')}</span>${segHTML('sound', [[t('strings'), 'strings'], [t('woodwinds'), 'woodwinds'], [t('brass'), 'brass'], [t('headerSound'), 'header']], st.sound)}</div>`
   } else if (DIRS[id]) {
     const dirs = new Set(st.dirs || ['up'])
@@ -458,9 +457,9 @@ function renderSettings() {
   }
   rows += `<div class="vrow"><span>${t('roots')}</span>${segHTML('roots', [[t('natural'), 'natural'], [t('all'), 'all']], st.roots)}</div>`
   rows += `<div class="vrow"><span>${t('length')}</span>${segHTML('length', [['10', 10], ['20', 20], ['30', 30]], Number(st.length) || 10)}</div>`
-  rows += `<div class="vrow"><span>${t('focus')}<small>${t('focusHint')}</small></span><button class="switch" data-toggle="focus" aria-pressed="${!!st.focus}" aria-label="${t('focus')}"></button></div>`
-  rows += `<div class="vrow"><span>${t('auto')}<small>${t('autoHint')}</small></span><button class="switch" data-toggle="auto" aria-pressed="${auto}" aria-label="${t('auto')}"></button></div>`
-  if (id !== 'intonation') rows += `<div class="vrow"><span>${t('fret')}<small>${t('fretHint')}</small></span><button class="switch" data-toggle="fretboard" aria-pressed="${!!st.fretboard}" aria-label="${t('fret')}"></button></div>`
+  rows += `<div class="vrow"><span>${t('focus')}</span><button class="switch" data-toggle="focus" aria-pressed="${!!st.focus}" aria-label="${t('focus')}"></button></div>`
+  rows += `<div class="vrow"><span>${t('auto')}</span><button class="switch" data-toggle="auto" aria-pressed="${auto}" aria-label="${t('auto')}"></button></div>`
+  if (id !== 'intonation') rows += `<div class="vrow"><span>${t('fret')}</span><button class="switch" data-toggle="fretboard" aria-pressed="${!!st.fretboard}" aria-label="${t('fret')}"></button></div>`
   return `<div class="panel">${rows}</div>
     <div style="margin-top:14px"><button class="pbtn big" data-act="start">${t('start')}<span class="kbd">⏎</span></button></div>`
 }
@@ -510,12 +509,12 @@ function renderMelodyPlay() {
     if (S.result === 'bad') staff += `<div class="lbl sol">${t('solution')}</div>` + staffSVG({ clef: 'treble', columns: q.midis.map((m) => col(m, 'ok')), label: t('solution'), colW: many ? 5.4 : 7.2 })
   }
   let html = `<div class="stagebox melody">
-    <div><button class="playbtn" data-act="play" aria-label="${t('replay')}">${REPLAY_ICON}</button><span class="playlbl">${t('replay')} <span class="kbd">␣</span></span></div>
+    <div><button class="playbtn" data-act="play" aria-label="${t('replay')}">${REPLAY_ICON}</button><span class="playlbl"><span class="kbd">␣</span></span></div>
     <div>${staff}</div>
   </div>
   <div class="qmeta">${Number(S.settings.bpm) || 80} BPM · ${t('nNotes', { n })}</div><div class="loading" id="loading"></div>`
   const names = q.notes.map((x) => noteLabel(x, lang)).join(' – ')
-  if (!S.result) html += `<div class="feedback">${t('qMelody')} <b class="count">${S.entry.length}/${n}</b></div>`
+  if (!S.result) html += `<div class="feedback"><b class="count">${S.entry.length}/${n}</b></div>`
   else if (S.result === 'ok') html += `<div class="feedback ok"><span class="ic" aria-hidden="true">✓</span>${t('melodyRight', { n })}<small>${esc(names)}</small></div>`
   else html += `<div class="feedback bad"><span class="ic" aria-hidden="true">✕</span>${t('melodyWrong', { k: melodyHits(q, S.answer).filter(Boolean).length, n })}<small>${t('solution')}: ${esc(names)}</small></div>`
   const marks = {}
@@ -539,7 +538,7 @@ function renderIntonationPlay() {
   const c = Number(S.settings.cents) || 20
   const meta = `${longName('intonation', q.id)} · ${t(S.settings.tuning === 'just' ? 'just' : 'equal')} · ±${c} ${t('centsUnit')}`
   let html = `<div class="stagebox">
-    <div><button class="playbtn" data-act="play" aria-label="${t('replay')}">${REPLAY_ICON}</button><span class="playlbl">${t('playAll')} <span class="kbd">␣</span></span></div>
+    <div><button class="playbtn" data-act="play" aria-label="${t('replay')}">${REPLAY_ICON}</button><span class="playlbl"><span class="kbd">␣</span></span></div>
     <div>${staff}</div>
   </div>
   <div class="qmeta">${esc(meta)} · ${q.notes.map((x) => noteLabel(x, lang)).join(' – ')}</div><div class="loading" id="loading"></div>`
@@ -570,11 +569,11 @@ function renderPlay() {
   const meta = q.dir ? t('dir' + q.dir[0].toUpperCase() + q.dir.slice(1)) : t(S.settings.play || 'block')
   const noteNames = q.notes.map((x) => noteLabel(x, lang)).join(' – ')
   let html = `<div class="stagebox">
-    <div><button class="playbtn" data-act="play" aria-label="${t('replay')}">${S.result || S.i > 0 || S.q ? REPLAY_ICON : PLAY_ICON}</button><span class="playlbl">${t('replay')} <span class="kbd">␣</span></span></div>
+    <div><button class="playbtn" data-act="play" aria-label="${t('replay')}">${S.result || S.i > 0 || S.q ? REPLAY_ICON : PLAY_ICON}</button><span class="playlbl"><span class="kbd">␣</span></span></div>
     <div>${staffFor(q)}</div>
   </div>
   <div class="qmeta">${esc(meta)}</div><div class="loading" id="loading"></div>`
-  if (!S.result) html += `<div class="feedback">${t({ interval: 'qInterval', chord: 'qChord', inversion: 'qInversion', scale: 'qScale' }[q.type])}</div>`
+  if (!S.result) html += '<div class="feedback"></div>'
   else if (S.result === 'ok') html += `<div class="feedback ok"><span class="ic" aria-hidden="true">✓</span>${t('right', { x: esc(fullName(id, q.id)) })}<small>${esc(noteNames)}</small></div>`
   else html += `<div class="feedback bad"><span class="ic" aria-hidden="true">✕</span>${t('wrong', { x: esc(fullName(id, q.id)) })}<small>${t('chosen', { x: esc(fullName(id, S.answer)) })} · ${esc(noteNames)}</small></div>`
   html += `<div class="answers ivs">${ordered.map((it, k) => {
