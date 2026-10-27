@@ -1,0 +1,6 @@
+{
+  "name": "@jemphub/fonts",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Jemp-Schriften (Figtree, Bricolage Grotesque, JetBrains Mono) zum Selbsthosten"
+}

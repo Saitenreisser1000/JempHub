@@ -1,0 +1,5 @@
+/* Jemp-Schriften, vom eigenen Server (keine Anfragen an Google).
+   Lateinische Teilmenge, variable Strichstärke. Lizenz: SIL Open Font License 1.1 (OFL-*.txt). */
+@font-face { font-family: 'Figtree'; src: url('figtree.woff') format('woff'); font-weight: 300 900; font-style: normal; font-display: swap; }
+@font-face { font-family: 'Bricolage Grotesque'; src: url('bricolage-grotesque.woff') format('woff'); font-weight: 200 800; font-style: normal; font-display: swap; }
+@font-face { font-family: 'JetBrains Mono'; src: url('jetbrains-mono.woff') format('woff'); font-weight: 100 800; font-style: normal; font-display: swap; }

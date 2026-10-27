@@ -7,11 +7,9 @@
     <meta name="description" content="JempHub – one home for developing music skills: GuitarJemp, NoteJemp, EarJemp and StemPlayer." />
     <title>JempHub</title>
     <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%230f1311'/%3E%3Cpath d='M8 16h3M21 16h3' stroke='%23d8b46a' stroke-width='1.6' stroke-linecap='round'/%3E%3Ccircle cx='6' cy='16' r='3' fill='%237cc4f2'/%3E%3Crect x='12' y='8' width='8' height='16' rx='4' fill='%238fd3a9' opacity='.3'/%3E%3Ccircle cx='16' cy='12.5' r='2.4' fill='%238fd3a9'/%3E%3Ccircle cx='16' cy='19.5' r='2.4' fill='%238fd3a9'/%3E%3Ccircle cx='26' cy='16' r='3' fill='%23f2c46d'/%3E%3C/svg%3E" />
-    <link rel="preconnect" href="https://fonts.googleapis.com" />
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700&family=Figtree:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" />
+    <link rel="stylesheet" href="vendor/fonts/fonts.css" />
     <link rel="stylesheet" href="design-system/styles.css?v=2" />
-    <link rel="stylesheet" href="styles.css?v=4" />
+    <link rel="stylesheet" href="styles.css?v=5" />
   </head>
   <body>
     <main class="hub">
@@ -156,8 +154,13 @@
           <h2 id="imprint-title">Legal notice</h2>
           <a href="#" class="gbtn" aria-label="Close">Close</a>
         </div>
-        <p>Responsible for content according to Section 5 TMG: Stefan Leutgeb.</p>
-        <p>Add your full postal address, contact details, and all legally required information before publishing.</p>
+        <dl class="legal">
+          <dt>Media owner</dt><dd>Stefan Leutgeb, Freistadt, Austria</dd>
+          <dt>Contact</dt><dd><a href="mailto:office@jemphub.com">office@jemphub.com</a></dd>
+          <dt>Subject</dt><dd>Free web apps for learning music: guitar, reading music, ear training, conducting</dd>
+          <dt>Basic direction</dt><dd>Practice tools for music education, without content intended to influence public opinion</dd>
+        </dl>
+        <p class="fine">Disclosure according to § 25 Austrian Media Act (MedienG). Applies to jemphub.com and all apps on its subdomains.</p>
       </div>
     </section>
 
@@ -168,8 +171,15 @@
           <h2 id="privacy-title">Privacy policy</h2>
           <a href="#" class="gbtn" aria-label="Close">Close</a>
         </div>
-        <p>This page is a central overview of linked projects. Technically necessary server logs may be processed when the page is accessed.</p>
-        <p>Replace this placeholder with your complete privacy policy for jemphub.com and all connected services.</p>
+        <p><b>Controller:</b> Stefan Leutgeb, Freistadt, Austria, <a href="mailto:office@jemphub.com">office@jemphub.com</a>. This policy covers jemphub.com and all apps on its subdomains (GuitarJemp, NoteJemp, EarJemp, ConductJemp).</p>
+        <h3>Server logs</h3>
+        <p>When you open a page, the web server records technical data (IP address, time, requested file, browser) to deliver the pages and keep them secure. Legal basis: legitimate interest (Art. 6(1)(f) GDPR). The logs are kept only as long as needed for this purpose.</p>
+        <h3>No tracking, no cookies</h3>
+        <p>There are no analytics, ads or cookies. Fonts and sounds are served from this server. Your progress and settings are stored only in your browser (local storage); you can delete them at any time by clearing the site data.</p>
+        <h3>Camera in ConductJemp</h3>
+        <p>Only if you start the camera: the video is analysed on your device and is neither transmitted nor stored. To do this, the hand-recognition software is loaded from cdn.jsdelivr.net and storage.googleapis.com (Google); these providers receive your IP address.</p>
+        <h3>Your rights</h3>
+        <p>You have the right to access, rectification, erasure, restriction of processing and objection. You can lodge a complaint with the Austrian Data Protection Authority (<a href="https://www.dsb.gv.at" rel="noreferrer">dsb.gv.at</a>).</p>
       </div>
     </section>
 

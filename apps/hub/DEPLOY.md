@@ -1,5 +1,7 @@
 # Jemphub VPS Deployment
 
+**Aktualisieren:** `VPS_HOST=187.124.190.130 ./deploy/publish.sh` baut den Hub (inkl. Schriften aus `packages/fonts`) und lädt `dist/` nach `/var/www/jemphub`. Die Anleitung unten beschreibt die Ersteinrichtung.
+
 This project is a static landing page. Upload `index.html`, `styles.css`, `design-system/styles.css`, and `design-system/tokens.css` to your VPS and serve them with Nginx.
 
 ## Target setup
