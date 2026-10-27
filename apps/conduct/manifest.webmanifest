@@ -1,0 +1,10 @@
+{
+  "name": "ConductJemp – Dirigieren",
+  "short_name": "ConductJemp",
+  "start_url": "./",
+  "display": "standalone",
+  "orientation": "any",
+  "background_color": "#0f1311",
+  "theme_color": "#0f1311",
+  "icons": [{ "src": "icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any maskable" }]
+}
