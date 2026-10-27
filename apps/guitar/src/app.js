@@ -71,10 +71,10 @@ let seed=7;const rnd=()=>{seed=(seed*16807)%2147483647;return (seed-1)/214748364
 
 function renderBoard(){
   const g=geo,ex=cur();let s='';seed=11;
-  s+='<defs><linearGradient id="wood" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#2e221c"/><stop offset=".5" stop-color="#241b16"/><stop offset="1" stop-color="#2c201a"/></linearGradient>'+
+  s+='<defs><linearGradient id="wood" x1="0" y1="0" x2="0" y2="1"><stop offset="0" style="stop-color:var(--wood-hi)"/><stop offset=".5" style="stop-color:var(--wood-lo)"/><stop offset="1" style="stop-color:var(--wood-hi)"/></linearGradient>'+
      '<linearGradient id="fretG" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#666c67"/><stop offset=".5" stop-color="#d0d5cf"/><stop offset="1" stop-color="#666c67"/></linearGradient></defs>';
   // open-string zone
-  s+='<rect '+rx(g.LEFT,g.nutX)+' y="'+g.TOP+'" height="'+(g.bottom-g.TOP)+'" rx="7" fill="#151c18" stroke="#24302a"/>';
+  s+='<rect '+rx(g.LEFT,g.nutX)+' y="'+g.TOP+'" height="'+(g.bottom-g.TOP)+'" rx="7" style="fill:var(--open);stroke:var(--open-line)"/>';
   s+='<text class="fretnum" x="'+g.X(g.LEFT+g.OPEN/2)+'" y="'+(g.bottom+18)+'" style="letter-spacing:.12em;font-size:8.5px">OPEN</text>';
   // board + grain
   s+='<rect '+rx(g.boardX,g.endX)+' y="'+g.TOP+'" height="'+(g.bottom-g.TOP)+'" fill="url(#wood)"/>';
@@ -82,10 +82,10 @@ function renderBoard(){
     s+='<path d="'+p+'" fill="none" stroke="'+(k%3?'#000':'#6b5040')+'" stroke-opacity="'+(k%3?.22:.1)+'" stroke-width="'+(.5+rnd()*1.1).toFixed(2)+'"/>'}
   // inlays
   const midY=(g.sy(0)+g.sy(g.nS-1))/2,iy=g.nS>=4?g.SP:g.SP*.6;
-  [3,5,7,9,15].forEach(f=>{if(f<=g.maxF)s+='<circle cx="'+g.X(g.fx(f))+'" cy="'+midY+'" r="5.5" fill="#d6dcd2" opacity=".15"/>'});
-  if(g.maxF>=12)[midY-iy,midY+iy].forEach(y=>s+='<circle cx="'+g.X(g.fx(12))+'" cy="'+y+'" r="5.5" fill="#d6dcd2" opacity=".15"/>');
+  [3,5,7,9,15].forEach(f=>{if(f<=g.maxF)s+='<circle cx="'+g.X(g.fx(f))+'" cy="'+midY+'" r="5.5" style="fill:var(--inlay)" opacity=".15"/>'});
+  if(g.maxF>=12)[midY-iy,midY+iy].forEach(y=>s+='<circle cx="'+g.X(g.fx(12))+'" cy="'+y+'" r="5.5" style="fill:var(--inlay)" opacity=".15"/>');
   // nut + frets
-  s+='<rect '+rx(g.nutX,g.boardX)+' y="'+(g.TOP-2)+'" height="'+(g.bottom-g.TOP+4)+'" rx="1.5" fill="#e2d8c2"/>';
+  s+='<rect '+rx(g.nutX,g.boardX)+' y="'+(g.TOP-2)+'" height="'+(g.bottom-g.TOP+4)+'" rx="1.5" style="fill:var(--nut)"/>';
   for(let f=1;f<=g.maxF;f++)s+='<rect '+rx(g.wire(f)-1.5,g.wire(f)+1.5)+' y="'+g.TOP+'" height="'+(g.bottom-g.TOP)+'" fill="url(#fretG)"/>';
   // key map
   if(state.scale&&ex.key){const sc=ex.key.m==='major'?[0,2,4,5,7,9,11]:[0,2,3,5,7,8,10],set=sc.map(x=>(x+ex.key.r)%12);
@@ -95,7 +95,7 @@ function renderBoard(){
   const gauges=ex.inst==='bass'?[2.6,3.2,3.8,4.4]:[1.05,1.35,1.8,2.2,2.7,3.2];
   for(let st=0;st<g.nS;st++){const y=g.sy(st),w=gauges[st]||2,wound=ex.inst==='bass'||st>=3,x1=g.X(g.LEFT+8),x2=g.X(g.endX);
     s+='<line x1="'+x1+'" x2="'+x2+'" y1="'+(y+.8)+'" y2="'+(y+.8)+'" stroke="#000" stroke-opacity=".45" stroke-width="'+w+'"/>';
-    s+='<line x1="'+x1+'" x2="'+x2+'" y1="'+y+'" y2="'+y+'" stroke="'+(wound?'#b4ab98':'#ccd2cc')+'" stroke-width="'+w+'"/>';
+    s+='<line x1="'+x1+'" x2="'+x2+'" y1="'+y+'" y2="'+y+'" style="stroke:'+(wound?'var(--string-wound)':'var(--string)')+'" stroke-width="'+w+'"/>';
     if(wound)s+='<line x1="'+x1+'" x2="'+x2+'" y1="'+y+'" y2="'+y+'" stroke="#2a251c" stroke-opacity=".55" stroke-width="'+w+'" stroke-dasharray="1 1.4"/>';
     else s+='<line x1="'+x1+'" x2="'+x2+'" y1="'+(y-w*.25)+'" y2="'+(y-w*.25)+'" stroke="#fff" stroke-opacity=".35" stroke-width=".5"/>';
     s+='<text class="tune" x="'+g.X(g.LEFT/2-2)+'" y="'+y+'">'+(st===0&&ex.inst==='guitar'?pcName(ex.tuning[st]%12).toLowerCase():pcName(ex.tuning[st]%12))+'</text>';
@@ -195,7 +195,7 @@ function renderMoments(){
       else if(lab==='finger')t=open?'':(d.fg?String(d.fg):'');
       else t=noteName(d,false);
       s+='<g transform="translate('+x.toFixed(1)+' '+y+')"><circle class="sring" r="'+(R+4.5)+'"/><circle class="nring" r="'+(R+5)+'"/><circle class="cring" r="'+(R+4)+'"/>'+
-        '<g class="dotb">'+(open?'<circle r="'+(R-1.4)+'" fill="#111613" stroke="'+c+'" stroke-width="3"/>':'<circle r="'+R+'" fill="'+c+'"/>')+
+        '<g class="dotb">'+(open?'<circle r="'+(R-1.4)+'" style="fill:var(--open)" stroke="'+c+'" stroke-width="3"/>':'<circle r="'+R+'" fill="'+c+'"/>')+
         (t?'<text class="dot-t" fill="'+(open?c:'#0d110f')+'"'+(t.length>2?' style="font-size:8.5px"':'')+'>'+t+'</text>':'')+'</g>';
       if(d.t==='b'||d.t==='~')s+='<text class="tech-t" x="'+(R+5)+'" y="'+(-R-3)+'" fill="'+c+'">'+(d.t==='b'?'b↑':'~')+'</text>';
       s+='</g>';
@@ -408,7 +408,7 @@ function renderHead(){
 }
 function miniSVG(ex){
   const nS=ex.tuning.length,seen=new Set();let s='<svg width="46" height="28" viewBox="0 0 46 28">';
-  for(let i=0;i<nS;i++){const y=4+i*(20/(nS-1));s+='<line x1="3" x2="43" y1="'+y+'" y2="'+y+'" stroke="#e6ebe4" stroke-opacity=".12"/>'}
+  for(let i=0;i<nS;i++){const y=4+i*(20/(nS-1));s+='<line x1="3" x2="43" y1="'+y+'" y2="'+y+'" stroke="currentColor" stroke-opacity=".18"/>'}
   ex.moments.forEach(m=>m.dots.forEach(d=>{const k=d.s+':'+d.f;if(seen.has(k))return;seen.add(k);s+='<circle cx="'+(4+d.f*2.5).toFixed(1)+'" cy="'+(4+d.s*(20/(nS-1))).toFixed(1)+'" r="2" fill="'+(m.color||ex.color||SKY)+'"/>'}));
   return s+'</svg>';
 }

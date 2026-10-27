@@ -2,7 +2,7 @@
 
 **Aktualisieren:** `VPS_HOST=187.124.190.130 ./deploy/publish.sh` baut den Hub (inkl. Schriften aus `packages/fonts`) und lädt `dist/` nach `/var/www/jemphub`. Die Anleitung unten beschreibt die Ersteinrichtung.
 
-This project is a static landing page. Upload `index.html`, `styles.css`, `design-system/styles.css`, and `design-system/tokens.css` to your VPS and serve them with Nginx.
+This project is a static landing page. Upload `index.html`, `styles.css`, `design-system/styles.css` and `vendor/` (fonts and the shared colour scheme) to your VPS and serve them with Nginx.
 
 ## Target setup
 
@@ -27,7 +27,7 @@ Copy the files to your VPS:
 
 ```bash
 scp index.html styles.css user@YOUR_VPS_IP:/tmp/jemphub/
-scp design-system/styles.css design-system/tokens.css user@YOUR_VPS_IP:/tmp/jemphub/design-system/
+scp design-system/styles.css user@YOUR_VPS_IP:/tmp/jemphub/design-system/
 ```
 
 Then on the VPS:
@@ -38,7 +38,6 @@ sudo mkdir -p /var/www/jemphub/design-system
 sudo cp /tmp/jemphub/index.html /var/www/jemphub/
 sudo cp /tmp/jemphub/styles.css /var/www/jemphub/
 sudo cp /tmp/jemphub/design-system/styles.css /var/www/jemphub/design-system/
-sudo cp /tmp/jemphub/design-system/tokens.css /var/www/jemphub/design-system/
 sudo chown -R www-data:www-data /var/www/jemphub
 ```
 
@@ -116,7 +115,7 @@ The hub page currently links to:
 - EarJemp: `https://earjemp.jemphub.com/`
 - StemPlayer: `https://stemplayer.jemphub.com/`
 
-The page uses the shared Jemp look: `design-system/tokens.css` (colours, fonts) and
+The page uses the shared Jemp look: `vendor/theme/theme.css` (colours, fonts, copied from `packages/theme`) and
 `design-system/styles.css` (base controls), the same as GuitarJemp and NoteJemp.
 
 If you want a different URL later, edit `index.html` before uploading.
@@ -127,12 +126,11 @@ Whenever you change the page locally:
 
 ```bash
 scp index.html styles.css user@YOUR_VPS_IP:/tmp/jemphub/
-scp design-system/styles.css design-system/tokens.css user@YOUR_VPS_IP:/tmp/jemphub/design-system/
+scp design-system/styles.css user@YOUR_VPS_IP:/tmp/jemphub/design-system/
 ssh user@YOUR_VPS_IP
 sudo cp /tmp/jemphub/index.html /var/www/jemphub/
 sudo cp /tmp/jemphub/styles.css /var/www/jemphub/
 sudo cp /tmp/jemphub/design-system/styles.css /var/www/jemphub/design-system/
-sudo cp /tmp/jemphub/design-system/tokens.css /var/www/jemphub/design-system/
 ```
 
 No rebuild step is needed.
@@ -163,6 +161,6 @@ The script uploads:
 - `index.html`
 - `styles.css`
 - `design-system/styles.css`
-- `design-system/tokens.css`
+- `vendor/theme/theme.css`
 
 Then it publishes the files on the VPS, runs `nginx -t`, and reloads Nginx.

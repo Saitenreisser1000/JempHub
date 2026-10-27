@@ -30,7 +30,7 @@ export function fretboardSVG(tones, title = 'Gitarre') {
     for (const p of guitarPositions(tone.midi, FRETS)) {
       const cx = fx(p.f), cy = y(p.s)
       s += p.f === 0
-        ? `<circle cx="${cx}" cy="${cy}" r="7.4" fill="#111613" stroke="${tone.color}" stroke-width="2.4"/><text x="${cx}" y="${cy}" class="f-deg" style="fill:${tone.color}">${tone.label}</text>`
+        ? `<circle cx="${cx}" cy="${cy}" r="7.4" style="fill:var(--open)" stroke="${tone.color}" stroke-width="2.4"/><text x="${cx}" y="${cy}" class="f-deg" style="fill:${tone.color}">${tone.label}</text>`
         : `<circle cx="${cx}" cy="${cy}" r="8" fill="${tone.color}"/><text x="${cx}" y="${cy}" class="f-deg">${tone.label}</text>`
     }
   }

@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<meta name="theme-color" content="#0f1311">
+<meta name="theme-color" content="#f4efe4" media="(prefers-color-scheme: light)"><meta name="theme-color" content="#171c1a" media="(prefers-color-scheme: dark)">
 <meta name="description" content="ConductJemp – Dirigieren lernen: Die Musik folgt deinem Schlag.">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
@@ -11,15 +11,16 @@
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="icon" href="icon.svg" type="image/svg+xml">
 <link rel="apple-touch-icon" href="icon.svg">
+<link rel="stylesheet" href="vendor/theme/theme.css?v=1">
 <link rel="stylesheet" href="vendor/fonts/fonts.css">
-<link rel="stylesheet" href="src/base.css?v=1">
-<link rel="stylesheet" href="src/styles.css?v=3">
+<link rel="stylesheet" href="src/base.css?v=2">
+<link rel="stylesheet" href="src/styles.css?v=4">
 </head>
 <body>
 <header class="top">
   <a class="hub-link" href="https://jemphub.com/" title="Zur JempHub-Übersicht" aria-label="Zur JempHub-Übersicht"><svg width="15" height="15" viewBox="0 0 16 16" aria-hidden="true"><rect x="1" y="1" width="6" height="6" rx="1.6"/><rect x="9" y="1" width="6" height="6" rx="1.6"/><rect x="1" y="9" width="6" height="6" rx="1.6"/><rect x="9" y="9" width="6" height="6" rx="1.6"/></svg><span>JempHub</span></a>
   <a class="brand" href="./" aria-label="ConductJemp">
-    <svg width="30" height="22" viewBox="0 0 30 22" aria-hidden="true"><path d="M3 19 L26 3" stroke="#e6ebe4" stroke-width="1.8" stroke-linecap="round"/><circle cx="3.5" cy="18.5" r="3" fill="#d8b46a"/><path d="M9 8 Q 15 21 22 11" fill="none" stroke="#7cc4f2" stroke-width="1.6" stroke-linecap="round" stroke-dasharray="1.5 3"/></svg>
+    <svg width="30" height="22" viewBox="0 0 30 22" aria-hidden="true"><path d="M3 19 L26 3" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/><circle cx="3.5" cy="18.5" r="3" fill="#d8b46a"/><path d="M9 8 Q 15 21 22 11" fill="none" stroke="#7cc4f2" stroke-width="1.6" stroke-linecap="round" stroke-dasharray="1.5 3"/></svg>
     <span>ConductJemp</span>
   </a>
   <div class="top-r">
@@ -48,7 +49,7 @@
     </div>
   </div>
 
-  <div class="stagewrap" id="stage">
+  <div class="stagewrap on-stage" id="stage">
     <video id="video" playsinline muted></video>
     <canvas id="canvas"></canvas>
     <div class="beatnum" id="beatNum"></div>

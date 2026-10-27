@@ -1,0 +1,105 @@
+/* JempHub-Farbschema – die einzige Stelle für Farben, Schriften, Rundungen und Schatten.
+   Wird mit `node scripts/sync-shared.mjs <app> theme` nach apps/<app>/vendor/theme/ kopiert
+   (passiert automatisch bei `npm run build` und `npm run dev`).
+
+   Hell („Papier“) ist Standard. Steht das Gerät auf Dunkelmodus, gilt „Abend“.
+   Flächen mit der Klasse .on-stage (Griffbrett, Zeitleiste, Dirigierbühne) sind immer dunkel. */
+
+:root {
+  color-scheme: light dark;
+
+  /* Oberfläche – hell */
+  --bg: #f4efe4;
+  --surface: #fffdf8;
+  --raise: #ffffff;
+  --line: #e7dfcf;
+  --line2: #d8ccb6;
+  --fg: #1f2420;
+  --muted: #625b4f;
+  --faint: #857b6a;
+  --brass: #9a6c1c;
+  --brass-ink: #fffaf0;
+  --ok: #2e8655;
+  --bad: #c0503c;
+  --mid: #a87510;
+  --shadow-pop: 0 18px 50px #4a3a1a2e;
+  --card-shadow: 0 1px 2px #4a3a1a14, 0 8px 24px #4a3a1a1a;
+  --backdrop: #1f242099;
+
+  /* Moment-Farben (leuchtend, für Punkte auf dunklen Flächen).
+     Gleiche Werte stehen als Daten in guitar/src/core/constants.js (COLORS). */
+  --sage: #8fd3a9;
+  --sky: #7cc4f2;
+  --amber: #f2c46d;
+  --coral: #f28b7c;
+  --lilac: #b9a3f2;
+  --teal: #5fd6cf;
+  --rose: #ef98c4;
+  --sand: #e8dcc0;
+
+  /* Instrument – in beiden Varianten gleich */
+  --wood: #271d18;
+  --wood-hi: #2e221c;
+  --wood-lo: #241b16;
+  --nut: #e2d8c2;
+  --fret: #8d938e;
+  --string: #c4c9c2;
+  --string-wound: #b4ab98;
+  --inlay: #d6dcd2;
+  --open: #151c18;
+  --open-line: #24302a;
+  --dot-ink: #0d110f;
+  --key-white: #ebe6da;
+  --key-black: #151a17;
+  --key-frame: #1f2420;
+
+  /* Schriften */
+  --font-display: 'Bricolage Grotesque', 'Avenir Next', system-ui, sans-serif;
+  --font-body: 'Figtree', system-ui, -apple-system, 'Segoe UI', sans-serif;
+  --font-mono: 'JetBrains Mono', ui-monospace, 'SF Mono', Menlo, Consolas, monospace;
+
+  /* Rundungen */
+  --radius-sm: 8px;
+  --radius-md: 12px;
+  --radius-lg: 16px;
+}
+
+/* Oberfläche – dunkel („Abend“) */
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #171c1a;
+    --surface: #1d2421;
+    --raise: #252d29;
+    --line: #2c3531;
+    --line2: #3a4640;
+    --fg: #eef2ec;
+    --muted: #a3afa7;
+    --faint: #6f7b74;
+    --brass: #e0bf78;
+    --brass-ink: #1c1609;
+    --ok: #8fd3a9;
+    --bad: #f28b7c;
+    --mid: #f2c46d;
+    --shadow-pop: 0 20px 60px #000a;
+    --card-shadow: 0 1px 0 #ffffff0a inset, 0 10px 30px #00000059;
+    --backdrop: #000a;
+  }
+}
+
+/* Bühne: immer dunkel */
+.on-stage {
+  --bg: #171c1a;
+  --surface: #1d2421;
+  --raise: #252d29;
+  --line: #2c3531;
+  --line2: #3a4640;
+  --fg: #eef2ec;
+  --muted: #a3afa7;
+  --faint: #6f7b74;
+  --brass: #e0bf78;
+  --brass-ink: #1c1609;
+  --ok: #8fd3a9;
+  --bad: #f28b7c;
+  --mid: #f2c46d;
+  color: var(--fg);
+}

@@ -1,5 +1,5 @@
 // Kopiert gemeinsame Pakete in eine App, damit sie als statische Dateien ausgeliefert werden.
-//   node scripts/sync-shared.mjs ear sounds fonts   (ohne Paketnamen: sounds)
+//   node scripts/sync-shared.mjs ear sounds fonts theme   (ohne Paketnamen: sounds)
 import { cp, rm, mkdir } from 'node:fs/promises';
 import { resolve } from 'node:path';
 
@@ -8,6 +8,7 @@ if (!app) throw new Error('Expected an app name, e.g. ear');
 const root = resolve(import.meta.dirname, '..');
 const PACKAGES = {
   sounds: ['piano', 'vpo', 'src'],
+  theme: ['theme.css'],
   fonts: ['fonts.css', 'figtree.woff', 'bricolage-grotesque.woff', 'jetbrains-mono.woff', 'OFL-Figtree.txt', 'OFL-BricolageGrotesque.txt', 'OFL-JetBrainsMono.txt'],
 };
 for (const pkg of wanted.length ? wanted : ['sounds']) {

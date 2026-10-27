@@ -7,8 +7,8 @@
     "node": ">=22.12.0"
   },
   "scripts": {
-    "dev": "node ../../scripts/sync-shared.mjs conduct sounds fonts && node ../../scripts/serve-static.mjs . --port 5184",
-    "build": "npm test && node ../../scripts/sync-shared.mjs conduct sounds fonts && node ../../scripts/build-static.mjs conduct",
+    "dev": "node ../../scripts/sync-shared.mjs conduct sounds fonts theme && node ../../scripts/serve-static.mjs . --port 5184",
+    "build": "npm test && node ../../scripts/sync-shared.mjs conduct sounds fonts theme && node ../../scripts/build-static.mjs conduct",
     "test": "node --test \"src/**/*.test.js\""
   }
 }

@@ -5,22 +5,8 @@ img{max-width:100%}
 [hidden]{display:none!important}
 
 /* Layout: instrument stage. Fretboard is the hero; one quiet dock below holds transport and editing; rarely used options live in a View menu. */
-:root{
-  color-scheme:dark;
-  --bg:#0f1311;
-  --surface:#141916;
-  --raise:#1b221e;
-  --line:#232b27;
-  --line2:#313b36;
-  --fg:#e6ebe4;
-  --muted:#8d9991;
-  --faint:#5a6560;
-  --brass:#d8b46a;
-  --brass-ink:#1c1609;
-  --font-display:"Bricolage Grotesque","Avenir Next",system-ui,sans-serif;
-  --font-body:"Figtree",system-ui,-apple-system,"Segoe UI",sans-serif;
-  --font-mono:"JetBrains Mono",ui-monospace,"SF Mono",Menlo,Consolas,monospace;
-}
+
+
 *{box-sizing:border-box}
 html,body{height:100%}
 body{background:var(--bg);color:var(--fg);font-family:var(--font-body);font-size:14px;line-height:1.4;
@@ -38,7 +24,7 @@ button{font-family:inherit}
 /* buttons */
 .gbtn{display:inline-flex;align-items:center;justify-content:center;gap:6px;height:30px;min-width:30px;padding:0 8px;border:0;border-radius:8px;background:transparent;color:var(--muted);font:500 12.5px var(--font-body);cursor:pointer;white-space:nowrap}
 .gbtn:hover{background:var(--raise);color:var(--fg)}
-.gbtn[aria-pressed="true"]{color:var(--brass);background:#d8b46a17}
+.gbtn[aria-pressed="true"]{color:var(--brass);background:color-mix(in srgb, var(--brass) 9%, transparent)}
 .gbtn:disabled{opacity:.35;cursor:default;background:transparent}
 .gbtn svg{flex:none}
 .gbtn .lb{display:none}
@@ -96,7 +82,7 @@ body.practice .now{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,.6f
 .now-pos .c{font-size:11px;color:var(--faint)}
 
 /* fretboard */
-.board-wrap{position:relative;border-radius:16px;padding:10px 4px 0;display:flex;justify-content:center;flex:none}
+.board-wrap{position:relative;border-radius:16px;padding:12px 10px 4px;background:var(--bg);display:flex;justify-content:center;flex:none}
 #board{width:100%;height:auto;max-height:54vh;display:block;touch-action:manipulation;-webkit-user-select:none;user-select:none;overflow:visible}
 body.practice #board{max-height:58vh}
 body.editing #board{cursor:crosshair}
@@ -170,13 +156,13 @@ body.playing .mg,body.playing .cn{transition:none}
 .colorbtn:hover{background:var(--raise)}
 .colorbtn i{width:16px;height:16px;border-radius:50%;display:block;box-shadow:0 0 0 2px var(--bg),0 0 0 3px var(--line2)}
 .sw{width:24px;height:24px;border-radius:50%;border:2px solid transparent;cursor:pointer;padding:0}
-.sw[aria-pressed="true"]{border-color:#fff}
+.sw[aria-pressed="true"]{border-color:var(--fg)}
 
 body.practice .edit-only{display:none !important}
 body:not(.practice) .practice-only{display:none !important}
 
 /* popovers */
-.pop{position:fixed;z-index:40;background:var(--raise);border:1px solid var(--line2);border-radius:14px;padding:14px 16px;box-shadow:0 20px 60px #000a;width:min(340px,calc(100vw - 32px))}
+.pop{position:fixed;z-index:40;background:var(--raise);border:1px solid var(--line2);border-radius:14px;padding:14px 16px;box-shadow:var(--shadow-pop);width:min(340px,calc(100vw - 32px))}
 .pop.anchor-top{right:max(16px,env(safe-area-inset-right,0px));top:56px}
 .pop h3{margin:0 0 10px;font:700 15px var(--font-display)}
 .pop dl{display:grid;grid-template-columns:auto 1fr;gap:6px 14px;margin:0;font-size:12.5px}

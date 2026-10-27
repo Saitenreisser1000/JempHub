@@ -1,24 +1,9 @@
 :root {
-  color-scheme: dark;
-  --bg: #0f1311;
-  --surface: #141916;
-  --raise: #1b221e;
-  --line: #232b27;
-  --line2: #313b36;
-  --fg: #e6ebe4;
-  --muted: #8d9991;
-  --faint: #5a6560;
-  --brass: #d8b46a;
-  --brass-ink: #1c1609;
-  --ok: #8fd3a9;
-  --bad: #f28b7c;
-  --mid: #f2c46d;
-  --font-display: 'Bricolage Grotesque', 'Avenir Next', system-ui, sans-serif;
-  --font-body: 'Figtree', system-ui, -apple-system, 'Segoe UI', sans-serif;
-  --font-mono: 'JetBrains Mono', ui-monospace, 'SF Mono', Menlo, Consolas, monospace;
   padding-top: env(safe-area-inset-top, 0px);
   padding-bottom: env(safe-area-inset-bottom, 0px);
 }
+
+
 * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
 html, body { margin: 0; min-height: 100%; }
 body {
@@ -54,7 +39,7 @@ h1, h2 { font-family: var(--font-display); letter-spacing: -.015em; margin: 0; t
 .switch::after { content: ""; position: absolute; top: 3px; left: 3px; width: 16px; height: 16px; border-radius: 50%; background: var(--fg); transition: transform .15s; }
 .switch[aria-pressed="true"] { background: var(--brass); }
 .switch[aria-pressed="true"]::after { transform: translateX(16px); background: var(--brass-ink); }
-.pop { position: fixed; right: max(16px, env(safe-area-inset-right, 0px)); top: calc(56px + env(safe-area-inset-top, 0px)); z-index: 40; width: min(340px, calc(100vw - 32px)); background: var(--raise); border: 1px solid var(--line2); border-radius: 14px; padding: 14px 16px; box-shadow: 0 20px 60px #000a; }
+.pop { position: fixed; right: max(16px, env(safe-area-inset-right, 0px)); top: calc(56px + env(safe-area-inset-top, 0px)); z-index: 40; width: min(340px, calc(100vw - 32px)); background: var(--raise); border: 1px solid var(--line2); border-radius: 14px; padding: 14px 16px; box-shadow: var(--shadow-pop); }
 .pop h3 { margin: 0 0 10px; font: 700 15px var(--font-display); }
 .pop dl { display: grid; grid-template-columns: auto 1fr; gap: 6px 14px; margin: 0; font-size: 12.5px; }
 .pop dt { font-family: var(--font-mono); color: var(--brass); white-space: nowrap; }
