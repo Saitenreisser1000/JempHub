@@ -1,17 +1,19 @@
 /* JempHub – overview of the Jemp apps in the GuitarJemp look.
    Layout: one centred column; a fretboard trail as the opening image, then app cards in a grid. */
 
-.top, .hub, .site-footer { max-width: 1040px; margin: 0 auto; }
+.hub, .site-footer { max-width: 1040px; margin: 0 auto; }
 
 .top { display: flex; align-items: center; height: 60px; }
 .brand { display: flex; align-items: center; gap: 10px; font: 700 18px/1 var(--font-display); letter-spacing: -0.01em; text-decoration: none; }
 
-/* hero */
-.hero { padding: 40px 0 36px; }
-.hero h1 { font-size: clamp(30px, 5vw, 50px); line-height: 1.08; max-width: 18ch; }
-.lead { color: var(--muted); font-size: 17px; max-width: 58ch; margin: 14px 0 0; }
+/* hero: JempHub groß, Unterzeile und Griffbrett nebeneinander */
+.hero { padding: 44px 0 36px; }
+.wordmark { display: flex; align-items: center; gap: clamp(12px, 2vw, 20px); font-size: clamp(44px, 8vw, 84px); line-height: 1; letter-spacing: -0.03em; }
+.wordmark .logo { width: clamp(64px, 10vw, 112px); height: auto; flex: none; }
+.hero-row { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.6fr); align-items: center; gap: 28px; margin-top: 22px; }
+.sub { margin: 0; color: var(--muted); font: 500 clamp(16px, 1.8vw, 19px)/1.35 var(--font-body); max-width: 22ch; }
 
-.trail { display: block; width: 100%; max-width: 640px; height: auto; margin-top: 32px; }
+.trail { display: block; width: 100%; height: auto; }
 .t-wood { fill: var(--wood); }
 .t-nut { fill: var(--nut) !important; }
 .t-frets rect { fill: var(--fret); opacity: 0.7; }
@@ -34,12 +36,20 @@
 .apps { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
 .app {
   display: grid; grid-template-rows: auto 1fr; text-decoration: none; color: var(--fg);
-  background: var(--surface); border-radius: var(--radius-lg); overflow: hidden;
-  transition: background 0.15s, transform 0.15s;
+  background: #19211d; border: 1px solid var(--line2); border-radius: var(--radius-lg); overflow: hidden;
+  box-shadow: 0 1px 0 #ffffff0a inset, 0 10px 30px #00000059;
+  transition: background 0.15s, transform 0.15s, border-color 0.15s;
 }
-.app:hover { background: var(--raise); }
-.app:hover .open { color: var(--brass); }
-.app:active { transform: scale(0.995); }
+a.app:hover { background: #1e2723; border-color: #d8b46a66; transform: translateY(-2px); }
+a.app:hover .open { color: var(--brass); }
+a.app:active { transform: scale(0.995); }
+
+/* Hinweise am Namen */
+.badge { display: inline-block; vertical-align: 4px; margin-left: 6px; font: 600 10.5px/1 var(--font-mono); letter-spacing: 0.04em; text-transform: uppercase; padding: 4px 8px; border-radius: 999px; color: var(--muted); border: 1px solid var(--line2); }
+.badge.beta { color: var(--brass); border-color: #d8b46a80; background: #d8b46a14; }
+.app.soon { cursor: default; }
+.app.soon .thumb { opacity: 0.45; filter: saturate(0.5); }
+.app.soon h2 { color: var(--muted); }
 .thumb { display: block; background: var(--bg); margin: 10px 10px 0; border-radius: 12px; }
 .thumb svg { display: block; width: 100%; height: auto; max-height: 150px; }
 .body { display: flex; flex-direction: column; gap: 6px; padding: 16px 18px 18px; }
@@ -77,9 +87,9 @@
 
 @media (max-width: 720px) {
   .apps { grid-template-columns: minmax(0, 1fr); }
-  .hero { padding: 24px 0 28px; }
-  .lead { font-size: 15.5px; }
-  .trail { margin-top: 24px; }
+  .hero { padding: 28px 0 26px; }
+  .hero-row { grid-template-columns: minmax(0, 1fr); gap: 16px; margin-top: 14px; }
+  .sub { max-width: none; }
 }
 
 /* Pfeil statt „Open …“-Text: rechts neben dem Namen */
