@@ -282,3 +282,7 @@ h1, h2 { font-family: var(--font-display); letter-spacing: -.015em; margin: 0; t
 @media (max-width: 640px) { .hub-link span { display: none; } .hub-link { padding-right: 8px; } }
 @media (max-width: 440px) { .top { gap: 8px; } .top .brand span { display: none; } }
 a.gbtn { text-decoration: none; }
+/* Optionen in der Übung */
+.optbtn { margin-left: 2px; }
+.panel.opts { margin-bottom: 12px; }
+@media (max-width: 440px) { .qhead h2 { font-size: 19px; } .qstats { gap: 8px; } .qstats span { white-space: nowrap; } }

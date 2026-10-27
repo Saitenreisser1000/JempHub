@@ -54,7 +54,7 @@ const S = {
   route: 'home', phase: 'settings', settings: null,
   q: null, i: 0, score: 0, streak: 0, bestStreak: 0,
   result: null, answer: null, acc: 0, oct: null, needOct: false, dotted: false,
-  missed: [], times: [], shownAt: 0, advanceT: 0, resetArmed: false,
+  missed: [], times: [], shownAt: 0, advanceT: 0, resetArmed: false, optsOpen: false,
 }
 let sound = store.pref('sound', true)
 let auto = store.pref('auto', false)
@@ -140,6 +140,13 @@ function nextQuestion() {
   render()
 }
 
+// Speichern; während einer offenen Aufgabe gilt eine Änderung sofort (neue Aufgabe, gleiche Nummer)
+function settingsChanged(key) {
+  store.saveSettings(S.route, S.settings)
+  if (S.phase === 'playing' && !S.result && S.q && !['length', 'focus', 'fretboard'].includes(key)) return nextQuestion()
+  render()
+}
+
 function itemKey(q) {
   return S.route === 'notes' ? noteKey(q) : S.route === 'values' ? valueKey(q) : measureKey(q)
 }
@@ -207,24 +214,30 @@ function headHTML() {
   return `<div class="qhead">
     <button class="gbtn icon-only" data-go="home" aria-label="Zur Übersicht"><svg width="18" height="18" viewBox="0 0 24 24"><path d="M15 5l-7 7 7 7" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
     <div><h2>${ex().title}</h2>${sub ? `<span class="qsub">${sub}</span>` : ''}</div>
-    ${playing ? `<div class="qstats"><span><b>${S.i + 1}</b>/${roundLength()}</span><span>✓ <b>${S.score}</b></span><span>Serie <b>${S.streak}</b></span></div>` : ''}
-  </div>${playing ? `<div class="progress"><i style="width:${((S.i + (S.result ? 1 : 0)) / roundLength()) * 100}%"></i></div>` : ''}`
+    ${playing ? `<div class="qstats"><span><b>${S.i + 1}</b>/${roundLength()}</span><span>✓ <b>${S.score}</b></span><span>Serie <b>${S.streak}</b></span></div><button class="gbtn icon-only optbtn" data-act="opts" aria-pressed="${S.optsOpen}" aria-label="Optionen" title="Optionen"><svg width="18" height="18" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h10M18 7h2M4 17h4M12 17h8" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/><circle cx="16" cy="7" r="2.2" fill="none" stroke="currentColor" stroke-width="1.8"/><circle cx="10" cy="17" r="2.2" fill="none" stroke="currentColor" stroke-width="1.8"/></svg></button>` : ''}
+  </div>${playing ? `<div class="progress"><i style="width:${((S.i + (S.result ? 1 : 0)) / roundLength()) * 100}%"></i></div>` : ''}${playing && S.optsOpen ? `<div class="panel opts">${optionRows(false)}</div>` : ''}`
 }
 
 function segHTML(key, opts, value) {
   return `<div class="seg" data-set="${key}">${opts.map(([l, v]) => `<button data-v='${JSON.stringify(v)}' aria-pressed="${v === value}">${l}</button>`).join('')}</div>`
 }
 
-function renderSettings() {
+// Optionen: essential = nur die erste (Einstieg), sonst alle (Optionen in der Übung)
+function optionRows(essential) {
   const st = S.settings
-  return `<div class="panel">
-    ${ex().options.map(([key, label, opts]) => `<div class="vrow"><span>${label}</span>${segHTML(key, opts, st[key])}</div>`).join('')}
-    <div class="vrow"><span>Aufgaben pro Runde</span>${segHTML('length', LENGTHS.map(([l, v]) => [l, v]), Number(st.length) || 10)}</div>
+  const opts = essential ? ex().options.slice(0, 1) : ex().options
+  let rows = opts.map(([key, label, o]) => `<div class="vrow"><span>${label}</span>${segHTML(key, o, st[key])}</div>`).join('')
+  if (essential) return rows
+  rows += `<div class="vrow"><span>Aufgaben pro Runde</span>${segHTML('length', LENGTHS.map(([l, v]) => [l, v]), Number(st.length) || 10)}</div>
     <div class="vrow"><span>Schwächen gezielt üben</span><button class="switch" data-toggle="focus" aria-pressed="${!!st.focus}" aria-label="Schwächen gezielt üben"></button></div>
-    <div class="vrow"><span>Automatisch weiter</span><button class="switch" data-toggle="auto" aria-pressed="${auto}" aria-label="Automatisch weiter"></button></div>
-  </div>
-  <div style="margin-top:14px"><button class="pbtn big" data-act="start">Los geht's<span class="kbd">⏎</span></button></div>
-  <p class="hintline">Am Computer geht alles auch mit der Tastatur, siehe <b>?</b> oben rechts.</p>`
+    <div class="vrow"><span>Automatisch weiter</span><button class="switch" data-toggle="auto" aria-pressed="${auto}" aria-label="Automatisch weiter"></button></div>`
+  return rows
+}
+
+// Einstieg: nur das Wichtigste, alles Weitere über das Regler-Symbol in der Übung
+function renderSettings() {
+  return `<div class="panel">${optionRows(true)}</div>
+  <div style="margin-top:14px"><button class="pbtn big" data-act="start">Los geht's<span class="kbd">⏎</span></button></div>`
 }
 
 function feedbackHTML(prompt, right, wrong, extra = '') {
@@ -432,6 +445,7 @@ view.addEventListener('click', (e) => {
   if (t.dataset.act === 'start') return start()
   if (t.dataset.act === 'next') return advance()
   if (t.dataset.act === 'settings') { S.phase = 'settings'; return render() }
+  if (t.dataset.act === 'opts') { S.optsOpen = !S.optsOpen; return render() }
   if (t.dataset.act === 'reset') {
     if (!S.resetArmed) { S.resetArmed = true; render(); setTimeout(() => { S.resetArmed = false; if (S.route === 'progress') render() }, 3000); return }
     S.resetArmed = false; store.reset(); return render()
@@ -439,10 +453,9 @@ view.addEventListener('click', (e) => {
   const seg = t.closest('[data-set]')
   if (seg) {
     S.settings[seg.dataset.set] = JSON.parse(t.dataset.v)
-    store.saveSettings(S.route, S.settings)
-    return render()
+    return settingsChanged(seg.dataset.set)
   }
-  if (t.dataset.toggle === 'focus') { S.settings.focus = !S.settings.focus; store.saveSettings(S.route, S.settings); return render() }
+  if (t.dataset.toggle === 'focus') { S.settings.focus = !S.settings.focus; return settingsChanged('focus') }
   if (t.dataset.toggle === 'auto') { auto = !auto; store.setPref('auto', auto); return render() }
   if (t.dataset.acc !== undefined) { S.acc = Number(t.dataset.acc); return render() }
   if (t.dataset.dot !== undefined) { S.dotted = !S.dotted; return render() }
