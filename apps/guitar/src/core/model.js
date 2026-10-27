@@ -103,3 +103,24 @@ export function prevSounding(moments, i, order, wrap) {
 export function isValidExercise(e) {
   return !!e && Array.isArray(e.moments) && Array.isArray(e.tuning) && Array.isArray(e.ts)
 }
+
+// Moment von Position from an Position to verschieben (to = Index im Ergebnis). Gibt to zurück.
+export function moveMoment(moments, from, to) {
+  to = Math.max(0, Math.min(moments.length - 1, to))
+  if (from === to || from < 0 || from >= moments.length) return from
+  const [m] = moments.splice(from, 1)
+  moments.splice(to, 0, m)
+  return to
+}
+
+// Einfügestelle für einen gezogenen Moment an Zeitpunkt t (Ticks): vor dem Moment,
+// dessen Mitte rechts von t liegt. Liefert den Index vor dem Entfernen des gezogenen Moments.
+export function dropIndex(moments, on, t) {
+  for (let i = 0; i < moments.length; i++) if (t < on[i] + moments[i].dur / 2) return i
+  return moments.length
+}
+
+// Länge beim Ziehen am rechten Rand: auf Sechzehntel (6 Ticks) runden, 1/16 bis 2 ganze Takte
+export function snapDur(ticks, grid = 6) {
+  return Math.max(grid, Math.min(192, Math.round(ticks / grid) * grid))
+}
