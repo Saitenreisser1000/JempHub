@@ -1,0 +1,81 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#0f1311">
+<meta name="description" content="ConductJemp – Dirigieren lernen: Die Musik folgt deinem Schlag.">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<title>ConductJemp</title>
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="icon.svg">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700&family=Figtree:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap">
+<link rel="stylesheet" href="src/base.css?v=1">
+<link rel="stylesheet" href="src/styles.css?v=1">
+</head>
+<body>
+<header class="top">
+  <a class="hub-link" href="https://jemphub.com/" title="Zur JempHub-Übersicht" aria-label="Zur JempHub-Übersicht"><svg width="15" height="15" viewBox="0 0 16 16" aria-hidden="true"><rect x="1" y="1" width="6" height="6" rx="1.6"/><rect x="9" y="1" width="6" height="6" rx="1.6"/><rect x="1" y="9" width="6" height="6" rx="1.6"/><rect x="9" y="9" width="6" height="6" rx="1.6"/></svg><span>JempHub</span></a>
+  <a class="brand" href="./" aria-label="ConductJemp">
+    <svg width="30" height="22" viewBox="0 0 30 22" aria-hidden="true"><path d="M3 19 L26 3" stroke="#e6ebe4" stroke-width="1.8" stroke-linecap="round"/><circle cx="3.5" cy="18.5" r="3" fill="#d8b46a"/><path d="M9 8 Q 15 21 22 11" fill="none" stroke="#7cc4f2" stroke-width="1.6" stroke-linecap="round" stroke-dasharray="1.5 3"/></svg>
+    <span>ConductJemp</span>
+  </a>
+  <div class="top-r">
+    <button class="gbtn icon-only" id="helpBtn" aria-expanded="false" aria-label="Hilfe"><span style="font:600 14px var(--font-mono)">?</span></button>
+  </div>
+</header>
+
+<main class="view">
+  <div class="bar">
+    <div class="seg" id="pieceSeg" role="group" aria-label="Stück">
+      <button data-piece="ex2">2/4</button><button data-piece="ex3">3/4</button><button data-piece="ex4">4/4</button><button data-piece="ode">♪ Freude</button>
+    </div>
+    <div class="bar-r">
+    <div class="seg" id="handSeg" role="group" aria-label="Schlaghand">
+      <button data-hand="left" title="Linke Hand" aria-label="Linke Hand">L</button><button data-hand="right" title="Rechte Hand" aria-label="Rechte Hand">R</button>
+    </div>
+    <div class="seg" id="inputSeg" role="group" aria-label="Eingabe">
+      <button data-input="camera" title="Kamera" aria-label="Kamera"><svg width="17" height="17" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 8h3l2-3h8l2 3h3v11H3z" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"/><circle cx="12" cy="13" r="3.5" fill="none" stroke="currentColor" stroke-width="1.7"/></svg></button>
+      <button data-input="pointer" title="Maus / Finger" aria-label="Maus oder Finger"><svg width="17" height="17" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 11V5.5a1.5 1.5 0 0 1 3 0V11m0-1.5a1.5 1.5 0 0 1 3 0V12m0-1a1.5 1.5 0 0 1 3 0v4a6 6 0 0 1-6 6h-1a6 6 0 0 1-5-2.7L4.6 15a1.5 1.5 0 0 1 2.4-1.8L9 15" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
+    </div>
+    </div>
+  </div>
+
+  <div class="stagewrap" id="stage">
+    <video id="video" playsinline muted></video>
+    <canvas id="canvas"></canvas>
+    <div class="beatnum" id="beatNum"></div>
+    <div class="start" id="startBox">
+      <button class="pbtn" id="startCam"><svg width="18" height="18" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 8h3l2-3h8l2 3h3v11H3z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/><circle cx="12" cy="13" r="3.5" fill="none" stroke="currentColor" stroke-width="1.8"/></svg>Kamera</button>
+      <button class="gbtn" id="startPointer">Maus / Finger</button>
+      <div class="err" id="err" hidden></div>
+    </div>
+  </div>
+
+  <div class="stats">
+    <div><span class="lbl">BPM</span><b id="stBpm">–</b></div>
+    <div><span class="lbl">Dynamik</span><b id="stDyn">–</b></div>
+    <div><span class="lbl">Takt</span><b id="stBar">–</b></div>
+    <div><span class="lbl">Figur</span><b id="stFig">–</b></div>
+  </div>
+
+  <section class="result" id="result" hidden></section>
+</main>
+
+<div class="pop" id="help" hidden>
+  <h3>Dirigieren</h3>
+  <dl>
+    <dt>Auftakt</dt><dd>Ein Schlag vorab gibt das Tempo</dd>
+    <dt>Groß / klein</dt><dd>Laut / leise</dd>
+    <dt>Stopp</dt><dd>Hand ruhig halten</dd>
+    <dt>Space</dt><dd>Schlag per Taste</dd>
+  </dl>
+</div>
+
+<script type="module" src="src/app.js"></script>
+</body>
+</html>
