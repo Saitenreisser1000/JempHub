@@ -13,7 +13,7 @@
 <link rel="apple-touch-icon" href="icon.svg">
 <link rel="stylesheet" href="vendor/fonts/fonts.css">
 <link rel="stylesheet" href="src/base.css?v=1">
-<link rel="stylesheet" href="src/styles.css?v=2">
+<link rel="stylesheet" href="src/styles.css?v=3">
 </head>
 <body>
 <header class="top">
@@ -29,8 +29,13 @@
 
 <main class="view">
   <div class="bar">
-    <div class="seg" id="pieceSeg" role="group" aria-label="Stück">
-      <button data-piece="ex2">2/4</button><button data-piece="ex3">3/4</button><button data-piece="ex4">4/4</button><button data-piece="ode">♪ Freude</button>
+    <div class="bar-l">
+      <div class="seg pieceSeg" role="group" aria-label="Übung">
+        <button data-piece="ex2">2/4</button><button data-piece="ex3">3/4</button><button data-piece="ex4">4/4</button>
+      </div>
+      <div class="seg pieceSeg pieces" role="group" aria-label="Stück">
+        <button data-piece="haenschen">♪ Hänschen <small>2/4</small></button><button data-piece="walzer">♪ Walzer <small>3/4</small></button><button data-piece="ode">♪ Freude <small>4/4</small></button><button data-piece="barcarole">♪ Barcarole <small>6/8</small></button>
+      </div>
     </div>
     <div class="bar-r">
     <div class="seg" id="handSeg" role="group" aria-label="Schlaghand">

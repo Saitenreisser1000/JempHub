@@ -1,5 +1,5 @@
 // ConductJemp: Kamera oder Maus liefern die Handbahn, Schlagpunkte steuern die Musik.
-import { createBeatTracker, createTempo, dynamicsFrom, dynamicLabel, figureOk, figurePoints as idealPoints } from './conduct.js'
+import { createBeatTracker, createTempo, dynamicsFrom, dynamicLabel, figureOk, isDownbeat, figurePoints as idealPoints } from './conduct.js'
 import { PIECES, notesInBeat } from './score.js'
 import { createPlayer } from '../vendor/sounds/src/player.js'
 
@@ -27,6 +27,7 @@ const S = {
   trail: [], // { x, y, t } normiert
   marks: [], // Schlagpunkte { x, y, t, k, ok }
   log: [], // { bpm, ok, vel }
+  drops: [], skipped: 0, lostT: null,
   hand: false,
 }
 let piece = PIECES[S.pieceId] ? PIECES[S.pieceId]() : PIECES.ex4()
@@ -46,7 +47,7 @@ function playBeat(pos, t, interval) {
   for (const n of notesInBeat(piece, pos)) {
     const start = t + (n.at - pos) * interval
     const when = Math.max(aNow + 0.005, aNow + (start - pNow))
-    const melody = piece.id === 'ode' && n.vel === 1
+    const melody = !!n.mel
     player.note(n.midi, when, Math.max(0.25, n.len * interval * 0.95), {
       instrument: melody ? 'woodwinds' : 'strings',
       vel: Math.min(1, n.vel * S.vel * (melody ? 1.1 : 0.85)),
@@ -58,6 +59,7 @@ function playBeat(pos, t, interval) {
 
 function onBeat(b) {
   S.tempo.beat(b.t)
+  S.tracker.setInterval(S.tempo.interval)
   const meter = piece.meter
   if (S.state === 'idle' || S.state === 'done') {
     if (S.state === 'done') resetRun()
@@ -74,9 +76,18 @@ function onBeat(b) {
     S.state = 'play'
   }
   const interval = S.tempo.interval || b.t - S.lastBeatT
+  const scale = figureScale()
+  // Schlag verpasst? Kommt statt des letzten Schlags im Takt deutlich eine Eins
+  // (große Abwärtsbewegung, tief wie die letzte Eins), springt das Orchester zur Eins.
+  if (S.pos % meter === meter - 1 && S.barOne && isDownbeat(b.drop, S.drops) && Math.abs(b.y - S.barOne.y) < scale * 0.35) {
+    S.pos++
+    S.skipped++
+    if (!piece.endless && S.pos >= piece.beats) { S.state = 'done'; setTimeout(showResult, 600); renderStats(); return }
+  }
+  S.drops.push(b.drop)
+  if (S.drops.length > 8) S.drops.shift()
   const k = S.pos % meter
   if (k === 0) S.barOne = b
-  const scale = figureScale()
   const ok = figureOk(meter, k, S.barOne, b, scale, S.left)
   S.vel = 0.5 * S.vel + 0.5 * dynamicsFrom(b.size)
   playBeat(S.pos, b.t, interval)
@@ -110,12 +121,16 @@ function figureScale() {
   return Math.max(0.08, Math.max(...xs) - Math.min(...xs), Math.max(...ys) - Math.min(...ys))
 }
 
-function pushPoint(x, y, t) {
-  if (x === null) { S.hand = false; return }
+// unit: Größe der Hand im Bild (Kamera), sonst Standard
+function pushPoint(x, y, t, hand, unit) {
+  if (x === null) { S.hand = false; if (S.lostT === null) S.lostT = t; return }
+  // Hand war kurz weg: angefangene Bewegung verwerfen, sonst entstehen Phantomschläge
+  if (S.lostT !== null && t - S.lostT > 0.3) S.tracker.reset()
+  S.lostT = null
   S.hand = true
   S.trail.push({ x, y, t })
   while (S.trail.length && t - S.trail[0].t > 1.6) S.trail.shift()
-  const b = S.tracker.push(x, y, t)
+  const b = S.tracker.push(x, y, t, unit)
   if (b) onBeat(b)
 }
 
@@ -137,6 +152,8 @@ function resetRun() {
   S.log = []
   S.marks = []
   S.barOne = null
+  S.drops = []
+  S.skipped = 0
   S.tracker.reset()
   S.tempo.reset()
   $('#result').hidden = true
@@ -266,7 +283,7 @@ function renderStats() {
     fig.className = p >= 75 ? 'ok' : p < 50 ? 'bad' : ''
   } else { fig.textContent = '–'; fig.className = '' }
   document.querySelectorAll('#handSeg button').forEach((b) => b.setAttribute('aria-pressed', String((b.dataset.hand === 'left') === S.left)))
-  document.querySelectorAll('#pieceSeg button').forEach((b) => b.setAttribute('aria-pressed', String(b.dataset.piece === S.pieceId)))
+  document.querySelectorAll('.pieceSeg button').forEach((b) => b.setAttribute('aria-pressed', String(b.dataset.piece === S.pieceId)))
   document.querySelectorAll('#inputSeg button').forEach((b) => b.setAttribute('aria-pressed', String(b.dataset.input === S.input)))
 }
 
@@ -282,8 +299,8 @@ function showResult() {
   const Y = (v) => 100 - ((v - lo) / (hi - lo)) * 100
   const pts = bpms.map((v, i) => `${X(i).toFixed(2)},${Y(v).toFixed(2)}`).join(' ')
   const bad = log.map((l, i) => (l.ok ? '' : `<circle class="dot-bad" cx="${X(i)}" cy="${Y(l.bpm)}" r="1.4"/>`)).join('')
-  $('#result').innerHTML = `<div class="rhead"><h2>Ode an die Freude</h2>
-    <div class="nums"><span>Ø <b>${Math.round(avg)}</b> BPM</span><span>± <b>${Math.round((sd / avg) * 100)}</b> %</span><span>Figur <b>${fig}</b> %</span></div></div>
+  $('#result').innerHTML = `<div class="rhead"><h2>${piece.title}</h2>
+    <div class="nums"><span>Ø <b>${Math.round(avg)}</b> BPM</span><span>± <b>${Math.round((sd / avg) * 100)}</b> %</span><span>Figur <b>${fig}</b> %</span>${S.skipped ? `<span>verpasst <b>${S.skipped}</b></span>` : ''}</div></div>
     <svg viewBox="0 0 100 100" preserveAspectRatio="none" aria-label="Tempoverlauf"><line class="grid" x1="0" x2="100" y1="${Y(avg)}" y2="${Y(avg)}"/><polyline class="curve" points="${pts}"/>${bad}</svg>
     <div class="actions"><button class="pbtn" id="again">Nochmal</button></div>`
   $('#result').hidden = false
@@ -359,14 +376,14 @@ $('#handSeg').addEventListener('click', (e) => {
   store.set('left', S.left)
   resetRun()
 })
-$('#pieceSeg').addEventListener('click', (e) => {
+document.querySelectorAll('.pieceSeg').forEach((seg) => seg.addEventListener('click', (e) => {
   const b = e.target.closest('button')
   if (!b) return
   S.pieceId = b.dataset.piece
   store.set('piece', S.pieceId)
   piece = PIECES[S.pieceId]()
   resetRun()
-})
+}))
 
 // Leertaste: ein Schlag an der Stelle der Idealfigur (zum Ausprobieren ohne Kamera)
 document.addEventListener('keydown', (e) => {
@@ -376,7 +393,7 @@ document.addEventListener('keydown', (e) => {
   prepareSound()
   const k = S.state === 'play' ? S.pos % piece.meter : piece.meter - 1
   const [x, y] = figurePoints()[S.state === 'idle' || S.state === 'done' ? piece.meter - 1 : k]
-  onBeat({ t: performance.now() / 1000, x, y, size: 0.25 })
+  onBeat({ t: performance.now() / 1000, x, y, size: 0.25, drop: 0.3 })
 })
 
 $('#helpBtn').addEventListener('click', (e) => { e.stopPropagation(); const h = $('#help'); h.hidden = !h.hidden; $('#helpBtn').setAttribute('aria-expanded', String(!h.hidden)) })
