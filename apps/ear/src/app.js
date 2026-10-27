@@ -100,7 +100,7 @@ const fullName = (exId, id) => (shortName(exId, id) ? `${longName(exId, id)} (${
 const S = {
   route: 'home', phase: 'settings', settings: null,
   q: null, i: 0, score: 0, streak: 0, bestStreak: 0,
-  result: null, answer: null, entry: [], missed: [], times: [], shownAt: 0, advanceT: 0, resetArmed: false,
+  result: null, answer: null, entry: [], missed: [], optsOpen: false, times: [], shownAt: 0, advanceT: 0, resetArmed: false,
 }
 
 function route() {
@@ -413,36 +413,38 @@ function headHTML() {
   return `<div class="qhead">
     <button class="gbtn icon-only" data-go="home" aria-label="${t('back')}">${BACK_ICON}</button>
     <div><h2>${ex().title()}</h2>${sub ? `<span class="qsub">${sub}</span>` : ''}</div>
-    ${playing ? `<div class="qstats"><span><b>${S.i + 1}</b>/${roundLength()}</span><span>✓ <b>${S.score}</b></span><span>${t('streak')} <b>${S.streak}</b></span></div>` : ''}
-  </div>${playing ? `<div class="progress"><i style="width:${((S.i + (S.result ? 1 : 0)) / roundLength()) * 100}%"></i></div>` : ''}`
+    ${playing ? `<div class="qstats"><span><b>${S.i + 1}</b>/${roundLength()}</span><span>✓ <b>${S.score}</b></span><span>${t('streak')} <b>${S.streak}</b></span></div><button class="gbtn icon-only optbtn" data-act="opts" aria-pressed="${S.optsOpen}" aria-label="${t('settings')}" title="${t('settings')}"><svg width="18" height="18" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h10M18 7h2M4 17h4M12 17h8" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/><circle cx="16" cy="7" r="2.2" fill="none" stroke="currentColor" stroke-width="1.8"/><circle cx="10" cy="17" r="2.2" fill="none" stroke="currentColor" stroke-width="1.8"/></svg></button>` : ''}
+  </div>${playing ? `<div class="progress"><i style="width:${((S.i + (S.result ? 1 : 0)) / roundLength()) * 100}%"></i></div>` : ''}${playing && S.optsOpen ? `<div class="panel opts">${optionRows(false)}</div>` : ''}`
 }
 
 function segHTML(key, opts, value) {
   return `<div class="seg" data-set="${key}">${opts.map(([l, v]) => `<button data-v='${JSON.stringify(v)}' aria-pressed="${v === value}">${l}</button>`).join('')}</div>`
 }
 
-function renderMelodySettings() {
+// Optionen einer Übung. essential: nur die Stufe (Einstieg); sonst alles (Optionen in der Übung)
+function melodyRows(essential) {
   const st = S.settings
   const lv = Number(st.level) || 1
   let rows = `<div class="vrow col"><span>${t('level')}</span>${segHTML('level', Object.keys(MELODY_LEVELS).map((l) => [t('mLevel' + l), Number(l)]), lv)}</div>`
+  if (essential) return rows
   rows += `<div class="vrow"><span>${t('notesCount')}</span>${segHTML('notes', [4, 5, 6, 8, 10, 12].map((n) => [String(n), n]), Number(st.notes) || 5)}</div>`
   rows += `<div class="vrow"><span>${t('bpm')}</span>${segHTML('bpm', [60, 80, 100, 120, 140].map((n) => [String(n), n]), Number(st.bpm) || 80)}</div>`
   rows += `<div class="vrow"><span>${t('length')}</span>${segHTML('length', [['5', 5], ['10', 10], ['20', 20]], Number(st.length) || 10)}</div>`
   rows += `<div class="vrow"><span>${t('hint')}</span><button class="switch" data-toggle="hint" aria-pressed="${!!st.hint}" aria-label="${t('hint')}"></button></div>`
   rows += `<div class="vrow"><span>${t('auto')}</span><button class="switch" data-toggle="auto" aria-pressed="${auto}" aria-label="${t('auto')}"></button></div>`
-  return `<div class="panel">${rows}</div>
-    <div style="margin-top:14px"><button class="pbtn big" data-act="start">${t('start')}<span class="kbd">⏎</span></button></div>`
+  return rows
 }
 
-function renderSettings() {
-  if (ex().kind === 'melody') return renderMelodySettings()
+function optionRows(essential) {
+  if (ex().kind === 'melody') return melodyRows(essential)
   const st = S.settings, id = S.route, e = ex()
   const labels = presetLabels(id)
   const presetOpts = Object.keys(e.presets).map((k) => [labels[k], Number(k)])
-  presetOpts.push([t('custom'), 'custom'])
+  if (!essential) presetOpts.push([t('custom'), 'custom'])
   const sel = new Set(e.choices(st))
-  let rows = `<div class="vrow col"><span>${t('level')}</span>${segHTML('preset', presetOpts, st.preset)}
-      <div class="pick" data-pick>${e.items.map((it) => `<button data-item="${it.id}" aria-pressed="${sel.has(it.id)}">${nameOf(it)[0]}${nameOf(it)[1] ? `<small>${nameOf(it)[1]}</small>` : ''}</button>`).join('')}</div></div>`
+  const pick = essential ? '' : `<div class="pick" data-pick>${e.items.map((it) => `<button data-item="${it.id}" aria-pressed="${sel.has(it.id)}">${nameOf(it)[0]}${nameOf(it)[1] ? `<small>${nameOf(it)[1]}</small>` : ''}</button>`).join('')}</div>`
+  let rows = `<div class="vrow col"><span>${t('level')}</span>${segHTML('preset', presetOpts, st.preset)}${pick}</div>`
+  if (essential) return rows
   if (id === 'intonation') {
     rows += `<div class="vrow"><span>${t('playback')}</span>${segHTML('play', [[t('melodic'), 'melodic'], [t('harmonic'), 'harmonic']], st.play)}</div>`
     rows += `<div class="vrow"><span>${t('cents')}</span>${segHTML('cents', [30, 20, 15, 10, 5].map((c) => [`±${c}`, c]), Number(st.cents) || 20)}</div>`
@@ -460,7 +462,12 @@ function renderSettings() {
   rows += `<div class="vrow"><span>${t('focus')}</span><button class="switch" data-toggle="focus" aria-pressed="${!!st.focus}" aria-label="${t('focus')}"></button></div>`
   rows += `<div class="vrow"><span>${t('auto')}</span><button class="switch" data-toggle="auto" aria-pressed="${auto}" aria-label="${t('auto')}"></button></div>`
   if (id !== 'intonation') rows += `<div class="vrow"><span>${t('fret')}</span><button class="switch" data-toggle="fretboard" aria-pressed="${!!st.fretboard}" aria-label="${t('fret')}"></button></div>`
-  return `<div class="panel">${rows}</div>
+  return rows
+}
+
+// Einstieg: nur die Stufe, alles Weitere über das Zahnrad in der Übung
+function renderSettings() {
+  return `<div class="panel">${optionRows(true)}</div>
     <div style="margin-top:14px"><button class="pbtn big" data-act="start">${t('start')}<span class="kbd">⏎</span></button></div>`
 }
 
@@ -662,7 +669,13 @@ function renderAbout() {
 
 /* ---------------------------------------------------------------- Ereignisse */
 
-function saveSettings() { store.saveSettings(S.route, S.settings) }
+// Speichern; während einer offenen Aufgabe gilt eine Änderung sofort (neue Aufgabe, gleiche Nummer)
+const KEEP_QUESTION = ['length', 'focus', 'fretboard', 'bpm', 'tempo', 'cents', 'sound']
+function saveSettings(key) {
+  store.saveSettings(S.route, S.settings)
+  if (S.phase === 'playing' && !S.result && S.q && !KEEP_QUESTION.includes(key)) { S.q = null; nextQuestion(); return true }
+  return false
+}
 
 view.addEventListener('click', (e) => {
   const b = e.target.closest('button')
@@ -674,6 +687,7 @@ view.addEventListener('click', (e) => {
   if (act === 'play') return playQuestion()
   if (act === 'compare') return compare()
   if (act === 'settings') { S.phase = 'settings'; return render() }
+  if (act === 'opts') { S.optsOpen = !S.optsOpen; return render() }
   if (act === 'reset') {
     if (!S.resetArmed) { S.resetArmed = true; render(); setTimeout(() => { S.resetArmed = false; if (S.route === 'progress') render() }, 3000); return }
     S.resetArmed = false; store.reset(); return render()
@@ -689,26 +703,26 @@ view.addEventListener('click', (e) => {
     const v = JSON.parse(b.dataset.v)
     S.settings[seg.dataset.set] = v
     if (seg.dataset.set === 'preset' && v !== 'custom') S.settings.selected = [...ex().presets[v]]
-    saveSettings()
-    return render()
+    if (!saveSettings(seg.dataset.set)) render()
+    return
   }
   if (b.dataset.item) {
     const cur = new Set(ex().choices(S.settings))
     if (cur.has(b.dataset.item)) { if (cur.size > 2) cur.delete(b.dataset.item) } else cur.add(b.dataset.item)
     S.settings.selected = ex().items.map((it) => it.id).filter((id) => cur.has(id))
     S.settings.preset = 'custom'
-    saveSettings()
-    return render()
+    if (!saveSettings('selected')) render()
+    return
   }
   if (b.dataset.dir) {
     const dirs = new Set(S.settings.dirs || ['up'])
     if (dirs.has(b.dataset.dir)) { if (dirs.size > 1) dirs.delete(b.dataset.dir) } else dirs.add(b.dataset.dir)
     S.settings.dirs = DIRS[S.route].filter((d) => dirs.has(d))
-    saveSettings()
-    return render()
+    if (!saveSettings('dirs')) render()
+    return
   }
   if (b.dataset.toggle === 'auto') { auto = !auto; store.setPref('auto', auto); return render() }
-  if (b.dataset.toggle) { S.settings[b.dataset.toggle] = !S.settings[b.dataset.toggle]; saveSettings(); return render() }
+  if (b.dataset.toggle) { S.settings[b.dataset.toggle] = !S.settings[b.dataset.toggle]; if (!saveSettings(b.dataset.toggle)) render(); return }
 })
 
 document.addEventListener('keydown', (e) => {
