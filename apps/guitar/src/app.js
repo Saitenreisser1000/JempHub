@@ -408,7 +408,7 @@ function renderHead(){
 }
 function miniSVG(ex){
   const nS=ex.tuning.length,seen=new Set();let s='<svg width="46" height="28" viewBox="0 0 46 28">';
-  for(let i=0;i<nS;i++){const y=4+i*(20/(nS-1));s+='<line x1="3" x2="43" y1="'+y+'" y2="'+y+'" stroke="#e6ebe4" stroke-opacity=".12"/>'}
+  for(let i=0;i<nS;i++){const y=4+i*(20/(nS-1));s+='<line x1="3" x2="43" y1="'+y+'" y2="'+y+'" stroke="currentColor" stroke-opacity=".18"/>'}
   ex.moments.forEach(m=>m.dots.forEach(d=>{const k=d.s+':'+d.f;if(seen.has(k))return;seen.add(k);s+='<circle cx="'+(4+d.f*2.5).toFixed(1)+'" cy="'+(4+d.s*(20/(nS-1))).toFixed(1)+'" r="2" fill="'+(m.color||ex.color||SKY)+'"/>'}));
   return s+'</svg>';
 }

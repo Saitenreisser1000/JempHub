@@ -1,5 +1,5 @@
 /* Jemp base styles and controls (same as in GuitarJemp and NoteJemp). */
-@import url('tokens.css?v=2');
+@import url('tokens.css?v=3');
 
 *, *::before, *::after { box-sizing: border-box; }
 

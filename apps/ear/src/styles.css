@@ -7,26 +7,65 @@
 }
 
 :root {
-  color-scheme: dark;
-  --bg: #0f1311;
-  --surface: #141916;
-  --raise: #1b221e;
-  --line: #232b27;
-  --line2: #313b36;
-  --fg: #e6ebe4;
-  --muted: #8d9991;
-  --faint: #5a6560;
-  --brass: #d8b46a;
-  --brass-ink: #1c1609;
-  --ok: #8fd3a9;
-  --bad: #f28b7c;
-  --mid: #f2c46d;
+  color-scheme: light dark;
+  --bg: #f4efe4;
+  --surface: #fffdf8;
+  --raise: #ffffff;
+  --line: #e7dfcf;
+  --line2: #d8ccb6;
+  --fg: #1f2420;
+  --muted: #625b4f;
+  --faint: #857b6a;
+  --brass: #9a6c1c;
+  --brass-ink: #fffaf0;
+  --ok: #2e8655;
+  --bad: #c0503c;
+  --mid: #a87510;
   --font-display: 'Bricolage Grotesque', 'Avenir Next', system-ui, sans-serif;
   --font-body: 'Figtree', system-ui, -apple-system, 'Segoe UI', sans-serif;
   --font-mono: 'JetBrains Mono', ui-monospace, 'SF Mono', Menlo, Consolas, monospace;
   padding-top: env(safe-area-inset-top, 0px);
   padding-bottom: env(safe-area-inset-bottom, 0px);
+  --shadow-pop: 0 18px 50px #4a3a1a2e;
 }
+
+/* Farben: hell (Papier) als Standard, dunkel (Abend) nach Geräteeinstellung.
+   .on-stage: Instrument und Bühne bleiben in beiden Varianten dunkel. */
+@media (prefers-color-scheme: dark) {
+:root {
+  --bg: #171c1a;
+  --surface: #1d2421;
+  --raise: #252d29;
+  --line: #2c3531;
+  --line2: #3a4640;
+  --fg: #eef2ec;
+  --muted: #a3afa7;
+  --faint: #6f7b74;
+  --brass: #e0bf78;
+  --brass-ink: #1c1609;
+  --ok: #8fd3a9;
+  --bad: #f28b7c;
+  --mid: #f2c46d;
+  --shadow-pop: 0 20px 60px #000a;
+}
+}
+.on-stage {
+  --bg: #171c1a;
+  --surface: #1d2421;
+  --raise: #252d29;
+  --line: #2c3531;
+  --line2: #3a4640;
+  --fg: #eef2ec;
+  --muted: #a3afa7;
+  --faint: #6f7b74;
+  --brass: #e0bf78;
+  --brass-ink: #1c1609;
+  --ok: #8fd3a9;
+  --bad: #f28b7c;
+  --mid: #f2c46d;
+  color: var(--fg);
+}
+
 * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
 html, body { margin: 0; min-height: 100%; }
 body {
@@ -112,8 +151,8 @@ h1, h2 { font-family: var(--font-display); letter-spacing: -.015em; margin: 0; t
 .abtn:hover:not(:disabled) { background: var(--raise); }
 .abtn:active:not(:disabled) { transform: scale(.97); }
 .abtn:disabled { cursor: default; }
-.abtn.ok { box-shadow: inset 0 0 0 2px var(--ok); background: #8fd3a91a; }
-.abtn.bad { box-shadow: inset 0 0 0 2px var(--bad); background: #f28b7c1a; }
+.abtn.ok { box-shadow: inset 0 0 0 2px var(--ok); background: color-mix(in srgb, var(--ok) 10%, transparent); }
+.abtn.bad { box-shadow: inset 0 0 0 2px var(--bad); background: color-mix(in srgb, var(--bad) 10%, transparent); }
 .abtn.dim { opacity: .45; }
 .abtn .k { position: absolute; top: 5px; right: 7px; font: 500 10px var(--font-mono); color: var(--faint); }
 .abtn.txt { font-size: 15px; }
@@ -132,7 +171,7 @@ h1, h2 { font-family: var(--font-display); letter-spacing: -.015em; margin: 0; t
 .staff .glyph { font-family: 'Bravura', serif; font-size: 40px; fill: currentColor; }
 .staff .stroke { stroke: currentColor; }
 .staff .fillc { fill: currentColor; }
-.staff .gap { fill: #d8b46a14; stroke: var(--brass); stroke-width: 2; stroke-dasharray: 6 5; }
+.staff .gap { fill: color-mix(in srgb, var(--brass) 8%, transparent); stroke: var(--brass); stroke-width: 2; stroke-dasharray: 6 5; }
 .staff .ledger { stroke: currentColor; stroke-width: 1.3; }
 .staff .qmark { font: 700 34px var(--font-display); fill: var(--brass); }
 .staff .ok { fill: var(--ok); stroke: var(--ok); }
@@ -175,14 +214,14 @@ h1, h2 { font-family: var(--font-display); letter-spacing: -.015em; margin: 0; t
 .scroll .staff { height: 120px; min-width: 620px; }
 .chips { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
 .chip { font: 500 12px var(--font-mono); border-radius: 999px; padding: 3px 10px; background: var(--bg); color: var(--muted); box-shadow: inset 0 0 0 1px var(--line2); }
-.chip.weak { color: var(--bad); box-shadow: inset 0 0 0 1px #f28b7c66; }
-.chip.good { color: var(--ok); box-shadow: inset 0 0 0 1px #8fd3a966; }
+.chip.weak { color: var(--bad); box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--bad) 40%, transparent); }
+.chip.good { color: var(--ok); box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--ok) 40%, transparent); }
 .legend { display: flex; gap: 14px; flex-wrap: wrap; font-size: 12px; color: var(--muted); margin-top: 6px; }
 .legend i { display: inline-block; width: 9px; height: 9px; border-radius: 50%; margin-right: 6px; }
 .muted { color: var(--muted); font-size: 13px; }
 
 /* help popover */
-.pop { position: fixed; right: max(16px, env(safe-area-inset-right, 0px)); top: calc(56px + env(safe-area-inset-top, 0px)); z-index: 40; width: min(340px, calc(100vw - 32px)); background: var(--raise); border: 1px solid var(--line2); border-radius: 14px; padding: 14px 16px; box-shadow: 0 20px 60px #000a; }
+.pop { position: fixed; right: max(16px, env(safe-area-inset-right, 0px)); top: calc(56px + env(safe-area-inset-top, 0px)); z-index: 40; width: min(340px, calc(100vw - 32px)); background: var(--raise); border: 1px solid var(--line2); border-radius: 14px; padding: 14px 16px; box-shadow: var(--shadow-pop); }
 .pop h3 { margin: 0 0 10px; font: 700 15px var(--font-display); }
 .pop dl { display: grid; grid-template-columns: auto 1fr; gap: 6px 14px; margin: 0; font-size: 12.5px; }
 .pop dt { font-family: var(--font-mono); color: var(--brass); white-space: nowrap; }
@@ -225,7 +264,7 @@ h1, h2 { font-family: var(--font-display); letter-spacing: -.015em; margin: 0; t
 .sbtn:hover { background: var(--raise); }
 .pick { display: flex; flex-wrap: wrap; gap: 6px; padding: 4px 0 12px; }
 .pick button { border: 0; border-radius: 999px; padding: 6px 12px; font: 500 12.5px var(--font-body); background: var(--bg); color: var(--muted); box-shadow: inset 0 0 0 1px var(--line2); cursor: pointer; }
-.pick button[aria-pressed="true"] { background: #d8b46a1f; color: var(--brass); box-shadow: inset 0 0 0 1px #d8b46a88; }
+.pick button[aria-pressed="true"] { background: color-mix(in srgb, var(--brass) 12%, transparent); color: var(--brass); box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--brass) 53%, transparent); }
 .pick button small { font-family: var(--font-mono); opacity: .7; margin-left: 4px; }
 .vrow.col { flex-direction: column; align-items: stretch; }
 .fret .f-deg { font: 700 8.5px var(--font-mono); text-anchor: middle; dominant-baseline: central; fill: #0d110f; }
@@ -247,7 +286,7 @@ h1, h2 { font-family: var(--font-display); letter-spacing: -.015em; margin: 0; t
 
 /* Melodiediktat: Klaviatur */
 .kbd-wrap { margin-top: 12px; }
-.keys { position: relative; display: flex; height: clamp(120px, 20vh, 170px); user-select: none; -webkit-user-select: none; touch-action: manipulation; }
+.keys { position: relative; display: flex; border-top: 6px solid #1f2420; border-radius: 4px 4px 10px 10px; box-shadow: 0 0 0 1px #1f2420; height: clamp(120px, 20vh, 170px); user-select: none; -webkit-user-select: none; touch-action: manipulation; }
 .key { -webkit-tap-highlight-color: transparent; cursor: pointer; padding: 0; }
 .key.white { flex: 1; min-width: 0; background: #ebe6da; border: 0; border-right: 1px solid #0f1311; border-radius: 0 0 9px 9px; display: flex; align-items: flex-end; justify-content: center; padding-bottom: 9px; color: #1b221e; font: 600 13px var(--font-mono); }
 .key.white:last-child { border-right: 0; }
