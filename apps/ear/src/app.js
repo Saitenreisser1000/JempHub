@@ -649,12 +649,13 @@ function renderAbout() {
     <div class="qhead"><button class="gbtn icon-only" data-go="home" aria-label="${t('back')}">${BACK_ICON}</button><h2>${t('aboutTitle')}</h2></div>
     <div class="panel"><p>${t('aboutP1')}</p><p>${t('aboutP2')}</p><p>${t('aboutP3')}</p></div>
     <section><div class="panel"><b>${t('legalTitle')}</b>
-      <div class="row"><span class="muted">${t('legalOwner')}</span><span>Stefan Leutgeb</span></div>
+      <div class="row"><span class="muted">${t('legalOwner')}</span><span>Stefan Leutgeb, Freistadt</span></div>
       <div class="row"><span class="muted">${t('legalContact')}</span><a href="mailto:office@jemphub.com">office@jemphub.com</a></div>
       <div class="row"><span class="muted">${t('legalWebsite')}</span><span>earjemp.jemphub.com</span></div>
       <div class="row col"><span class="muted">${t('legalDirection')}</span><span>${t('legalDirectionText')}</span></div>
     </div></section>
     <section><div class="panel"><b>${t('creditsTitle')}</b><p class="muted">${t('credits')}</p></div></section>
+    <p class="muted copy"><a href="https://jemphub.com/#privacy-modal">${t('privacy')}</a></p>
     <p class="muted copy">JEMPCompany © ${new Date().getFullYear()} · office@jemphub.com</p>
   </section>`
 }

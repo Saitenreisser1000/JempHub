@@ -47,7 +47,7 @@ const STR = {
     aboutP3: 'Sie läuft am Computer, Tablet und Handy und lässt sich als Web-App auf den Startbildschirm legen.',
     legalTitle: 'Impressum / Offenlegung', legalOwner: 'Medieninhaber', legalContact: 'Kontakt', legalWebsite: 'Website',
     legalDirection: 'Grundlegende Richtung', legalDirectionText: 'Diese Website stellt eine private Software zum Training musikalischer Hörfähigkeiten vor. Die App befindet sich in Entwicklung.',
-    creditsTitle: 'Schrift und Klänge', credits: 'Notenschrift Bravura von Steinberg Media Technologies, SIL Open Font License 1.1. Orchesterklänge aus Virtual Playing Orchestra (virtualplaying.com).',
+    creditsTitle: 'Schrift und Klänge', credits: 'Notenschrift Bravura von Steinberg Media Technologies; Figtree, Bricolage Grotesque, JetBrains Mono – alle SIL Open Font License 1.1, vom eigenen Server. Orchesterklänge aus Virtual Playing Orchestra (virtualplaying.com).', privacy: 'Datenschutz',
     dirUp: 'aufwärts', dirDown: 'abwärts', dirHarmonic: 'gleichzeitig',
   },
   en: {
@@ -96,7 +96,7 @@ const STR = {
     aboutP3: 'It runs on computers, tablets and phones and can be added to your home screen as a web app.',
     legalTitle: 'Imprint / Disclosure', legalOwner: 'Media owner', legalContact: 'Contact', legalWebsite: 'Website',
     legalDirection: 'Basic direction', legalDirectionText: 'This website presents private software for training musical listening skills. The app is still in development.',
-    creditsTitle: 'Font and sounds', credits: 'Music font Bravura by Steinberg Media Technologies, SIL Open Font License 1.1. Orchestra sounds from Virtual Playing Orchestra (virtualplaying.com).',
+    creditsTitle: 'Fonts and sounds', credits: 'Music font Bravura by Steinberg Media Technologies; Figtree, Bricolage Grotesque, JetBrains Mono – all SIL Open Font License 1.1, served from this server. Orchestra sounds from Virtual Playing Orchestra (virtualplaying.com).', privacy: 'Privacy',
     dirUp: 'up', dirDown: 'down', dirHarmonic: 'together',
   },
 }

@@ -95,3 +95,12 @@ a.app:active { transform: scale(0.995); }
 /* Pfeil statt „Open …“-Text: rechts neben dem Namen */
 .app { position: relative; }
 .app .open { position: absolute; right: 22px; bottom: 20px; margin: 0; padding: 0; font-size: 20px; color: var(--muted); }
+
+/* Rechtstexte */
+.lightbox-panel h3 { margin: 16px 0 0; font: 600 15px var(--font-display); }
+.lightbox-panel a { color: var(--brass); }
+.legal { display: grid; grid-template-columns: auto 1fr; gap: 6px 16px; margin: 12px 0 0; font-size: 14px; }
+.legal dt { color: var(--faint); }
+.legal dd { margin: 0; }
+.lightbox-panel .fine { font-size: 12.5px; color: var(--faint); }
+@media (max-width: 480px) { .legal { grid-template-columns: 1fr; gap: 2px; } .legal dd { margin-bottom: 8px; } }

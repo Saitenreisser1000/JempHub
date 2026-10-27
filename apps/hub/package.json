@@ -3,7 +3,7 @@
   "private": true,
   "version": "1.0.0",
   "scripts": {
-    "dev": "node ../../scripts/serve-static.mjs . --port 4173",
-    "build": "node ../../scripts/build-static.mjs hub"
+    "dev": "node ../../scripts/sync-shared.mjs hub fonts && node ../../scripts/serve-static.mjs . --port 4173",
+    "build": "node ../../scripts/sync-shared.mjs hub fonts && node ../../scripts/build-static.mjs hub"
   }
 }

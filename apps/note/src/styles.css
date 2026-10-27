@@ -208,3 +208,4 @@ h1, h2 { font-family: var(--font-display); letter-spacing: -.015em; margin: 0; t
 .hub-link svg { fill: currentColor; }
 .hub-link:hover, .hub-link:focus-visible { color: var(--fg); }
 @media (max-width: 640px) { .hub-link span { display: none; } .hub-link { padding-right: 8px; } }
+a.gbtn { text-decoration: none; }

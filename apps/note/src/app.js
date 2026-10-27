@@ -106,7 +106,7 @@ function renderHome() {
     <div class="ex-list">${Object.entries(EX).map(([id, ex]) => `<button class="ex-card" data-go="${id}">
       <span class="ex-thumb">${ex.thumb()}</span>
       <span class="ex-body"><b>${ex.title}</b>${statLine(id)}</span></button>`).join('')}</div>
-    <div class="home-foot"><button class="gbtn" data-go="progress">Fortschritt ansehen →</button></div>
+    <div class="home-foot"><button class="gbtn" data-go="progress">Fortschritt ansehen →</button><span><a class="gbtn" href="https://jemphub.com/#imprint-modal">Impressum</a><a class="gbtn" href="https://jemphub.com/#privacy-modal">Datenschutz</a></span></div>
   </section>`
 }
 

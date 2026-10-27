@@ -7,8 +7,8 @@
     "node": ">=22.12.0"
   },
   "scripts": {
-    "dev": "node ../../scripts/serve-static.mjs . --port 5182",
-    "build": "npm test && node ../../scripts/build-static.mjs note",
+    "dev": "node ../../scripts/sync-shared.mjs note fonts && node ../../scripts/serve-static.mjs . --port 5182",
+    "build": "npm test && node ../../scripts/sync-shared.mjs note fonts && node ../../scripts/build-static.mjs note",
     "test": "node --test \"src/**/*.test.js\""
   }
 }
