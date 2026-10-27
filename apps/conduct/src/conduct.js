@@ -1,30 +1,54 @@
 // Schlagerkennung für das Dirigieren. Reine Funktionen, ohne Browser.
 // Koordinaten: x, y normiert 0..1 (y wächst nach unten), t in Sekunden.
 
+// Glättung mit dem One-Euro-Filter: bei langsamer Hand stark (gegen Zittern),
+// bei schneller Hand schwach (wenig Verzögerung).
+export function oneEuro({ minCutoff = 4, beta = 20, dCutoff = 1.2 } = {}) {
+  let x = null, dx = 0, lt = null
+  const alpha = (cut, dt) => 1 / (1 + 1 / (2 * Math.PI * cut * dt))
+  return {
+    reset() { x = null; dx = 0; lt = null },
+    filter(v, t) {
+      if (x === null || t <= lt) { x = v; lt = t; return v }
+      const dt = Math.min(0.1, t - lt)
+      lt = t
+      dx += alpha(dCutoff, dt) * ((v - x) / dt - dx)
+      x += alpha(minCutoff + beta * Math.abs(dx), dt) * (v - x)
+      return x
+    },
+  }
+}
+
 // Schlagpunkt (Iktus) = unterster Punkt einer Abwärtsbewegung, sobald die Hand
-// danach wieder etwas steigt.
+// danach wieder etwas steigt. Schwellen in „Handgrößen“ (unit): bei der Kamera die
+// Länge der Handfläche im Bild, sonst 0,1 – so zählt dieselbe Geste nah und fern gleich.
 export function createBeatTracker(opts = {}) {
-  const o = { smooth: 0.55, minDrop: 0.03, rise: 0.01, minGap: 0.22, ...opts }
+  const o = { minDrop: 0.3, rise: 0.12, minGap: 0.22, unit: 0.1, ...opts }
+  const fx = oneEuro(o.filter), fy = oneEuro(o.filter)
   let sx = null, sy = null, px = null, py = null
   let top = null // höchster Punkt seit dem letzten Schlag-Kandidaten
   let low = null // tiefster Punkt der laufenden Abwärtsbewegung
   let lastBeat = -Infinity
-  let path = 0 // Weg seit dem letzten Schlag
+  let path = 0 // Weg seit dem letzten Schlag (in Handgrößen · 0,1)
   let pathAtLow = 0
+  let gap = o.minGap
 
   return {
-    reset() { sx = sy = px = py = null; top = low = null; path = pathAtLow = 0; lastBeat = -Infinity },
+    reset() { fx.reset(); fy.reset(); sx = sy = px = py = null; top = low = null; path = pathAtLow = 0; lastBeat = -Infinity },
+    // Sperrzeit nach einem Schlag an das Tempo anpassen (gegen Doppelschläge beim Rückprall)
+    setInterval(iv) { gap = iv ? Math.max(0.15, Math.min(0.4, iv * 0.42)) : o.minGap },
     // liefert einen Schlag { t, x, y, size, drop } oder null
-    push(x, y, t) {
-      if (sx === null) { sx = x; sy = y } else { sx += o.smooth * (x - sx); sy += o.smooth * (y - sy) }
-      if (px !== null) path += Math.hypot(sx - px, sy - py)
+    push(x, y, t, unit = o.unit) {
+      const u = Math.max(0.02, unit)
+      sx = fx.filter(x, t); sy = fy.filter(y, t)
+      if (px !== null) path += (Math.hypot(sx - px, sy - py) / u) * 0.1
       px = sx; py = sy
       const p = { x: sx, y: sy, t }
       if (!top || sy < top.y) { top = p; low = null; return null }
       if (!low || sy >= low.y) { low = p; pathAtLow = path; return null }
       const drop = low.y - top.y
-      if (drop >= o.minDrop && low.y - sy >= o.rise && low.t - lastBeat >= o.minGap) {
-        const beat = { t: low.t, x: low.x, y: low.y, size: pathAtLow, drop }
+      if (drop >= o.minDrop * u && low.y - sy >= o.rise * u && low.t - lastBeat >= gap) {
+        const beat = { t: low.t, x: low.x, y: low.y, size: pathAtLow, drop: (drop / u) * 0.1 }
         lastBeat = low.t
         path -= pathAtLow
         top = p
@@ -34,6 +58,13 @@ export function createBeatTracker(opts = {}) {
       return null
     },
   }
+}
+
+// Verpasster Schlag? Eine deutlich größere Abwärtsbewegung als zuletzt ist die Eins.
+export function isDownbeat(drop, recent) {
+  if (recent.length < 4) return false
+  const sorted = [...recent].sort((a, b) => a - b)
+  return drop > 1.7 * sorted[Math.floor(sorted.length / 2)]
 }
 
 // Tempo aus den Abständen der Schläge; Ausreißer zählen erst, wenn sie sich wiederholen.

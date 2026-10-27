@@ -1,7 +1,10 @@
 import { describe, it } from 'node:test'
 import assert from 'node:assert/strict'
-import { createBeatTracker, createTempo, dynamicsFrom, dynamicLabel, figureOk, FIGURES } from './conduct.js'
+import { createBeatTracker, createTempo, dynamicsFrom, dynamicLabel, figureOk, isDownbeat, FIGURES } from './conduct.js'
 import { PIECES, notesInBeat, ode } from './score.js'
+
+let seed = 7
+const rnd = () => ((seed = (seed * 16807) % 2147483647) / 2147483647)
 
 // Simulierte Hand: fährt zwischen den Schlagpunkten der Figur in Bögen (60 Bilder/s)
 export function simulate(meter, bpm, bars, { size = 0.3, fps = 60, jitter = 0 } = {}) {
@@ -16,17 +19,18 @@ export function simulate(meter, bpm, bars, { size = 0.3, fps = 60, jitter = 0 } 
     // von a nach b mit Bogen nach oben (Rückprall), Tiefpunkt bei f = 0 bzw. 1
     const x = a[0] + (b[0] - a[0]) * f
     const y = a[1] + (b[1] - a[1]) * f - Math.sin(Math.PI * f) * size * 0.5
-    out.push([x + (Math.random() - 0.5) * jitter, y + (Math.random() - 0.5) * jitter, t])
+    out.push([x + (rnd() - 0.5) * jitter, y + (rnd() - 0.5) * jitter, t])
   }
   return out
 }
 
-function run(meter, bpm, bars, opts) {
+function run(meter, bpm, bars, opts, unit) {
+  seed = 7
   const tr = createBeatTracker(), tempo = createTempo()
   const beats = []
   for (const [x, y, t] of simulate(meter, bpm, bars, opts)) {
-    const b = tr.push(x, y, t)
-    if (b) { beats.push(b); tempo.beat(b.t) }
+    const b = tr.push(x, y, t, unit)
+    if (b) { beats.push(b); tempo.beat(b.t); tr.setInterval(tempo.interval) }
   }
   return { beats, tempo }
 }
@@ -39,6 +43,23 @@ describe('beat detection', () => {
       assert.ok(Math.abs(tempo.bpm - 90) < 4, `bpm ${tempo.bpm}`)
     })
   }
+  it('finds small gestures far from the camera (30 fps, noise)', () => {
+    for (const meter of [2, 3, 4]) for (const bpm of [60, 100, 140]) {
+      const { beats } = run(meter, bpm, 4, { size: 0.12, fps: 30, jitter: 0.012 }, 0.05)
+      assert.ok(Math.abs(beats.length - 4 * meter) <= 1, `${meter}/4 ${bpm}: ${beats.length}`)
+    }
+  })
+  it('does not invent beats from a shaky resting hand', () => {
+    const tr = createBeatTracker()
+    let n = 0
+    for (let i = 0; i < 300; i++) if (tr.push(0.5 + (rnd() - 0.5) * 0.01, 0.5 + (rnd() - 0.5) * 0.01, i / 30)) n++
+    assert.equal(n, 0)
+  })
+  it('recognises a big downbeat after a missed beat', () => {
+    assert.equal(isDownbeat(0.5, [0.2, 0.18, 0.25, 0.22]), true)
+    assert.equal(isDownbeat(0.26, [0.2, 0.18, 0.25, 0.22]), false)
+    assert.equal(isDownbeat(0.5, [0.2]), false)
+  })
   it('follows an accelerando', () => {
     const tempo = createTempo()
     let t = 0, d = 0.8
@@ -72,6 +93,17 @@ describe('beat detection', () => {
 })
 
 describe('score', () => {
+  it('has complete pieces in 2/4, 3/4, 4/4 and 6/8', () => {
+    for (const [id, meter, bars] of [['haenschen', 2, 16], ['walzer', 3, 16], ['ode', 4, 16], ['barcarole', 2, 8]]) {
+      const p = PIECES[id]()
+      assert.equal(p.meter, meter)
+      assert.equal(p.beats, meter * bars)
+      const mel = p.notes.filter((n) => n.mel)
+      assert.ok(Math.abs(Math.max(...mel.map((n) => n.at + n.len)) - p.beats) < 1e-9, id)
+      for (let b = 0; b < p.beats; b++) assert.ok(notesInBeat(p, b).length > 0, `${id} beat ${b}`)
+      assert.ok(p.notes.every((n) => n.midi >= 41 && n.midi <= 74), id)
+    }
+  })
   it('has a complete Ode with 16 bars', () => {
     const p = ode()
     const melody = p.notes.filter((n) => n.vel === 1)

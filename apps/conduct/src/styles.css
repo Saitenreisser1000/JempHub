@@ -44,3 +44,5 @@
 #handSeg button { font: 600 13px var(--font-mono); min-width: 34px; }
 .legal-foot { display: flex; justify-content: flex-end; gap: 2px; margin-top: 14px; }
 a.gbtn { text-decoration: none; }
+.bar-l { display: flex; gap: 8px; flex-wrap: wrap; }
+.pieces small { font: 500 10.5px var(--font-mono); opacity: .6; margin-left: 4px; }
