@@ -75,7 +75,7 @@
         <g id="L-board"></g><g id="L-moments"></g><g id="L-fx"></g><g id="L-ghost"></g>
       </svg>
       <div class="overlay" id="countin"></div>
-      <div class="overlay" id="emptyHint"><div class="box">Click any string position to place the first note. Open strings live in the narrow zone left of the nut.</div></div>
+      <div class="overlay" id="emptyHint"><div class="box">Click the fretboard to place the first note.</div></div>
     </div>
 
     <div class="stripbox">
@@ -130,21 +130,20 @@
 <div class="pop anchor-top" id="help" hidden>
   <h3>Keys</h3>
   <dl>
-    <dt>Click</dt><dd>Place a dot. Melody mode starts a new moment, chord mode stacks it.</dd>
-    <dt>Shift + click</dt><dd>Add the dot to the current moment in any mode</dd>
+    <dt>Click</dt><dd>Place a dot</dd>
+    <dt>Shift + click</dt><dd>Add to current moment</dd>
     <dt>Enter</dt><dd>Next moment (close the chord)</dd>
     <dt>G</dt><dd>Switch melody / chord entry</dd>
     <dt>1 – 5</dt><dd>16th, 8th, quarter, half, whole</dd>
     <dt>. &nbsp; T</dt><dd>Dotted, triplet</dd>
     <dt>R &nbsp; D</dt><dd>Insert rest, repeat moment</dd>
     <dt>← →</dt><dd>Select previous / next moment</dd>
-    <dt>Space</dt><dd>Play / pause (next moment in Step through)</dd>
+    <dt>Space</dt><dd>Play / pause</dd>
     <dt>Shift + click strip</dt><dd>Mark a passage, then Loop</dd>
     <dt>H &nbsp; N</dt><dd>Cycle horizon, cycle dot labels</dd>
     <dt>M &nbsp; L &nbsp; F</dt><dd>Click, loop, full screen</dd>
     <dt>Ctrl + Z</dt><dd>Undo</dd>
   </dl>
-  <p>Open strings are hollow rings. Lines show the move from one moment to the next and take the colour of the moment they lead into.</p>
 </div>
 
 <script type="module" src="src/app.js"></script>

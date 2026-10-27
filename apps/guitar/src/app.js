@@ -20,6 +20,8 @@ const state={exs:examples(),cur:0,mode:'edit',sel:0,caret:'after',entry:'melody'
   metro:false,countIn:true,loop:false,range:null,wait:false,trainer:false,undo:[]};
 const SKEY='guitarjemp.v1';
 try{const raw=localStorage.getItem(SKEY); if(raw){const o=JSON.parse(raw); if(o&&Array.isArray(o.exs)&&o.exs.length&&o.exs.every(isValidExercise)){state.exs=o.exs; state.cur=Math.min(o.cur|0,o.exs.length-1);}}}catch(e){}
+// Beschreibungen der Beispiele sind nicht editierbar: immer die aktuelle Fassung zeigen
+{const fresh=Object.fromEntries(examples().map(e=>[e.id,e.desc]));state.exs.forEach(e=>{if(e.id in fresh)e.desc=fresh[e.id]})}
 let saveT=0;
 function save(){clearTimeout(saveT);saveT=setTimeout(()=>{try{localStorage.setItem(SKEY,JSON.stringify({exs:state.exs,cur:state.cur}))}catch(e){}},300)}
 
@@ -423,7 +425,7 @@ function renderTools(){
 }
 function renderInspector(){
   const ex=cur(),ms=ex.moments,on=onsets(),i=state.sel,m=ms[i],el=$('#insp');
-  if(!m){el.innerHTML='<span>No moments yet. Click the fretboard to start.</span>';renderHint();return}
+  if(!m){el.innerHTML='';renderHint();return}
   let s='<span class="mt">Moment '+(i+1)+'</span><span>'+durName(m.dur)+'</span>';
   if(!m.dots.length)s+='<span class="dchip w">rest</span>';
   else{const h=m.dots.length>1?harmony(m):null;if(h)s+='<span class="dchip"><b>'+h.name+'</b></span>';
@@ -437,11 +439,9 @@ function renderInspector(){
 }
 function renderHint(){
   const h=$('#hint'),ms=cur().moments,i=state.sel;
-  if(state.mode==='practice'){h.innerHTML='<span>Tap the strip to jump · <b>Shift-click</b> to mark a passage for Loop</span>';return}
-  if(!ms.length){h.innerHTML='<span><b>Melody</b>: every click is a new moment. <b>Chord</b>: clicks stack until <b>Next moment</b>.</span>';return}
-  const nx=i+2;
-  h.innerHTML=state.caret==='after'?'<span>Next click → <b>new moment</b> · Shift-click adds to moment '+(i+1)+'</span>':
-    '<span>Clicks stack into <b>moment '+(i+1)+'</b> · Enter closes it</span>';
+  // nur der Eingabezustand, keine Anleitung
+  if(state.mode==='practice'||!ms.length){h.innerHTML='';return}
+  h.innerHTML=state.caret==='after'?'<span>→ <b>new moment</b></span>':'<span>+ <b>moment '+(i+1)+'</b></span>';
 }
 function renderNow(i,nx){
   const ms=cur().moments,on=onsets(),m=ms[i];

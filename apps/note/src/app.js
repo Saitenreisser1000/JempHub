@@ -18,7 +18,6 @@ const LENGTHS = [['10', 10], ['20', 20], ['30', 30]]
 const EX = {
   notes: {
     title: 'Noten bestimmen',
-    text: 'Violin- und Bassschlüssel, Hilfslinien, Vorzeichen',
     defaults: NOTE_DEFAULTS,
     options: [
       ['clef', 'Notenschlüssel', [['Violin', 'treble'], ['Bass', 'bass'], ['Beide', 'both']]],
@@ -31,7 +30,6 @@ const EX = {
   },
   values: {
     title: 'Notenwerte & Pausen',
-    text: 'Ganze bis Sechzehntel, auch punktiert',
     defaults: VALUE_DEFAULTS,
     options: [
       ['kind', 'Was üben?', [['Noten', 'note'], ['Pausen', 'rest'], ['Beides', 'both']]],
@@ -42,7 +40,6 @@ const EX = {
   },
   measures: {
     title: 'Takte vervollständigen',
-    text: 'Welche Note oder Pause fehlt im Takt?',
     defaults: MEASURE_DEFAULTS,
     options: [
       ['meter', 'Taktart', [['2/4', '2/4'], ['3/4', '3/4'], ['4/4', '4/4'], ['6/8', '6/8'], ['3/8', '3/8'], ['Gemischt', 'mix']]],
@@ -105,11 +102,10 @@ function statLine(ex) {
 
 function renderHome() {
   view.innerHTML = `<section class="home">
-    <div class="hero"><h1>Noten lesen, Schritt für Schritt</h1>
-      <p>Wähle eine Übung. Was du oft falsch beantwortest, kommt öfter dran, bis es sitzt.</p></div>
+    <div class="hero"><h1>Noten lesen, Schritt für Schritt</h1></div>
     <div class="ex-list">${Object.entries(EX).map(([id, ex]) => `<button class="ex-card" data-go="${id}">
       <span class="ex-thumb">${ex.thumb()}</span>
-      <span class="ex-body"><b>${ex.title}</b><span>${ex.text}</span>${statLine(id)}</span></button>`).join('')}</div>
+      <span class="ex-body"><b>${ex.title}</b>${statLine(id)}</span></button>`).join('')}</div>
     <div class="home-foot"><button class="gbtn" data-go="progress">Fortschritt ansehen →</button></div>
   </section>`
 }
@@ -224,15 +220,15 @@ function renderSettings() {
   return `<div class="panel">
     ${ex().options.map(([key, label, opts]) => `<div class="vrow"><span>${label}</span>${segHTML(key, opts, st[key])}</div>`).join('')}
     <div class="vrow"><span>Aufgaben pro Runde</span>${segHTML('length', LENGTHS.map(([l, v]) => [l, v]), Number(st.length) || 10)}</div>
-    <div class="vrow"><span>Schwächen gezielt üben<small>Oft falsch Beantwortetes kommt öfter dran</small></span><button class="switch" data-toggle="focus" aria-pressed="${!!st.focus}" aria-label="Schwächen gezielt üben"></button></div>
-    <div class="vrow"><span>Automatisch weiter<small>Nach einer richtigen Antwort ohne Tippen weiter</small></span><button class="switch" data-toggle="auto" aria-pressed="${auto}" aria-label="Automatisch weiter"></button></div>
+    <div class="vrow"><span>Schwächen gezielt üben</span><button class="switch" data-toggle="focus" aria-pressed="${!!st.focus}" aria-label="Schwächen gezielt üben"></button></div>
+    <div class="vrow"><span>Automatisch weiter</span><button class="switch" data-toggle="auto" aria-pressed="${auto}" aria-label="Automatisch weiter"></button></div>
   </div>
   <div style="margin-top:14px"><button class="pbtn big" data-act="start">Los geht's<span class="kbd">⏎</span></button></div>
   <p class="hintline">Am Computer geht alles auch mit der Tastatur, siehe <b>?</b> oben rechts.</p>`
 }
 
 function feedbackHTML(prompt, right, wrong, extra = '') {
-  if (!S.result) return `<div class="feedback">${prompt}</div>`
+  if (!S.result) return '<div class="feedback"></div>'
   return S.result === 'ok'
     ? `<div class="feedback ok"><span class="ic" aria-hidden="true">✓</span>Richtig: ${right}${extra ? `<small>${extra}</small>` : ''}</div>`
     : `<div class="feedback bad"><span class="ic" aria-hidden="true">✕</span>Das war: ${wrong}${extra ? `<small>${extra}</small>` : ''}</div>`
@@ -341,7 +337,7 @@ function missedHTML(q) {
 function renderResult() {
   const len = roundLength()
   const r = S.score / len
-  const msg = r === 1 ? 'Perfekt, alles richtig.' : r >= 0.8 ? 'Sehr gut. Fast alles sitzt.' : r >= 0.5 ? 'Gut gemacht. Mit ein paar Runden mehr sitzt der Rest auch.' : 'Dranbleiben: Die schwierigen Aufgaben kommen jetzt öfter, bis sie sitzen.'
+  const msg = r === 1 ? 'Perfekt!' : r >= 0.8 ? 'Sehr gut!' : r >= 0.5 ? 'Gut!' : 'Dranbleiben!'
   const avg = S.times.length ? (S.times.reduce((a, b) => a + b, 0) / S.times.length / 1000).toFixed(1).replace('.', ',') : '–'
   const seen = new Set()
   const missed = S.missed.filter((q) => { const k = itemKey(q); if (seen.has(k)) return false; seen.add(k); return true }).slice(0, 8)
