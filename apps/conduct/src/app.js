@@ -1,5 +1,5 @@
 // ConductJemp: Kamera oder Maus liefern die Handbahn, Schlagpunkte steuern die Musik.
-import { createBeatTracker, createTempo, dynamicsFrom, dynamicLabel, figureOk, FIGURES } from './conduct.js'
+import { createBeatTracker, createTempo, dynamicsFrom, dynamicLabel, figureOk, figurePoints as idealPoints } from './conduct.js'
 import { PIECES, notesInBeat } from './score.js'
 import { createPlayer } from '../vendor/sounds/src/player.js'
 
@@ -15,6 +15,7 @@ const store = {
 
 const S = {
   pieceId: store.get('piece', 'ex4'),
+  left: store.get('left', false), // Linkshänder: Figur gespiegelt
   input: null, // 'camera' | 'pointer'
   stopCam: null,
   tracker: createBeatTracker(),
@@ -76,7 +77,7 @@ function onBeat(b) {
   const k = S.pos % meter
   if (k === 0) S.barOne = b
   const scale = figureScale()
-  const ok = figureOk(meter, k, S.barOne, b, scale)
+  const ok = figureOk(meter, k, S.barOne, b, scale, S.left)
   S.vel = 0.5 * S.vel + 0.5 * dynamicsFrom(b.size)
   playBeat(S.pos, b.t, interval)
   S.log.push({ bpm: 60 / interval, ok, vel: S.vel })
@@ -164,7 +165,7 @@ function toStage(x, y) {
 
 // Idealfigur: Schlagpunkte mit Bögen dazwischen, mittig auf der Bühne
 function figurePoints() {
-  return FIGURES[piece.meter].points.map(([x, y]) => [0.5 + (x - 0.5) * 0.7, 0.18 + y * 0.7])
+  return idealPoints(piece.meter, S.left).map(([x, y]) => [0.5 + (x - 0.5) * 0.7, 0.18 + y * 0.7])
 }
 
 function draw(now) {
@@ -264,6 +265,7 @@ function renderStats() {
     fig.textContent = p + '%'
     fig.className = p >= 75 ? 'ok' : p < 50 ? 'bad' : ''
   } else { fig.textContent = '–'; fig.className = '' }
+  document.querySelectorAll('#handSeg button').forEach((b) => b.setAttribute('aria-pressed', String((b.dataset.hand === 'left') === S.left)))
   document.querySelectorAll('#pieceSeg button').forEach((b) => b.setAttribute('aria-pressed', String(b.dataset.piece === S.pieceId)))
   document.querySelectorAll('#inputSeg button').forEach((b) => b.setAttribute('aria-pressed', String(b.dataset.input === S.input)))
 }
@@ -313,7 +315,7 @@ async function useCamera() {
 
 async function startCameraLazy() {
   const { startCamera } = await import('./camera.js')
-  return startCamera(video, pushPoint)
+  return startCamera(video, pushPoint, () => S.left)
 }
 
 function usePointer() {
@@ -349,6 +351,13 @@ $('#inputSeg').addEventListener('click', (e) => {
   if (!b) return
   if (b.dataset.input === 'camera') useCamera()
   else usePointer()
+})
+$('#handSeg').addEventListener('click', (e) => {
+  const b = e.target.closest('button')
+  if (!b) return
+  S.left = b.dataset.hand === 'left'
+  store.set('left', S.left)
+  resetRun()
 })
 $('#pieceSeg').addEventListener('click', (e) => {
   const b = e.target.closest('button')

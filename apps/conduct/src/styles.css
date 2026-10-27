@@ -40,3 +40,5 @@
   .beatnum { font-size: 48px; }
 }
 @media (max-width: 440px) { .top { gap: 8px; } .top .brand span { display: none; } }
+.bar-r { display: flex; gap: 8px; }
+#handSeg button { font: 600 13px var(--font-mono); min-width: 34px; }

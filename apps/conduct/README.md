@@ -5,6 +5,7 @@ Dirigieren lernen: Die Hand wird über die Kamera (oder Maus/Finger) verfolgt, S
 - **Übungen 2/4, 3/4, 4/4**: Akkord auf jedem Schlag, Eins betont; Schlagfigur als Vorlage, Schlagpunkte grün (richtige Richtung) oder rot.
 - **Ode an die Freude** (Beethoven, gemeinfrei): 16 Takte, Melodie Holzbläser, Begleitung Streicher; am Ende Tempoverlauf, Schwankung und Figur-Trefferquote.
 - Auftakt gibt das Tempo, große Figur = laut, Hand ruhig = Pause (das Stück macht beim nächsten Auftakt weiter).
+- Linke oder rechte Schlaghand (L/R): Figur und Prüfung werden gespiegelt; mit Kamera wird bei zwei sichtbaren Händen die Schlaghand gewählt.
 - Leertaste: Schlag per Taste.
 
 ## Technik

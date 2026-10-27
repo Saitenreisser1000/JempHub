@@ -60,6 +60,9 @@ describe('beat detection', () => {
       bar.forEach((b, k) => assert.ok(figureOk(meter, k, bar[0], b), `${meter}/4 beat ${k + 1}`))
     }
     assert.equal(figureOk(4, 1, { x: 0.5, y: 0.8 }, { x: 0.7, y: 0.78 }), false)
+    // linke Hand: gespiegelt
+    assert.equal(figureOk(4, 1, { x: 0.5, y: 0.8 }, { x: 0.7, y: 0.78 }, 0.2, true), true)
+    assert.equal(figureOk(3, 1, { x: 0.5, y: 0.8 }, { x: 0.3, y: 0.78 }, 0.2, true), true)
   })
   it('maps size to dynamics', () => {
     assert.equal(dynamicLabel(dynamicsFrom(0.05)), 'pp')

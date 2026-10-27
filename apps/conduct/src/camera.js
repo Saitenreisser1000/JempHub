@@ -13,14 +13,14 @@ async function createLandmarker() {
   const make = (delegate) => HandLandmarker.createFromOptions(vision, {
     baseOptions: { modelAssetPath: MODEL, delegate },
     runningMode: 'VIDEO',
-    numHands: 1,
+    numHands: 2,
   })
   try { landmarker = await make('GPU') } catch { landmarker = await make('CPU') }
   return landmarker
 }
 
-// onPoint(x, y, t, hand) mit x, y in 0..1; gibt eine Stopp-Funktion zurück
-export async function startCamera(video, onPoint) {
+// onPoint(x, y, t, hand) mit x, y in 0..1; isLeft(): Linkshänder?; gibt eine Stopp-Funktion zurück
+export async function startCamera(video, onPoint, isLeft = () => false) {
   const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'user', width: { ideal: 640 }, height: { ideal: 480 } }, audio: false })
   video.srcObject = stream
   video.muted = true
@@ -34,11 +34,17 @@ export async function startCamera(video, onPoint) {
       last = video.currentTime
       const now = performance.now()
       const res = lm.detectForVideo(video, now)
-      const hand = res && res.landmarks && res.landmarks[0]
-      if (hand) {
+      // Handmitten (gespiegelt); bei zwei Händen die Schlaghand: im Spiegelbild
+      // ist die rechte Hand die weiter rechts, die linke die weiter links
+      const palms = ((res && res.landmarks) || []).map((h) => {
         let x = 0, y = 0
-        for (const i of PALM) { x += hand[i].x; y += hand[i].y }
-        onPoint(1 - x / PALM.length, y / PALM.length, now / 1000, true)
+        for (const i of PALM) { x += h[i].x; y += h[i].y }
+        return [1 - x / PALM.length, y / PALM.length]
+      })
+      if (palms.length) {
+        palms.sort((a, b) => a[0] - b[0])
+        const [x, y] = isLeft() ? palms[0] : palms[palms.length - 1]
+        onPoint(x, y, now / 1000, true)
       } else onPoint(null, null, now / 1000, false)
     }
     requestAnimationFrame(loop)

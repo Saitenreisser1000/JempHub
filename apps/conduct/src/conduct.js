@@ -66,6 +66,7 @@ const DYN = [[0.3, 'pp'], [0.45, 'p'], [0.6, 'mp'], [0.75, 'mf'], [0.9, 'f'], [I
 export const dynamicLabel = (v) => DYN.find(([lim]) => v < lim)[1]
 
 // Schlagfiguren für die rechte Hand, gesehen im Spiegelbild (Kamera) bzw. am Bildschirm.
+// Für die linke Hand wird die Figur gespiegelt (figurePoints, figureOk mit left = true).
 // Punkte: Lage der Schlagpunkte in einem Kasten 0..1, dazu die Prüfung je Schlag.
 export const FIGURES = {
   2: { points: [[0.5, 0.82], [0.62, 0.62]] },
@@ -73,11 +74,13 @@ export const FIGURES = {
   4: { points: [[0.5, 0.82], [0.2, 0.74], [0.8, 0.74], [0.56, 0.5]] },
 }
 
+export const figurePoints = (meter, left = false) => FIGURES[meter].points.map(([x, y]) => [left ? 1 - x : x, y])
+
 // Prüft, ob ein Schlag in die richtige Richtung geht, relativ zur Eins des Takts.
-// beat: 0-basiert im Takt; one/cur: { x, y }; scale: Größe der Figur (für Toleranz)
-export function figureOk(meter, beat, one, cur, scale = 0.2) {
+// beat: 0-basiert im Takt; one/cur: { x, y }; scale: Größe der Figur (für Toleranz); left: linke Hand
+export function figureOk(meter, beat, one, cur, scale = 0.2, left = false) {
   if (beat === 0 || !one) return true
-  const dx = cur.x - one.x, dy = cur.y - one.y // dy < 0: höher als die Eins
+  const dx = (cur.x - one.x) * (left ? -1 : 1), dy = cur.y - one.y // dy < 0: höher als die Eins
   const tol = Math.max(0.02, scale * 0.15)
   if (meter === 2) return dy < -tol / 2 || dx > tol
   if (meter === 3) return beat === 1 ? dx > tol : dy < -tol / 2
