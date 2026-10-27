@@ -432,3 +432,10 @@ input[type="range"]:not(.stem-pan) {
     min-width: 140px;
   }
 }
+
+/* Zurück zur JempHub-Übersicht */
+.topbar-title { display: flex; align-items: center; gap: 12px; min-width: 0; }
+.hub-link { display: inline-flex; align-items: center; gap: 6px; padding: 6px 10px; border: 1px solid var(--border); border-radius: 999px; color: var(--ink-soft); background: rgba(255, 255, 255, 0.7); font-size: 0.85rem; text-decoration: none; white-space: nowrap; }
+.hub-link svg { fill: currentColor; }
+.hub-link:hover { color: var(--ink); }
+@media (max-width: 640px) { .hub-link span { display: none; } }
