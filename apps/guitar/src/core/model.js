@@ -124,3 +124,27 @@ export function dropIndex(moments, on, t) {
 export function snapDur(ticks, grid = 6) {
   return Math.max(grid, Math.min(192, Math.round(ticks / grid) * grid))
 }
+
+// Can the dot at `from` move to `to` in every listed moment? A string holds
+// only one note per moment, so the target string must be free (apart from the
+// moving dot itself).
+export function canMoveDot(moments, list, from, to) {
+  if (from.s === to.s && from.f === to.f) return false
+  return list.every((i) => {
+    const m = moments[i]
+    if (!m || !m.dots.some((d) => d.s === from.s && d.f === from.f)) return false
+    return !m.dots.some((d) => d.s === to.s && !(d.s === from.s && d.f === from.f))
+  })
+}
+
+// Move the dot at `from` to `to` in every listed moment (finger and technique
+// travel with it). Returns false and changes nothing if the move is not allowed.
+export function moveDot(moments, list, from, to) {
+  if (!canMoveDot(moments, list, from, to)) return false
+  for (const i of list) {
+    const d = moments[i].dots.find((q) => q.s === from.s && q.f === from.f)
+    d.s = to.s
+    d.f = to.f
+  }
+  return true
+}

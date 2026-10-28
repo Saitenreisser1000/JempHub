@@ -3,7 +3,7 @@ import { TPQ, E8, COLORS, SKY, STD, DUR_NAMES, TECH } from './core/constants.js'
 import {
   n, mo, setKey, onsets as coreOnsets, barTicks, durName, durFromSpec, decodeDur,
   posLabel as corePosLabel, momentAt as coreMomentAt, nextSounding as coreNext,
-  prevSounding as corePrev, isValidExercise, moveMoment, dropIndex, snapDur,
+  prevSounding as corePrev, isValidExercise, moveMoment, dropIndex, snapDur, canMoveDot, moveDot,
 } from './core/model.js'
 import { useFlats, pcName as corePcName, noteName as coreNoteName, harmony as coreHarmony } from './core/music.js'
 import { examples } from './core/exercises.js'
@@ -105,7 +105,7 @@ function renderBoard(){
 }
 
 /* ---------- moments layer ---------- */
-let conns={},gEls=[],lastVis=null;
+let conns={},gEls=[],lastVis=null,GROUPS={};
 const nextSounding = (i, order, wrap) => coreNext(cur().moments, i, order, wrap)
 const prevSounding = (i, order, wrap) => corePrev(cur().moments, i, order, wrap)
 const allOrder=()=>cur().moments.map((m,i)=>i);
@@ -155,6 +155,7 @@ function renderMoments(){
   const head=[],lists={},occ=new Map();
   ms.forEach((m,i)=>{if(!m.dots.length)return;if(!playing&&vis[i]===undefined)return;const k=playing?'i'+i:setKey(m);
     if(!occ.has(k)){occ.set(k,i);lists[i]=[i];head[i]=i}else{const h=occ.get(k);lists[h].push(i);head[i]=h}});
+  GROUPS=lists;
   const opOf=i=>playing?.1:(vis[i]===undefined?0:vis[i]);
   // transitions
   let cs='';conns={};
@@ -499,7 +500,7 @@ function hit(e){
 }
 let ghostKey='';
 svg.addEventListener('pointermove',e=>{
-  const gh=$('#gh');if(!gh)return;
+  const gh=$('#gh');if(!gh||DOT)return;
   if(e.pointerType!=='mouse'||state.mode!=='edit'||P.on){gh.setAttribute('visibility','hidden');ghostKey='';return}
   const h=hit(e);if(!h){gh.setAttribute('visibility','hidden');ghostKey='';return}
   const ms=cur().moments,act=ms[state.sel],inAct=act&&act.dots.some(d=>d.s===h.s&&d.f===h.f),stack=act&&(state.caret==='inside'||e.shiftKey);
@@ -515,8 +516,9 @@ svg.addEventListener('pointermove',e=>{
   gh.querySelector('.gh-a').textContent=inAct?'remove':stack?'+ moment '+(state.sel+1):'+ new';
   if(moved){const b=gh.querySelector('.ghb');b.classList.remove('pop');void b.getBBox();b.classList.add('pop')}
 });
-svg.addEventListener('pointerleave',()=>{const gh=$('#gh');if(gh)gh.setAttribute('visibility','hidden');ghostKey=''});
+svg.addEventListener('pointerleave',()=>{const gh=$('#gh');if(gh&&!DOT)gh.setAttribute('visibility','hidden');ghostKey=''});
 svg.addEventListener('click',e=>{
+  if(performance.now()<noClickUntil)return;
   if(state.mode==='practice'){if(P.wait)waitStep(1);return}
   const h=hit(e);if(!h)return;placeDot(h.s,h.f,e.shiftKey);ghostKey='';
 });
@@ -578,15 +580,72 @@ strip.addEventListener('contextmenu',e=>{
 });
 // Rechtsklick / langes Drücken auf einen Moment am Griffbrett
 svg.addEventListener('contextmenu',e=>{
+  if(DOT&&!DOT.mouse){e.preventDefault();return}
   if(state.mode!=='edit')return;const g=e.target.closest('.mg');if(!g)return;e.preventDefault();
   openCtx(+g.id.slice(3),e.clientX,e.clientY);
 });
-let boardLp=0;
+/* Punkte ziehen: lange drücken (Finger) bzw. ziehen (Maus) verschiebt einen
+   Griffpunkt, und zwar nur im ausgewählten Moment (gehört der Punkt zu
+   einem zusammengefassten Griff ohne Auswahl: im ersten Vorkommen). Langes Drücken
+   ohne Bewegung öffnet weiterhin das Moment-Menü. */
+let DOT=null,noClickUntil=0;
+const LIFT_MS=400,SLOP=8;
+function dotGhost(t){
+  const gh=$('#gh');if(!gh)return;
+  if(!t){gh.setAttribute('visibility','hidden');return}
+  const ok=canMoveDot(cur().moments,DOT.list,DOT.from,t),same=t.s===DOT.from.s&&t.f===DOT.from.f;
+  const [x,y]=geo.pos(t.s,t.f),c=same||ok?DOT.color:'#e2665a';
+  gh.setAttribute('transform','translate('+x+' '+y+')');gh.setAttribute('visibility','visible');
+  const cc=gh.querySelector('.gh-c'),rr=gh.querySelector('.gh-r');
+  cc.setAttribute('fill',c);cc.setAttribute('fill-opacity',.55);rr.setAttribute('stroke-dasharray','none');
+  gh.querySelector('.gh-t').textContent=noteName(t,false);
+  gh.querySelector('.gh-a').textContent=same?'':ok?'move':'string taken';
+}
+function liftDot(){
+  if(!DOT)return;DOT.lifted=true;
+  const el=gEls[DOT.head];if(el)el.classList.add('lift');
+  try{navigator.vibrate&&navigator.vibrate(12)}catch(e){}
+}
+function endDot(apply){
+  const d=DOT;DOT=null;if(!d)return;clearTimeout(d.timer);
+  const el=gEls[d.head];if(el)el.classList.remove('lift');
+  dotGhost(null);ghostKey='';
+  if(d.dragging||(!d.mouse&&d.lifted))noClickUntil=performance.now()+350;
+  if(apply&&d.dragging&&d.to&&canMoveDot(cur().moments,d.list,d.from,d.to)){
+    pushUndo();moveDot(cur().moments,d.list,d.from,d.to);
+    state.sel=d.list[0];state.caret='after';
+    afterEdit();return}
+  if(d.dragging)renderMoments();
+}
 svg.addEventListener('pointerdown',e=>{
-  if(e.pointerType==='mouse'||state.mode!=='edit')return;const g=e.target.closest('.mg');if(!g)return;
-  const x=e.clientX,y=e.clientY;boardLp=setTimeout(()=>{boardLp=-1;openCtx(+g.id.slice(3),x,y)},500);
+  if(state.mode!=='edit'||P.on||P.wait||e.button>0)return;
+  const g=e.target.closest('.mg'),h=hit(e);if(!g||!h)return;
+  const head=+g.id.slice(3),m=cur().moments[head];if(!m||!m.dots.some(d=>d.s===h.s&&d.f===h.f))return;
+  const mouse=e.pointerType==='mouse';
+  const grp=GROUPS[head]||[head],only=grp.includes(state.sel)?state.sel:head;
+  DOT={id:e.pointerId,x0:e.clientX,y0:e.clientY,head,list:[only],from:{s:h.s,f:h.f},to:null,
+    color:colorOf(m),mouse,lifted:mouse,dragging:false,timer:0};
+  if(!mouse)DOT.timer=setTimeout(liftDot,LIFT_MS);
 });
-['pointerup','pointercancel','pointermove'].forEach(ev=>svg.addEventListener(ev,e=>{if(ev==='pointermove'&&boardLp>0&&e.pointerType==='mouse')return;if(boardLp>0&&ev!=='pointermove'){clearTimeout(boardLp);boardLp=0}}));
+svg.addEventListener('pointermove',e=>{
+  const d=DOT;if(!d||e.pointerId!==d.id)return;
+  const far=Math.hypot(e.clientX-d.x0,e.clientY-d.y0)>(d.mouse?5:SLOP);
+  if(!d.lifted){if(far){clearTimeout(d.timer);DOT=null}return}  // vor dem Anheben bewegt: Scrollen
+  if(!d.dragging){if(!far)return;d.dragging=true;try{svg.setPointerCapture(e.pointerId)}catch(_){}
+    if(d.mouse){const el=gEls[d.head];if(el)el.classList.add('lift')}}
+  const t=hit(e);
+  if(t){const k=t.s+':'+t.f;if(k!==d.tk){d.tk=k;d.to=t;dotGhost(t);
+    if(!(t.s===d.from.s&&t.f===d.from.f)&&canMoveDot(cur().moments,d.list,d.from,t)){ensureAudio();pluck(cur().tuning[t.s]+t.f,clock()+.005,.35,.6)}}}
+  e.preventDefault();
+});
+svg.addEventListener('pointerup',e=>{
+  const d=DOT;if(!d||e.pointerId!==d.id)return;
+  if(!d.mouse&&d.lifted&&!d.dragging){endDot(false);openCtx(d.head,e.clientX,e.clientY);return}
+  endDot(true);
+});
+svg.addEventListener('pointercancel',()=>endDot(false));
+// Während ein Punkt angehoben ist, darf die Seite nicht scrollen.
+svg.addEventListener('touchmove',e=>{if(DOT&&DOT.lifted)e.preventDefault()},{passive:false});
 
 /* ---------- Kontextmenü eines Moments ---------- */
 function openCtx(i,x,y){
