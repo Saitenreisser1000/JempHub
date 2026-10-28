@@ -24,3 +24,15 @@ export const DUR_NAMES = {
 }
 
 export const TECH = { h: 'hammer-on', p: 'pull-off', sl: 'slide', b: 'bend', '~': 'vibrato' }
+
+// Tunings to choose from, grouped by number of strings (a tuning change keeps
+// every dot on its string and fret, so only same-size tunings are offered).
+export const TUNINGS = [
+  { name: 'Standard', notes: STD },
+  { name: 'Drop D', notes: DROPD },
+  { name: 'Half step down', notes: [63, 58, 54, 49, 44, 39] },
+  { name: 'Open G', notes: [62, 59, 55, 50, 43, 38] },
+  { name: 'DADGAD', notes: [62, 57, 55, 50, 45, 38] },
+  { name: 'Bass standard', notes: BASS4 },
+]
+export const TIME_SIGS = [[2, 4], [3, 4], [4, 4], [6, 8], [12, 8]]
