@@ -1,0 +1,141 @@
+# Veröffentlicht die Jemp-Apps automatisch auf dem VPS.
+#
+# - Jeder Push/Merge nach main baut und veröffentlicht nur die Apps, die sich
+#   geändert haben. Änderungen an packages/ oder scripts/ betreffen alle Apps.
+# - Unter "Actions → Deploy → Run workflow" lässt sich eine App (oder alle)
+#   auch von Hand veröffentlichen.
+#
+# Benötigte Secrets (Settings → Secrets and variables → Actions):
+#   VPS_HOST         IP-Adresse oder Name des Servers
+#   VPS_SSH_KEY      privater Deploy-Schlüssel (nur für diesen Zweck erzeugt)
+#   VPS_KNOWN_HOSTS  Ausgabe von: ssh-keyscan -t ed25519 <VPS_HOST>
+# Optional:
+#   VPS_USER         Standard: root
+#
+# Einrichtung: siehe DEPLOY.md im Wurzelordner.
+
+name: Deploy
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+    inputs:
+      app:
+        description: Welche App veröffentlichen?
+        type: choice
+        default: all
+        options: [all, hub, guitar, note, ear, conduct]
+
+concurrency:
+  group: deploy
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  plan:
+    runs-on: ubuntu-latest
+    outputs:
+      apps: ${{ steps.pick.outputs.apps }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - id: pick
+        env:
+          EVENT: ${{ github.event_name }}
+          INPUT_APP: ${{ github.event.inputs.app }}
+          BEFORE: ${{ github.event.before }}
+          AFTER: ${{ github.sha }}
+        run: |
+          ALL='["hub","guitar","note","ear","conduct"]'
+          if [ "$EVENT" = "workflow_dispatch" ]; then
+            if [ "$INPUT_APP" = "all" ]; then echo "apps=$ALL" >> "$GITHUB_OUTPUT"
+            else echo "apps=[\"$INPUT_APP\"]" >> "$GITHUB_OUTPUT"; fi
+            exit 0
+          fi
+          if [ -z "$BEFORE" ] || ! git cat-file -e "$BEFORE^{commit}" 2>/dev/null; then
+            echo "apps=$ALL" >> "$GITHUB_OUTPUT"; exit 0
+          fi
+          CHANGED=$(git diff --name-only "$BEFORE" "$AFTER")
+          echo "$CHANGED"
+          if echo "$CHANGED" | grep -qE '^(packages|scripts)/|^\.github/workflows/deploy\.yml$'; then
+            echo "apps=$ALL" >> "$GITHUB_OUTPUT"; exit 0
+          fi
+          LIST=""
+          for a in hub guitar note ear conduct; do
+            if echo "$CHANGED" | grep -q "^apps/$a/"; then LIST="$LIST\"$a\","; fi
+          done
+          echo "apps=[${LIST%,}]" >> "$GITHUB_OUTPUT"
+
+  deploy:
+    needs: plan
+    if: needs.plan.outputs.apps != '[]'
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      max-parallel: 1
+      matrix:
+        app: ${{ fromJSON(needs.plan.outputs.apps) }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Bauen und testen
+        working-directory: apps/${{ matrix.app }}
+        run: npm run build
+
+      - name: Ziel festlegen
+        id: target
+        run: |
+          case "${{ matrix.app }}" in
+            hub)     echo "path=/var/www/jemphub"     >> "$GITHUB_OUTPUT"; echo "url=https://jemphub.com" >> "$GITHUB_OUTPUT";;
+            guitar)  echo "path=/var/www/guitarjemp"  >> "$GITHUB_OUTPUT"; echo "url=https://guitarjemp.jemphub.com" >> "$GITHUB_OUTPUT";;
+            note)    echo "path=/var/www/notejemp"    >> "$GITHUB_OUTPUT"; echo "url=https://notejemp.jemphub.com" >> "$GITHUB_OUTPUT";;
+            ear)     echo "path=/var/www/earjemp"     >> "$GITHUB_OUTPUT"; echo "url=https://earjemp.jemphub.com" >> "$GITHUB_OUTPUT";;
+            conduct) echo "path=/var/www/conductjemp" >> "$GITHUB_OUTPUT"; echo "url=https://conductjemp.jemphub.com" >> "$GITHUB_OUTPUT";;
+          esac
+
+      - name: SSH vorbereiten
+        env:
+          KEY: ${{ secrets.VPS_SSH_KEY }}
+          KNOWN: ${{ secrets.VPS_KNOWN_HOSTS }}
+          HOST: ${{ secrets.VPS_HOST }}
+        run: |
+          if [ -z "$KEY" ] || [ -z "$HOST" ] || [ -z "$KNOWN" ]; then
+            echo "::error::VPS_HOST, VPS_SSH_KEY und VPS_KNOWN_HOSTS müssen als Secrets gesetzt sein (siehe DEPLOY.md)."
+            exit 1
+          fi
+          mkdir -p ~/.ssh && chmod 700 ~/.ssh
+          printf '%s\n' "$KEY" > ~/.ssh/deploy_key && chmod 600 ~/.ssh/deploy_key
+          printf '%s\n' "$KNOWN" > ~/.ssh/known_hosts && chmod 644 ~/.ssh/known_hosts
+
+      - name: Hochladen
+        env:
+          HOST: ${{ secrets.VPS_HOST }}
+          USER_: ${{ secrets.VPS_USER }}
+          DEST: ${{ steps.target.outputs.path }}
+          APP: ${{ matrix.app }}
+        run: |
+          U="${USER_:-root}"
+          SSH="ssh -i $HOME/.ssh/deploy_key -o IdentitiesOnly=yes -o BatchMode=yes"
+          # Hub: nichts löschen (dort liegen auch Dateien, die nicht aus dem Repo kommen).
+          # GuitarJemp: config.js auf dem Server (Supabase-Zugang) bleibt erhalten.
+          OPTS="-rlptz --delete"
+          [ "$APP" = "hub" ] && OPTS="-rlptz"
+          [ "$APP" = "guitar" ] && OPTS="$OPTS --exclude=config.js"
+          $SSH "$U@$HOST" "mkdir -p '$DEST'"
+          rsync $OPTS -e "$SSH" "apps/$APP/dist/" "$U@$HOST:$DEST/"
+          $SSH "$U@$HOST" "chown -R www-data:www-data '$DEST' 2>/dev/null || true"
+
+      - name: Prüfen
+        run: |
+          sleep 2
+          code=$(curl -s -o /dev/null -w '%{http_code}' "${{ steps.target.outputs.url }}/" || true)
+          echo "${{ steps.target.outputs.url }} → HTTP $code"
+          [ "$code" = "200" ] || echo "::warning::${{ steps.target.outputs.url }} antwortet mit $code"
