@@ -198,3 +198,9 @@ a.gbtn { text-decoration: none; }
 .optbtn { margin-left: 2px; }
 .panel.opts { margin-bottom: 12px; }
 @media (max-width: 440px) { .qhead h2 { font-size: 19px; } .qstats { gap: 8px; } .qstats span { white-space: nowrap; } }
+
+/* Nach der Antwort: Weiter-Knopf bleibt am unteren Rand sichtbar, ohne Scrollen */
+.actions.dock { position: sticky; bottom: 0; z-index: 5; margin-top: 12px; padding: 14px 0 calc(12px + env(safe-area-inset-bottom, 0px)); background: linear-gradient(to bottom, transparent, var(--bg) 14px); }
+.actions.dock { display: flex; gap: 8px; flex-wrap: nowrap; }
+.actions.dock .pbtn { flex: 1 1 auto; }
+.actions.dock .sbtn { flex: none; }
