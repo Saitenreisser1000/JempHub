@@ -240,3 +240,43 @@ a.linkbtn{text-decoration:none}
 #board{-webkit-touch-callout:none}
 .mg.lift{opacity:.4!important}
 .mg.lift .dotb{transform:scale(1.25)}
+
+/* ---------- Mobile first: Griffbrett wischbar, Bedienung im Daumenbereich ---------- */
+.board-scroll{width:100%;display:flex;justify-content:center}
+.strnames{display:none}
+.vsel{display:inline-flex;gap:6px;align-items:center;color:var(--muted);font-size:12.5px}
+.vsel select,.vsel input{background:var(--bg);color:var(--fg);border:1px solid var(--line2);border-radius:7px;font:500 13px var(--font-body);height:30px;padding:0 6px}
+.vsel input{width:64px;font-family:var(--font-mono)}
+@media (max-width:640px){
+  .board-wrap{padding:6px 0 0;overflow:hidden}
+  .board-scroll{display:block;overflow-x:auto;overflow-y:hidden;touch-action:pan-x pan-y;scrollbar-width:none;-webkit-overflow-scrolling:touch;overscroll-behavior-x:contain}
+  .board-scroll::-webkit-scrollbar{display:none}
+  #board,body.practice #board{width:auto;max-height:none}
+  .strnames{display:block;position:absolute;left:0;top:0;bottom:0;width:26px;pointer-events:none;opacity:0;transition:opacity .15s;
+    background:linear-gradient(90deg,var(--bg) 55%,transparent)}
+  .strnames.show{opacity:1}
+  .strnames span{position:absolute;left:6px;transform:translateY(-50%);font:600 11px var(--font-mono);color:var(--muted)}
+  /* feste Leiste unten */
+  .stage{padding-bottom:calc(var(--dockH,120px) + 12px)}
+  .dock{position:fixed;left:0;right:0;bottom:0;z-index:20;border-radius:18px 18px 0 0;justify-content:space-between;
+    padding:8px max(12px,env(safe-area-inset-left,0px)) calc(8px + env(safe-area-inset-bottom,0px)) max(12px,env(safe-area-inset-right,0px));
+    box-shadow:0 -6px 24px #0000001f;border-top:1px solid var(--line)}
+  .dock .dgroup{flex-wrap:nowrap}
+  .dock .tools{width:100%;justify-content:space-between}
+  .dock .gbtn,.dock .seg button{height:40px;min-width:40px;font-size:14px}
+  .dock .seg button{padding:0 13px}
+  .dock .play{width:46px;height:46px}
+  .tempo button{width:36px;height:40px;font-size:18px}
+  /* Moment-Menü als Bottom Sheet */
+  .pop.ctx{left:0!important;right:0;top:auto!important;bottom:0;width:100%;max-height:72vh;border-radius:18px 18px 0 0;
+    padding:6px 16px calc(16px + env(safe-area-inset-bottom,0px));animation:sheet .18s ease-out;z-index:45}
+  .pop.ctx::before{content:"";display:block;width:38px;height:4px;border-radius:2px;background:var(--line2);margin:2px auto 10px}
+  .ctx-r{padding:10px 0}
+  .ctx-r .seg button{min-height:36px}
+  .ctx-sw .sw{width:30px;height:30px}
+  .ctx-sel select{height:34px;font-size:14px}
+  .ctx-a .gbtn{height:40px;font-size:14px}
+  .ctx-note{font-size:16px}
+  .vsel input{font-size:16px}
+}
+@keyframes sheet{from{transform:translateY(100%)}to{transform:none}}

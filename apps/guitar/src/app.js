@@ -1,5 +1,5 @@
 // GuitarJemp app: fretboard rendering, editing, playback and practice.
-import { TPQ, E8, COLORS, SKY, STD, DUR_NAMES, TECH } from './core/constants.js'
+import { TPQ, E8, COLORS, SKY, STD, DUR_NAMES, TECH, TUNINGS, TIME_SIGS } from './core/constants.js'
 import {
   n, mo, setKey, onsets as coreOnsets, barTicks, durName, durFromSpec, decodeDur,
   posLabel as corePosLabel, momentAt as coreMomentAt, nextSounding as coreNext,
@@ -11,6 +11,9 @@ import { ensureAudio, clock, pluck, click, silence } from './audio/synth.js'
 
 const $ = (s) => document.querySelector(s)
 const R = 12
+// Handy: Griffbrett größer und seitlich wischbar statt ganz sichtbar
+const phone = () => matchMedia('(max-width:640px)').matches
+let ZOOM = 2.2
 
 
 
@@ -57,7 +60,7 @@ function describe(m){
 let geo=null;
 function buildGeo(){
   const ex=cur(),nS=ex.tuning.length,maxF=15;
-  const SP=ex.inst==='bass'?42:36,TOP=28,EDGE=17,LEFT=34,OPEN=46,NUT=7,L=1560;
+  const SP=ex.inst==='bass'?(phone()?52:42):(phone()?44:36),TOP=28,EDGE=17,LEFT=34,OPEN=46,NUT=7,L=1560;
   const nutX=LEFT+OPEN,boardX=nutX+NUT;
   const wire=f=>boardX+L*(1-Math.pow(2,-f/12));
   const endX=wire(maxF)+22,W=endX+14,y0=TOP+EDGE,bottom=y0+SP*(nS-1)+EDGE,H=bottom+30;
@@ -221,6 +224,8 @@ function renderMoments(){
 
 function updateViewBox(){
   const g=geo,ms=cur().moments;let x0=0,x1=g.W;
+  if(phone()){$('#board').setAttribute('viewBox','0 0 '+g.W+' '+g.H);$('#board').style.width=Math.round($('#boardScroll').clientWidth*ZOOM)+'px';placeNames();return}
+  $('#board').style.width='';$('#strNames').innerHTML='';
   if(frameMode()==='fit'){const fr=[];let open=false;ms.forEach(m=>m.dots.forEach(d=>{if(d.f===0)open=true;else fr.push(d.f)}));
     if(fr.length||open){const mn=fr.length?Math.min(...fr):1,mx=fr.length?Math.max(...fr):3;let lf=(open||mn<=3)?0:mn-1;let rf=Math.min(g.maxF,Math.max(mx+1,lf+5));
       if(rf-lf<5)lf=Math.max(0,rf-5);
@@ -228,6 +233,34 @@ function updateViewBox(){
       if(state.lefty){x0=g.W-b;x1=g.W-a}else{x0=a;x1=b}}}
   $('#board').setAttribute('viewBox',x0.toFixed(1)+' 0 '+(x1-x0).toFixed(1)+' '+g.H);
 }
+
+/* Handy: Saitennamen am linken Rand, sobald der Sattel aus dem Bild ist */
+const bscale=()=>$('#board').getBoundingClientRect().width/geo.W;
+function placeNames(){
+  const el=$('#strNames');if(!phone()){el.innerHTML='';return}
+  const ex=cur(),k=bscale(),top=$('#board').getBoundingClientRect().top-$('.board-wrap').getBoundingClientRect().top;
+  el.innerHTML=ex.tuning.map((t,st)=>'<span style="top:'+(top+geo.sy(st)*k).toFixed(1)+'px">'+(st===0&&ex.inst==='guitar'?pcName(t%12).toLowerCase():pcName(t%12))+'</span>').join('');
+  showNames();
+}
+function showNames(){const sc=$('#boardScroll'),open=geo.X(geo.nutX)*bscale();$('#strNames').classList.toggle('show',state.lefty?sc.scrollLeft+sc.clientWidth<open-10:sc.scrollLeft>open-10)}
+// Den ausgewählten Moment ins Bild holen
+function follow(i,instant){
+  if(!phone()||!geo)return;const m=cur().moments[i];if(!m||!m.dots.length)return;
+  const sc=$('#boardScroll'),k=bscale(),xs=m.dots.map(d=>geo.pos(d.s,d.f)[0]*k);
+  const a=Math.min(...xs)-30,b=Math.max(...xs)+30;
+  if(a>=sc.scrollLeft&&b<=sc.scrollLeft+sc.clientWidth)return;
+  const to=Math.max(0,(a+b)/2-sc.clientWidth/2);
+  sc.scrollTo({left:to,behavior:instant?'auto':'smooth'});
+}
+{const sc=$('#boardScroll');sc.addEventListener('scroll',()=>{if(phone())showNames()},{passive:true});
+  let pin=null;const dist=t=>Math.hypot(t[0].clientX-t[1].clientX,t[0].clientY-t[1].clientY);
+  sc.addEventListener('touchstart',e=>{if(e.touches.length!==2||!phone())return;if(DOT)endDot(false);
+    const r=sc.getBoundingClientRect(),mx=(e.touches[0].clientX+e.touches[1].clientX)/2-r.left;
+    pin={d0:dist(e.touches),z0:ZOOM,frac:(sc.scrollLeft+mx)/$('#board').getBoundingClientRect().width,mx}},{passive:true});
+  sc.addEventListener('touchmove',e=>{if(!pin||e.touches.length!==2)return;e.preventDefault();
+    ZOOM=clamp(pin.z0*dist(e.touches)/pin.d0,1,4);const w=Math.round(sc.clientWidth*ZOOM);$('#board').style.width=w+'px';
+    sc.scrollLeft=pin.frac*w-pin.mx;placeNames()},{passive:false});
+  sc.addEventListener('touchend',e=>{if(pin&&e.touches.length<2){pin=null;noClickUntil=performance.now()+300}},{passive:true});}
 
 /* ---------- time strip ---------- */
 const ST={ppt:3,H:66,top:15};
@@ -325,7 +358,7 @@ function frame(){
   const p=(tick-on[c])/ms[c].dur;
   const nx=nextSounding(c,P.order,P.looping),pv=prevSounding(c,P.order,P.looping);
   const key=pass+':'+c;
-  if(key!==P.lastKey){P.lastKey=key;if(ms[c].dots.length)spawnPulse(c);renderNow(c,nx);state.sel=c}
+  if(key!==P.lastKey){P.lastKey=key;if(ms[c].dots.length)spawnPulse(c);renderNow(c,nx);state.sel=c;follow(nx>=0&&ms[c].dots.length===0?nx:c)}
   applyPlay(c,p,nx,pv);
   const ph=$('#ph');if(ph){const x=8+tick*ST.ppt;ph.setAttribute('x1',x);ph.setAttribute('x2',x);ph.setAttribute('opacity',1)}
   if(Math.floor(now*4)!==P._sc){P._sc=Math.floor(now*4);scrollStripTo(tick)}
@@ -379,7 +412,7 @@ function startWait(){
 function waitStep(dir){if(!P.wait)return;const f=dir>0?nextSounding:prevSounding;const j=f(P.wi,P.order,true);if(j>=0)P.wi=j;waitShow()}
 function waitShow(){
   const i=P.wi,on=onsets(),nx=nextSounding(i,P.order,true),pv=prevSounding(i,P.order,true);
-  state.sel=i;applyPlay(i,.62,nx,pv,true);spawnPulse(i);playMoment(i,clock()+.01,spt());renderNow(i,nx);
+  state.sel=i;follow(i);applyPlay(i,.62,nx,pv,true);spawnPulse(i);playMoment(i,clock()+.01,spt());renderNow(i,nx);
   const ph=$('#ph');if(ph){const x=8+on[i]*ST.ppt;ph.setAttribute('x1',x);ph.setAttribute('x2',x);ph.setAttribute('opacity',1)}
   scrollStripTo(on[i]);
 }
@@ -402,6 +435,11 @@ function renderHead(){
   const keyName=ex.key?pcName(ex.key.r)+(ex.key.m==='minor'?' minor':' major'):'';
   $('#exMeta').textContent=[(ex.inst==='bass'?'Bass':'Guitar')+' · '+ex.tuningName,keyName,ex.bpm+' bpm',ex.ts.join('/'),ex.tag].filter(Boolean).join('   ·   ');
   const d=$('#exDesc');d.textContent=ex.desc||'';d.hidden=!ex.desc;d.classList.remove('open');
+  const kr=$('#keyRoot');if(!kr.options.length)kr.innerHTML=[...Array(12)].map((_,i)=>'<option value="'+i+'">'+corePcName(i,[5,10,3,8,1].includes(i))+'</option>').join('');
+  kr.value=ex.key?ex.key.r:0;$('#keyMode').value=ex.key?ex.key.m:'major';$('#bpmIn').value=ex.bpm;
+  $('#tsSel').innerHTML=TIME_SIGS.map(t=>'<option value="'+t.join('/')+'"'+(t.join('/')===ex.ts.join('/')?' selected':'')+'>'+t.join('/')+'</option>').join('');
+  const tl=TUNINGS.filter(t=>t.notes.length===ex.tuning.length);let ti=tl.findIndex(t=>t.notes.join()===ex.tuning.join());
+  $('#tuneSel').innerHTML=(ti<0?'<option value="-1" selected>'+esc(ex.tuningName||'Custom')+'</option>':'')+tl.map((t,i)=>'<option value="'+TUNINGS.indexOf(t)+'"'+(i===ti?' selected':'')+'>'+t.name+'</option>').join('');
   segSet('#horizonSeg',hor());segSet('#labelSeg',state.labels);segSet('#frameSeg',frameMode());segSet('#modeSeg',state.mode);
   $('#scaleBtn').setAttribute('aria-pressed',state.scale);$('#leftyBtn').setAttribute('aria-pressed',state.lefty);
 }
@@ -451,11 +489,12 @@ function renderAll(){
   $('#L-fx').innerHTML='<circle id="comet" r="4.5" opacity="0"/>';
   $('#L-ghost').innerHTML='<g id="gh" visibility="hidden"><g class="ghb"><circle class="gh-c" r="16" fill-opacity=".38"/><circle class="gh-r" r="16" fill="none" stroke="#fff" stroke-opacity=".85" stroke-width="1.4"/><text class="gh-t"></text></g><text class="gh-a" y="-26"></text></g>';
   renderBoard();renderMoments();updateViewBox();renderStrip();renderHead();renderLib();renderTools();renderInspector();renderTransport();
-  const ms=cur().moments;renderNow(clamp(state.sel,0,Math.max(0,ms.length-1)),nextSounding(clamp(state.sel,0,Math.max(0,ms.length-1)),allOrder(),false));updatePos();
+  const ms=cur().moments;requestAnimationFrame(()=>{updateViewBox();follow(clamp(state.sel,0,Math.max(0,ms.length-1)),true)});renderNow(clamp(state.sel,0,Math.max(0,ms.length-1)),nextSounding(clamp(state.sel,0,Math.max(0,ms.length-1)),allOrder(),false));updatePos();
 }
 function afterEdit(){
   renderMoments();if(frameMode()==='fit')updateViewBox();renderStrip();renderInspector();renderTools();renderLib();renderTransport();updatePos();save();
   const on=onsets();if(cur().moments[state.sel])scrollStripTo(on[state.sel]);
+  if(!DOT)follow(state.sel);
 }
 
 /* ---------- editing ---------- */
@@ -479,7 +518,7 @@ function repeatMoment(){const ms=cur().moments,a=ms[state.sel];if(!a)return;push
 function deleteMoment(){const ms=cur().moments;if(!ms[state.sel])return;pushUndo();ms.splice(state.sel,1);state.sel=clamp(state.sel-(state.caret==='after'?1:0),0,Math.max(0,ms.length-1));state.caret='after';afterEdit()}
 function selectMoment(i){const ms=cur().moments;if(!ms.length)return;state.sel=clamp(i,0,ms.length-1);state.caret=state.mode==='edit'?caretFor():'after';
   if(P.wait){P.wi=ms[state.sel].dots.length?state.sel:nextSounding(state.sel,P.order,true);waitShow();renderStrip();return}
-  renderMoments();renderStrip();renderInspector();renderTools();updatePos();renderNow(state.sel,nextSounding(state.sel,allOrder(),false));scrollStripTo(onsets()[state.sel]);
+  renderMoments();renderStrip();renderInspector();renderTools();updatePos();renderNow(state.sel,nextSounding(state.sel,allOrder(),false));scrollStripTo(onsets()[state.sel]);follow(state.sel);
   if(state.mode==='practice'&&ms[state.sel].dots.length){ensureAudio();playMoment(state.sel,clock()+.01,spt())}
 }
 function setDur(o){
@@ -733,6 +772,12 @@ document.querySelectorAll('[data-pop]').forEach(b=>b.addEventListener('click',e=
   if(open&&!p.classList.contains('anchor-top')){const r=b.getBoundingClientRect();p.style.left=Math.max(16,Math.min(window.innerWidth-p.offsetWidth-16,r.left+r.width/2-p.offsetWidth/2))+'px';const below=r.bottom+8,above=r.top-p.offsetHeight-8;p.style.top=(above>8?above:below)+'px'}}));
 document.addEventListener('click',e=>{if(performance.now()-ctxOpenT<450)return;if(!e.target.closest('.pop')&&!e.target.closest('[data-pop]'))closePops()});
 $('#exDesc').addEventListener('click',e=>e.currentTarget.classList.toggle('open'));
+function setEx(fn){if(P.on||P.wait)stopPlay();fn(cur());save();renderAll()}
+$('#keyRoot').addEventListener('change',e=>setEx(ex=>{ex.key={r:+e.target.value,m:$('#keyMode').value}}));
+$('#keyMode').addEventListener('change',e=>setEx(ex=>{ex.key={r:+$('#keyRoot').value,m:e.target.value}}));
+$('#bpmIn').addEventListener('change',e=>{const v=clamp(Math.round(+e.target.value)||cur().bpm,30,260);e.target.value=v;cur().bpm=v;save();renderHead();renderTransport()});
+$('#tsSel').addEventListener('change',e=>setEx(ex=>{ex.ts=e.target.value.split('/').map(Number)}));
+$('#tuneSel').addEventListener('change',e=>{const t=TUNINGS[+e.target.value];if(t)setEx(ex=>{ex.tuning=t.notes.slice();ex.tuningName=t.name})});
 
 document.addEventListener('keydown',e=>{
   const tg=e.target.tagName;if(tg==='INPUT'||tg==='SELECT'||tg==='TEXTAREA')return;
@@ -764,6 +809,9 @@ function toggleFs(){try{const on=document.fullscreenElement||document.webkitFull
 $('#fsBtn').addEventListener('click',toggleFs);
 ['fullscreenchange','webkitfullscreenchange'].forEach(ev=>document.addEventListener(ev,()=>{const on=!!(document.fullscreenElement||document.webkitFullscreenElement);$('#fsTxt').textContent=on?'Exit full screen':'Full screen';setTimeout(()=>renderStrip(),150)}));
 document.addEventListener('keydown',e=>{const tg=e.target.tagName;if(tg==='INPUT'||tg==='SELECT'||tg==='TEXTAREA')return;if((e.key==='f'||e.key==='F')&&!e.ctrlKey&&!e.metaKey&&!e.altKey&&fsOk&&!$('#fsBtn').hidden)toggleFs()});
-let rzT=0;window.addEventListener('resize',()=>{clearTimeout(rzT);rzT=setTimeout(()=>{renderStrip();if(P.wait)waitShow()},120)});
+let rzT=0,wasPhone=phone();window.addEventListener('resize',()=>{clearTimeout(rzT);rzT=setTimeout(()=>{if(phone()!==wasPhone&&!P.on){wasPhone=phone();renderAll();return}updateViewBox();renderStrip();setDockH();if(P.wait)waitShow()},120)});
+// Platz für die feste Bedienleiste unten (Handy)
+function setDockH(){document.documentElement.style.setProperty('--dockH',($('.dock').offsetHeight||0)+'px')}
+new ResizeObserver(setDockH).observe($('.dock'));
 
 renderAll();
