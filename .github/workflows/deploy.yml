@@ -86,9 +86,19 @@ jobs:
         with:
           node-version: 22
 
+      - name: alphaTab holen (Datei-Import in GuitarJemp)
+        if: matrix.app == 'guitar'
+        run: echo "ALPHATAB_JS=$(bash scripts/fetch-alphatab.sh "$RUNNER_TEMP/alphatab")" >> "$GITHUB_ENV"
+
       - name: Bauen und testen
         working-directory: apps/${{ matrix.app }}
         run: npm run build
+
+      - name: alphaTab mitliefern
+        if: matrix.app == 'guitar'
+        run: |
+          mkdir -p apps/guitar/dist/vendor/alphatab
+          cp "$(dirname "$ALPHATAB_JS")"/* apps/guitar/dist/vendor/alphatab/
 
       - name: Ziel festlegen
         id: target
