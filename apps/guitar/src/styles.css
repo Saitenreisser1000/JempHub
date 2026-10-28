@@ -236,3 +236,7 @@ a.linkbtn{text-decoration:none}
 #strip{touch-action:pan-x;user-select:none;-webkit-user-select:none}
 #L-ghost,#L-fx{pointer-events:none}
 @media (max-width: 400px) { .top .theme-btn { width: 26px; } .top-r .gbtn.icon-only { min-width: 26px; } }
+/* Griffpunkt angehoben (verschieben) */
+#board{-webkit-touch-callout:none}
+.mg.lift{opacity:.4!important}
+.mg.lift .dotb{transform:scale(1.25)}

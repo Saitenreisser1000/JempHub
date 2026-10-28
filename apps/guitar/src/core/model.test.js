@@ -1,6 +1,6 @@
 import { describe, it } from 'node:test'
 import assert from 'node:assert/strict'
-import { n, mo, onsets, barTicks, durFromSpec, decodeDur, posLabel, momentAt, nextSounding, prevSounding, setKey, isValidExercise, moveMoment, dropIndex, snapDur } from './model.js'
+import { n, mo, onsets, barTicks, durFromSpec, decodeDur, posLabel, momentAt, nextSounding, prevSounding, setKey, isValidExercise, moveMoment, dropIndex, snapDur, canMoveDot, moveDot } from './model.js'
 import { harmony, noteName, useFlats } from './music.js'
 import { examples } from './exercises.js'
 import { STD, DROPD } from './constants.js'
@@ -102,5 +102,30 @@ describe('strip editing', () => {
     assert.equal(snapDur(25), 24)
     assert.equal(snapDur(29), 30)
     assert.equal(snapDur(500), 192)
+  })
+})
+
+describe('moveDot', () => {
+  const pat = () => [mo(12, [n(4, 3, 3)]), mo(12, [n(1, 1)]), mo(12, [n(4, 3, 3, 'h'), n(0, 0)])]
+  it('moves the dot in every listed moment, keeping finger and technique', () => {
+    const ms = pat()
+    assert.equal(moveDot(ms, [0, 2], { s: 4, f: 3 }, { s: 3, f: 2 }), true)
+    assert.deepEqual(ms[0].dots[0], { s: 3, f: 2, fg: 3, t: null })
+    assert.deepEqual(ms[2].dots[0], { s: 3, f: 2, fg: 3, t: 'h' })
+    assert.deepEqual(ms[1].dots[0], { s: 1, f: 1, fg: null, t: null })
+  })
+  it('allows a fret change on the same string', () => {
+    const ms = pat()
+    assert.equal(moveDot(ms, [0], { s: 4, f: 3 }, { s: 4, f: 5 }), true)
+    assert.equal(ms[0].dots[0].f, 5)
+  })
+  it('refuses a string that is already taken in one of the moments', () => {
+    const ms = pat()
+    assert.equal(canMoveDot(ms, [0, 2], { s: 4, f: 3 }, { s: 0, f: 3 }), false)
+    assert.equal(moveDot(ms, [0, 2], { s: 4, f: 3 }, { s: 0, f: 3 }), false)
+    assert.equal(ms[0].dots[0].s, 4)
+  })
+  it('refuses a move onto the same spot', () => {
+    assert.equal(canMoveDot(pat(), [0], { s: 4, f: 3 }, { s: 4, f: 3 }), false)
   })
 })
