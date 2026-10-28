@@ -64,9 +64,9 @@
   --radius-lg: 16px;
 }
 
-/* Oberfläche – dunkel („Abend“) */
+/* Oberfläche – dunkel („Abend“): nach Geräteeinstellung oder per Schalter (data-theme, siehe theme.js) */
 @media (prefers-color-scheme: dark) {
-  :root {
+  :root:not([data-theme="light"]) {
     --bg: #171c1a;
     --surface: #1d2421;
     --raise: #252d29;
@@ -85,6 +85,26 @@
     --backdrop: #000a;
   }
 }
+:root[data-theme="dark"] {
+  color-scheme: dark;
+  --bg: #171c1a;
+  --surface: #1d2421;
+  --raise: #252d29;
+  --line: #2c3531;
+  --line2: #3a4640;
+  --fg: #eef2ec;
+  --muted: #a3afa7;
+  --faint: #6f7b74;
+  --brass: #e0bf78;
+  --brass-ink: #1c1609;
+  --ok: #8fd3a9;
+  --bad: #f28b7c;
+  --mid: #f2c46d;
+  --shadow-pop: 0 20px 60px #000a;
+  --card-shadow: 0 1px 0 #ffffff0a inset, 0 10px 30px #00000059;
+  --backdrop: #000a;
+}
+:root[data-theme="light"] { color-scheme: light; }
 
 /* Bühne: immer dunkel */
 .on-stage {
@@ -102,4 +122,16 @@
   --bad: #f28b7c;
   --mid: #f2c46d;
   color: var(--fg);
+}
+
+/* Hell/Dunkel-Schalter (Knopf mit data-theme-toggle): Mond im Hellen, Sonne im Dunklen */
+.theme-btn { display: inline-flex; align-items: center; justify-content: center; width: 32px; height: 32px; padding: 0; border: 0; border-radius: 8px; background: transparent; color: var(--muted); cursor: pointer; flex: none; }
+.theme-btn:hover { background: var(--raise); color: var(--fg); }
+.theme-btn svg { display: block; }
+.theme-btn .i-sun { display: none; }
+:root[data-theme="dark"] .theme-btn .i-sun { display: block; }
+:root[data-theme="dark"] .theme-btn .i-moon { display: none; }
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) .theme-btn .i-sun { display: block; }
+  :root:not([data-theme="light"]) .theme-btn .i-moon { display: none; }
 }

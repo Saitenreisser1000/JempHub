@@ -8,7 +8,7 @@ if (!app) throw new Error('Expected an app name, e.g. ear');
 const root = resolve(import.meta.dirname, '..');
 const PACKAGES = {
   sounds: ['piano', 'vpo', 'src'],
-  theme: ['theme.css'],
+  theme: ['theme.css', 'theme.js'],
   fonts: ['fonts.css', 'figtree.woff', 'bricolage-grotesque.woff', 'jetbrains-mono.woff', 'OFL-Figtree.txt', 'OFL-BricolageGrotesque.txt', 'OFL-JetBrainsMono.txt'],
 };
 for (const pkg of wanted.length ? wanted : ['sounds']) {

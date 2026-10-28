@@ -235,3 +235,4 @@ a.linkbtn{text-decoration:none}
 .ctx-a .danger{color:var(--bad,#f28b7c);margin-left:auto}
 #strip{touch-action:pan-x;user-select:none;-webkit-user-select:none}
 #L-ghost,#L-fx{pointer-events:none}
+@media (max-width: 400px) { .top .theme-btn { width: 26px; } .top-r .gbtn.icon-only { min-width: 26px; } }
