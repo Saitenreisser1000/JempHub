@@ -16,7 +16,7 @@ const R = 12
 
 /* ---------- state ---------- */
 const state={exs:examples(),cur:0,mode:'edit',sel:0,caret:'after',entry:'melody',dur:{base:E8,dot:false,trip:false},
-  horizon:{edit:'whole',practice:'near'},labels:'order',scale:false,frame:{edit:'full',practice:'fit'},lefty:false,speed:1,
+  horizon:{edit:'near',practice:'near'},labels:'finger',scale:false,frame:{edit:'full',practice:'fit'},lefty:false,speed:1,
   metro:false,countIn:true,loop:false,range:null,wait:false,trainer:false,undo:[]};
 // Ziehen in der Zeitleiste und Kontextmenü
 let DRAG=null,ctxOpenT=0;
@@ -203,7 +203,6 @@ function renderMoments(){
     // badge
     let badge='';
     if(m.strum&&list.length>1){let pat='';list.forEach((j,k)=>{if(k&&j-list[k-1]>1&&ms.slice(list[k-1]+1,j).some(q=>!q.dots.length))pat+='·';pat+=ms[j].strum==='u'?'↑':ms[j].strum==='d'?'↓':'•'});badge=pat}
-    else if(list.length>1||pts.length>1){const nums=list.map(j=>j+1);badge=nums.length>4?nums[0]+'…'+nums[nums.length-1]+' ×'+nums.length:nums.join(' · ')}
     if(m.strum&&list.length===1)badge=(badge?badge+' ':'')+(m.strum==='u'?'↑':'↓');
     if(badge&&!(pts.length===1&&list.length===1)){
       const minY=Math.min(...pts.map(p=>p[1])),top=pts.filter(p=>p[1]===minY),bx=centroid(top)[0],by=minY-R-12;
@@ -329,7 +328,6 @@ function frame(){
   applyPlay(c,p,nx,pv);
   const ph=$('#ph');if(ph){const x=8+tick*ST.ppt;ph.setAttribute('x1',x);ph.setAttribute('x2',x);ph.setAttribute('opacity',1)}
   if(Math.floor(now*4)!==P._sc){P._sc=Math.floor(now*4);scrollStripTo(tick)}
-  $('#posLine').textContent=posLabel(tick);
   P.raf=requestAnimationFrame(frame);
 }
 function setOp(el,op,cls){if(!el)return;if(Math.abs(el._op-op)>.008){el.style.opacity=op.toFixed(3);el._op=op}if(cls!==undefined&&el._cls!==cls){el.setAttribute('class','mg'+(cls?' '+cls:''));el._cls=cls}}
@@ -382,7 +380,7 @@ function waitShow(){
   const i=P.wi,on=onsets(),nx=nextSounding(i,P.order,true),pv=prevSounding(i,P.order,true);
   state.sel=i;applyPlay(i,.62,nx,pv,true);spawnPulse(i);playMoment(i,clock()+.01,spt());renderNow(i,nx);
   const ph=$('#ph');if(ph){const x=8+on[i]*ST.ppt;ph.setAttribute('x1',x);ph.setAttribute('x2',x);ph.setAttribute('opacity',1)}
-  scrollStripTo(on[i]);$('#posLine').textContent=posLabel(on[i]);
+  scrollStripTo(on[i]);
 }
 
 /* ---------- panels ---------- */
@@ -420,33 +418,22 @@ function renderTools(){
   segSet('#entrySeg',state.entry);
   const ms=cur().moments,a=ms[state.sel],dd=a?(decodeDur(a.dur)||{}):state.dur;
   const bases=[[6,'1/16'],[12,'1/8'],[24,'¼'],[48,'½'],[96,'1']];
+  const bl=(bases.find(([b])=>b===dd.base)||[0,''])[1];
+  $('#durBtn').textContent=(bl||durName(a?a.dur:durTicks()))+(dd.dot?'.':'')+(dd.trip?' ³':'');
   $('#durs').innerHTML=bases.map(([b,l],k)=>'<button data-base="'+b+'" aria-pressed="'+(dd.base===b)+'" title="'+DUR_NAMES[b]+' ('+(k+1)+')">'+l+'</button>').join('')+
     '<button data-flag="dot" aria-pressed="'+!!dd.dot+'" title="Dotted (.)">.</button><button data-flag="trip" aria-pressed="'+!!dd.trip+'" title="Triplet (T)">3</button>';
-  const col=a?colorOf(a):(cur().color||SKY);
-  $('#colorDot').style.background=col;
-  $('#swatches').innerHTML=COLORS.map(c=>'<button class="sw" data-c="'+c+'" style="background:'+c+'" aria-pressed="'+(c===col)+'" aria-label="Moment colour"></button>').join('');
   $('#undoBtn').disabled=!state.undo.length;
-  ['#delBtn','#dupBtn'].forEach(id=>$(id).disabled=!a);
 }
 function renderInspector(){
-  const ex=cur(),ms=ex.moments,on=onsets(),i=state.sel,m=ms[i],el=$('#insp');
-  if(!m){el.innerHTML='';renderHint();return}
-  let s='<span class="mt">Moment '+(i+1)+'</span><span>'+durName(m.dur)+'</span>';
-  if(!m.dots.length)s+='<span class="dchip w">rest</span>';
-  else{const h=m.dots.length>1?harmony(m):null;if(h)s+='<span class="dchip"><b>'+h.name+'</b></span>';
-    m.dots.slice().sort((a,b)=>b.s-a.s).forEach(d=>{const k=m.dots.indexOf(d);
-      s+='<span class="dchip"><b>'+noteName(d,true)+'</b><span class="w">'+stringName(d.s)+' '+(d.f===0?'open':d.f)+'</span>'+
-       '<select data-k="'+k+'" data-p="fg" aria-label="Finger">'+['','1','2','3','4','T'].map(v=>'<option value="'+v+'"'+(String(d.fg||'')===v?' selected':'')+'>'+(v?'fg '+v:'fg –')+'</option>').join('')+'</select>'+
-       '<select data-k="'+k+'" data-p="t" aria-label="Technique">'+[['','plain'],['h','hammer-on'],['p','pull-off'],['sl','slide'],['b','bend'],['~','vibrato']].map(([v,l])=>'<option value="'+v+'"'+((d.t||'')===v?' selected':'')+'>'+l+'</option>').join('')+'</select></span>'});
-    if(m.dots.length>1)s+='<select id="strumSel" aria-label="Strum">'+[['','together'],['d','strum ↓'],['u','strum ↑']].map(([v,l])=>'<option value="'+v+'"'+((m.strum||'')===v?' selected':'')+'>'+l+'</option>').join('')+'</select>';}
-  s+='<input type="text" id="noteIn" placeholder="Add a note for the student…" value="'+esc(m.note||'')+'">';
-  el.innerHTML=s;renderHint();
-}
-function renderHint(){
-  const h=$('#hint'),ms=cur().moments,i=state.sel;
-  // nur der Eingabezustand, keine Anleitung
-  if(state.mode==='practice'||!ms.length){h.innerHTML='';return}
-  h.innerHTML=state.caret==='after'?'<span>→ <b>new moment</b></span>':'<span>+ <b>moment '+(i+1)+'</b></span>';
+  const ms=cur().moments,m=ms[state.sel],el=$('#insp');
+  if(!m){el.hidden=true;return}
+  el.hidden=false;
+  let s='<span class="mt">'+(state.sel+1)+'</span>';
+  if(!m.dots.length)s+='<span class="w">rest</span>';
+  else{const h=m.dots.length>1?harmony(m):null;if(h)s+='<b class="hn">'+h.name+'</b>';
+    s+='<span class="nn">'+m.dots.slice().sort((a,b)=>b.s-a.s).map(d=>noteName(d,true)).join(' · ')+'</span>'}
+  s+='<span class="w">'+durName(m.dur)+'</span><span class="more" aria-hidden="true">⋯</span>';
+  el.innerHTML=s;
 }
 function renderNow(i,nx){
   const ms=cur().moments,on=onsets(),m=ms[i];
@@ -456,7 +443,7 @@ function renderNow(i,nx){
   $('#nextBig').textContent=nx>=0?dn.big:'End';$('#nextSub').textContent=nx>=0?dn.sub.split(' · ').slice(0,2).join(' · '):'';
   $('#posBig').textContent=m?posLabel(on[i]):'–';$('#posCount').textContent=m?'moment '+(i+1)+' of '+ms.length:'';
 }
-function updatePos(){const ms=cur().moments,on=onsets();$('#posLine').textContent=ms[state.sel]?'bar '+posLabel(on[state.sel])+'  ·  '+ms.length+' moments':'';}
+function updatePos(){}
 function renderAll(){
   document.body.classList.toggle('practice',state.mode==='practice');document.body.classList.toggle('editing',state.mode==='edit');
   buildGeo();
@@ -485,7 +472,7 @@ function placeDot(s,f,shift){
   state.caret=shift&&state.entry==='melody'?'after':caretFor();
   afterEdit();ensureAudio();pluck(cur().tuning[s]+f,clock()+.005,.5,.75);
 }
-function nextMoment(){state.caret='after';renderStrip();renderHint()}
+function nextMoment(){state.caret='after';renderStrip()}
 function insertRest(){const ms=cur().moments;pushUndo();const m=mo(durTicks(),[]);if(!ms.length){ms.push(m);state.sel=0}else{ms.splice(state.sel+1,0,m);state.sel++}state.caret='after';afterEdit()}
 function repeatMoment(){const ms=cur().moments,a=ms[state.sel];if(!a)return;pushUndo();ms.splice(state.sel+1,0,JSON.parse(JSON.stringify(a)));state.sel++;state.caret='after';afterEdit()}
 function deleteMoment(){const ms=cur().moments;if(!ms[state.sel])return;pushUndo();ms.splice(state.sel,1);state.sel=clamp(state.sel-(state.caret==='after'?1:0),0,Math.max(0,ms.length-1));state.caret='after';afterEdit()}
@@ -496,7 +483,7 @@ function selectMoment(i){const ms=cur().moments;if(!ms.length)return;state.sel=c
 }
 function setDur(o){
   Object.assign(state.dur,o);if(o.dot)state.dur.trip=false;if(o.trip)state.dur.dot=false;
-  const a=cur().moments[state.sel];if(a){pushUndo();a.dur=durTicks();afterEdit()}else renderTools();renderHint();
+  const a=cur().moments[state.sel];if(a){pushUndo();a.dur=durTicks();afterEdit()}else renderTools();
 }
 
 /* ---------- board pointer ---------- */
@@ -541,7 +528,7 @@ function stripClick(e){
   if(e.shiftKey){state.range=[state.sel,i];if(!state.loop)state.loop=true;renderStrip();renderTransport();if(P.on){stopPlay();play()}return}
   if(P.on){state.sel=i;stopPlay();play();return}
   selectMoment(i);
-  if(state.mode==='edit'&&t>=onsets().total){state.caret='after';renderStrip();renderHint()}
+  if(state.mode==='edit'&&t>=onsets().total){state.caret='after';renderStrip()}
 }
 // Ziehen in der Zeitleiste (Bearbeiten): Moment verschieben oder am rechten Rand die Länge ändern.
 // Finger: langes Drücken öffnet das Kontextmenü.
@@ -665,22 +652,13 @@ $('#labelSeg').addEventListener('click',e=>{const b=e.target.closest('button');i
 $('#frameSeg').addEventListener('click',e=>{const b=e.target.closest('button');if(!b)return;state.frame[state.mode]=b.dataset.v;segSet('#frameSeg',b.dataset.v);updateViewBox()});
 $('#scaleBtn').addEventListener('click',()=>{state.scale=!state.scale;renderBoard();renderHead();save()});
 $('#leftyBtn').addEventListener('click',()=>{const was=P.on;if(P.on||P.wait)stopPlay();state.lefty=!state.lefty;renderAll();if(was)play()});
-$('#entrySeg').addEventListener('click',e=>{const b=e.target.closest('button');if(!b)return;state.entry=b.dataset.v;state.caret=caretFor();renderTools();renderStrip();renderHint()});
+$('#entrySeg').addEventListener('click',e=>{const b=e.target.closest('button');if(!b)return;state.entry=b.dataset.v;state.caret=caretFor();renderTools();renderStrip()});
 $('#nextBtn').addEventListener('click',nextMoment);
 $('#restBtn').addEventListener('click',insertRest);
-$('#dupBtn').addEventListener('click',repeatMoment);
-$('#delBtn').addEventListener('click',deleteMoment);
 $('#undoBtn').addEventListener('click',undo);
 $('#durs').addEventListener('click',e=>{const b=e.target.closest('button');if(!b)return;if(b.dataset.base)setDur({base:+b.dataset.base});else{const f=b.dataset.flag,a=cur().moments[state.sel],dd=a?(decodeDur(a.dur)||state.dur):state.dur;state.dur.base=dd.base||state.dur.base;setDur(f==='dot'?{dot:!dd.dot,trip:false}:{trip:!dd.trip,dot:false})}});
-$('#swatches').addEventListener('click',e=>{const b=e.target.closest('button');if(!b)return;const a=cur().moments[state.sel];if(a){pushUndo();a.color=b.dataset.c;afterEdit()}else{cur().color=b.dataset.c;renderTools()}closePops()});
-$('#insp').addEventListener('change',e=>{
-  const a=cur().moments[state.sel];if(!a)return;const t=e.target;
-  if(t.id==='noteIn'){a.note=t.value.trim()||null;save();return}
-  pushUndo();
-  if(t.id==='strumSel')a.strum=t.value||null;
-  else if(t.dataset.k!=null){const d=a.dots[+t.dataset.k];if(t.dataset.p==='fg')d.fg=t.value?(t.value==='T'?'T':+t.value):null;else d.t=t.value||null}
-  afterEdit();
-});
+$('#insp').addEventListener('click',e=>{e.stopPropagation();const r=e.currentTarget.getBoundingClientRect();openCtx(state.sel,r.left,r.bottom+6)});
+$('#durs').addEventListener('click',e=>{const b=e.target.closest('button');if(b&&b.dataset.base)setTimeout(closePops,0)});
 $('#exTitle').addEventListener('change',e=>{cur().title=e.target.value.trim()||'Untitled exercise';renderLib();save()});
 $('#libList').addEventListener('click',e=>{const b=e.target.closest('.lib-item');if(!b)return;loadEx(+b.dataset.i);document.body.classList.remove('lib-open')});
 function loadEx(i){if(P.on||P.wait)stopPlay();state.cur=i;state.sel=0;state.range=null;state.undo=[];state.caret=caretFor();state.speed=1;renderAll();save()}
@@ -705,6 +683,7 @@ document.addEventListener('keydown',e=>{
   if(k===' '){e.preventDefault();if(P.wait){waitStep(1);return}if(P.on)stopPlay();else play();return}
   if(k==='ArrowRight'){e.preventDefault();if(P.wait)waitStep(1);else if(!P.on)selectMoment(state.sel+1);return}
   if(k==='ArrowLeft'){e.preventDefault();if(P.wait)waitStep(-1);else if(!P.on)selectMoment(state.sel-1);return}
+  if(k==='?'){const hp=$('#help'),open=hp.hidden;closePops();hp.hidden=!open;return}
   if(k==='Escape'){if(P.on||P.wait)stopPlay();closePops();return}
   if(k==='h'||k==='H'){const o=['whole','near','now'];state.horizon[state.mode]=o[(o.indexOf(hor())+1)%3];segSet('#horizonSeg',hor());if(P.wait){renderMoments();waitShow()}else if(!P.on)renderMoments();return}
   if(k==='n'||k==='N'){const o=['order','finger','note'];state.labels=o[(o.indexOf(state.labels)+1)%3];segSet('#labelSeg',state.labels);renderMoments();if(P.wait)waitShow();return}
@@ -715,7 +694,7 @@ document.addEventListener('keydown',e=>{
   if(k==='Backspace'||k==='Delete'){e.preventDefault();deleteMoment();return}
   if(k==='r'||k==='R'){insertRest();return}
   if(k==='d'||k==='D'){repeatMoment();return}
-  if(k==='g'||k==='G'){state.entry=state.entry==='melody'?'chord':'melody';state.caret=caretFor();renderTools();renderStrip();renderHint();return}
+  if(k==='g'||k==='G'){state.entry=state.entry==='melody'?'chord':'melody';state.caret=caretFor();renderTools();renderStrip();return}
   if(k>='1'&&k<='5'){setDur({base:[6,12,24,48,96][+k-1]});return}
   if(k==='.'){const a=ms[state.sel],dd=a?(decodeDur(a.dur)||state.dur):state.dur;state.dur.base=dd.base||state.dur.base;setDur({dot:!dd.dot,trip:false});return}
   if(k==='t'||k==='T'){const a=ms[state.sel],dd=a?(decodeDur(a.dur)||state.dur):state.dur;state.dur.base=dd.base||state.dur.base;setDur({trip:!dd.trip,dot:false});return}
