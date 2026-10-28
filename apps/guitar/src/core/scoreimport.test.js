@@ -10,6 +10,8 @@ const path = process.env.ALPHATAB_JS
 let at = null
 if (path) at = path.endsWith('.mjs') ? await import(path) : createRequire(import.meta.url)(path)
 if (at && at.default && !at.importer) at = at.default
+if (process.env.GITHUB_ACTIONS && !at) throw new Error('alphaTab missing in CI')
+if (at) console.log('::notice::alphaTab import tests running (' + (at.meta && at.meta.version || 'version unknown') + ')')
 
 const TEX = `\\title "Import Test" \\tempo 90
 .

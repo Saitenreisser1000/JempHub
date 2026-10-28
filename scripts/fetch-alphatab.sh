@@ -9,7 +9,7 @@ DEST="${1:?Zielordner fehlt}"
 VER="${ALPHATAB_VERSION:-1}"
 TMP="$(mktemp -d)"
 (cd "$TMP" && npm pack "@coderline/alphatab@$VER" --silent >/dev/null && tar xzf ./*.tgz)
-echo "alphaTab $(node -p "require('$TMP/package/package.json').version")" >&2
+echo "::notice::alphaTab $(node -p "require('$TMP/package/package.json').version") fetched" >&2
 ls "$TMP/package/dist" >&2
 JS="$(ls "$TMP/package/dist/alphaTab.min.js" "$TMP/package/dist/alphaTab.js" 2>/dev/null | head -1)"
 [ -n "$JS" ] || { echo "alphaTab.js nicht gefunden" >&2; exit 1; }
