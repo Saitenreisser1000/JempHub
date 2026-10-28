@@ -8,3 +8,9 @@
   Jede App bindet sie als `vendor/theme/theme.css` vor ihren eigenen Styles ein.
 
 Eine Farbe ändern: hier anpassen, `?v=` im Link der Apps erhöhen, Apps neu hochladen.
+
+## Hell/Dunkel-Schalter
+
+`theme.js` wird in jeder App als normales `<script>` im `<head>` geladen. Ein Knopf mit
+`data-theme-toggle` (Klasse `theme-btn`) schaltet um. Die Wahl wird als Cookie auf `.jemphub.com`
+gespeichert und gilt damit für alle Apps; ohne Wahl folgt die Seite der Geräteeinstellung.

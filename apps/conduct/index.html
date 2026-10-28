@@ -11,7 +11,8 @@
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="icon" href="icon.svg" type="image/svg+xml">
 <link rel="apple-touch-icon" href="icon.svg">
-<link rel="stylesheet" href="vendor/theme/theme.css?v=1">
+<script src="vendor/theme/theme.js?v=1"></script>
+<link rel="stylesheet" href="vendor/theme/theme.css?v=2">
 <link rel="stylesheet" href="vendor/fonts/fonts.css">
 <link rel="stylesheet" href="src/base.css?v=2">
 <link rel="stylesheet" href="src/styles.css?v=4">
@@ -24,6 +25,7 @@
     <span>ConductJemp</span>
   </a>
   <div class="top-r">
+    <button type="button" class="theme-btn" data-theme-toggle title="Hell / Dunkel" aria-label="Hell / Dunkel"><svg class="i-moon" width="16" height="16" viewBox="0 0 24 24" aria-hidden="true"><path d="M20 14.5A8 8 0 0 1 9.5 4a8 8 0 1 0 10.5 10.5z" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"/></svg><svg class="i-sun" width="17" height="17" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="4" fill="none" stroke="currentColor" stroke-width="1.7"/><path d="M12 2.5v2.2M12 19.3v2.2M2.5 12h2.2M19.3 12h2.2M5.3 5.3l1.6 1.6M17.1 17.1l1.6 1.6M5.3 18.7l1.6-1.6M17.1 6.9l1.6-1.6" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/></svg></button>
     <button class="gbtn icon-only" id="helpBtn" aria-expanded="false" aria-label="Hilfe"><span style="font:600 14px var(--font-mono)">?</span></button>
   </div>
 </header>
