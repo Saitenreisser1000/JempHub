@@ -218,8 +218,11 @@ h1, h2 { font-family: var(--font-display); letter-spacing: -.015em; margin: 0; t
 .soon { color: var(--faint); font-size: 13px; margin: 14px 4px 0; }
 .ex-thumb svg.staff { height: 64px; width: 100%; }
 @media (max-width: 560px) {
-  .stagebox { grid-template-columns: 1fr; justify-items: center; }
-  .playbtn { width: 72px; height: 72px; }
+  .stagebox { gap: 8px; padding: 10px 12px; }
+  .stagebox.melody { grid-template-columns: 1fr; justify-items: center; }
+  .playbtn { width: 58px; height: 58px; }
+  .stagebox .playlbl { display: none; }
+  .stagebox .staff { height: clamp(130px, 21vh, 190px); }
   .answers.ivs { grid-template-columns: repeat(2, 1fr); }
   .top .seg button { padding: 0 7px; }
 }
@@ -271,3 +274,11 @@ a.gbtn { text-decoration: none; }
 .optbtn { margin-left: 2px; }
 .panel.opts { margin-bottom: 12px; }
 @media (max-width: 440px) { .qhead h2 { font-size: 19px; } .qstats { gap: 8px; } .qstats span { white-space: nowrap; } }
+
+/* Nach der Antwort: Weiter-Knopf bleibt am unteren Rand sichtbar, ohne Scrollen */
+.actions.dock { position: sticky; bottom: 0; z-index: 5; margin-top: 12px; padding: 14px 0 calc(12px + env(safe-area-inset-bottom, 0px)); background: linear-gradient(to bottom, transparent, var(--bg) 14px); }
+.actions.dock { display: flex; gap: 8px; flex-wrap: nowrap; }
+.actions.dock .pbtn { flex: 1 1 auto; }
+.actions.dock .sbtn { flex: none; }
+@media (max-height: 700px) { .stagebox .staff { height: clamp(110px, 20vh, 160px); } .feedback { margin: 10px 0; } }
+@media (max-width: 560px) { .stagebox.melody .staff { height: clamp(96px, 15vh, 140px); } }

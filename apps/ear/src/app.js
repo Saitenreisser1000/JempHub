@@ -532,7 +532,7 @@ function renderMelodyPlay() {
     html += `<div class="actions"><button class="sbtn" data-act="undo" ${S.entry.length > hintCount() ? '' : 'disabled'}>${t('undo')}<span class="kbd">⌫</span></button><button class="sbtn" data-act="clear" ${S.entry.length > hintCount() ? '' : 'disabled'}>${t('clear')}</button><button class="pbtn" data-act="check" ${full ? '' : 'disabled'}>${t('checkBtn')}<span class="kbd">⏎</span></button></div>`
   } else {
     const last = S.i + 1 >= roundLength()
-    html += `<div class="actions">${S.result === 'bad' ? `<button class="sbtn" data-act="compare" title="${t('compareHint')}">${t('compare')}<span class="kbd">C</span></button>` : ''}<button class="pbtn" data-act="next">${last ? t('toResult') : t('next')}<span class="kbd">⏎</span></button></div>`
+    html += `<div class="actions dock">${S.result === 'bad' ? `<button class="sbtn" data-act="compare" title="${t('compareHint')}">${t('compare')}<span class="kbd">C</span></button>` : ''}<button class="pbtn" data-act="next">${last ? t('toResult') : t('next')}<span class="kbd">⏎</span></button></div>`
   }
   return html
 }
@@ -561,7 +561,7 @@ function renderIntonationPlay() {
   }).join('')}</div>`
   if (S.result) {
     const last = S.i + 1 >= roundLength()
-    html += `<div class="actions"><button class="pbtn" data-act="next">${last ? t('toResult') : t('next')}<span class="kbd">⏎</span></button></div>`
+    html += `<div class="actions dock"><button class="pbtn" data-act="next">${last ? t('toResult') : t('next')}<span class="kbd">⏎</span></button></div>`
   }
   return html
 }
@@ -592,7 +592,8 @@ function renderPlay() {
   if (S.result) {
     const fret = S.settings.fretboard ? `<div class="where"><div class="lbl">${t('onGuitar')}</div>${fretboardSVG(fretTones(q), t('onGuitar'))}</div>` : ''
     const last = S.i + 1 >= roundLength()
-    html += `<div class="reveal">${fret}<div class="actions">${S.result === 'bad' ? `<button class="sbtn" data-act="compare" title="${t('compareHint')}">${t('compare')}<span class="kbd">C</span></button>` : ''}<button class="pbtn" data-act="next">${last ? t('toResult') : t('next')}<span class="kbd">⏎</span></button></div></div>`
+    if (fret) html += `<div class="reveal">${fret}</div>`
+    html += `<div class="actions dock">${S.result === 'bad' ? `<button class="sbtn" data-act="compare" title="${t('compareHint')}">${t('compare')}<span class="kbd">C</span></button>` : ''}<button class="pbtn" data-act="next">${last ? t('toResult') : t('next')}<span class="kbd">⏎</span></button></div>`
   }
   return html
 }

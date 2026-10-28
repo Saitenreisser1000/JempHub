@@ -247,7 +247,7 @@ function feedbackHTML(prompt, right, wrong, extra = '') {
     : `<div class="feedback bad"><span class="ic" aria-hidden="true">✕</span>Das war: ${wrong}${extra ? `<small>${extra}</small>` : ''}</div>`
 }
 
-const nextBtn = () => (S.result ? `<button class="pbtn big" data-act="next">${S.i + 1 >= roundLength() ? 'Zum Ergebnis' : 'Weiter'}<span class="kbd">⏎</span></button>` : '')
+const nextBtn = () => (S.result ? `<div class="actions dock"><button class="pbtn big" data-act="next">${S.i + 1 >= roundLength() ? 'Zum Ergebnis' : 'Weiter'}<span class="kbd">⏎</span></button></div>` : '')
 
 function cls(isRight, isChosen) {
   if (!S.result) return ''
@@ -289,7 +289,7 @@ function renderNotes() {
   }).join('')}</div>`
   if (S.result) {
     const where = S.settings.fretboard ? `<div class="where"><div class="lbl">So liegt ${esc(q.fullName)} auf ${instrument === 'guitar' ? 'der Gitarre' : 'dem E-Bass'}</div>${fretboardSVG(q.midi, instrument, S.result === 'ok' ? '#8fd3a9' : '#d8b46a')}</div>` : ''
-    html += `<div class="reveal">${where}${nextBtn()}</div>`
+    html += (where ? `<div class="reveal">${where}</div>` : '') + nextBtn()
   }
   return html
 }
@@ -314,7 +314,7 @@ function renderValues() {
     const chosen = S.answer && S.answer.base === b
     return `<button class="abtn txt${cls(b === q.base, chosen)}" data-base="${b}" ${S.result ? 'disabled' : ''}>${BASES[b].name}<span class="k">${k + 1}</span></button>`
   }).join('')}</div>`
-  if (S.result) html += `<div class="reveal">${nextBtn()}</div>`
+  if (S.result) html += nextBtn()
   return html
 }
 
@@ -332,7 +332,7 @@ function renderMeasures() {
     const chosen = S.answer && S.answer.dur === d
     return `<button class="abtn${cls(d === q.missing, chosen)}" data-dur="${d}" aria-label="${esc(measureLabel(q, d))}" ${S.result ? 'disabled' : ''}>${staffSVG({ items: [it], lines: false, minWidth: 7, top: 4, height: 9, label: measureLabel(q, d) })}<span class="k">${k + 1}</span></button>`
   }).join('')}</div>`
-  if (S.result) html += `<div class="reveal">${nextBtn()}</div>`
+  if (S.result) html += nextBtn()
   return html
 }
 
