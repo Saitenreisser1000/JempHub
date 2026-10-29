@@ -60,15 +60,27 @@ export function createPlayer({ base = new URL('../', import.meta.url).href } = {
 
   const now = () => (ctx ? ctx.currentTime : 0)
 
+  // Klavierdateien schon beim Öffnen der Seite holen (geht ohne Nutzeraktion);
+  // dekodiert wird erst in loadPiano, sobald Audio erlaubt ist.
+  let pianoBytes = null
+  function prefetchPiano() {
+    if (!pianoBytes) {
+      pianoBytes = Promise.all([fetch(base + 'piano/piano.json'), fetch(base + 'piano/piano.mp3')]).then(async ([spriteRes, audioRes]) => {
+        if (!spriteRes.ok || !audioRes.ok) throw new Error('Klavierklang konnte nicht geladen werden')
+        return { sprite: (await spriteRes.json()).sprite, audio: await audioRes.arrayBuffer() }
+      })
+      pianoBytes.catch(() => { pianoBytes = null })
+    }
+    return pianoBytes
+  }
+
   async function loadPiano() {
     if (piano) return piano
     if (pianoLoading) return pianoLoading
     if (!ensure()) return null
     pianoLoading = (async () => {
-      const [spriteRes, audioRes] = await Promise.all([fetch(base + 'piano/piano.json'), fetch(base + 'piano/piano.mp3')])
-      if (!spriteRes.ok || !audioRes.ok) throw new Error('Klavierklang konnte nicht geladen werden')
-      const sprite = (await spriteRes.json()).sprite
-      const buffer = await ctx.decodeAudioData(await audioRes.arrayBuffer())
+      const { sprite, audio } = await prefetchPiano()
+      const buffer = await ctx.decodeAudioData(audio.slice(0))
       const map = {}
       for (const [name, [start, dur]] of Object.entries(sprite)) {
         const m = midiFromName(name)
@@ -210,6 +222,7 @@ export function createPlayer({ base = new URL('../', import.meta.url).href } = {
   return {
     ensure,
     now,
+    prefetchPiano,
     loadPiano,
     pianoReady: () => !!piano,
     loadSustain,

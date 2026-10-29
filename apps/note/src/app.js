@@ -7,7 +7,19 @@ import {
 import { createStore } from './stats.js'
 import { staffSVG } from './staff.js'
 import { fretboardSVG } from './fretboard.js'
-import { ensureAudio, clock, pluck, click } from './audio.js'
+import { createPlayer } from '../vendor/sounds/src/player.js'
+
+// Klavierklang (gemeinsames Paket); bis das Sample geladen ist, klingt kurz die Gitarre
+const player = createPlayer()
+player.prefetchPiano().catch(() => {})
+function ensureAudio() {
+  if (!player.ensure()) return false
+  if (!player.pianoReady()) player.loadPiano().catch(() => {})
+  return true
+}
+const clock = () => player.now()
+const pluck = (midi, when, dur, vel) => player.note(midi, when, dur, { instrument: 'piano', vel })
+const click = (when, accent) => player.click(when, accent)
 
 const $ = (s) => document.querySelector(s)
 const view = $('#view')
@@ -116,6 +128,7 @@ const ex = () => EX[S.route]
 const roundLength = () => Number(S.settings.length) || 10
 
 function start() {
+  if (sound) ensureAudio()
   clearTimeout(S.advanceT)
   Object.assign(S, { phase: 'playing', i: 0, score: 0, streak: 0, bestStreak: 0, missed: [], times: [], q: null })
   nextQuestion()
