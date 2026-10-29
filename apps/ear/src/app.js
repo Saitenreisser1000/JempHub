@@ -211,6 +211,7 @@ function playNotes(q, notes, offset = 0) {
   if (q.type === 'melody') {
     const beat = 60 / (Number(S.settings.bpm) || 80)
     notes.forEach((n, k) => player.note(midiOf(n), t0 + k * beat, Math.max(0.35, beat * 0.92), opts))
+    if (notes === q.notes && !S.result) markHint(t0, Math.max(0.35, beat * 0.92))
     return notes.length * beat + 0.8
   }
   if (q.type === 'scale') {
@@ -227,6 +228,17 @@ function playNotes(q, notes, offset = 0) {
   }
   if (mode === 'block' || mode === 'both') ms.forEach((m) => player.note(m, tt, 1.6, opts))
   return tt - t0 + 1.7
+}
+
+// Melodiediktat: vorgegebener erster Ton leuchtet, solange er erklingt
+let hintT = []
+function markHint(t0, dur) {
+  hintT.forEach(clearTimeout)
+  const on = (v) => document.querySelectorAll('.staff .hint').forEach((el) => el.classList.toggle('sounding', v))
+  on(false)
+  if (!hintCount()) return
+  const delay = Math.max(0, (t0 - player.now()) * 1000)
+  hintT = [setTimeout(() => on(true), delay), setTimeout(() => on(false), delay + dur * 1000)]
 }
 
 // Intonation: notes = Liste der Fassungen (Indizes 0–2)
@@ -366,14 +378,23 @@ function submitMelody() {
   }
   store.recordAnswer(S.route, melodyKey(q.id), ok)
   render()
-  if (ok && auto) S.advanceT = setTimeout(advance, 1600)
+  playEntry()
+  if (ok && auto) S.advanceT = setTimeout(advance, 1600 + q.midis.length * (60 / (Number(S.settings.bpm) || 80)) * 1000)
+}
+
+// Kontrolle: die eigene Eingabe erklingt
+async function playEntry() {
+  await prepareSound()
+  player.stopAll()
+  markPlaying(playNotes(S.q, playOrder(S.q, S.answer)))
 }
 
 const hintCount = () => (S.q && S.q.type === 'melody' && S.settings.hint ? 1 : 0)
 
 async function pressKey(midi) {
   await prepareSound()
-  player.note(midi, player.now() + 0.01, 0.7, { instrument })
+  // Melodiediktat: Tasten nur hörbar, wenn eingeschaltet oder nach der Kontrolle
+  if (!S.q || S.q.type !== 'melody' || S.result || S.settings.keySound) player.note(midi, player.now() + 0.01, 0.7, { instrument })
   if (S.result || !S.q || S.entry.length >= S.q.midis.length) return
   S.entry.push(midi)
   render()
@@ -431,6 +452,7 @@ function melodyRows(essential) {
   rows += `<div class="vrow"><span>${t('bpm')}</span>${segHTML('bpm', [60, 80, 100, 120, 140].map((n) => [String(n), n]), Number(st.bpm) || 80)}</div>`
   rows += `<div class="vrow"><span>${t('length')}</span>${segHTML('length', [['5', 5], ['10', 10], ['20', 20]], Number(st.length) || 10)}</div>`
   rows += `<div class="vrow"><span>${t('hint')}</span><button class="switch" data-toggle="hint" aria-pressed="${!!st.hint}" aria-label="${t('hint')}"></button></div>`
+  rows += `<div class="vrow"><span>${t('keySound')}</span><button class="switch" data-toggle="keySound" aria-pressed="${!!st.keySound}" aria-label="${t('keySound')}"></button></div>`
   rows += `<div class="vrow"><span>${t('auto')}</span><button class="switch" data-toggle="auto" aria-pressed="${auto}" aria-label="${t('auto')}"></button></div>`
   return rows
 }

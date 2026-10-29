@@ -282,3 +282,7 @@ a.gbtn { text-decoration: none; }
 .actions.dock .sbtn { flex: none; }
 @media (max-height: 700px) { .stagebox .staff { height: clamp(110px, 20vh, 160px); } .feedback { margin: 10px 0; } }
 @media (max-width: 560px) { .stagebox.melody .staff { height: clamp(96px, 15vh, 140px); } }
+/* Melodiediktat: vorgegebener erster Ton leuchtet beim Erklingen */
+.staff .hint { transition: fill .1s ease, transform .1s ease; transform-box: fill-box; transform-origin: center; }
+.staff .hint.sounding { fill: var(--brass); transform: scale(1.45); filter: drop-shadow(0 0 5px var(--brass)) drop-shadow(0 0 10px color-mix(in srgb, var(--brass) 60%, transparent)); }
+@media (prefers-reduced-motion: reduce) { .staff .hint { transition: none; } }

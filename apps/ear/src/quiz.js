@@ -135,7 +135,8 @@ export const MELODY_LEVELS = {
   3: { low: 60, high: 72, chromatic: true, leap: 7 },
   4: { low: 57, high: 76, chromatic: true, leap: 12 },
 }
-export const MELODY_DEFAULTS = { level: 1, notes: 5, bpm: 80, hint: true, length: 10 }
+// keySound: Tasten beim Eingeben hörbar (Standard aus – gehört wird erst bei der Kontrolle)
+export const MELODY_DEFAULTS = { level: 1, notes: 5, bpm: 80, hint: true, keySound: false, length: 10 }
 export const melodyKey = (id) => `m:${id}`
 
 export function melodyPool(level) {
