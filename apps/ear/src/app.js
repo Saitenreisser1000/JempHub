@@ -12,6 +12,7 @@ const $ = (s) => document.querySelector(s)
 const view = $('#view')
 const store = createStore()
 const player = createPlayer()
+player.prefetchPiano().catch(() => {})
 const esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c])
 const TONE_COLORS = ['#7cc4f2', '#f2c46d', '#8fd3a9', '#ef98c4']
 

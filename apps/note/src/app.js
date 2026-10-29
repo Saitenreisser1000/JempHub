@@ -11,6 +11,7 @@ import { createPlayer } from '../vendor/sounds/src/player.js'
 
 // Klavierklang (gemeinsames Paket); bis das Sample geladen ist, klingt kurz die Gitarre
 const player = createPlayer()
+player.prefetchPiano().catch(() => {})
 function ensureAudio() {
   if (!player.ensure()) return false
   if (!player.pianoReady()) player.loadPiano().catch(() => {})

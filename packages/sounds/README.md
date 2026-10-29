@@ -4,7 +4,7 @@ Gemeinsame Klänge der Jemp-Apps.
 
 | Datei | Inhalt |
 | --- | --- |
-| `piano/piano.mp3`, `piano/piano.json` | Klavier: 54 Töne als Sprite (je 1,6 s), aus EarJemp übernommen. Lückenlos von C1 bis Cis5, dazu A5–H5; D5–Gis5 werden aus Nachbartönen erzeugt |
+| `piano/piano.mp3`, `piano/piano.json` | Klavier: 29 Töne als Sprite (je 1,6 s, mono, 64 kbit/s, ca. 380 KB), aus EarJemp übernommen und mit `scripts/slim-piano.py` verkleinert: Ganztöne von Ais0 bis C5, dazu Cis5, A5, Ais5. Fehlende Töne werden um höchstens einen Halbton verschoben (D5–Gis5 etwas weiter) |
 | `vpo/` | Gehaltene Orchesterklänge (Streicher, Holzbläser, Blechbläser, Fis2–C5) aus Virtual Playing Orchestra, mit `manifest.json`; aus EarJemp übernommen, erzeugt mit `scripts/prepare-vpo.mjs` |
 | `src/player.js` | Web-Audio-Player: Klavier, Gitarre (Karplus–Strong-Synthese), Orchester, Metronom-Klick; Verstimmung in Cent |
 
@@ -18,6 +18,7 @@ Fehlende Töne werden aus dem nächstgelegenen Sample per Tonhöhenverschiebung 
 ```js
 import { createPlayer } from '../vendor/sounds/src/player.js'
 const player = createPlayer()
+player.prefetchPiano()          // beim Laden der Seite: Dateien schon holen
 player.ensure()                 // nach einer Nutzeraktion
 await player.loadPiano()
 player.note(60, player.now(), 1.2, { instrument: 'piano' })
