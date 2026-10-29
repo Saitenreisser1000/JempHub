@@ -211,7 +211,7 @@ function playNotes(q, notes, offset = 0) {
   if (q.type === 'melody') {
     const beat = 60 / (Number(S.settings.bpm) || 80)
     notes.forEach((n, k) => player.note(midiOf(n), t0 + k * beat, Math.max(0.35, beat * 0.92), opts))
-    if (notes === q.notes && !S.result) markHint(t0, Math.max(0.35, beat * 0.92))
+    if (notes === q.notes && !S.result) markHint(t0)
     return notes.length * beat + 0.8
   }
   if (q.type === 'scale') {
@@ -230,15 +230,16 @@ function playNotes(q, notes, offset = 0) {
   return tt - t0 + 1.7
 }
 
-// Melodiediktat: vorgegebener erster Ton leuchtet, solange er erklingt
-let hintT = []
-function markHint(t0, dur) {
-  hintT.forEach(clearTimeout)
-  const on = (v) => document.querySelectorAll('.staff .hint').forEach((el) => el.classList.toggle('sounding', v))
-  on(false)
+// Melodiediktat: der bereits gezeigte erste Ton pulsiert kurz, wenn er erklingt
+let hintT = 0
+function markHint(t0) {
+  clearTimeout(hintT)
   if (!hintCount()) return
-  const delay = Math.max(0, (t0 - player.now()) * 1000)
-  hintT = [setTimeout(() => on(true), delay), setTimeout(() => on(false), delay + dur * 1000)]
+  hintT = setTimeout(() => document.querySelectorAll('.staff .hint').forEach((el) => {
+    el.classList.remove('pulse')
+    void el.getBBox()
+    el.classList.add('pulse')
+  }), Math.max(0, (t0 - player.now()) * 1000))
 }
 
 // Intonation: notes = Liste der Fassungen (Indizes 0–2)
