@@ -211,7 +211,9 @@ function playNotes(q, notes, offset = 0) {
   if (q.type === 'melody') {
     const beat = 60 / (Number(S.settings.bpm) || 80)
     notes.forEach((n, k) => player.note(midiOf(n), t0 + k * beat, Math.max(0.35, beat * 0.92), opts))
-    if (notes === q.notes && !S.result) markHint(t0)
+    if (!S.result) { if (notes === q.notes) markHint(t0) }
+    // nach der Kontrolle: die gespielten Töne pulsieren der Reihe nach (Lösung bzw. eigene Eingabe)
+    else pulseStaff(notes === q.notes && S.result === 'bad' ? 1 : 0, notes.length, t0, beat)
     return notes.length * beat + 0.8
   }
   if (q.type === 'scale') {
@@ -230,18 +232,31 @@ function playNotes(q, notes, offset = 0) {
   return tt - t0 + 1.7
 }
 
-// Melodiediktat: der bereits gezeigte erste Ton pulsiert kurz, wenn er erklingt
-let hintT = 0
-function markHint(t0) {
-  clearTimeout(hintT)
-  if (!hintCount()) return
-  hintT = setTimeout(() => document.querySelectorAll('.staff .hint').forEach((el) => {
+// Melodiediktat: Notenköpfe pulsieren kurz, wenn ihr Ton erklingt
+function pulseEls(els) {
+  els.forEach((el) => {
     el.classList.remove('pulse')
-    // Mittelpunkt des Notenkopfs als festen Drehpunkt setzen (Safari kennt fill-box bei Text nicht zuverlässig)
+    // Mittelpunkt als festen Drehpunkt setzen (Safari kennt fill-box bei Text nicht zuverlässig)
     const bb = el.getBBox()
     el.style.transformOrigin = `${bb.x + bb.width / 2}px ${bb.y + bb.height / 2}px`
     el.classList.add('pulse')
-  }), Math.max(0, (t0 - player.now()) * 1000))
+  })
+}
+let pulseT = []
+const atTime = (t, fn) => pulseT.push(setTimeout(fn, Math.max(0, (t - player.now()) * 1000)))
+// der bereits gezeigte erste Ton
+function markHint(t0) {
+  pulseT.forEach(clearTimeout); pulseT = []
+  if (!hintCount()) return
+  atTime(t0, () => pulseEls(document.querySelectorAll('.staff .hint')))
+}
+// staffIdx: 0 = eigene Eingabe, 1 = Lösung (nur bei falscher Antwort sichtbar)
+function pulseStaff(staffIdx, count, t0, beat) {
+  if (t0 <= player.now() + 0.1) { pulseT.forEach(clearTimeout); pulseT = [] }
+  for (let k = 0; k < count; k++) atTime(t0 + k * beat, () => {
+    const svg = document.querySelectorAll('.stagebox.melody svg.staff')[staffIdx]
+    if (svg) pulseEls(svg.querySelectorAll(`[data-col="${k}"]`))
+  })
 }
 
 // Intonation: notes = Liste der Fassungen (Indizes 0–2)

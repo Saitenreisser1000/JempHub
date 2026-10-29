@@ -283,7 +283,8 @@ a.gbtn { text-decoration: none; }
 @media (max-height: 700px) { .stagebox .staff { height: clamp(110px, 20vh, 160px); } .feedback { margin: 10px 0; } }
 @media (max-width: 560px) { .stagebox.melody .staff { height: clamp(96px, 15vh, 140px); } }
 /* Melodiediktat: vorgegebener erster Ton pulsiert kurz beim Erklingen */
-.staff .hint { transform-box: view-box; }
-.staff .hint.pulse { animation: hintpulse .42s ease-out; }
-@keyframes hintpulse { 0% { transform: scale(1); fill: var(--muted); } 35% { transform: scale(1.35); fill: var(--brass); } 100% { transform: scale(1); fill: var(--muted); } }
-@media (prefers-reduced-motion: reduce) { .staff .hint.pulse { animation-duration: .01s; } }
+.staff .glyph { transform-box: view-box; }
+.staff .glyph.pulse { animation: notepulse .42s ease-out; }
+/* Farbe nur in der Mitte: davor und danach gilt die eigene Farbe (grau, grün, rot) */
+@keyframes notepulse { 0% { transform: scale(1); } 35% { transform: scale(1.35); fill: var(--brass); } 100% { transform: scale(1); } }
+@media (prefers-reduced-motion: reduce) { .staff .glyph.pulse { animation-duration: .01s; } }

@@ -14,7 +14,9 @@ export function staffSVG({ clef = 'treble', columns = [], label = 'Notensystem',
   const [glyph, cpos] = CLEF[clef]
   parts.push(`<text class="glyph" x="${0.6 * S}" y="${yOf(cpos)}">${cp(glyph)}</text>`)
   let x = 7
+  let ci = -1
   for (const col of columns) {
+    ci++
     if (col.gap) {
       parts.push(`<rect class="gap" x="${r1((x + 0.4) * S)}" y="${yOf(10)}" width="${r1((colW - 1.6) * S)}" height="${12 * (S / 2)}" rx="8"/>`)
       parts.push(`<text class="qmark" x="${r1((x + colW / 2 - 0.4) * S)}" y="${yOf(4) + 9}" text-anchor="middle">?</text>`)
@@ -44,8 +46,8 @@ export function staffSVG({ clef = 'treble', columns = [], label = 'Notensystem',
       const nx = hx + n._shift
       for (let p = -2; p >= n.pos; p -= 2) parts.push(`<line class="ledger" x1="${r1((hx - 0.6) * S)}" x2="${r1((hx + 2.4 + n._shift) * S)}" y1="${yOf(p)}" y2="${yOf(p)}"/>`)
       for (let p = 10; p <= n.pos; p += 2) parts.push(`<line class="ledger" x1="${r1((hx - 0.6) * S)}" x2="${r1((hx + 2.4 + n._shift) * S)}" y1="${yOf(p)}" y2="${yOf(p)}"/>`)
-      if (n.acc) parts.push(`<text class="glyph${cls}" x="${r1(n._accX * S)}" y="${y}">${cp(ACC[n.acc])}</text>`)
-      parts.push(`<text class="glyph${cls}" x="${r1(nx * S)}" y="${y}">${cp(0xe0a2)}</text>`)
+      if (n.acc) parts.push(`<text class="glyph${cls}" data-col="${ci}" x="${r1(n._accX * S)}" y="${y}">${cp(ACC[n.acc])}</text>`)
+      parts.push(`<text class="glyph${cls}" data-col="${ci}" x="${r1(nx * S)}" y="${y}">${cp(0xe0a2)}</text>`)
     }
     x += colW
   }
