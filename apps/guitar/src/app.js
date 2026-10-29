@@ -7,6 +7,8 @@ import {
 } from './core/model.js'
 import { useFlats, pcName as corePcName, noteName as coreNoteName, harmony as coreHarmony } from './core/music.js'
 import { examples } from './core/exercises.js'
+import { parseTextTab } from './core/texttab.js'
+import { scoreInfo, scoreToExercise } from './core/scoreimport.js'
 import { ensureAudio, clock, pluck, click, silence } from './audio/synth.js'
 
 const $ = (s) => document.querySelector(s)
@@ -762,6 +764,54 @@ $('#libList').addEventListener('click',e=>{const b=e.target.closest('.lib-item')
 function loadEx(i){if(P.on||P.wait)stopPlay();state.cur=i;state.sel=0;state.range=null;state.undo=[];state.caret=caretFor();state.speed=1;renderAll();save()}
 $('#newBtn').addEventListener('click',()=>{state.exs.push({id:'u'+Date.now(),title:'Untitled exercise',type:'Custom',tag:'Your own material',desc:'',inst:'guitar',tuning:STD,tuningName:'Standard',key:{r:0,m:'major'},bpm:80,ts:[4,4],color:SKY,moments:[]});
   if(state.mode!=='edit')state.mode='edit';loadEx(state.exs.length-1);document.body.classList.remove('lib-open')});
+/* ---------- Tabs importieren ---------- */
+const IMP={mode:'text',score:null,name:'',bars:0};
+function openImport(){closePops();document.body.classList.remove('lib-open');$('#importPop').hidden=false;ctxOpenT=performance.now();impMode(IMP.mode);impMsg('')}
+function impMsg(t,bad){const m=$('#impMsg');m.textContent=t;m.classList.toggle('bad',!!bad)}
+function impMode(v){IMP.mode=v;segSet('#impSeg',v);$('#impText').hidden=v!=='text';$('#impFile').hidden=v!=='file';impMsg('');updImpGo()}
+function updImpGo(){$('#impGo').disabled=IMP.mode==='file'?!IMP.score:!$('#impTa').value.trim()}
+let atP=null;
+function loadAlphaTab(){
+  if(window.alphaTab)return Promise.resolve(window.alphaTab);
+  return atP||(atP=new Promise((res,rej)=>{const sc=document.createElement('script');sc.src='vendor/alphatab/alphaTab.min.js';
+    sc.onload=()=>window.alphaTab?res(window.alphaTab):rej(new Error('File import is not available in this version.'));
+    sc.onerror=()=>{atP=null;rej(new Error('File import is not available in this version.'))};document.head.appendChild(sc)}));
+}
+$('#importBtn').addEventListener('click',e=>{e.stopPropagation();openImport()});
+$('#impClose').addEventListener('click',()=>{$('#importPop').hidden=true});
+$('#impSeg').addEventListener('click',e=>{const b=e.target.closest('button');if(b)impMode(b.dataset.v)});
+$('#impTa').addEventListener('input',()=>{impMsg('');updImpGo()});
+$('#impIn').addEventListener('change',async e=>{
+  const f=e.target.files&&e.target.files[0];IMP.score=null;$('#impOpts').hidden=true;updImpGo();if(!f)return;
+  $('#impFileName').textContent=f.name;IMP.name=f.name.replace(/\.[^.]+$/,'');impMsg('Reading…');
+  try{
+    const [at,buf]=await Promise.all([loadAlphaTab(),f.arrayBuffer()]);
+    const score=at.importer.ScoreLoader.loadScoreFromBytes(new Uint8Array(buf),new at.Settings());
+    const info=scoreInfo(score);if(!info.tracks.length)throw new Error('This file has no guitar or bass track.');
+    IMP.score=score;IMP.bars=info.bars;
+    $('#impTrack').innerHTML=info.tracks.map(t=>'<option value="'+t.index+'">'+esc(t.name)+' · '+t.strings+' strings</option>').join('');
+    $('#impFrom').value=1;$('#impFrom').max=info.bars;$('#impTo').value=Math.min(info.bars,8);$('#impTo').max=info.bars;$('#impBars').textContent=info.bars;
+    $('#impOpts').hidden=false;impMsg((info.title?info.title+(info.artist?' – '+info.artist:'')+' · ':'')+info.bars+' bars');
+  }catch(err){impMsg(err&&err.message&&err.message.length<120?err.message:'This file could not be read.',true)}
+  updImpGo();
+});
+$('#impGo').addEventListener('click',()=>{
+  let ex;
+  try{
+    if(IMP.mode==='text'){
+      const r=parseTextTab($('#impTa').value);
+      ex={id:'u'+Date.now(),title:'Imported tab',type:'Imported',tag:'Text tab',desc:'',inst:r.tuning.length<=5&&r.tuning[0]<60?'bass':'guitar',
+        tuning:r.tuning,tuningName:r.tuningName,key:{r:0,m:'major'},bpm:80,ts:[4,4],color:SKY,moments:r.moments};
+    }else{
+      const a=Math.max(1,Math.round(+$('#impFrom').value||1)),b=Math.min(IMP.bars,Math.round(+$('#impTo').value||a));
+      if(b<a)throw new Error('The last bar must come after the first.');
+      if(b-a>63)throw new Error('Choose at most 64 bars.');
+      ex=scoreToExercise(IMP.score,{track:+$('#impTrack').value,from:a,to:b,title:IMP.score.title||IMP.name});
+    }
+  }catch(err){impMsg(err.message||'Import failed.',true);return}
+  $('#importPop').hidden=true;$('#impTa').value='';
+  state.exs.push(ex);state.mode='edit';loadEx(state.exs.length-1);
+});
 let resetArmed=false;
 $('#resetBtn').addEventListener('click',e=>{if(!resetArmed){resetArmed=true;e.target.textContent='Click again to reset';setTimeout(()=>{resetArmed=false;e.target.textContent='Reset examples'},3000);return}
   resetArmed=false;e.target.textContent='Reset examples';const own=state.exs.filter(x=>String(x.id).startsWith('u'));state.exs=examples().concat(own);loadEx(0)});

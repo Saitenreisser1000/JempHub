@@ -280,3 +280,20 @@ a.linkbtn{text-decoration:none}
   .vsel input{font-size:16px}
 }
 @keyframes sheet{from{transform:translateY(100%)}to{transform:none}}
+
+/* Import */
+.lib-h>span{display:flex;gap:2px}
+.pop.imp{left:50%;top:10vh;transform:translateX(-50%);width:min(560px,calc(100vw - 32px));z-index:46}
+.imp-seg{margin:4px 0 10px}
+#impTa{font-variant-ligatures:none;font-feature-settings:"liga" 0,"calt" 0;width:100%;min-height:180px;resize:vertical;background:var(--bg);color:var(--fg);border:1px solid var(--line2);border-radius:10px;padding:10px;font:12.5px/1.35 var(--font-mono);white-space:pre;overflow:auto}
+.filepick{display:flex;align-items:center;justify-content:center;min-height:90px;border:1.5px dashed var(--line2);border-radius:12px;color:var(--muted);font-size:13px;cursor:pointer;text-align:center;padding:12px}
+.filepick:hover{color:var(--fg);border-color:var(--brass)}
+.filepick input{position:absolute;opacity:0;width:1px;height:1px}
+#impOpts{margin-top:8px}
+.imp-msg{min-height:18px;margin:8px 0 0;font-size:12.5px;color:var(--muted)}
+.imp-msg.bad{color:var(--bad,#e2665a)}
+.imp-a{display:flex;justify-content:flex-end;margin-top:6px}
+.imp-go{background:var(--brass);color:var(--brass-ink);height:36px;padding:0 18px;font-size:13.5px}
+.imp-go:hover{background:var(--brass);color:var(--brass-ink);filter:brightness(1.06)}
+.imp-go:disabled{background:var(--line2);color:var(--muted)}
+@media (max-width:640px){.pop.imp{transform:none;width:100%}#impTa{font-size:16px;min-height:160px}}

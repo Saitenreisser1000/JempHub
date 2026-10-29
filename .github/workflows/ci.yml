@@ -1,0 +1,29 @@
+# Prüft Pull Requests: Tests der geänderten Apps; bei GuitarJemp zusätzlich
+# der Datei-Import mit der echten alphaTab-Bibliothek.
+name: CI
+
+on:
+  pull_request:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        app: [guitar, note, ear, conduct, hub]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: alphaTab holen
+        if: matrix.app == 'guitar'
+        run: echo "ALPHATAB_JS=$(bash scripts/fetch-alphatab.sh "$RUNNER_TEMP/alphatab")" >> "$GITHUB_ENV"
+      - name: Bauen und testen
+        working-directory: apps/${{ matrix.app }}
+        run: npm run build

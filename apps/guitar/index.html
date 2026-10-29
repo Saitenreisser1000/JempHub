@@ -7,7 +7,7 @@
 <meta name="description" content="GuitarJemp – a guitar-learning environment whose visual language is the fretboard.">
 <title>GuitarJemp</title>
 <link rel="icon" href="favicon.svg" type="image/svg+xml">
-<link rel="stylesheet" href="src/styles.css?v=9">
+<link rel="stylesheet" href="src/styles.css?v=10">
 <script src="vendor/theme/theme.js?v=1"></script>
 <link rel="stylesheet" href="vendor/theme/theme.css?v=2">
 <link rel="stylesheet" href="vendor/fonts/fonts.css">
@@ -34,7 +34,7 @@
 
 <div class="app">
   <aside class="lib" id="lib" aria-label="Exercise library">
-    <div class="lib-h"><span class="lbl">Exercises</span><button class="gbtn" id="newBtn" title="New exercise">+ New</button></div>
+    <div class="lib-h"><span class="lbl">Exercises</span><span><button class="gbtn" id="importBtn" title="Import a tab">Import</button><button class="gbtn" id="newBtn" title="New exercise">+ New</button></span></div>
     <div class="lib-list" id="libList"></div>
     <div class="lib-f"><button class="linkbtn" id="resetBtn">Reset examples</button><span class="legal-links"><a class="linkbtn" href="https://jemphub.com/#imprint-modal">Imprint</a> · <a class="linkbtn" href="https://jemphub.com/#privacy-modal">Privacy</a></span></div>
   </aside>
@@ -126,6 +126,20 @@
   <div class="vrow"><span>Click</span><button class="switch" id="metroBtn" aria-pressed="false" aria-label="Metronome click"></button></div>
   <div class="vrow"><span>Count-in</span><button class="switch" id="countBtn" aria-pressed="true" aria-label="Count-in"></button></div>
 </div>
+<div class="pop ctx imp" id="importPop" hidden role="dialog" aria-label="Import tab">
+  <div class="ctx-h"><b>Import tab</b><button class="gbtn icon-only" id="impClose" aria-label="Close">×</button></div>
+  <div class="seg imp-seg" id="impSeg"><button data-v="text">Text tab</button><button data-v="file">Guitar Pro / MusicXML</button></div>
+  <div id="impText"><textarea id="impTa" rows="9" spellcheck="false" autocapitalize="off" autocomplete="off" placeholder="Paste a tab, one line per string:&#10;e|-----0-----|&#10;B|---1---1---|&#10;G|-2-------2-|&#10;D|-----------|&#10;A|-3---------|&#10;E|-----------|"></textarea></div>
+  <div id="impFile" hidden>
+    <label class="filepick"><input type="file" id="impIn" accept=".gp,.gp3,.gp4,.gp5,.gpx,.xml,.musicxml,.mxl"><span id="impFileName">Choose a file (.gp, .gp5, .gpx, MusicXML)</span></label>
+    <div id="impOpts" hidden>
+      <div class="vrow"><span>Track</span><span class="vsel"><select id="impTrack"></select></span></div>
+      <div class="vrow"><span>Bars</span><span class="vsel"><input type="number" id="impFrom" min="1" inputmode="numeric"> – <input type="number" id="impTo" min="1" inputmode="numeric"> of <b id="impBars"></b></span></div>
+    </div>
+  </div>
+  <p class="imp-msg" id="impMsg" aria-live="polite"></p>
+  <div class="imp-a"><button class="gbtn imp-go" id="impGo">Import</button></div>
+</div>
 <div class="pop" id="durPop" hidden><div class="seg mono" id="durs"></div></div>
 <div class="pop ctx" id="ctx" hidden role="dialog" aria-label="Moment"></div>
 
@@ -151,6 +165,6 @@
   </dl>
 </div>
 
-<script type="module" src="src/app.js?v=6"></script>
+<script type="module" src="src/app.js?v=7"></script>
 </body>
 </html>
