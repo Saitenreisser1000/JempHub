@@ -237,7 +237,9 @@ function markHint(t0) {
   if (!hintCount()) return
   hintT = setTimeout(() => document.querySelectorAll('.staff .hint').forEach((el) => {
     el.classList.remove('pulse')
-    void el.getBBox()
+    // Mittelpunkt des Notenkopfs als festen Drehpunkt setzen (Safari kennt fill-box bei Text nicht zuverlässig)
+    const bb = el.getBBox()
+    el.style.transformOrigin = `${bb.x + bb.width / 2}px ${bb.y + bb.height / 2}px`
     el.classList.add('pulse')
   }), Math.max(0, (t0 - player.now()) * 1000))
 }
