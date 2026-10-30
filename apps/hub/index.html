@@ -11,56 +11,33 @@
     <link rel="stylesheet" href="vendor/theme/theme.css?v=2">
     <link rel="stylesheet" href="vendor/fonts/fonts.css" />
     <link rel="stylesheet" href="design-system/styles.css?v=3" />
-    <link rel="stylesheet" href="styles.css?v=6" />
+    <link rel="stylesheet" href="styles.css?v=7" />
+    <script type="module" src="hub.js?v=1"></script>
   </head>
   <body>
     <main class="hub">
       <section class="hero">
         <button type="button" class="theme-btn" data-theme-toggle title="Light / dark" aria-label="Light / dark"><svg class="i-moon" width="16" height="16" viewBox="0 0 24 24" aria-hidden="true"><path d="M20 14.5A8 8 0 0 1 9.5 4a8 8 0 1 0 10.5 10.5z" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"/></svg><svg class="i-sun" width="17" height="17" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="4" fill="none" stroke="currentColor" stroke-width="1.7"/><path d="M12 2.5v2.2M12 19.3v2.2M2.5 12h2.2M19.3 12h2.2M5.3 5.3l1.6 1.6M17.1 17.1l1.6 1.6M5.3 18.7l1.6-1.6M17.1 6.9l1.6-1.6" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/></svg></button>
         <h1 class="wordmark"><svg class="logo" viewBox="0 0 44 22" aria-hidden="true"><path d="M8 11 L15 11 M29 11 L36 11" stroke="#d8b46a" stroke-width="1.6" stroke-linecap="round" opacity=".7"/><circle cx="5" cy="11" r="4" fill="#7cc4f2"/><rect x="16" y="3" width="12" height="16" rx="6" fill="#8fd3a9" opacity=".25"/><circle cx="22" cy="7.5" r="3" fill="#8fd3a9"/><circle cx="22" cy="14.5" r="3" fill="#8fd3a9"/><circle cx="39" cy="11" r="4" fill="#f2c46d"/></svg><span>JempHub</span></h1>
-        <div class="hero-row">
-          <p class="sub">One home for developing music skills</p>
-          <svg class="trail" viewBox="0 0 640 96" role="img" aria-label="Notes moving across a fretboard">
-          <rect x="0" y="10" width="640" height="76" rx="10" class="t-wood" />
-          <g class="t-frets">
-            <rect x="22" y="10" width="4" height="76" class="t-nut" />
-            <rect x="110" y="10" width="2" height="76" /><rect x="192" y="10" width="2" height="76" /><rect x="270" y="10" width="2" height="76" />
-            <rect x="343" y="10" width="2" height="76" /><rect x="412" y="10" width="2" height="76" /><rect x="477" y="10" width="2" height="76" />
-            <rect x="538" y="10" width="2" height="76" /><rect x="596" y="10" width="2" height="76" />
-          </g>
-          <g class="t-strings">
-            <line x1="0" x2="640" y1="20" y2="20" stroke-width="1" /><line x1="0" x2="640" y1="33" y2="33" stroke-width="1.2" /><line x1="0" x2="640" y1="46" y2="46" stroke-width="1.5" />
-            <line x1="0" x2="640" y1="59" y2="59" stroke-width="1.9" /><line x1="0" x2="640" y1="72" y2="72" stroke-width="2.3" /><line x1="0" x2="640" y1="85" y2="85" stroke-width="2.7" opacity="0" />
-          </g>
-          <g class="t-links" fill="none" stroke-width="1.6" stroke-linecap="round">
-            <path d="M75 72 Q 110 52 145 59" stroke="#8fd3a9" /><path d="M145 46 Q 190 20 231 33" stroke="#f2c46d" />
-            <path d="M231 33 Q 270 40 306 46" stroke="#b9a3f2" /><path d="M306 46 Q 360 64 378 59" stroke="#f28b7c" />
-            <path d="M378 46 Q 410 22 445 20" stroke="#7cc4f2" />
-          </g>
-          <g class="t-dots">
-            <circle class="d1" cx="66" cy="72" r="8" fill="#7cc4f2" />
-            <g class="d2"><rect x="135" y="38" width="20" height="30" rx="10" fill="#8fd3a9" opacity=".22" /><circle cx="145" cy="46" r="8" fill="#8fd3a9" /><circle cx="145" cy="59" r="8" fill="#8fd3a9" /></g>
-            <circle class="d3" cx="231" cy="33" r="8" fill="#f2c46d" />
-            <circle class="d4" cx="306" cy="46" r="8" fill="#b9a3f2" />
-            <g class="d5"><rect x="368" y="38" width="20" height="30" rx="10" fill="#f28b7c" opacity=".22" /><circle cx="378" cy="46" r="8" fill="#f28b7c" /><circle cx="378" cy="59" r="8" fill="#f28b7c" /></g>
-            <circle class="d6" cx="445" cy="20" r="8" fill="#7cc4f2" />
-          </g>
-        </svg>
+        <p class="sub">One home for developing music skills</p>
+        <div class="stage">
+          <button type="button" class="hero-play" aria-label="Play the phrase"><svg width="22" height="22" viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5.2v13.6L19 12z" fill="currentColor"/></svg></button>
+          <svg class="trail" viewBox="16 0 560 132" role="img" aria-label="A short guitar phrase on a fretboard"><rect x="0" y="8" width="760" height="116" rx="12" class="t-wood"/><g class="t-frets"><rect x="38" y="8" width="5" height="116" class="t-nut"/><rect x="106" y="8" width="2" height="116"/><rect x="169" y="8" width="2" height="116"/><rect x="228" y="8" width="2" height="116"/><rect x="283" y="8" width="2" height="116"/><rect x="336" y="8" width="2" height="116"/><rect x="386" y="8" width="2" height="116"/><rect x="432" y="8" width="2" height="116"/><rect x="477" y="8" width="2" height="116"/><rect x="518" y="8" width="2" height="116"/><rect x="558" y="8" width="2" height="116"/></g><g class="t-inlays"><circle cx="198" cy="68" r="4"/><circle cx="310" cy="68" r="4"/><circle cx="409" cy="68" r="4"/><circle cx="498" cy="68" r="4"/></g><g class="t-strings"><line x1="0" x2="760" y1="20" y2="20" stroke-width="1.00"/><line x1="0" x2="760" y1="39" y2="39" stroke-width="1.35"/><line x1="0" x2="760" y1="58" y2="58" stroke-width="1.70"/><line x1="0" x2="760" y1="77" y2="77" stroke-width="2.05"/><line x1="0" x2="760" y1="96" y2="96" stroke-width="2.40"/><line x1="0" x2="760" y1="115" y2="115" stroke-width="2.75"/></g><g class="t-links" fill="none" stroke-width="1.8" stroke-linecap="round"><path d="M208 96 Q 227 61 246 58" stroke="#f2c46d"/><path d="M266 58 Q 283 47 300 68" stroke="#8fd3a9"/><path d="M320 68 Q 335 37 351 39" stroke="#b9a3f2"/><path d="M371 39 Q 385 32 399 58" stroke="#f28b7c"/><path d="M419 58 Q 432 28 445 30" stroke="#ef98c4"/></g><g class="t-dots"><g class="dot d1" data-midi="48" tabindex="0" role="button" aria-label="Play note"><circle cx="198" cy="96" r="9" fill="#7cc4f2"/></g><g class="dot d2" data-midi="59" tabindex="0" role="button" aria-label="Play note"><circle cx="256" cy="58" r="9" fill="#f2c46d"/></g><g class="dot d3" data-midi="55 60" tabindex="0" role="button" aria-label="Play note"><rect x="298" y="46" width="24" height="43" rx="12" fill="#8fd3a9" opacity=".22"/><circle cx="310" cy="77" r="9" fill="#8fd3a9"/><circle cx="310" cy="58" r="9" fill="#8fd3a9"/></g><g class="dot d4" data-midi="65" tabindex="0" role="button" aria-label="Play note"><circle cx="361" cy="39" r="9" fill="#b9a3f2"/></g><g class="dot d5" data-midi="62" tabindex="0" role="button" aria-label="Play note"><circle cx="409" cy="58" r="9" fill="#f28b7c"/></g><g class="dot d6" data-midi="67 72" tabindex="0" role="button" aria-label="Play note"><rect x="443" y="8" width="24" height="43" rx="12" fill="#ef98c4" opacity=".22"/><circle cx="455" cy="39" r="9" fill="#ef98c4"/><circle cx="455" cy="20" r="9" fill="#ef98c4"/></g></g></svg>
         </div>
       </section>
 
       <section class="apps" aria-label="Apps">
-        <a class="app" href="https://guitarjemp.jemphub.com/" data-local-url="http://127.0.0.1:5180/">
+        <a class="app guitar" href="https://guitarjemp.jemphub.com/" data-local-url="http://127.0.0.1:5180/">
           <span class="thumb">
             <svg viewBox="0 0 240 110" aria-hidden="true">
               <rect x="10" y="14" width="220" height="82" rx="6" class="wood" />
               <rect x="30" y="14" width="3" height="82" class="nut" />
               <g class="frets"><rect x="80" y="14" width="2" height="82" /><rect x="124" y="14" width="2" height="82" /><rect x="164" y="14" width="2" height="82" /><rect x="200" y="14" width="2" height="82" /></g>
               <g class="strings"><line x1="10" x2="230" y1="24" y2="24" /><line x1="10" x2="230" y1="38" y2="38" /><line x1="10" x2="230" y1="52" y2="52" /><line x1="10" x2="230" y1="66" y2="66" /><line x1="10" x2="230" y1="80" y2="80" /></g>
-              <path d="M62 80 Q 84 62 98 66" fill="none" stroke="#8fd3a9" stroke-width="1.5" /><path d="M102 52 Q 128 30 144 38" fill="none" stroke="#f2c46d" stroke-width="1.5" />
-              <circle cx="55" cy="80" r="7" fill="#7cc4f2" />
-              <rect x="93" y="45" width="18" height="28" rx="9" fill="#8fd3a9" opacity=".22" /><circle cx="102" cy="52" r="7" fill="#8fd3a9" /><circle cx="102" cy="66" r="7" fill="#8fd3a9" />
-              <circle cx="145" cy="38" r="7" fill="#f2c46d" />
+              <path class="ln l1" pathLength="1" d="M62 80 Q 84 62 98 66" fill="none" stroke="#8fd3a9" stroke-width="1.5" /><path class="ln l2" pathLength="1" d="M102 52 Q 128 30 144 38" fill="none" stroke="#f2c46d" stroke-width="1.5" />
+              <circle class="pd p1" cx="55" cy="80" r="7" fill="#7cc4f2" />
+              <g class="pd p2"><rect x="93" y="45" width="18" height="28" rx="9" fill="#8fd3a9" opacity=".22" /><circle cx="102" cy="52" r="7" fill="#8fd3a9" /><circle cx="102" cy="66" r="7" fill="#8fd3a9" /></g>
+              <circle class="pd p3" cx="145" cy="38" r="7" fill="#f2c46d" />
             </svg>
           </span>
           <span class="body">
@@ -70,14 +47,14 @@
           </span>
         </a>
 
-        <a class="app" href="https://notejemp.jemphub.com/" data-local-url="http://127.0.0.1:5182/">
+        <a class="app note" href="https://notejemp.jemphub.com/" data-local-url="http://127.0.0.1:5182/">
           <span class="thumb">
             <svg viewBox="0 0 240 110" aria-hidden="true">
               <g class="staff"><line x1="16" x2="224" y1="34" y2="34" /><line x1="16" x2="224" y1="46" y2="46" /><line x1="16" x2="224" y1="58" y2="58" /><line x1="16" x2="224" y1="70" y2="70" /><line x1="16" x2="224" y1="82" y2="82" /></g>
               <ellipse cx="70" cy="76" rx="7" ry="5.5" transform="rotate(-20 70 76)" class="ink" /><line x1="76.5" x2="76.5" y1="74" y2="40" class="stem" />
-              <ellipse cx="120" cy="58" rx="7" ry="5.5" transform="rotate(-20 120 58)" fill="#8fd3a9" /><line x1="126.5" x2="126.5" y1="56" y2="22" stroke="#8fd3a9" stroke-width="1.6" />
+              <g class="pop"><ellipse cx="120" cy="58" rx="7" ry="5.5" transform="rotate(-20 120 58)" fill="#8fd3a9" /><line x1="126.5" x2="126.5" y1="56" y2="22" stroke="#8fd3a9" stroke-width="1.6" /></g>
               <ellipse cx="170" cy="40" rx="7" ry="5.5" transform="rotate(-20 170 40)" class="ink" /><line x1="163.5" x2="163.5" y1="42" y2="76" class="stem" />
-              <rect x="104" y="88" width="32" height="16" rx="8" class="chip" /><text x="120" y="99.5" text-anchor="middle" class="chip-t">c2</text>
+              <g class="chipin"><rect x="104" y="88" width="32" height="16" rx="8" class="chip" /><text x="120" y="99.5" text-anchor="middle" class="chip-t">c2</text></g>
             </svg>
           </span>
           <span class="body">
@@ -87,7 +64,7 @@
           </span>
         </a>
 
-        <a class="app" href="https://earjemp.jemphub.com/" data-local-url="http://127.0.0.1:5181/">
+        <a class="app ear" href="https://earjemp.jemphub.com/" data-local-url="http://127.0.0.1:5181/">
           <span class="thumb">
             <svg viewBox="0 0 240 110" aria-hidden="true">
               <g class="wave">
@@ -95,9 +72,9 @@
                 <rect x="72" y="40" width="6" height="30" rx="3" /><rect x="86" y="22" width="6" height="66" rx="3" /><rect x="100" y="34" width="6" height="42" rx="3" />
                 <rect x="114" y="44" width="6" height="22" rx="3" />
               </g>
-              <circle cx="160" cy="70" r="8" fill="#7cc4f2" /><circle cx="196" cy="38" r="8" fill="#f2c46d" />
-              <path d="M168 66 Q 186 40 189 40" fill="none" stroke="#f2c46d" stroke-width="1.5" />
-              <rect x="160" y="84" width="48" height="16" rx="8" class="chip" /><text x="184" y="95.5" text-anchor="middle" class="chip-t">5th</text>
+              <circle class="pd p1" cx="160" cy="70" r="8" fill="#7cc4f2" /><circle class="pd p3" cx="196" cy="38" r="8" fill="#f2c46d" />
+              <path class="ln l1" pathLength="1" d="M168 66 Q 186 40 189 40" fill="none" stroke="#f2c46d" stroke-width="1.5" />
+              <g class="chipin"><rect x="160" y="84" width="48" height="16" rx="8" class="chip" /><text x="184" y="95.5" text-anchor="middle" class="chip-t">5th</text></g>
             </svg>
           </span>
           <span class="body">
@@ -108,14 +85,14 @@
         </a>
 
 
-        <a class="app" href="https://conductjemp.jemphub.com/" data-local-url="http://127.0.0.1:5184/">
+        <a class="app conduct" href="https://conductjemp.jemphub.com/" data-local-url="http://127.0.0.1:5184/">
           <span class="thumb">
             <svg viewBox="0 0 240 110" aria-hidden="true">
               <path d="M120 88 Q 100 58 78 76 Q 120 50 164 76 Q 150 40 128 46 Q 124 70 120 88" fill="none" stroke="currentColor" stroke-opacity=".25" stroke-width="1.5" stroke-dasharray="3 5" />
-              <path d="M120 88 Q 100 58 78 76" fill="none" stroke="#7cc4f2" stroke-width="2.4" stroke-linecap="round" />
+              <path class="fig" pathLength="1" d="M120 88 Q 100 58 78 76 Q 120 50 164 76 Q 150 40 128 46 Q 124 70 120 88" fill="none" stroke="#7cc4f2" stroke-width="2.4" stroke-linecap="round" />
               <circle cx="120" cy="88" r="7" fill="#d8b46a" /><circle cx="78" cy="76" r="7" fill="#7cc4f2" />
               <circle cx="164" cy="76" r="7" fill="#8fd3a9" opacity=".5" /><circle cx="128" cy="46" r="7" fill="#ef98c4" opacity=".5" />
-              <path d="M178 24 L 214 92" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" /><circle cx="178" cy="24" r="4" fill="#d8b46a" />
+              <g class="baton"><path d="M178 24 L 214 92" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" /><circle cx="178" cy="24" r="4" fill="#d8b46a" /></g>
             </svg>
           </span>
           <span class="body">
@@ -125,7 +102,7 @@
           </span>
         </a>
 
-        <div class="app soon" aria-disabled="true">
+        <div class="app soon stem" aria-disabled="true">
           <span class="thumb">
             <svg viewBox="0 0 240 110" aria-hidden="true">
               <g class="lanes"><rect x="16" y="18" width="208" height="14" rx="4" /><rect x="16" y="38" width="208" height="14" rx="4" /><rect x="16" y="58" width="208" height="14" rx="4" /><rect x="16" y="78" width="208" height="14" rx="4" /></g>

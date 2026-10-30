@@ -10,6 +10,7 @@ const root = resolve(import.meta.dirname, '..');
 const PACKAGES = {
   sounds: ['piano', 'vpo', 'src'],
   'sounds-piano': ['piano', 'src'],
+  'sounds-core': ['src'],
   theme: ['theme.css', 'theme.js'],
   fonts: ['fonts.css', 'figtree.woff', 'bricolage-grotesque.woff', 'jetbrains-mono.woff', 'OFL-Figtree.txt', 'OFL-BricolageGrotesque.txt', 'OFL-JetBrainsMono.txt'],
 };

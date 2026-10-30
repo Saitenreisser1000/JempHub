@@ -4,7 +4,7 @@ const app = process.argv[2];
 if (!['hub', 'stemplayer', 'guitar', 'note', 'ear', 'conduct'].includes(app)) throw new Error('Expected hub, stemplayer, guitar, note, ear or conduct');
 const root = resolve(import.meta.dirname, '..', 'apps', app);
 const files = {
-  hub: ['index.html', 'styles.css', 'design-system', 'vendor'],
+  hub: ['index.html', 'styles.css', 'hub.js', 'design-system', 'vendor'],
   stemplayer: ['index.html', 'styles.css', 'app.js', 'playlist.json'],
   guitar: ['index.html', 'favicon.svg', 'src', 'vendor'],
   note: ['index.html', 'icon.svg', 'manifest.webmanifest', 'src', 'vendor'],
