@@ -457,11 +457,12 @@ const P={w:10,h:14,x:0,y:0,vx:0,vy:0,ground:false,face:1,coyote:0,buffer:0,squas
   usedDouble:false,airDash:false,dashT:0,dashDir:1,dashCD:0,wallDir:0,kickT:0,glide:false};
 const PH={max:60,accG:700,accA:450,fricG:800,fricA:90,tierBonus:10,grav:1150,jump:300,airJump:270,fall:420,coyote:.1,buffer:.13,
   holdMax:.18,holdGrav:.3,cutGrav:2.0,spring:560,stomp:280,
-  kickX:95,kickY:330,kickT:.14,slide:70,dashSpeed:220,dashT:.2,glideFall:40,upLift:2000,upMax:220,upSpeed:45};
+  camLook:1,camSmooth:4,camZoom:.18,kickX:95,kickY:330,kickT:.14,slide:70,dashSpeed:220,dashT:.2,glideFall:40,upLift:2000,upMax:220,upSpeed:45};
 
 function resetPlayer(p){
   Object.assign(P,{x:p.x,y:p.y,vx:0,vy:0,ground:false,buffer:0,plat:null,rising:false,usedDouble:false,airDash:false,dashT:0,kickT:0,glide:false,wallDir:0});
-  camX=Math.max(0,Math.min(L.w*TS-viewW,P.x-viewW*.4)); camY=Math.max(0,Math.min(L.h*TS-VIEW_H,P.y-VIEW_H*.55));
+  camGround=P.y+P.h; camLook=P.face*viewW*.12; zoom=1; applyZoom();
+  camX=Math.max(0,Math.min(L.w*TS-viewW,P.x+P.w/2-viewW/2+camLook)); camY=Math.max(0,Math.min(L.h*TS-viewH,camGround-viewH*.62));
 }
 function respawn(){
   resetPlayer(cpPos||L.start);
@@ -855,7 +856,7 @@ function die(){ shake=.25; sfx('hurt'); respawn(); }
 function resize(){
   const dpr=Math.min(devicePixelRatio||1,2);
   cv.width=Math.round(innerWidth*dpr); cv.height=Math.round(innerHeight*dpr);
-  scale=cv.height/VIEW_H; viewW=cv.width/scale; skyW=cv.width/(cv.height/SKY_H);
+  applyZoom(); skyW=cv.width/(cv.height/SKY_H);
   ctx.imageSmoothingEnabled=false;
 }
 addEventListener('resize',resize);
@@ -1044,12 +1045,12 @@ function draw(){
   const cx=Math.round(camX-sx), cy=Math.round(camY-sy);
   ctx.save(); ctx.translate(-cx,-cy);
   const c0=Math.max(0,Math.floor(cx/TS)-2), c1=Math.min(L.w-1,Math.ceil((cx+viewW)/TS)+2);
-  const r0=Math.max(0,Math.floor(cy/TS)-1), r1=Math.min(L.h-1,Math.ceil((cy+VIEW_H)/TS)+1);
+  const r0=Math.max(0,Math.floor(cy/TS)-1), r1=Math.min(L.h-1,Math.ceil((cy+viewH)/TS)+1);
   const xl=c0*TS-40, xr=(c1+1)*TS+40;
   for(const d of L.decor) if(d.back&&d.x>xl&&d.x<xr) drawDecorBack(d);
   drawUpdrafts(c0,c1,r0,r1); drawWater(c0,c1,r0,r1); drawTiles(c0,c1,r0,r1); drawMovers(); drawSprings();
   for(const d of L.decor) if(!d.back&&d.x>xl&&d.x<xr) drawDecorFront(d);
-  if(sk.tint>0){ ctx.fillStyle=`rgba(10,16,40,${sk.tint})`; ctx.fillRect(cx-4,cy-4,viewW+8,VIEW_H+8); }
+  if(sk.tint>0){ ctx.fillStyle=`rgba(10,16,40,${sk.tint})`; ctx.fillRect(cx-4,cy-4,viewW+8,viewH+8); }
   drawCheckpoints(); drawDoors(); drawHubHints(); drawGoal(); drawCoins(xl,xr); drawCrystals(); drawEnemies();
   for(const p of particles){ ctx.globalAlpha=Math.max(0,Math.min(1,p.t/.4)); ctx.fillStyle=p.col; ctx.fillRect(Math.round(p.x),Math.round(p.y),2,2); }
   ctx.globalAlpha=1;
@@ -1058,13 +1059,52 @@ function draw(){
     ctx.strokeStyle='#ff5c5c'; for(const e of L.enemies) if(e.alive) ctx.strokeRect(e.x,e.y,e.w,e.h); }
   ctx.restore();
 }
+// ---------- Dynamische Kamera ----------
+// Schaut je nach Tempo voraus, hält bei Sprüngen die Bodenhöhe, folgt beim Fallen,
+// peilt die nächste Plattform in Laufrichtung an und zoomt bei hohem Tempo leicht heraus.
+let camGround=0, camLook=0, camAheadY=0, zoom=1, viewH=180;
+function applyZoom(){ viewH=VIEW_H*zoom; scale=cv.height/viewH; viewW=cv.width/scale; }
+function surfaceAhead(dir){
+  // Mittelwert der begehbaren Oberflächen 3–11 Kacheln voraus (nähere zählen mehr); null = Abgrund
+  const c0=Math.floor((P.x+P.w/2)/TS), feet=camGround, r0=Math.floor(feet/TS);
+  let sum=0, wsum=0, gaps=0;
+  for(let d=3;d<=11;d++){
+    const c=c0+dir*d; if(c<0||c>=L.w) break;
+    let found=null;
+    for(let k=0;k<=7&&found===null;k++) for(const r of k?[r0+k,r0-k]:[r0]){
+      if(r>=1&&r<L.h&&solid(c,r)&&!solid(c,r-1)&&tileAt(c,r)!=='^'){ found=r*TS; break; } }
+    for(const m of L.movers) if(found===null&&c*TS+8>m.x&&c*TS+8<m.x+m.w&&Math.abs(m.y-feet)<TS*7) found=m.y;
+    if(found===null){ gaps++; continue; }
+    const w=1/d; sum+=found*w; wsum+=w;
+  }
+  return {y:wsum?sum/wsum:null, gaps};
+}
 function camera(dt){
-  const tx=P.x-viewW*.4+P.face*20;
-  camX+=(tx-camX)*Math.min(1,dt*6);
+  const sp=Math.abs(P.vx), dir=Math.abs(P.vx)>8?Math.sign(P.vx):P.face;
+  // Horizontal: Vorausschau wächst mit dem Tempo
+  const lookT=dir*viewW*.1*PH.camLook + P.vx*.9*PH.camLook;
+  camLook+=(Math.max(-viewW*.3,Math.min(viewW*.3,lookT))-camLook)*Math.min(1,dt*2.2);
+  const tx=P.x+P.w/2-viewW/2+camLook;
+  camX+=(tx-camX)*Math.min(1,dt*PH.camSmooth*1.3);
+  // Vertikal: Bodenhöhe halten, nur bei großen Höhen oder beim Fallen folgen
+  const feet=P.y+P.h;
+  if(P.ground) camGround=feet;
+  let fy=camGround;
+  if(feet<camGround-TS*2.5) fy=feet+TS*2.5;
+  if(feet>camGround) fy=feet;
+  const ahead=surfaceAhead(dir);
+  if(ahead.y!==null) camAheadY+=(ahead.y-camAheadY)*Math.min(1,dt*3); else camAheadY+=(fy+TS*2-camAheadY)*Math.min(1,dt*2);
+  fy=fy*(1-.35*PH.camLook)+camAheadY*.35*PH.camLook;
+  if(P.vy>150&&!P.glide) fy+=(P.vy-150)*.3;
+  const ty=fy-viewH*.62;
+  const ySpeed=PH.camSmooth*(P.vy>200?1.6:1);
+  camY+=(ty-camY)*Math.min(1,dt*ySpeed);
+  // Zoom: schneller, Dash, Schwung oder Abgrund voraus = etwas mehr Überblick
+  const want=Math.min(1,sp/(PH.max*1.5)+(P.dashT>0?.5:0)+tier()*.12+(ahead.gaps>=4?.35:0));
+  zoom+=(1+PH.camZoom*want-zoom)*Math.min(1,dt*1.4);
+  applyZoom();
   camX=Math.max(0,Math.min(L.w*TS-viewW,camX));
-  const ty=P.y+P.h/2-VIEW_H*.55;
-  camY+=(ty-camY)*Math.min(1,dt*5);
-  camY=Math.max(0,Math.min(L.h*TS-VIEW_H,camY));
+  camY=Math.max(0,Math.min(L.h*TS-viewH,camY));
 }
 
 // ---------- Debug ----------
@@ -1085,7 +1125,10 @@ const TUNES=[
   ['kickX','Wandsprung seitlich',30,200,5],
   ['kickY','Wandsprung hoch',200,420,5],
   ['glideFall','Fallen beim Gleiten',10,100,1],
-  ['viewH','Zoom: sichtbare Höhe (kleiner = näher)',120,270,6]];
+  ['viewH','Zoom: sichtbare Höhe (kleiner = näher)',120,270,6],
+  ['camLook','Kamera: Vorausschau',0,2,0.05],
+  ['camSmooth','Kamera: Nachführtempo',1,12,0.5],
+  ['camZoom','Kamera: Herauszoomen bei Tempo',0,0.5,0.01]];
 try{ const t=JSON.parse(localStorage.getItem(TUNE_KEY)||'null'); if(t){ Object.assign(PH,t.ph||{}); if(t.viewH) VIEW_H=t.viewH; Object.assign(dbg,t.dbg||{}); } }catch(_){}
 function tuneValues(){ const ph={}; for(const [k] of TUNES) if(k!=='viewH') ph[k]=PH[k]; return {ph,viewH:VIEW_H}; }
 function saveTune(){ try{ localStorage.setItem(TUNE_KEY,JSON.stringify({...tuneValues(),dbg})); }catch(_){} }
