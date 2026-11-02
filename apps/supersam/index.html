@@ -6,7 +6,7 @@
 <meta name="theme-color" content="#16233a">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
-<title>Daumensprung</title>
+<title>Supersam</title>
 <link rel="icon" href="icon.svg" type="image/svg+xml">
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -70,6 +70,7 @@ canvas{position:fixed;inset:0;width:100vw;height:100vh;display:block;image-rende
 .btn:focus-visible{outline:3px solid var(--cream);outline-offset:3px}
 .ability{border:2px solid var(--sky);padding:10px 16px;max-width:36em}
 .stats{font-size:13px;line-height:1.8}
+#start{background:linear-gradient(to top,rgba(13,21,36,.8),rgba(13,21,36,0) 38%);justify-content:flex-end;padding-bottom:calc(env(safe-area-inset-bottom,0px) + 22px)}
 #rotate{display:none;z-index:20;background:var(--night)}
 @media (orientation:portrait){#rotate{display:flex}}
 .phone{width:40px;height:66px;border:4px solid var(--cream);border-radius:8px;animation:turn 2s ease-in-out infinite}
@@ -90,18 +91,9 @@ canvas{position:fixed;inset:0;width:100vw;height:100vh;display:block;image-rende
 <div class="hud" id="hr"></div>
 <div id="msg"></div>
 
-<div class="panel" id="start">
-  <h1>Daumensprung</h1>
-  <div class="keys">
-    <b>ein Daumen</b><span>laufen (links/rechts)</span>
-    <b>zweiter Daumen dazu</b><span>springen, halten = höher</span>
-    <b>beide aus dem Stand</b><span>senkrecht hoch, danach lenken</span>
-  </div>
-  <p>Die Hubwelt verbindet vier Welten. Jede schenkt dir am Ziel eine neue Fähigkeit, mit der du anderswo weiterkommst. Bleib in Bewegung, dann wächst dein Schwung und du wirst schneller.</p>
+<div class="panel" id="start" aria-label="Supersam">
   <div class="row">
     <button class="btn" id="play" type="button">Spielen</button>
-    <button class="btn ghost" id="test" type="button">Testmodus: alle Fähigkeiten</button>
-    <button class="btn ghost" id="dbgopen" type="button">Debug</button>
     <button class="btn ghost" id="wipe" type="button">Fortschritt löschen</button>
   </div>
   <p id="wipeinfo" hidden>Fortschritt gelöscht.</p>
@@ -120,7 +112,6 @@ canvas{position:fixed;inset:0;width:100vw;height:100vh;display:block;image-rende
   <div class="row" style="flex-direction:column;align-items:stretch;min-width:220px">
     <button class="btn" id="presume" type="button">Weiter</button>
     <button class="btn ghost" id="phub" type="button">Zur Hubwelt</button>
-    <button class="btn ghost" id="pdebug" type="button">Debug</button>
     <button class="btn ghost" id="pmain" type="button">Hauptmenü</button>
   </div>
   <div class="tunes" style="max-width:380px">
@@ -192,30 +183,31 @@ function flipX(src){ const c=mk(src.width,src.height),g=c.getContext('2d'); g.tr
 const pair=c=>({r:c,l:flipX(c)});
 const withRows=(base,rep)=>base.map((r,i)=>rep[i]??r);
 
-const HERO_PAL={k:'#1a1020',o:'#f2a65a',O:'#c4703a',h:'#ffd6a0',c:'#f6ead2',w:'#ffffff',e:'#1a1020',s:'#4a8ae0',S:'#2a5aa8',f:'#5a3b26'};
+// Sam: kleiner blonder Junge, 16x16, Hitbox 10x14
+const HERO_PAL={k:'#1a1020',h:'#fff3b0',y:'#ffd85a',Y:'#d9a630',s:'#ffcfa0',S:'#e0a070',w:'#ffffff',e:'#1a1020',r:'#d84a4a',R:'#9a2a36',b:'#3a6ac8',B:'#2a4a90',f:'#5a3b26'};
 const HERO=[
-  ".....kkkkkk.....",
-  "....khhoooook...",
-  "...khhooooowwk..",
-  "...khoooooowek..",
-  "..khooooooowek..",
-  "..kooooooooook..",
-  ".skssssssssssk..",
-  "sSkSSSSSSSSSSk..",
-  "s.kOooccccooOk..",
-  "..kOoccccccoOk..",
-  "..kOOccccccOOk..",
-  "...kOOOOOOOOk...",
-  "....kkkkkkkk....",
-  "....kffk.kffk...",
-  "....kffk.kffk...",
-  "....kkkk.kkkk..."];
+  "....kkkkkk......",
+  "...khhyyyyk.....",
+  "..khyyyyyyyk....",
+  "..kyyyyyyyyyk...",
+  "..kyYyssssyyk...",
+  "..kYyssswesk....",
+  "..kYsssswesk....",
+  "...kSssssssk....",
+  "....kkSSkkk.....",
+  "...krrrrrrk.....",
+  "..krRrrrrrsk....",
+  "..kRRrrrrRkk....",
+  "...kbbbbbbk.....",
+  "...kbBk.kBbk....",
+  "...kffk.kffk....",
+  "...kkkk.kkkk...."];
 const HERO_FR={
   idle:pair(spr(HERO,HERO_PAL)),
-  blink:pair(spr(withRows(HERO,{2:"...khhoooooook..",3:"...khoooooookk..",4:"..khoooooooook.."}),HERO_PAL)),
-  runA:pair(spr(withRows(HERO,{13:"...kffk..kffk...",14:"..kffk....kffk..",15:"..kkk......kkk.."}),HERO_PAL)),
-  runB:pair(spr(withRows(HERO,{13:"....kffkkffk....",14:".....kffffk.....",15:".....kkkkkk....."}),HERO_PAL)),
-  jump:pair(spr(withRows(HERO,{6:"sskssssssssssk..",7:"sSkSSSSSSSSSSk..",8:"..kOooccccooOk..",13:"....kffffffk....",14:".....kkkkkk.....",15:"................"}),HERO_PAL))
+  blink:pair(spr(withRows(HERO,{5:"..kYyssssssk....",6:"..kYsssskksk...."}),HERO_PAL)),
+  runA:pair(spr(withRows(HERO,{13:"..kbBk...kBbk...",14:"..kffk....kffk..",15:"..kkkk....kkkk.."}),HERO_PAL)),
+  runB:pair(spr(withRows(HERO,{13:"....kbBBk.......",14:".....kffk.......",15:".....kkkk......."}),HERO_PAL)),
+  jump:pair(spr(withRows(HERO,{13:"....kbbbbk......",14:"....kffffk......",15:"................"}),HERO_PAL))
 };
 const BEETLE_PAL={k:'#1a1020',r:'#d84a4a',R:'#8e2a36',l:'#ff9a8a',w:'#ffffff'};
 const BEETLE=[
@@ -653,8 +645,6 @@ function begin(){
   audioInit(); startEl.hidden=true; loadLevel('hub'); state='play';
   try{ const p=document.documentElement.requestFullscreen?.({navigationUI:'hide'}); p?.then(()=>screen.orientation?.lock?.('landscape').catch(()=>{})).catch(()=>{}); }catch(_){}
 }
-document.getElementById('play').addEventListener('click',begin);
-document.getElementById('test').addEventListener('click',()=>{ save.ab={double:true,wall:true,dash:true,glide:true}; persist(); begin(); });
 document.getElementById('wipe').addEventListener('click',()=>{ save=blankSave(); persist(); document.getElementById('wipeinfo').hidden=false; });
 const homeBtn=document.getElementById('home');
 homeBtn.addEventListener('pointerdown',e=>e.stopPropagation());
@@ -1017,7 +1007,34 @@ function drawPlayer(){
   if(P.glide) ctx.drawImage(LEAF,Math.round(P.x+P.w/2-8),y-9);
   ctx.drawImage(img,x,y,w,h);
 }
+function drawTitle(){
+  const ss=cv.height/SKY_H; ctx.setTransform(ss,0,0,ss,0,0);
+  const W=skyW, H=SKY_H, scroll=clock*40, keep=camX;
+  camX=scroll; drawSky(skyAt(.3)); camX=keep;
+  const gy=H-44, off=Math.floor(scroll)%16, base=Math.floor(scroll/16);
+  for(let i=-1;i*16<W+16;i++){ const x=i*16-off, k=((i+base)%3+3)%3;
+    ctx.drawImage(T.grass[k],x,gy); ctx.drawImage(T.dirt[k],x,gy+16); ctx.drawImage(T.dirt[(k+1)%3],x,gy+32); }
+  // Sam läuft und springt über Münzen
+  const ph=(clock%1.8)/1.8, air=ph<.45, hop=air?Math.sin(ph/.45*Math.PI)*46:0;
+  const f=air?(ph<.22?HERO_FR.jump:HERO_FR.runB):(Math.floor(clock*10)%2?HERO_FR.runA:HERO_FR.runB);
+  const hx=Math.round(W*.5-32), hy=Math.round(gy-64-hop);
+  ctx.fillStyle='rgba(13,21,36,.25)'; ctx.fillRect(hx+14,gy-2,36-hop*.3,3);
+  ctx.drawImage(f.r,hx,hy,64,64);
+  for(let i=0;i<6;i++){ const cx=Math.round(((i*46-scroll*1)%(W+60)+W+60)%(W+60)-30); ctx.drawImage(COIN_SEQ[Math.floor(clock*8+i)%4],cx,gy-74,8,10); }
+  ctx.drawImage(CRYSTAL,Math.round(W*.82),Math.round(46+Math.sin(clock*2)*4),20,22);
+  // Schriftzug
+  const size=Math.min(48,Math.floor(W/8.2)), y=Math.round(H*.27);
+  ctx.textAlign='center'; ctx.textBaseline='middle'; ctx.font=`700 ${size}px Silkscreen, monospace`;
+  ctx.fillStyle='#0d1524'; ctx.fillText('SUPERSAM',W/2+4,y+5);
+  ctx.lineJoin='round'; ctx.lineWidth=Math.max(6,size/6); ctx.strokeStyle='#1a1020'; ctx.strokeText('SUPERSAM',W/2,y);
+  const g=ctx.createLinearGradient(0,y-size/2,0,y+size/2); g.addColorStop(0,'#fff3b0'); g.addColorStop(.45,'#ffd166'); g.addColorStop(.55,'#f2a65a'); g.addColorStop(1,'#c4703a');
+  ctx.fillStyle=g; ctx.fillText('SUPERSAM',W/2,y);
+  ctx.font=`${Math.max(8,Math.round(size/5))}px Silkscreen, monospace`; ctx.fillStyle='#f6ead2';
+  ctx.fillText('Ein Daumen läuft · zwei springen',W/2,y+size*.78);
+  ctx.textBaseline='alphabetic';
+}
 function draw(){
+  if(state==='start'){ drawTitle(); return; }
   const sk=skyAt(L.sky);
   const ss=cv.height/SKY_H; ctx.setTransform(ss,0,0,ss,0,0); drawSky(sk);
   ctx.setTransform(scale,0,0,scale,0,0);
@@ -1097,13 +1114,19 @@ function openPause(){ syncVol(); state='pause'; clearInput(); document.getElemen
 function resume(){ pauseEl.hidden=true; state='play'; last=performance.now(); }
 document.getElementById('presume').addEventListener('click',resume);
 document.getElementById('phub').addEventListener('click',()=>{ const w=L.id; loadLevel('hub',w); resume(); });
-document.getElementById('pdebug').addEventListener('click',()=>openDebug('pause'));
 document.getElementById('pmain').addEventListener('click',()=>{ pauseEl.hidden=true; state='start'; document.getElementById('wipeinfo').hidden=true; startEl.hidden=false; });
 function openDebug(from){ debugFrom=from; if(from==='pause') pauseEl.hidden=true; else startEl.hidden=true; dbgOut.hidden=true; buildTunes(); debugEl.hidden=false; }
-document.getElementById('dbgopen').addEventListener('click',()=>openDebug('start'));
+// Debug ist versteckt: „Spielen“ bzw. „☰ Menü“ 1,5 Sekunden gedrückt halten
+function longPress(el,ms,onLong,onShort){
+  let timer=0, fired=false;
+  el.addEventListener('pointerdown',e=>{ e.stopPropagation(); fired=false; clearTimeout(timer); timer=setTimeout(()=>{ fired=true; onLong(); },ms); });
+  for(const ev of ['pointerup','pointerleave','pointercancel']) el.addEventListener(ev,()=>clearTimeout(timer));
+  el.addEventListener('click',e=>{ if(fired){ fired=false; e.preventDefault(); return; } onShort(); });
+  el.addEventListener('contextmenu',e=>e.preventDefault());
+}
+longPress(document.getElementById('play'),1500,()=>openDebug('start'),begin);
 const gearBtn=document.getElementById('gear');
-gearBtn.addEventListener('pointerdown',e=>e.stopPropagation());
-gearBtn.addEventListener('click',()=>{ if(state==='play') openPause(); });
+longPress(gearBtn,1500,()=>{ if(state==='play'){ state='pause'; clearInput(); openDebug('pause'); } },()=>{ if(state==='play') openPause(); });
 document.getElementById('dbgclose').addEventListener('click',()=>{ debugEl.hidden=true; if(debugFrom==='pause') resume(); else startEl.hidden=false; });
 document.getElementById('dbgreset').addEventListener('click',()=>{ Object.assign(PH,PH_DEFAULT); VIEW_H=VIEW_DEFAULT; resize(); saveTune(); buildTunes(); });
 document.getElementById('dbgcopy').addEventListener('click',()=>{

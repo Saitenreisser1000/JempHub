@@ -9,4 +9,4 @@ await Promise.all(files.map(file => access(resolve(root, file))));
 await rm(resolve(root, 'dist'), { recursive: true, force: true });
 await mkdir(resolve(root, 'dist'), { recursive: true });
 for (const file of files) await cp(resolve(root, file), resolve(root, 'dist', file));
-console.log('daumensprung: dist/ gebaut');
+console.log('supersam: dist/ gebaut');
