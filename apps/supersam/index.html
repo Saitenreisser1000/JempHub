@@ -694,11 +694,12 @@ const SFX={
   tier:n=>{ const t=atime(); tone(t,mtof(76+n*4),.15,{wave:'p12',vol:.08}); tone(t+.07,mtof(83+n*4),.22,{wave:'p12',vol:.08}); }
 };
 // ---------- Juice: Trefferpause, Kamera-Impuls, Vibration ----------
-let hitstop=0, punch=0;
-const JUICE={stomp:{hs:.07,p:.04,v:25},smash:{hs:.06,p:.06,v:35},crystal:{hs:.1,p:.08,v:30},spring:{hs:.03,p:.05,v:20},
-  land:{v:10},hurt:{hs:.08,v:[40,30,60]},dash:{p:.03,v:15},tier:{p:.05,v:12},unlock:{p:.1,v:[30,40,30,40,80]},kick:{v:10},double:{v:8}};
+let hitstop=0, punch=0, punchT=0;
+// Trefferpause nur bei echten Treffern; beim Einsammeln nur ein weicher Zoom-Stoß
+const JUICE={stomp:{hs:.05,p:.025,v:25},smash:{hs:.05,p:.035,v:35},crystal:{p:.035,v:30},spring:{p:.025,v:20},
+  land:{v:10},hurt:{v:[40,30,60]},dash:{p:.015,v:15},tier:{p:.015,v:12},unlock:{p:.06,v:[30,40,30,40,80]},kick:{v:10},double:{v:8}};
 function juice(name){ const j=JUICE[name]; if(!j) return;
-  if(j.hs) hitstop=Math.max(hitstop,j.hs); if(j.p) punch=Math.max(punch,j.p);
+  if(j.hs) hitstop=Math.max(hitstop,j.hs); if(j.p) punchT=Math.max(punchT,j.p);
   if(j.v&&AU.vol.vib!==false){ try{ navigator.vibrate?.(j.v); }catch(_){} } }
 function sfx(name,arg){ juice(name); if(!AU.ctx||AU.vol.sfx<=0) return; try{ SFX[name](arg); }catch(_){} }
 
@@ -1436,7 +1437,7 @@ function camera(dt){
   // Zoom: schneller, Dash, Schwung oder Abgrund voraus = etwas mehr Überblick
   const want=Math.min(1,sp/(PH.max*1.5)+(P.dashT>0?.5:0)+tier()*.12+(ahead.gaps>=4?.35:0));
   zoom+=(1+PH.camZoom*want-zoom)*Math.min(1,dt*1.4);
-  punch=Math.max(0,punch-dt*.35);
+  punch+=(punchT-punch)*Math.min(1,dt*14); punchT=Math.max(0,punchT-dt*.18);
   applyZoom();
   camX=Math.max(0,Math.min(L.w*TS-viewW,camX));
   camY=Math.max(0,Math.min(L.h*TS-viewH,camY));
