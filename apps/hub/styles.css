@@ -6,49 +6,69 @@
 .top { display: flex; align-items: center; height: 60px; }
 .brand { display: flex; align-items: center; gap: 10px; font: 700 18px/1 var(--font-display); letter-spacing: -0.01em; text-decoration: none; }
 
-/* hero: JempHub groß, Unterzeile und Griffbrett nebeneinander */
-.hero { position: relative; padding: 44px 0 36px; }
+/* hero: JempHub groß, darunter ein spielbares Griffbrett über die volle Breite */
+.hero { position: relative; padding: 44px 0 30px; }
 .hero > .theme-btn { position: absolute; top: 12px; right: 0; }
 .wordmark { display: flex; align-items: center; gap: clamp(12px, 2vw, 20px); font-size: clamp(44px, 8vw, 84px); line-height: 1; letter-spacing: -0.03em; }
 .wordmark .logo { width: clamp(64px, 10vw, 112px); height: auto; flex: none; }
-.hero-row { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.6fr); align-items: center; gap: 28px; margin-top: 22px; }
-.sub { margin: 0; color: var(--muted); font: 500 clamp(16px, 1.8vw, 19px)/1.35 var(--font-body); max-width: 22ch; }
+.sub { margin: 14px 0 0; color: var(--muted); font: 500 clamp(16px, 1.8vw, 19px)/1.35 var(--font-body); }
+.stage { display: grid; grid-template-columns: auto minmax(0, 1fr); align-items: center; gap: 16px; margin-top: 26px; }
+.hero-play { width: 56px; height: 56px; border-radius: 50%; border: 0; background: var(--brass); color: var(--brass-ink); display: grid; place-items: center; cursor: pointer; box-shadow: 0 6px 18px color-mix(in srgb, var(--brass) 35%, transparent); transition: transform .12s; }
+.hero-play:hover { transform: scale(1.05); }
+.hero-play.on { background: var(--raise); color: var(--brass); box-shadow: inset 0 0 0 2px var(--brass); }
 
 .trail { display: block; width: 100%; height: auto; }
 .t-wood { fill: var(--wood); }
 .t-nut { fill: var(--nut) !important; }
 .t-frets rect { fill: var(--fret); opacity: 0.7; }
+.t-inlays circle { fill: var(--inlay, #e6ebe4); opacity: .14; }
 .t-strings line { stroke: var(--string); opacity: 0.75; }
 .t-links path { opacity: 0.5; }
-.t-dots > * { transform-box: fill-box; transform-origin: center; animation: beat 4.8s ease-in-out infinite; opacity: 0.35; }
-.t-dots .d1 { animation-delay: 0s; }
-.t-dots .d2 { animation-delay: 0.8s; }
-.t-dots .d3 { animation-delay: 1.6s; }
-.t-dots .d4 { animation-delay: 2.4s; }
-.t-dots .d5 { animation-delay: 3.2s; }
-.t-dots .d6 { animation-delay: 4s; }
-@keyframes beat {
-  0%, 22%, 100% { opacity: 0.35; transform: scale(1); }
-  4% { opacity: 1; transform: scale(1.22); }
-  12% { opacity: 1; transform: scale(1.08); }
-}
+.trail .dot { cursor: pointer; outline: none; }
+.trail .tap { fill: transparent; }
+.trail .dot > :not(.tap) { transform-box: fill-box; transform-origin: center; }
+.trail .dot { animation: beat 5.4s ease-in-out infinite; opacity: 0.4; }
+.trail .d1 { animation-delay: 0s; } .trail .d2 { animation-delay: .9s; } .trail .d3 { animation-delay: 1.8s; }
+.trail .d4 { animation-delay: 2.7s; } .trail .d5 { animation-delay: 3.6s; } .trail .d6 { animation-delay: 4.5s; }
+@keyframes beat { 0%, 20%, 100% { opacity: 0.4; } 4%, 12% { opacity: 1; } }
+body.phrase .trail .dot { animation: none; opacity: .3; }
+.trail .dot.hit { animation: none; opacity: 1; }
+.trail .dot.hit > :not(.tap) { animation: hit .45s ease-out; }
+.trail .dot:focus-visible > circle { stroke: var(--fg); stroke-width: 2; }
+@keyframes hit { 0% { transform: scale(1); } 30% { transform: scale(1.4); } 100% { transform: scale(1); } }
 
 /* app cards */
-.apps { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
+.apps { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 12px; }
+.app.guitar { grid-column: span 4; grid-row: span 2; grid-template-rows: 1fr auto; }
+.app.note, .app.ear { grid-column: span 2; }
+.app.conduct { grid-column: span 3; }
+.app.stem { grid-column: span 3; }
+.app.guitar .thumb { display: flex; align-items: center; }
+.app.guitar .thumb svg { max-height: none; width: 100%; }
+
+/* jede App ihre Farbe */
+.app.guitar { --accent: #8fd3a9; } .app.note { --accent: #7cc4f2; } .app.ear { --accent: #5fd6cf; }
+.app.conduct { --accent: #ef98c4; } .app.stem { --accent: #f2c46d; }
+.app .thumb { background: color-mix(in srgb, var(--accent) 16%, var(--bg)); }
+.app .tags span { color: color-mix(in srgb, var(--accent) 55%, var(--muted)); border-color: color-mix(in srgb, var(--accent) 45%, transparent); }
 .app {
   display: grid; grid-template-rows: auto 1fr; text-decoration: none; color: var(--fg);
   background: var(--surface); border: 1px solid var(--line2); border-radius: var(--radius-lg); overflow: hidden;
   box-shadow: var(--card-shadow);
   transition: background 0.15s, transform 0.15s, border-color 0.15s;
 }
-a.app:hover { background: var(--raise); border-color: color-mix(in srgb, var(--brass) 45%, transparent); transform: translateY(-2px); }
-a.app:hover .open { color: var(--brass); }
+a.app:hover { background: var(--raise); border-color: var(--accent); transform: translateY(-2px); }
+a.app:hover .open { color: var(--fg); transform: translateX(3px); }
 a.app:active { transform: scale(0.995); }
 
 /* Hinweise am Namen */
 .badge { display: inline-block; vertical-align: 4px; margin-left: 6px; font: 600 10.5px/1 var(--font-mono); letter-spacing: 0.04em; text-transform: uppercase; padding: 4px 8px; border-radius: 999px; color: var(--muted); border: 1px solid var(--line2); }
 .badge.beta { color: var(--brass); border-color: color-mix(in srgb, var(--brass) 50%, transparent); background: color-mix(in srgb, var(--brass) 8%, transparent); }
 .app.soon { cursor: default; }
+/* untere Reihe: breite, flache Karten (Bild links, Name rechts) */
+.app.conduct, .app.stem { grid-template-columns: 48% 1fr; grid-template-rows: auto; align-items: center; }
+.app.conduct .thumb, .app.stem .thumb { margin: 10px; }
+.app.conduct .body, .app.stem .body { padding: 14px 18px 14px 8px; }
 .app.soon .thumb { opacity: 0.45; filter: saturate(0.5); }
 .app.soon h2 { color: var(--muted); }
 .thumb { display: block; background: var(--bg); margin: 10px 10px 0; border-radius: 12px; }
@@ -86,11 +106,20 @@ a.app:active { transform: scale(0.995); }
 .lightbox-head h2 { font-size: 20px; }
 .lightbox-panel p { color: var(--muted); margin: 10px 0 0; }
 
+@media (max-width: 960px) {
+  .app.conduct, .app.stem { grid-template-columns: none; grid-template-rows: auto 1fr; align-items: stretch; }
+  .app.conduct .thumb, .app.stem .thumb { margin: 10px 10px 0; }
+  .app.conduct .body, .app.stem .body { padding: 16px 18px 18px; }
+  .apps { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .app.guitar { grid-column: span 2; grid-row: auto; }
+  .app.note, .app.ear, .app.conduct, .app.stem { grid-column: span 1; }
+}
 @media (max-width: 720px) {
   .apps { grid-template-columns: minmax(0, 1fr); }
-  .hero { padding: 28px 0 26px; }
-  .hero-row { grid-template-columns: minmax(0, 1fr); gap: 16px; margin-top: 14px; }
-  .sub { max-width: none; }
+  .app.guitar, .app.note, .app.ear, .app.conduct, .app.stem { grid-column: auto; }
+  .hero { padding: 28px 0 22px; }
+  .stage { gap: 10px; margin-top: 18px; }
+  .hero-play { width: 46px; height: 46px; }
 }
 
 /* Pfeil statt „Open …“-Text: rechts neben dem Namen */
@@ -106,3 +135,39 @@ a.app:active { transform: scale(0.995); }
 .lightbox-panel .fine { font-size: 12.5px; color: var(--faint); }
 @media (max-width: 480px) { .legal { grid-template-columns: 1fr; gap: 2px; } .legal dd { margin-bottom: 8px; } }
 
+
+/* Karten-Szenen: spielen beim Sichtbarwerden bzw. beim Darüberfahren */
+.thumb .pd, .thumb .pop, .thumb .chipin, .thumb .wave rect, .thumb .baton { transform-box: fill-box; transform-origin: center; }
+.thumb .baton { transform-origin: 100% 100%; }
+.app.live .pd { animation: popin .5s cubic-bezier(.3,1.6,.5,1) both; }
+.app.live .p1 { animation-delay: .1s; } .app.live .p2 { animation-delay: .55s; } .app.live .p3 { animation-delay: 1s; }
+.app.live .ln { stroke-dasharray: 1; animation: draw .45s ease-out both; }
+.app.live .l1 { animation-delay: .3s; } .app.live .l2 { animation-delay: .75s; }
+.app.live .pop { animation: drop .5s cubic-bezier(.3,1.5,.5,1) .2s both; }
+.app.live .chipin { animation: fadein .4s ease-out both; animation-delay: .75s; }
+.app.ear.live .chipin { animation-delay: 1.3s; }
+.app.live .wave rect { animation: wave .9s ease-in-out both; }
+.app.live .wave rect:nth-child(2) { animation-delay: .06s; } .app.live .wave rect:nth-child(3) { animation-delay: .12s; }
+.app.live .wave rect:nth-child(4) { animation-delay: .18s; } .app.live .wave rect:nth-child(5) { animation-delay: .24s; }
+.app.live .wave rect:nth-child(6) { animation-delay: .3s; } .app.live .wave rect:nth-child(7) { animation-delay: .36s; }
+.app.ear.live .p1 { animation-delay: .5s; } .app.ear.live .l1 { animation-delay: .75s; } .app.ear.live .p3 { animation-delay: 1s; }
+.app.live .fig { stroke-dasharray: 1; animation: figure 1.8s ease-in-out both; }
+.app.live .baton { animation: baton 1.8s ease-in-out both; }
+@keyframes popin { from { transform: scale(0); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+@keyframes draw { from { stroke-dashoffset: 1; } to { stroke-dashoffset: 0; } }
+@keyframes drop { from { transform: translateY(-14px); opacity: 0; } to { transform: none; opacity: 1; } }
+@keyframes fadein { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: none; } }
+@keyframes wave { 0% { transform: scaleY(.25); } 50% { transform: scaleY(1.15); } 100% { transform: scaleY(1); } }
+@keyframes figure { from { stroke-dashoffset: 1; } to { stroke-dashoffset: 0; } }
+@keyframes baton { 0% { transform: rotate(0); } 25% { transform: rotate(-14deg); } 50% { transform: rotate(6deg); } 75% { transform: rotate(-8deg); } 100% { transform: rotate(0); } }
+
+/* Karten tauchen beim Scrollen auf (nur wo der Browser das kann) */
+@supports (animation-timeline: view()) {
+  .apps .app { animation: rise linear both; animation-timeline: view(); animation-range: entry 0% entry 35%; }
+  @keyframes rise { from { opacity: 0; transform: translateY(28px); } to { opacity: 1; transform: none; } }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .trail .dot { animation: none; opacity: 1; }
+  .apps .app, .app.live * { animation: none !important; }
+}
