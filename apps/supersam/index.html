@@ -577,7 +577,7 @@ const PH={max:150,accG:700,accA:450,fricG:800,fricA:90,tierBonus:10,grav:1150,ju
 
 function resetPlayer(p){
   Object.assign(P,{x:p.x,y:p.y,vx:0,vy:0,ground:false,buffer:0,plat:null,rising:false,usedDouble:false,airDash:false,dashT:0,kickT:0,glide:false,wallDir:0});
-  camGround=P.y+P.h; camLook=P.face*viewW*.12; zoom=1; applyZoom();
+  camGround=P.y+P.h; camFall=0; camLook=P.face*viewW*.12; zoom=1; applyZoom();
   camX=Math.max(0,Math.min(L.w*TS-viewW,P.x+P.w/2-viewW/2+camLook)); camY=Math.max(0,Math.min(L.h*TS-viewH,camGround-viewH*.62));
 }
 function respawn(){
@@ -1441,7 +1441,7 @@ function draw(){
 // ---------- Dynamische Kamera ----------
 // Schaut je nach Tempo voraus, hält bei Sprüngen die Bodenhöhe, folgt beim Fallen,
 // peilt die nächste Plattform in Laufrichtung an und zoomt bei hohem Tempo leicht heraus.
-let camGround=0, camLook=0, camAheadY=0, zoom=1, viewH=180;
+let camGround=0, camLook=0, camAheadY=0, camFall=0, zoom=1, viewH=180;
 function applyZoom(){ viewH=VIEW_H*zoom*(1-punch); scale=cv.height/viewH; viewW=cv.width/scale; }
 function surfaceAhead(dir){
   // Mittelwert der begehbaren Oberflächen 3–11 Kacheln voraus (nähere zählen mehr); null = Abgrund
@@ -1474,9 +1474,12 @@ function camera(dt){
   const ahead=surfaceAhead(dir);
   if(ahead.y!==null) camAheadY+=(ahead.y-camAheadY)*Math.min(1,dt*6); else camAheadY+=(fy+TS*2-camAheadY)*Math.min(1,dt*4);
   const ab=Math.min(.35,.25*PH.camLook); fy=fy*(1-ab)+camAheadY*ab;
-  if(P.vy>150&&!P.glide) fy+=(P.vy-150)*.3;
+  // Blick nach unten nur, wenn Sam unter seine letzte Standhöhe fällt (nicht beim Landen auf höheren Plattformen)
+  const fallT=(P.vy>150&&!P.glide&&!P.ground&&feet>camGround-TS*.5)?(P.vy-150)*.3:0;
+  camFall+=(fallT-camFall)*Math.min(1,dt*(fallT>camFall?3:8));
+  fy+=camFall;
   const ty=fy-viewH*.62;
-  const ySpeed=PH.camSmoothY*(P.vy>200||feet<camGround-TS*1.5?1.8:1);
+  const ySpeed=PH.camSmoothY*((P.vy>200&&feet>camGround)||feet<camGround-TS*1.5?1.8:1);
   camY+=(ty-camY)*Math.min(1,dt*ySpeed);
   // Zoom: schneller, Dash, Schwung oder Abgrund voraus = etwas mehr Überblick
   const want=Math.min(1,sp/(PH.max*1.5)+(P.dashT>0?.5:0)+tier()*.12+(ahead.gaps>=4?.35:0));
@@ -1718,7 +1721,7 @@ function frame(now){
   requestAnimationFrame(frame);
 }
 resize(); loadLevel('hub'); requestAnimationFrame(frame);
-window.__dz={PH,setFlow:v=>{flow=v;},startCelebrate,ITEM,playStep,schedule,audioInit,playSong,sfx,SFX,AU,loadLevel,update,P,save,get L(){return L;},setState:s=>{state=s;},finishLevel};
+window.__dz={get cam(){return {camX,camY};},PH,setFlow:v=>{flow=v;},startCelebrate,ITEM,playStep,schedule,audioInit,playSong,sfx,SFX,AU,loadLevel,update,P,save,get L(){return L;},setState:s=>{state=s;},finishLevel};
 })();
 </script>
 

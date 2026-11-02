@@ -103,3 +103,15 @@ test('Hügel und Senken lassen sich in beide Richtungen durchlaufen', () => {
     assert.ok(air <= 2, `Welt ${lv} ab ${col}: ${air} Frames in der Luft`);
   }
 });
+
+test('Kamera schlägt beim Landen auf einer höheren Plattform nicht nach unten aus', () => {
+  const { dz, listeners, run } = boot();
+  dz.setState('play'); dz.loadLevel(1); dz.L.enemies.length = 0;
+  dz.P.x = 31 * 16; dz.P.y = 19 * 16 - 14; run(60);
+  const before = dz.cam.camY; let maxY = before;
+  listeners.keydown({ key: 'ArrowRight', preventDefault() {} }); run(4);
+  listeners.keydown({ key: ' ', preventDefault() {} });
+  for (let i = 0; i < 120; i++) { run(1); maxY = Math.max(maxY, dz.cam.camY); if (i === 20) listeners.keyup({ key: 'ArrowRight' }); }
+  assert.ok(dz.P.y < 15 * 16, 'Sam steht auf der Plattform');
+  assert.ok(maxY <= before + 0.5, `Kamera ging um ${(maxY - before).toFixed(1)} px nach unten`);
+});
