@@ -17,6 +17,7 @@
     "build:guitar": "npm run build --workspace guitarjemp",
     "build:ear": "npm run build --workspace earjemp",
     "build:note": "npm run build --workspace notejemp",
+    "build:supersam": "npm run build --workspace supersam",
     "build:stemplayer": "npm run build --workspace @jemphub/stemplayer && npm run build --workspace stemplayer-backend",
     "build:design-system": "npm run build --workspace jemp-design-system"
   }
