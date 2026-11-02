@@ -115,3 +115,24 @@ test('Kamera schlägt beim Landen auf einer höheren Plattform nicht nach unten 
   assert.ok(dz.P.y < 15 * 16, 'Sam steht auf der Plattform');
   assert.ok(maxY <= before + 0.5, `Kamera ging um ${(maxY - before).toFixed(1)} px nach unten`);
 });
+
+test('Neue Gegner bewegen sich und bleiben im Level', () => {
+  const { dz, run } = boot();
+  const seen = new Set();
+  for (const lv of [1, 2, 3, 4]) {
+    dz.setState('play'); dz.loadLevel(lv);
+    for (const e of dz.L.enemies) {
+      if (e.type === 'beetle') continue;
+      seen.add(e.type);
+      const x0 = e.x, y0 = e.y;
+      dz.P.x = e.spawn.x + 64; dz.P.y = e.spawn.y - 40; dz.P.vy = 0;
+      if (e.type === 'fisch') { e.state = 'leap'; e.vy = -340; }
+      let moved = 0;
+      for (let i = 0; i < 120; i++) { run(1); moved = Math.max(moved, Math.abs(e.x - x0) + Math.abs(e.y - y0)); }
+      assert.ok(Number.isFinite(e.x) && Number.isFinite(e.y), `${e.type} hat gültige Position`);
+      assert.ok(e.y < dz.L.h * 16, `${e.type} ist nicht aus dem Level gefallen`);
+      assert.ok(moved > 1 || !e.alive, `${e.type} bewegt sich`);
+    }
+  }
+  assert.deepEqual([...seen].sort(), ['fisch', 'frosch', 'geist', 'igel', 'skorpion', 'wespe']);
+});
