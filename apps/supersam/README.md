@@ -5,6 +5,7 @@ Jump'n'Run fürs Handy im Querformat mit Sam, einem kleinen blonden Jungen, gest
 ## Technik
 
 - Eine einzige Datei `index.html`: Canvas-Spiel in reinem JavaScript, Pixel-Sprites im SNES-Stil werden im Code gezeichnet.
+- WebGL-Effektschicht: das 2D-Bild läuft als Textur durch Shader (Licht und Schatten, Glühen, Bloom, Farbstimmung, Dunst, Vignette), Werte je Welt in `FXT`. Ohne WebGL bleibt das 2D-Bild sichtbar; im Debug-Menü abschaltbar.
 - Musik und Effekte entstehen live mit der Web Audio API (keine Audiodateien).
 - Fortschritt, Debug-Werte und Lautstärke liegen im `localStorage` des Browsers.
 - `src/game.test.js`: Rauchtest, der jede Welt mit Browser-Attrappen anspielt.

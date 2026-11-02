@@ -139,6 +139,7 @@ canvas{position:fixed;inset:0;width:100vw;height:100vh;display:block;image-rende
     <label><input type="checkbox" id="d-info"> Messwerte anzeigen</label>
     <label><input type="checkbox" id="d-hitbox"> Hitboxen zeigen</label>
     <label><input type="checkbox" id="d-god"> Unverwundbar</label>
+    <label><input type="checkbox" id="d-fx"> Licht-Effekte (WebGL)</label>
   </div>
   <div class="checks">
     <label><input type="checkbox" id="a-double"> Doppelsprung</label>
@@ -551,7 +552,7 @@ const P={w:10,h:14,x:0,y:0,vx:0,vy:0,ground:false,face:1,coyote:0,buffer:0,squas
   usedDouble:false,airDash:false,dashT:0,dashDir:1,dashCD:0,wallDir:0,kickT:0,glide:false};
 const PH={max:60,accG:700,accA:450,fricG:800,fricA:90,tierBonus:10,grav:1150,jump:300,airJump:270,fall:420,coyote:.1,buffer:.13,
   holdMax:.18,holdGrav:.3,cutGrav:2.0,spring:560,stomp:280,
-  camLook:1,camSmooth:4,camZoom:.18,kickX:95,kickY:330,kickT:.14,slide:70,dashSpeed:220,dashT:.2,glideFall:40,upLift:2000,upMax:220,upSpeed:45};
+  camLook:1,camSmooth:4,camZoom:.18,fxDark:1,fxBloom:1,kickX:95,kickY:330,kickT:.14,slide:70,dashSpeed:220,dashT:.2,glideFall:40,upLift:2000,upMax:220,upSpeed:45};
 
 function resetPlayer(p){
   Object.assign(P,{x:p.x,y:p.y,vx:0,vy:0,ground:false,buffer:0,plat:null,rising:false,usedDouble:false,airDash:false,dashT:0,kickT:0,glide:false,wallDir:0});
@@ -983,6 +984,7 @@ function resize(){
   cv.width=Math.round(innerWidth*dpr); cv.height=Math.round(innerHeight*dpr);
   applyZoom(); skyW=cv.width/(cv.height/SKY_H);
   bgCanvas.width=cv.width; bgCanvas.height=cv.height;
+  if(typeof FX!=='undefined') FX.resize(cv.width,cv.height);
   ctx.imageSmoothingEnabled=false;
 }
 addEventListener('resize',resize);
@@ -1399,7 +1401,7 @@ function camera(dt){
 
 // ---------- Debug ----------
 const PH_DEFAULT={...PH}, VIEW_DEFAULT=180, TUNE_KEY='daumensprung-tune';
-const dbg={info:false,hitbox:false,god:false};
+const dbg={info:false,hitbox:false,god:false,fx:true};
 const TUNES=[
   ['max','Höchsttempo Laufen',20,150,1],
   ['accG','Beschleunigen am Boden',100,1500,10],
@@ -1418,7 +1420,9 @@ const TUNES=[
   ['viewH','Zoom: sichtbare Höhe (kleiner = näher)',120,270,6],
   ['camLook','Kamera: Vorausschau',0,2,0.05],
   ['camSmooth','Kamera: Nachführtempo',1,12,0.5],
-  ['camZoom','Kamera: Herauszoomen bei Tempo',0,0.5,0.01]];
+  ['camZoom','Kamera: Herauszoomen bei Tempo',0,0.5,0.01],
+  ['fxDark','Licht: Stärke der Dunkelheit',0,1.5,0.05],
+  ['fxBloom','Licht: Überstrahlen',0,1.5,0.05]];
 try{ const t=JSON.parse(localStorage.getItem(TUNE_KEY)||'null'); if(t){ Object.assign(PH,t.ph||{}); if(t.viewH) VIEW_H=t.viewH; Object.assign(dbg,t.dbg||{}); } }catch(_){}
 function tuneValues(){ const ph={}; for(const [k] of TUNES) if(k!=='viewH') ph[k]=PH[k]; return {ph,viewH:VIEW_H}; }
 function saveTune(){ try{ localStorage.setItem(TUNE_KEY,JSON.stringify({...tuneValues(),dbg})); }catch(_){} }
@@ -1434,10 +1438,10 @@ function buildTunes(){
     inp.addEventListener('input',()=>{ const v=parseFloat(inp.value); if(k==='viewH'){ VIEW_H=v; resize(); } else PH[k]=v; out.textContent=fmt(v,step); saveTune(); });
     tunesEl.append(lab,inp,out);
   }
-  for(const k of ['info','hitbox','god']){ const cb=document.getElementById('d-'+k); cb.checked=dbg[k]; }
+  for(const k of ['info','hitbox','god','fx']){ const cb=document.getElementById('d-'+k); cb.checked=dbg[k]; }
   for(const a of ['double','wall','dash','glide']){ const cb=document.getElementById('a-'+a); cb.checked=save.ab[a]; }
 }
-for(const k of ['info','hitbox','god']) document.getElementById('d-'+k).addEventListener('change',e=>{ dbg[k]=e.target.checked; dbgInfo.hidden=!dbg.info; saveTune(); });
+for(const k of ['info','hitbox','god','fx']) document.getElementById('d-'+k).addEventListener('change',e=>{ dbg[k]=e.target.checked; dbgInfo.hidden=!dbg.info; if(k==='fx') FX.setActive(dbg.fx); saveTune(); });
 for(const a of ['double','wall','dash','glide']) document.getElementById('a-'+a).addEventListener('change',e=>{ save.ab[a]=e.target.checked; persist(); });
 let debugFrom='start';
 const pauseEl=document.getElementById('pause');
@@ -1475,6 +1479,126 @@ document.getElementById('dbgcopy').addEventListener('click',()=>{
 });
 dbgInfo.hidden=!dbg.info;
 
+// ---------- WebGL-Effektschicht ----------
+// Das Spiel zeichnet weiter mit Canvas 2D. Dieses fertige Bild wird hier als Textur durch Shader geschickt:
+// Licht und Schatten, Glühen, Überstrahlen (Bloom), Farbstimmung, Dunst und Vignette.
+// Ohne WebGL (oder wenn abgeschaltet) bleibt einfach das 2D-Bild sichtbar.
+const FXT={
+  meadow:{amb:1,   grade:[1,1,.97],    ga:.08,fog:[1,1,1],      fa:.05,vig:.28,bloom:.3},
+  forest:{amb:.8,  grade:[1.06,1,.84], ga:.22,fog:[.95,.9,.65], fa:.1, vig:.38,bloom:.4},
+  stone: {amb:.92, grade:[1.1,.93,.8], ga:.25,fog:[1,.8,.6],    fa:.08,vig:.35,bloom:.35},
+  lake:  {amb:1,   grade:[.95,1,1.06], ga:.15,fog:[.9,.96,1],   fa:.1, vig:.3, bloom:.35},
+  snow:  {amb:.55, grade:[.82,.88,1.15],ga:.3,fog:[.5,.55,.85], fa:.12,vig:.5, bloom:.55}
+};
+const MAX_LIGHTS=32;
+const FX=(()=>{
+  const off={ok:false,render(){},resize(){},setActive(){}};
+  let c, gl;
+  try{
+    c=document.createElement('canvas');
+    c.style.cssText='position:fixed;inset:0;width:100vw;height:100vh;display:block;pointer-events:none;image-rendering:pixelated';
+    gl=c.getContext('webgl',{alpha:false,antialias:false,premultipliedAlpha:false,preserveDrawingBuffer:false});
+  }catch(_){ gl=null; }
+  if(!gl) return off;
+  const VS='attribute vec2 p;varying vec2 uv;void main(){uv=p*.5+.5;gl_Position=vec4(p,0.,1.);}';
+  const BRIGHT='precision mediump float;varying vec2 uv;uniform sampler2D s;uniform float thr;void main(){vec3 c=texture2D(s,uv).rgb;float l=max(max(c.r,c.g),c.b);gl_FragColor=vec4(c*smoothstep(thr,1.,l),1.);}';
+  const BLUR='precision mediump float;varying vec2 uv;uniform sampler2D s;uniform vec2 d;void main(){vec3 c=texture2D(s,uv).rgb*.227;'+
+    'c+=(texture2D(s,uv+d).rgb+texture2D(s,uv-d).rgb)*.1945;c+=(texture2D(s,uv+2.*d).rgb+texture2D(s,uv-2.*d).rgb)*.1216;'+
+    'c+=(texture2D(s,uv+3.*d).rgb+texture2D(s,uv-3.*d).rgb)*.054;c+=(texture2D(s,uv+4.*d).rgb+texture2D(s,uv-4.*d).rgb)*.016;gl_FragColor=vec4(c,1.);}';
+  const FINAL=`precision mediump float;varying vec2 uv;
+uniform sampler2D scene,bloom;uniform vec2 res;uniform float amb,bloomAmt,vig,ga,fa;uniform vec3 grade,fogC;
+uniform vec4 lp[${MAX_LIGHTS}];uniform vec4 lc[${MAX_LIGHTS}];uniform int ln;
+void main(){
+  vec3 c=texture2D(scene,uv).rgb;
+  vec2 asp=vec2(res.x/res.y,1.);
+  vec3 light=vec3(0.),glow=vec3(0.);
+  for(int i=0;i<${MAX_LIGHTS};i++){ if(i>=ln) break;
+    float f=clamp(1.-length((uv-lp[i].xy)*asp)/lp[i].z,0.,1.); f*=f;
+    light+=lc[i].rgb*lc[i].a*f; glow+=lc[i].rgb*lc[i].a*f*f*lp[i].w; }
+  vec3 o=c*(vec3(amb)+light*(1.-amb)*1.7);
+  o+=glow*.28+texture2D(bloom,uv).rgb*bloomAmt;
+  o=mix(o,o*grade,ga*2.);
+  o=mix(o,fogC*max(amb,.5),fa*smoothstep(.5,0.,uv.y));
+  float v=smoothstep(.9,.25,length((uv-vec2(.5,.48))*vec2(1.,1.2)));
+  o*=mix(1.-vig,1.,v);
+  gl_FragColor=vec4(o,1.);
+}`;
+  function prog(fs){
+    const p=gl.createProgram();
+    for(const [type,src] of [[gl.VERTEX_SHADER,VS],[gl.FRAGMENT_SHADER,fs]]){ const sh=gl.createShader(type); gl.shaderSource(sh,src); gl.compileShader(sh);
+      if(!gl.getShaderParameter(sh,gl.COMPILE_STATUS)) throw new Error(gl.getShaderInfoLog(sh)); gl.attachShader(p,sh); }
+    gl.bindAttribLocation(p,0,'p'); gl.linkProgram(p);
+    if(!gl.getProgramParameter(p,gl.LINK_STATUS)) throw new Error(gl.getProgramInfoLog(p));
+    const u={}; return {p,u:n=>u[n]??(u[n]=gl.getUniformLocation(p,n))};
+  }
+  function tex(){ const t=gl.createTexture(); gl.bindTexture(gl.TEXTURE_2D,t);
+    for(const [k,v] of [[gl.TEXTURE_MIN_FILTER,gl.LINEAR],[gl.TEXTURE_MAG_FILTER,gl.LINEAR],[gl.TEXTURE_WRAP_S,gl.CLAMP_TO_EDGE],[gl.TEXTURE_WRAP_T,gl.CLAMP_TO_EDGE]]) gl.texParameteri(gl.TEXTURE_2D,k,v);
+    return t; }
+  let P1,P2,P3;
+  try{ P1=prog(BRIGHT); P2=prog(BLUR); P3=prog(FINAL); }catch(e){ console.warn('WebGL-Effekte aus:',e.message); return off; }
+  const quad=gl.createBuffer(); gl.bindBuffer(gl.ARRAY_BUFFER,quad); gl.bufferData(gl.ARRAY_BUFFER,new Float32Array([-1,-1,1,-1,-1,1,1,1]),gl.STATIC_DRAW);
+  gl.enableVertexAttribArray(0); gl.vertexAttribPointer(0,2,gl.FLOAT,false,0,0);
+  const sceneT=tex(); const fb=[0,1].map(()=>({t:tex(),f:gl.createFramebuffer()}));
+  let W=0,H=0,qw=1,qh=1, active=true, lost=false;
+  const lpA=new Float32Array(MAX_LIGHTS*4), lcA=new Float32Array(MAX_LIGHTS*4);
+  function resize(w,h){
+    W=w; H=h; c.width=w; c.height=h; qw=Math.max(1,w>>2); qh=Math.max(1,h>>2);
+    for(const b of fb){ gl.bindTexture(gl.TEXTURE_2D,b.t); gl.texImage2D(gl.TEXTURE_2D,0,gl.RGBA,qw,qh,0,gl.RGBA,gl.UNSIGNED_BYTE,null);
+      gl.bindFramebuffer(gl.FRAMEBUFFER,b.f); gl.framebufferTexture2D(gl.FRAMEBUFFER,gl.COLOR_ATTACHMENT0,gl.TEXTURE_2D,b.t,0); }
+    gl.bindFramebuffer(gl.FRAMEBUFFER,null);
+  }
+  function pass(P,target,w,h,src){ gl.bindFramebuffer(gl.FRAMEBUFFER,target); gl.viewport(0,0,w,h); gl.useProgram(P.p);
+    gl.activeTexture(gl.TEXTURE0); gl.bindTexture(gl.TEXTURE_2D,src); gl.uniform1i(P.u('s'),0); }
+  function render(p){
+    if(!active||lost) return;
+    gl.bindTexture(gl.TEXTURE_2D,sceneT); gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL,true);
+    gl.texImage2D(gl.TEXTURE_2D,0,gl.RGBA,gl.RGBA,gl.UNSIGNED_BYTE,cv);
+    pass(P1,fb[0].f,qw,qh,sceneT); gl.uniform1f(P1.u('thr'),.68); gl.drawArrays(gl.TRIANGLE_STRIP,0,4);
+    pass(P2,fb[1].f,qw,qh,fb[0].t); gl.uniform2f(P2.u('d'),1.5/qw,0); gl.drawArrays(gl.TRIANGLE_STRIP,0,4);
+    pass(P2,fb[0].f,qw,qh,fb[1].t); gl.uniform2f(P2.u('d'),0,1.5/qh); gl.drawArrays(gl.TRIANGLE_STRIP,0,4);
+    gl.bindFramebuffer(gl.FRAMEBUFFER,null); gl.viewport(0,0,W,H); gl.useProgram(P3.p);
+    gl.activeTexture(gl.TEXTURE0); gl.bindTexture(gl.TEXTURE_2D,sceneT); gl.uniform1i(P3.u('scene'),0);
+    gl.activeTexture(gl.TEXTURE1); gl.bindTexture(gl.TEXTURE_2D,fb[0].t); gl.uniform1i(P3.u('bloom'),1);
+    gl.uniform2f(P3.u('res'),W,H); gl.uniform1f(P3.u('amb'),p.amb); gl.uniform1f(P3.u('bloomAmt'),p.bloom);
+    gl.uniform1f(P3.u('vig'),p.vig); gl.uniform1f(P3.u('ga'),p.ga); gl.uniform1f(P3.u('fa'),p.fa);
+    gl.uniform3fv(P3.u('grade'),p.grade); gl.uniform3fv(P3.u('fogC'),p.fog);
+    const n=Math.min(MAX_LIGHTS,p.lights.length); lpA.fill(0); lcA.fill(0);
+    for(let i=0;i<n;i++){ const l=p.lights[i]; lpA.set([l[0],l[1],l[2],l[3]],i*4); lcA.set([l[4],l[5],l[6],l[7]],i*4); }
+    gl.uniform4fv(P3.u('lp[0]'),lpA); gl.uniform4fv(P3.u('lc[0]'),lcA); gl.uniform1i(P3.u('ln'),n);
+    gl.drawArrays(gl.TRIANGLE_STRIP,0,4);
+  }
+  function setActive(on){ active=on&&!lost; c.style.display=active?'block':'none'; cv.style.visibility=active?'hidden':'visible'; }
+  c.addEventListener('webglcontextlost',e=>{ e.preventDefault(); lost=true; setActive(false); });
+  if(cv.parentNode) cv.parentNode.insertBefore(c,cv.nextSibling);
+  return {ok:true,render,resize,setActive};
+})();
+const rgb1=h=>hex(h).map(v=>v/255);
+function collectLights(){
+  if(!L||state==='start') return [];
+  const out=[], W=cv.width, H=cv.height;
+  const add=(x,y,r,col,i,glow,prio)=>{ const sx=(x-camX)*scale, sy=(y-camY)*scale, rp=r*scale;
+    if(sx<-rp||sx>W+rp||sy<-rp||sy>H+rp) return;
+    const [R,G,B]=rgb1(col); out.push([sx/W,1-sy/H,rp/H,glow,R,G,B,i,prio]); };
+  const wc=WORLD_COL[L.id]||'#ffffff';
+  add(P.x+P.w/2,P.y+P.h/2,state==='celebrate'?130:(L.style==='snow'?90:72),state==='celebrate'?wc:'#ffe2b8',state==='celebrate'?1.4:1,.3,0);
+  if(L.goal) add(L.goal.x+8,L.goal.bottom-24,48,wc,1,1,1);
+  for(const k of L.crystals) if(!k.got) add(k.x,k.y,32,'#7fe0ff',.9,1,1);
+  for(const d of L.doors) add(d.x+8,d.bottom-16,40,WORLD_COL[d.world]||'#f6ead2',.8,.8,2);
+  for(const k of L.checkpoints) add(k.x+8,k.bottom-28,k.on?34:20,k.on?'#f2a65a':'#9aa4b8',k.on?.8:.35,.8,2);
+  for(const k of L.coins) if(!k.got) add(k.x,k.y,15,'#ffd166',.7,1,3);
+  for(const e of L.enemies) if(e.alive) add(e.x+6,e.y+4,11,'#ff5a5a',.5,.5,3);
+  if(out.length>MAX_LIGHTS){ const px=.5; out.sort((a,b)=>a[8]-b[8]||Math.abs(a[0]-px)-Math.abs(b[0]-px)); out.length=MAX_LIGHTS; }
+  return out;
+}
+function fxRender(){
+  if(!FX.ok||!dbg.fx) return;
+  const bl=themeBlend(), A=FXT[bl.a], B=FXT[bl.b], t=bl.t, m=(x,y)=>x+(y-x)*t, ma=(x,y)=>x.map((v,i)=>m(v,y[i]));
+  FX.render({amb:Math.max(0,1-(1-m(A.amb,B.amb))*PH.fxDark),grade:ma(A.grade,B.grade),ga:m(A.ga,B.ga),fog:ma(A.fog,B.fog),fa:m(A.fa,B.fa),
+    vig:m(A.vig,B.vig),bloom:m(A.bloom,B.bloom)*PH.fxBloom,lights:collectLights()});
+}
+
+FX.setActive(dbg.fx);
+
 // ---------- HUD ----------
 const flowFill=document.getElementById('flowfill'), flowLbl=document.getElementById('flowlbl'), hc=document.getElementById('hc'), hr=document.getElementById('hr');
 function updateHud(){
@@ -1499,7 +1623,7 @@ function frame(now){
   if(matchMedia('(orientation: portrait)').matches&&innerWidth<900) dt=0;
   acc+=dt;
   while(acc>=STEP){ clock+=STEP; if(L){ update(STEP); tickCelebrate(STEP); tickParticles(STEP); camera(STEP); } if(shake>0) shake-=STEP; acc-=STEP; }
-  if(L) draw();
+  if(L){ draw(); fxRender(); }
   hudT-=dt; if(hudT<=0){ updateHud(); hudT=.1; }
   requestAnimationFrame(frame);
 }
