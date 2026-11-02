@@ -136,3 +136,18 @@ test('Neue Gegner bewegen sich und bleiben im Level', () => {
   }
   assert.deepEqual([...seen].sort(), ['fisch', 'frosch', 'geist', 'igel', 'skorpion', 'wespe']);
 });
+
+test('Geheimgänge werden aufgedeckt und Sternmünzen sind erreichbar', () => {
+  const { dz, listeners, run } = boot();
+  const key = (k, d) => d ? listeners.keydown({ key: k, preventDefault() {} }) : listeners.keyup({ key: k });
+  const setup = (lv, col, row) => { dz.setState('play'); dz.loadLevel(lv); dz.L.enemies.length = 0; dz.P.x = col * 16 + 3; dz.P.y = (row + 1) * 16 - 14; dz.P.vx = 0; dz.P.vy = 0; run(3); };
+  setup(1, 174, 18); key('ArrowRight', 1); for (let i = 0; i < 200 && !dz.L.stars[0].got; i++) run(1); key('ArrowRight', 0);
+  assert.ok(dz.L.reveal.size > 0 && dz.L.stars[0].got, 'Wald: Geheimgang unter dem Boden');
+  setup(2, 174, 22); key('ArrowRight', 1); for (let i = 0; i < 150 && !dz.L.stars[0].got; i++) run(1); key('ArrowRight', 0);
+  assert.ok(dz.L.stars[0].got, 'Felsen: Geheimgang im Tafelberg');
+  setup(3, 218, 22); key('ArrowRight', 1); for (let i = 0; i < 200 && !dz.L.stars[1].got; i++) run(1); key('ArrowRight', 0);
+  assert.ok(dz.L.stars[1].got, 'See: Geheimraum im Felsen');
+  Object.assign(dz.save.ab, { double: true, wall: true, dash: true, glide: true });
+  setup(4, 212, 24); key('ArrowRight', 1); run(3); listeners.keydown({ key: 'Shift' }); run(40); key('ArrowRight', 0);
+  assert.equal(dz.L.grid[21][214], ' ', 'Gipfel: Höhlenausgang per Dash');
+});
