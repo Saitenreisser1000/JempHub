@@ -862,21 +862,62 @@ function resize(){
 addEventListener('resize',resize);
 
 const SKY=[
-  {top:'#5b8fc7',mid:'#9cc3e0',bot:'#f3d9b1',r:['#86a9c8','#6890b2','#4c7896'],tint:0},
-  {top:'#2f4a6b',mid:'#b8675c',bot:'#f2a65a',r:['#4a5f86','#33486c','#24375a'],tint:.08},
-  {top:'#080e1c',mid:'#18264a',bot:'#3a3f6b',r:['#1c2744','#141d36','#0e1628'],tint:.28}];
+  {top:'#5b8fc7',mid:'#9cc3e0',bot:'#f3d9b1',r:['#86a9c8','#6890b2','#4c7896','#355d78'],tint:0},
+  {top:'#2f4a6b',mid:'#b8675c',bot:'#f2a65a',r:['#4a5f86','#33486c','#24375a','#18263f'],tint:.08},
+  {top:'#080e1c',mid:'#18264a',bot:'#3a3f6b',r:['#1c2744','#141d36','#0e1628','#090f1c'],tint:.28}];
 const hex=h=>[1,3,5].map(i=>parseInt(h.slice(i,i+2),16));
 const mix=(a,b,t)=>{const A=hex(a),B=hex(b);return `rgb(${A.map((v,i)=>Math.round(v+(B[i]-v)*t)).join(',')})`;};
 function skyAt(p){ const s=p*2, i=Math.min(1,Math.floor(s)), t=Math.min(1,s-i), a=SKY[i], b=SKY[i+1];
   return {top:mix(a.top,b.top,t),mid:mix(a.mid,b.mid,t),bot:mix(a.bot,b.bot,t),r:a.r.map((c,k)=>mix(c,b.r[k],t)),tint:a.tint+(b.tint-a.tint)*t,p}; }
 const stars=Array.from({length:70},(_,i)=>({x:(i*97.31)%1,y:((i*53.77)%1)*.6,s:i%3===0?2:1}));
-function ridge(color,base,amp1,amp2,f,par,step,peaks){
+// ---------- Parallax-Hintergrund ----------
+// Ebenen bewegen sich je nach Tiefe (par) langsamer als die Welt, auch vertikal mit der Kamera.
+function parY(par){ if(!L||state==='start') return 0; return Math.max(-30,Math.min(70,(L.h*TS-viewH-camY)*par*.45)); }
+function hash(i){ const v=Math.sin(i*127.1+311.7)*43758.5453; return v-Math.floor(v); }
+function ridge(color,base,amp1,amp2,f,par,step,peaks,sharp){
+  const oy=parY(par);
   ctx.fillStyle=color; ctx.beginPath(); ctx.moveTo(0,SKY_H);
   for(let x=0;x<=skyW+step;x+=step){ const wx=x+camX*par;
-    let y=base-Math.sin(wx*f)*amp1-Math.sin(wx*f*2.7+1.3)*amp2;
+    let y=base+oy-Math.sin(wx*f)*amp1-Math.sin(wx*f*2.7+1.3)*amp2;
+    if(sharp) y-=Math.abs(Math.sin(wx*f*1.9+.7))*sharp;
     if(peaks) y-=Math.max(0,Math.sin(wx*f*.6+2))**6*peaks;
     ctx.lineTo(x,Math.round(y)); }
   ctx.lineTo(skyW+step,SKY_H); ctx.closePath(); ctx.fill();
+}
+function layerItems(spacing,par,fn){ const off=camX*par, i0=Math.floor(off/spacing)-2, n=Math.ceil(skyW/spacing)+4;
+  for(let i=i0;i<i0+n;i++) fn(Math.round(i*spacing-off+hash(i*3.1+spacing)*spacing*.5),hash(i+spacing*7)); }
+function pines(color,base,spacing,hmin,hmax,par,snow){
+  const y=Math.round(base+parY(par));
+  ctx.fillStyle=color; ctx.fillRect(0,y,skyW,SKY_H-y+2);
+  layerItems(spacing,par,(x,r)=>{ const h=hmin+(hmax-hmin)*r;
+    ctx.fillStyle=color; ctx.beginPath(); ctx.moveTo(x-h*.3,y+1); ctx.lineTo(x,y-h); ctx.lineTo(x+h*.3,y+1); ctx.fill();
+    ctx.fillRect(x-1,y-2,2,3);
+    if(snow){ ctx.fillStyle='rgba(233,238,245,.8)'; ctx.beginPath(); ctx.moveTo(x-h*.1,y-h*.66); ctx.lineTo(x,y-h); ctx.lineTo(x+h*.1,y-h*.66); ctx.fill(); } });
+}
+function clumps(color,base,spacing,par){
+  const y=Math.round(base+parY(par));
+  ctx.fillStyle=color; ctx.fillRect(0,y,skyW,SKY_H-y+2);
+  layerItems(spacing,par,(x,r)=>{ const s=9+r*10; ctx.beginPath(); ctx.arc(x,y-s*.6,s,0,7); ctx.arc(x-s*.8,y-s*.2,s*.7,0,7); ctx.arc(x+s*.9,y-s*.25,s*.75,0,7); ctx.fill(); });
+}
+function pillars(color,base,spacing,par){
+  const y=Math.round(base+parY(par));
+  ctx.fillStyle=color; ctx.fillRect(0,y,skyW,SKY_H-y+2);
+  layerItems(spacing,par,(x,r)=>{ const w=12+r*14, h=28+r*44; ctx.fillRect(x-w/2,y-h,w,h+1); ctx.fillRect(x-w/2+3,y-h-6,w-8,7); ctx.fillRect(x-w/2-4,y-h*.45,5,h*.45); });
+}
+function lakeBand(sk,base,par){
+  const y=Math.round(base+parY(par));
+  ctx.fillStyle=sk.r[1]; ctx.fillRect(0,y,skyW,SKY_H-y);
+  ctx.globalAlpha=.35; ctx.fillStyle=sk.mid; ctx.fillRect(0,y,skyW,3); ctx.globalAlpha=1;
+  ctx.fillStyle='rgba(255,255,255,.22)';
+  layerItems(18,par,(x,r)=>{ ctx.fillRect(x,y+5+Math.round(r*14),6+Math.round(r*8),1); });
+}
+function drawParallax(sk,style){
+  const [c0,c1,c2,c3]=sk.r;
+  if(style==='stone'){ ridge(c0,108,14,8,.006,.07,6,40,26); pillars(c1,150,64,.22); ridge(c2,166,10,6,.018,.4,4,0,14); ridge(c3,184,6,4,.03,.6,4,0,8); }
+  else if(style==='forest'){ ridge(c0,112,18,10,.007,.07,6,50); ridge(c1,146,10,6,.012,.2,5,0); pines(c2,160,20,22,44,.36); pines(c3,182,32,38,66,.56); }
+  else if(style==='lake'){ ridge(c0,116,18,10,.007,.07,6,55); ridge(c1,146,12,6,.013,.2,5,0); lakeBand(sk,156,.3); ridge(c3,186,6,4,.025,.56,4,0); }
+  else if(style==='snow'){ ridge('#e3eaf3',106,16,9,.007,.07,6,60); ridge(c0,118,16,9,.007,.07,6,60); ridge(c1,146,12,8,.012,.2,5,0); pines(c2,166,24,20,38,.36,true); ridge(c3,186,8,5,.022,.56,4,0); }
+  else { ridge(c0,116,18,10,.007,.08,6,55); ridge(c1,146,16,8,.012,.22,5,0); clumps(c2,166,44,.4); ridge(c3,184,8,5,.02,.6,4,0); }
 }
 function drawSky(sk){
   const g=ctx.createLinearGradient(0,0,0,SKY_H); g.addColorStop(0,sk.top); g.addColorStop(.55,sk.mid); g.addColorStop(1,sk.bot);
@@ -891,7 +932,7 @@ function drawSky(sk){
   for(let i=0;i<6;i++){ const w=skyW+120; const x=((i*173+clock*6-camX*.12)%w+w)%w-60, y=30+(i*37)%70;
     ctx.fillRect(Math.round(x),y,40,6); ctx.fillRect(Math.round(x+8),y-5,22,6); ctx.fillRect(Math.round(x+20),y-8,12,4); }
   ctx.globalAlpha=1;
-  ridge(sk.r[0],165,18,10,.007,.12,6,55); ridge(sk.r[1],200,16,8,.012,.3,5,0); ridge(sk.r[2],232,10,6,.02,.55,4,0);
+  drawParallax(sk,L?L.style:'meadow');
 }
 function drawDecorBack(d){
   const x=Math.round(d.x), y=d.y;
@@ -1163,10 +1204,13 @@ document.getElementById('pmain').addEventListener('click',()=>{ pauseEl.hidden=t
 function openDebug(from){ debugFrom=from; if(from==='pause') pauseEl.hidden=true; else startEl.hidden=true; dbgOut.hidden=true; buildTunes(); debugEl.hidden=false; }
 // Debug ist versteckt: „Spielen“ bzw. „☰ Menü“ 1,5 Sekunden gedrückt halten
 function longPress(el,ms,onLong,onShort){
-  let downAt=0;
+  let downAt=0, upAt=0;
+  const finish=cancelled=>{ if(!downAt) return; const held=performance.now()-downAt>=ms; downAt=0; upAt=performance.now();
+    if(held) onLong(); else if(!cancelled) onShort(); };
   el.addEventListener('pointerdown',e=>{ e.stopPropagation(); downAt=performance.now(); });
-  el.addEventListener('pointercancel',()=>{ downAt=0; });
-  el.addEventListener('click',()=>{ const held=downAt&&performance.now()-downAt>=ms; downAt=0; held?onLong():onShort(); });
+  el.addEventListener('pointerup',()=>finish(false));
+  el.addEventListener('pointercancel',()=>finish(true));
+  el.addEventListener('click',()=>{ if(performance.now()-upAt<800) return; onShort(); }); // Tastatur
   el.addEventListener('contextmenu',e=>e.preventDefault());
 }
 longPress(document.getElementById('play'),1500,()=>openDebug('start'),begin);
