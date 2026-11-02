@@ -51,6 +51,15 @@ canvas{position:fixed;inset:0;width:100vw;height:100vh;display:block;image-rende
 #msg{position:fixed;top:calc(env(safe-area-inset-top,0px) + 40px);left:50%;transform:translateX(-50%);font-family:var(--pixel);
   font-size:13px;color:var(--ember);text-shadow:2px 2px 0 var(--ink);opacity:0;transition:opacity .7s;pointer-events:none;white-space:nowrap}
 #msg.show{opacity:1;transition:none}
+#celebrate{position:fixed;left:0;right:0;top:20%;text-align:center;pointer-events:none;font-family:var(--pixel);--glow:#ffd166;z-index:5}
+#celebrate h2{margin:0;font-size:clamp(28px,7vw,56px);color:#ffffff;letter-spacing:.04em;
+  text-shadow:0 0 6px var(--glow),0 0 18px var(--glow),0 0 40px var(--glow),3px 3px 0 var(--ink);
+  animation:pop .55s cubic-bezier(.2,1.6,.4,1) both,glow 1s ease-in-out .55s infinite alternate}
+#celebrate p{margin:10px 0 0;font-size:14px;color:var(--cream);text-shadow:2px 2px 0 var(--ink);animation:rise .4s .45s both}
+@keyframes pop{from{transform:scale(.2);opacity:0}to{transform:scale(1);opacity:1}}
+@keyframes glow{from{filter:brightness(1)}to{filter:brightness(1.4)}}
+@keyframes rise{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+@media (prefers-reduced-motion:reduce){#celebrate h2,#celebrate p{animation:none}}
 .zone{position:fixed;bottom:0;top:0;width:50%;pointer-events:none;display:flex;align-items:flex-end;
   padding-bottom:calc(env(safe-area-inset-bottom,0px) + 10px);box-sizing:border-box;transition:background .08s}
 .zone.l{left:0;justify-content:flex-start;padding-left:calc(env(safe-area-inset-left,0px) + 16px);border-right:1px dashed rgba(246,234,210,.1)}
@@ -91,6 +100,7 @@ canvas{position:fixed;inset:0;width:100vw;height:100vh;display:block;image-rende
 <div class="hud" id="hc">◆ 0/3 · ● 0</div>
 <div class="hud" id="hr"></div>
 <div id="msg"></div>
+<div id="celebrate" hidden><h2 id="celebname"></h2><p id="celebtip"></p></div>
 
 <div class="panel" id="start" aria-label="Supersam">
   <div class="row">
@@ -169,6 +179,7 @@ function persist(){ try{ localStorage.setItem(SAVE_KEY,JSON.stringify(save)); }c
 const NAMES={0:'Hubwelt',1:'Wald',2:'Felsen',3:'See',4:'Gipfel'};
 const WORLD_COL={0:'#f6ead2',1:'#6aa84f',2:'#c69a6a',3:'#4fa3d9',4:'#b9a7ff'};
 const AB_OF={1:'double',2:'wall',3:'dash',4:'glide'};
+const AB_TIP={double:'In der Luft nochmal springen',wall:'An Wänden abstoßen und klettern',dash:'Laufdaumen zweimal tippen',glide:'Daumen halten und segeln'};
 const AB_INFO={
   double:{name:'Doppelsprung',short:'2×',how:'In der Luft den Sprungdaumen kurz heben und wieder aufsetzen. Damit erreichst du Kanten, die etwa doppelt so hoch liegen.'},
   wall:{name:'Wandsprung',short:'Wand',how:'Lauf in der Luft gegen eine Wand, dann rutschst du langsam. Setz den Sprungdaumen auf, um dich abzustoßen. Bleib mit dem Laufdaumen zur Wand gedrückt und wiederhole das, um hochzuklettern.'},
@@ -255,6 +266,77 @@ const LEAF=spr([
   ".kkkk..kk..kkkk.",
   ".......kb.......",
   ".......kb......."],{k:'#1a1020',l:'#9be06a',g:'#6aa84f',G:'#457a3a',b:'#5a3b26'});
+// Fähigkeits-Items, 16x16
+const ITEM={
+  double:spr([
+    "................",
+    "..kk............",
+    ".kwwk...........",
+    "kwwWWk..........",
+    "kwWWWk.kkkk.....",
+    ".kWWkkkbbbbk....",
+    "..kkkbbbbbbk....",
+    "....kbbbbbbk....",
+    "....kbbbbbbk....",
+    "....kbBbbbbkk...",
+    "....kbBBbbbbbk..",
+    "....kbBBBbbbbbk.",
+    "....kBBBBBBBBBk.",
+    "....kssssssssk..",
+    ".....kkkkkkkk...",
+    "................"],{k:'#1a1020',b:'#e05a5a',B:'#9a2a36',w:'#ffffff',W:'#bfe8ff',s:'#5a3b26'}),
+  wall:spr([
+    "................",
+    "....w.w.w.......",
+    "...kwkwkwk......",
+    "...kgkgkgk......",
+    "...kgkgkgkk.....",
+    "..kkgggggkgk....",
+    "..kgggggggk.....",
+    "..kgGgggggk.....",
+    "..kgGGgggGk.....",
+    "...kGGGGGk......",
+    "...krrrrrk......",
+    "...kRRRRRk......",
+    "....kkkkk.......",
+    "................",
+    "................",
+    "................"],{k:'#1a1020',g:'#a8b6d6',G:'#6a789a',w:'#ffffff',r:'#d84a4a',R:'#9a2a36'}),
+  dash:spr([
+    "........kkkk....",
+    ".......khyyk....",
+    "......khyyk.....",
+    ".....khyyk......",
+    "....khyyk.......",
+    "...khyyykkkk....",
+    "..kYyyyyyyyk....",
+    "..kkkkYyyyk.....",
+    "......kyyk......",
+    ".....kyyk.......",
+    "....kyYk........",
+    "...kyYk.........",
+    "...kYk..........",
+    "...kk...........",
+    "................",
+    "................"],{k:'#1a1020',h:'#fff8c0',y:'#ffe14d',Y:'#e0a030'}),
+  glide:spr([
+    "................",
+    "..........kkk...",
+    "........kklllk..",
+    "......kklllggk..",
+    ".....klllgggGk..",
+    "....kllgggGGk...",
+    "...klggggGGkk...",
+    "...kgggGGGk.....",
+    "..klggGGkk......",
+    "..kgGGGk........",
+    ".kgGGkk.........",
+    ".kGkk...........",
+    "kbk.............",
+    "kb..............",
+    "k...............",
+    "................"],{k:'#1a1020',l:'#9be06a',g:'#6aa84f',G:'#457a3a',b:'#5a3b26'})
+};
 const SPIKE=spr([
   "................","................","................","................",
   "................","................","................","................",
@@ -603,6 +685,8 @@ const SFX={
   splash:()=>{ const t=atime(); noise(t,.4,{vol:.2,freq:1200,to:300}); },
   checkpoint:()=>{ const t=atime(); tone(t,660,.1,{wave:'p25',vol:.09}); tone(t+.1,990,.2,{wave:'p25',vol:.09}); },
   door:()=>{ const t=atime(); tone(t,300,.4,{wave:'triangle',vol:.15,to:1200}); noise(t,.4,{vol:.06,freq:800,to:4000}); },
+  unlock:()=>{ const t=atime(); [60,64,67,72,76,79,84,88].forEach((m,i)=>tone(t+i*.06,mtof(m),.3,{wave:'p25',vol:.1}));
+    [72,76,79].forEach(m=>tone(t+.55,mtof(m),.9,{wave:'triangle',vol:.12})); tone(t+.55,mtof(96),.9,{wave:'p12',vol:.05}); noise(t+.5,.6,{vol:.08,type:'highpass',freq:6000}); },
   fanfare:()=>{ const t=atime(); [[67,0],[72,.12],[76,.24],[79,.36],[84,.5]].forEach(([m,d])=>tone(t+d,mtof(m),d===.5?.7:.14,{wave:'p25',vol:.11}));
     [60,64,67].forEach(m=>tone(t+.5,mtof(m),.7,{wave:'triangle',vol:.1})); },
   tier:n=>{ const t=atime(); tone(t,mtof(76+n*4),.15,{wave:'p12',vol:.08}); tone(t+.07,mtof(83+n*4),.22,{wave:'p12',vol:.08}); }
@@ -667,8 +751,37 @@ homeBtn.addEventListener('click',()=>{ if(state==='play'&&L.id!=='hub'){ const w
 let doneWorld=0;
 document.getElementById('donebtn').addEventListener('click',()=>{ doneEl.hidden=true; loadLevel('hub',doneWorld); state='play'; });
 
-function finishLevel(){
-  const n=L.id; state='done'; clearInput(); doneWorld=n; AU.song=null; sfx('fanfare');
+let celebT=0, celebAb=null, flash=0;
+const celebEl=document.getElementById('celebrate');
+function startCelebrate(ab){
+  state='celebrate'; clearInput(); celebT=0; celebAb=ab; flash=1; AU.song=null; sfx('unlock');
+  P.vx=0; P.vy=0;
+  document.getElementById('celebname').textContent=AB_INFO[ab].name+'!';
+  document.getElementById('celebtip').textContent=AB_TIP[ab];
+  celebEl.style.setProperty('--glow',WORLD_COL[L.id]);
+  celebEl.hidden=true; void celebEl.offsetWidth; celebEl.hidden=false;
+  const cx=P.x+P.w/2, cy=P.y-10;
+  for(let i=0;i<40;i++){ const a=Math.random()*Math.PI*2, sp=60+Math.random()*120; particles.push({x:cx,y:cy,vx:Math.cos(a)*sp,vy:Math.sin(a)*sp-80,t:.9+Math.random()*.6,col:['#ffd166','#ffffff',WORLD_COL[L.id],'#7fe0ff','#f28fad'][i%5]}); }
+}
+function tickCelebrate(dt){
+  if(state!=='celebrate') return;
+  celebT+=dt; flash=Math.max(0,flash-dt*2.5);
+  if(celebT<1.8&&Math.random()<.5){ const x=camX+Math.random()*viewW; particles.push({x,y:camY-4,vx:(Math.random()-.5)*40,vy:20+Math.random()*30,t:1.6,col:['#ffd166','#ffffff','#7fe0ff','#f28fad','#9be06a'][Math.floor(Math.random()*5)]}); }
+  if(celebT>=2.6){ celebEl.hidden=true; finishLevel(true); }
+}
+function drawCelebrate(){
+  if(state!=='celebrate') return;
+  const cx=Math.round(P.x+P.w/2), cy=Math.round(P.y-14), col=WORLD_COL[L.id], k=Math.min(1,celebT*2);
+  ctx.save(); ctx.translate(cx,cy); ctx.rotate(celebT*.8);
+  ctx.fillStyle=col; ctx.globalAlpha=.22*k;
+  for(let i=0;i<10;i++){ ctx.rotate(Math.PI/5); ctx.beginPath(); ctx.moveTo(0,0); ctx.lineTo(-7,90); ctx.lineTo(7,90); ctx.fill(); }
+  ctx.restore(); ctx.globalAlpha=1;
+  const y=Math.round(cy-8-Math.max(0,1-celebT*2)*20+Math.sin(clock*4)*1.5);
+  ctx.fillStyle=col; ctx.globalAlpha=.35; ctx.beginPath(); ctx.arc(cx,y+8,13,0,7); ctx.fill(); ctx.globalAlpha=1;
+  ctx.drawImage(ITEM[celebAb],cx-8,y);
+}
+function finishLevel(celebrated){
+  const n=L.id; state='done'; clearInput(); doneWorld=n; AU.song=null; if(!celebrated) sfx('fanfare');
   save.done[n]=true;
   const prev=save.best[n]||{};
   const got=L.crystals.filter(k=>k.got).length;
@@ -852,7 +965,7 @@ function update(dt){
   if(hz&&!dbg.god){ if(hz==='water') sfx('splash'); if(hz==='water') for(let i=0;i<10;i++) particles.push({x:P.x+5,y:P.y+P.h,vx:(Math.random()-.5)*80,vy:-60-Math.random()*80,t:.6,col:C.waterL}); die(); return; }
   if(P.y>L.h*TS+24){ die(); return; }
   // Ziel / Türen
-  if(L.goal&&P.x+P.w>L.goal.x+2&&P.x<L.goal.x+14&&P.y+P.h>L.goal.bottom-28&&P.y<L.goal.bottom){ finishLevel(); return; }
+  if(L.goal&&P.x+P.w>L.goal.x+2&&P.x<L.goal.x+14&&P.y+P.h>L.goal.bottom-28&&P.y<L.goal.bottom){ const ab=AB_OF[L.id]; if(!save.ab[ab]) startCelebrate(ab); else finishLevel(); return; }
   for(const d of L.doors){
     const over=P.x+P.w>d.x+2&&P.x<d.x+14&&Math.abs(P.y+P.h-d.bottom)<20;
     if(!over) d.armed=true; // eine Tür wirkt erst, nachdem man sie einmal verlassen hat
@@ -1147,9 +1260,11 @@ function drawHubHints(){
 }
 function drawGoal(){ if(!L.goal) return; const x=L.goal.x-4, b=L.goal.bottom, col=WORLD_COL[L.id];
   ctx.fillStyle='#1a1020'; ctx.fillRect(x,b-12,24,12); ctx.fillStyle='#98a1b0'; ctx.fillRect(x+1,b-11,22,11); ctx.fillStyle='#c9d0da'; ctx.fillRect(x+1,b-11,22,2);
-  const bob=Math.sin(clock*3)*2;
-  ctx.fillStyle=col; ctx.globalAlpha=.3; ctx.beginPath(); ctx.arc(x+12,b-22+bob,10,0,7); ctx.fill(); ctx.globalAlpha=1;
-  ctx.fillStyle='#1a1020'; ctx.fillRect(x+7,b-27+bob,10,10); ctx.fillStyle=col; ctx.fillRect(x+8,b-26+bob,8,8); ctx.fillStyle='#ffffff'; ctx.fillRect(x+9,b-25+bob,2,2);
+  if(state==='celebrate') return;
+  const bob=Math.round(Math.sin(clock*3)*2), owned=save.ab[AB_OF[L.id]];
+  ctx.fillStyle=col; ctx.globalAlpha=(owned?.15:.3)+.1*Math.sin(clock*4); ctx.beginPath(); ctx.arc(x+12,b-24+bob,12,0,7); ctx.fill(); ctx.globalAlpha=1;
+  ctx.globalAlpha=owned?.55:1; ctx.drawImage(ITEM[AB_OF[L.id]],x+4,b-32+bob); ctx.globalAlpha=1;
+  if(!owned&&Math.random()<.15) particles.push({x:x+4+Math.random()*16,y:b-30+Math.random()*12,vx:0,vy:-18,t:.5,col:'#ffffff'});
 }
 function drawCoins(xl,xr){ for(const k of L.coins){ if(k.got||k.x<xl||k.x>xr) continue;
   ctx.drawImage(COIN_SEQ[Math.floor(clock*8+k.x*.05)%4],Math.round(k.x-4),Math.round(k.y-5+Math.sin(clock*2+k.x)*1.5)); } }
@@ -1226,11 +1341,13 @@ function draw(){
   drawCheckpoints(); drawDoors(); drawHubHints(); drawGoal(); drawCoins(xl,xr); drawCrystals(); drawEnemies();
   for(const p of particles){ ctx.globalAlpha=Math.max(0,Math.min(1,p.t/.4)); ctx.fillStyle=p.col; ctx.fillRect(Math.round(p.x),Math.round(p.y),2,2); }
   ctx.globalAlpha=1;
+  drawCelebrate();
   drawPlayer();
   if(dbg.hitbox){ ctx.strokeStyle='#ffe14d'; ctx.lineWidth=.5; ctx.strokeRect(P.x,P.y,P.w,P.h);
     ctx.strokeStyle='#ff5c5c'; for(const e of L.enemies) if(e.alive) ctx.strokeRect(e.x,e.y,e.w,e.h); }
   ctx.restore();
   if(snowW>.02){ ctx.setTransform(ss,0,0,ss,0,0); snowFlakes(26,.9*snowW,2); }
+  if(flash>0){ ctx.setTransform(1,0,0,1,0,0); ctx.globalAlpha=flash*.8; ctx.fillStyle='#ffffff'; ctx.fillRect(0,0,cv.width,cv.height); ctx.globalAlpha=1; }
 }
 // ---------- Dynamische Kamera ----------
 // Schaut je nach Tempo voraus, hält bei Sprüngen die Bodenhöhe, folgt beim Fallen,
@@ -1381,13 +1498,13 @@ function frame(now){
   let dt=Math.min(.1,(now-last)/1000); last=now;
   if(matchMedia('(orientation: portrait)').matches&&innerWidth<900) dt=0;
   acc+=dt;
-  while(acc>=STEP){ clock+=STEP; if(L){ update(STEP); tickParticles(STEP); camera(STEP); } if(shake>0) shake-=STEP; acc-=STEP; }
+  while(acc>=STEP){ clock+=STEP; if(L){ update(STEP); tickCelebrate(STEP); tickParticles(STEP); camera(STEP); } if(shake>0) shake-=STEP; acc-=STEP; }
   if(L) draw();
   hudT-=dt; if(hudT<=0){ updateHud(); hudT=.1; }
   requestAnimationFrame(frame);
 }
 resize(); loadLevel('hub'); requestAnimationFrame(frame);
-window.__dz={playStep,schedule,audioInit,playSong,sfx,SFX,AU,loadLevel,update,P,save,get L(){return L;},setState:s=>{state=s;},finishLevel};
+window.__dz={startCelebrate,ITEM,playStep,schedule,audioInit,playSong,sfx,SFX,AU,loadLevel,update,P,save,get L(){return L;},setState:s=>{state=s;},finishLevel};
 })();
 </script>
 
