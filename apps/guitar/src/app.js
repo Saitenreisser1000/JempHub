@@ -762,8 +762,9 @@ $('#durs').addEventListener('click',e=>{const b=e.target.closest('button');if(b&
 $('#exTitle').addEventListener('change',e=>{cur().title=e.target.value.trim()||'Untitled exercise';renderLib();save()});
 $('#libList').addEventListener('click',e=>{const b=e.target.closest('.lib-item');if(!b)return;loadEx(+b.dataset.i);document.body.classList.remove('lib-open')});
 function loadEx(i){if(P.on||P.wait)stopPlay();state.cur=i;state.sel=0;state.range=null;state.undo=[];state.caret=caretFor();state.speed=1;renderAll();save()}
-$('#newBtn').addEventListener('click',()=>{state.exs.push({id:'u'+Date.now(),title:'Untitled exercise',type:'Custom',tag:'Your own material',desc:'',inst:'guitar',tuning:STD,tuningName:'Standard',key:{r:0,m:'major'},bpm:80,ts:[4,4],color:SKY,moments:[]});
-  if(state.mode!=='edit')state.mode='edit';loadEx(state.exs.length-1);document.body.classList.remove('lib-open')});
+function newExercise(){state.exs.push({id:'u'+Date.now(),title:'Untitled exercise',type:'Custom',tag:'Your own material',desc:'',inst:'guitar',tuning:STD,tuningName:'Standard',key:{r:0,m:'major'},bpm:80,ts:[4,4],color:SKY,moments:[]});
+  if(state.mode!=='edit')state.mode='edit';loadEx(state.exs.length-1);document.body.classList.remove('lib-open')}
+$('#newTopBtn').addEventListener('click',newExercise);
 /* ---------- Tabs importieren ---------- */
 const IMP={mode:'text',score:null,name:'',bars:0};
 function openImport(){closePops();document.body.classList.remove('lib-open');$('#importPop').hidden=false;ctxOpenT=performance.now();impMode(IMP.mode);impMsg('')}
