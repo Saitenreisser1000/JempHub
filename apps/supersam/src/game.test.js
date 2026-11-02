@@ -87,3 +87,19 @@ test('Musik und Effekte laufen ohne Fehler', () => {
     for (let i = 0; i < 64; i++) dz.playStep(i, 1);
   }
 });
+
+test('Hügel und Senken lassen sich in beide Richtungen durchlaufen', () => {
+  const { dz, listeners, run } = boot();
+  dz.PH.max = 60;
+  for (const [lv, col, key, frames, minCols] of [[1, 3, 'ArrowRight', 260, 14], [1, 62, 'ArrowRight', 140, 7], [1, 147, 'ArrowLeft', 140, 6], [4, 31, 'ArrowRight', 160, 8]]) {
+    dz.setState('play'); dz.loadLevel(lv); dz.L.enemies.length = 0; dz.L.goal = null;
+    let r = 0; for (let y = 0; y < dz.L.h; y++) if (dz.L.grid[y][col] === '#') { r = y; break; }
+    dz.P.x = col * 16; dz.P.y = r * 16 - 14; run(5);
+    const x0 = dz.P.x; let air = 0;
+    listeners.keydown({ key, preventDefault() {} });
+    for (let i = 0; i < frames; i++) { run(1); if (!dz.P.ground) air++; }
+    listeners.keyup({ key });
+    assert.ok(Math.abs(dz.P.x - x0) / 16 >= minCols, `Welt ${lv} ab ${col}: nur ${((dz.P.x - x0) / 16).toFixed(1)} Kacheln`);
+    assert.ok(air <= 2, `Welt ${lv} ab ${col}: ${air} Frames in der Luft`);
+  }
+});

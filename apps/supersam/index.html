@@ -413,29 +413,29 @@ const T={
 const DEFS={
   hub:{name:'Hubwelt',w:96,h:26,top:23,style:'meadow',zones:[{to:13,s:'meadow'},{to:27,s:'forest'},{to:44,s:'stone'},{to:69,s:'lake'},{to:96,s:'snow'}],build(b){
     b.ground(0,95); b.start(4,22);
-    b.plat(19,10,13); b.coins(18,10,13);
+    b.hill(6,2,2,true); b.coins(20,10,11);
     b.door(18,22,1); b.coins(22,21,26);
     b.rect(30,17,38,25); b.coins(16,31,34); b.door(35,16,2);          // Welt 2 liegt 6 Kacheln hoch: Doppelsprung
     b.updraft(44,47,4,22); b.plat(5,39,42); b.crystal(41,4);          // Geheimnis: nur mit Gleiten
-    b.coins(22,49,54);
-    b.rect(58,11,63,25); b.door(61,10,3);                              // Welt 3 auf hoher Säule: Wandsprung
+    b.dip(49,1,2,true); b.coins(23,51,52);
+    b.rect(58,11,63,25); b.door(61,10,3); b.hill(65,1,1);                              // Welt 3 auf hoher Säule: Wandsprung
     b.rect(74,0,95,18); b.crack(76,19,77,22); b.door(90,22,4); b.coins(22,80,86); // Welt 4 hinter Rissfels: Dash
   }},
   1:{name:'Wald',w:150,h:22,top:19,style:'forest',sky:.15,build(b){
     b.ground(0,25); b.ground(28,59); b.ground(62,97); b.ground(110,149);
     b.water(26,27,20); b.water(60,61,20); b.water(98,109,20);
-    b.start(3,18); b.coins(18,7,12); b.enemy(15,18);
+    b.start(3,18); b.hill(6,2,2,true); b.coins(16,10,11); b.coins(18,16,17); b.enemy(20,18);
     b.plat(15,33,36); b.coins(14,33,36); b.plat(12,38,41); b.coins(11,38,41);
     b.coins(16,26,27); b.enemy(45,18);
     b.cp(48,18); b.spring(52,18); b.plat(11,54,57); b.crystal(56,10);
     b.coins(16,60,61);
-    b.enemy(70,18); b.spikes(18,76,77); b.enemy(80,18);
+    b.dip(64,1,2,true); b.enemy(72,18); b.spikes(18,76,77); b.enemy(80,18);
     b.plat(12,88,92); b.crystal(90,11);                                // Kristall: braucht Doppelsprung
     b.coins(18,85,94);
     b.cp(95,18); b.mover(99,17,6,0,3,3.6); b.coins(15,101,106);
     b.cp(112,18);
     b.updraft(113,116,3,18); b.plat(4,119,122); b.crystal(121,3);      // Kristall: braucht Gleiten
-    b.enemy(126,18); b.spikes(18,131,132); b.enemy(137,18); b.coins(18,139,143);
+    b.enemy(126,18); b.spikes(18,131,132); b.enemy(137,18); b.hill(139,2,1); b.coins(16,141,141); b.coins(18,144,145);
     b.goal(146,18);
   }},
   2:{name:'Felsen',w:150,h:26,top:23,style:'stone',sky:.42,build(b){
@@ -446,17 +446,17 @@ const DEFS={
     b.rect(49,16,60,25); b.cp(52,15); b.coins(15,53,58);
     b.ground(61,105);
     b.rect(70,6,73,25); b.clear(70,20,73,22); b.crystal(72,5);         // Kristall: braucht Wandsprung
-    b.coins(22,64,68); b.enemy(80,22); b.spikes(22,85,86); b.enemy(90,22);
+    b.coins(22,64,68); b.dip(75,1,2,true); b.enemy(82,22); b.spikes(22,85,86); b.enemy(90,22);
     b.spikes(22,94,99); b.rect(96,20,97,25); b.coins(19,95,98);
     b.cp(103,22);
     b.rect(106,19,149,25); b.clear(106,20,120,22); b.crack(108,20,109,22); b.crystal(118,22); // Kristall: braucht Dash
     b.cp(123,18);
     b.clear(126,19,131,25); b.water(126,131,24); b.crumb(19,126,131);
-    b.coins(18,127,130); b.enemy(135,18); b.enemy(141,18); b.coins(18,134,140);
+    b.coins(18,127,130); b.enemy(134,18); b.hill(136,1,1,false,19); b.enemy(141,18); b.coins(17,137,137); b.coins(18,139,140);
     b.goal(146,18);
   }},
   3:{name:'See',w:160,h:26,top:23,style:'lake',sky:.62,build(b){
-    b.ground(0,29); b.start(3,22); b.coins(22,8,12); b.enemy(14,22);
+    b.ground(0,29); b.start(3,22); b.hill(5,1,2,true); b.coins(21,7,8); b.coins(22,11,13); b.enemy(16,22);
     b.rect(30,10,50,25);                                               // 13 Kacheln hohe Klippe: Wandsprung
     b.coins(9,33,38); b.cp(34,9); b.crystal(40,9); b.enemy(45,9);
     b.water(51,75,23); b.mover(53,18,7,0,3,3.8); b.mover(65,16,0,4,3,3); b.plat(18,70,71); b.plat(17,74,75); b.coins(15,55,60);
@@ -466,22 +466,22 @@ const DEFS={
     b.updraft(115,118,3,22); b.plat(4,121,124); b.crystal(123,3);      // Kristall: braucht Gleiten
     b.ground(123,159); b.cp(128,22);
     b.rect(135,12,140,25); b.coins(11,136,139);
-    b.enemy(145,22); b.enemy(150,22); b.coins(22,143,150);
+    b.enemy(144,22); b.dip(146,1,1,true); b.enemy(152,22); b.coins(22,142,144); b.coins(23,148,148);
     b.goal(155,22);
   }},
   4:{name:'Gipfel',w:170,h:28,top:25,style:'snow',sky:1,build(b){
     b.ground(0,59); b.start(3,24); b.coins(24,7,12);
     b.rect(18,0,30,20); b.crack(20,21,21,24);                          // Rissfels: nur mit Dash
-    b.enemy(36,24); b.coins(24,34,40);
+    b.hill(33,2,2); b.coins(22,35,36); b.enemy(41,24); b.coins(24,39,42);
     b.clear(44,25,52,27); b.water(44,52,26); b.crumb(25,44,52); b.coins(23,45,51);
     b.plat(20,55,58); b.crystal(57,19);
-    b.ground(60,99); b.cp(60,24);
+    b.ground(60,99); b.cp(60,24); b.hill(62,1,2,true);
     b.updraft(69,72,3,24); b.plat(4,75,78); b.crystal(77,3);           // Kristall: braucht Gleiten
     b.enemy(82,24); b.spikes(24,86,87); b.enemy(92,24); b.coins(24,80,84);
     b.ground(100,169); b.rect(100,8,104,27); b.clear(100,22,104,24); b.crystal(102,7); // Kristall: Wandsprung
     b.cp(108,24);
     b.clear(115,25,135,27); b.water(115,135,26); b.mover(116,22,8,0,3,3.4); b.mover(129,21,4,0,3,3); b.coins(19,118,126);
-    b.cp(140,24); b.enemy(142,24); b.spikes(24,146,147); b.enemy(152,24); b.coins(24,155,160);
+    b.cp(140,24); b.enemy(142,24); b.spikes(24,146,147); b.enemy(152,24); b.hill(155,2,1); b.coins(22,157,157); b.coins(24,160,162);
     b.goal(165,24);
   }}
 };
@@ -510,7 +510,19 @@ function makeLevel(id){
     mover:(c,r,dc,dr,mw=3,period=3.5)=>L.movers.push({x0:c*TS,y0:r*TS,x1:(c+dc)*TS,y1:(r+dr)*TS,w:mw*TS,period,x:c*TS,y:r*TS,dx:0,dy:0}),
     start:(c,r)=>{ L.start={x:c*TS+3,y:(r+1)*TS-14}; },
     goal:(c,r)=>{ L.goal={x:c*TS,bottom:(r+1)*TS}; },
-    door:(c,r,world)=>L.doors.push({x:c*TS,bottom:(r+1)*TS,world,t:0})
+    door:(c,r,world)=>L.doors.push({x:c*TS,bottom:(r+1)*TS,world,t:0}),
+    // Hügel: h Kacheln hoch, flat Kacheln Plateau; gentle = sanfte Hänge
+    hill:(c,hh,flat,gentle=false,base=d.top)=>{ let x=c; const down=(x,r)=>rect(x,r,x,h-1);
+      for(let i=0;i<hh;i++){ const r=base-1-i; if(gentle){ set(x,r,'('); down(x,r+1); x++; set(x,r,')'); down(x,r+1); x++; } else { set(x,r,'/'); down(x,r+1); x++; } }
+      for(let k=0;k<flat;k++){ down(x,base-hh); x++; }
+      for(let i=hh-1;i>=0;i--){ const r=base-1-i; if(gentle){ set(x,r,'['); down(x,r+1); x++; set(x,r,']'); down(x,r+1); x++; } else { set(x,r,'\\'); down(x,r+1); x++; } }
+      return x; },
+    // Senke: h Kacheln tief in den Boden
+    dip:(c,hh,flat,gentle=false,base=d.top)=>{ let x=c; const carve=(x,r)=>{ for(let k=base;k<r;k++) set(x,k,' '); };
+      for(let i=0;i<hh;i++){ const r=base+i; if(gentle){ carve(x,r); set(x,r,'['); x++; carve(x,r); set(x,r,']'); x++; } else { carve(x,r); set(x,r,'\\'); x++; } }
+      for(let k=0;k<flat;k++){ carve(x,base+hh); x++; }
+      for(let i=hh-1;i>=0;i--){ const r=base+i; if(gentle){ carve(x,r); set(x,r,'('); x++; carve(x,r); set(x,r,')'); x++; } else { carve(x,r); set(x,r,'/'); x++; } }
+      return x; }
   };
   d.build(b);
   if(id!=='hub') L.doors.push({x:1*TS,bottom:L.start.y+14,world:0,t:0});
@@ -544,6 +556,14 @@ function makeLevel(id){
 let lastTier=0, L=null, state='start', time=0, particles=[], trail=[], trailT=0, camX=0, camY=0, shake=0, cpPos=null, clock=0, flow=0, levelCoins=0, bestTier=0;
 let viewW=480, scale=1, skyW=480;
 const tileAt=(c,r)=>(r<0||r>=L.h||c<0||c>=L.w)?' ':L.grid[r][c];
+// Schrägen: Funktion liefert die Oberfläche (y innerhalb der Kachel) für die lokale x-Position.
+// '/' steil hoch nach rechts, '\' steil runter; '(' ')' sanft hoch (zwei Kacheln), '[' ']' sanft runter.
+const SLOPES={'/':lx=>TS-lx,'\\':lx=>lx,'(':lx=>TS-lx/2,')':lx=>8-lx/2,'[':lx=>lx/2,']':lx=>8+lx/2};
+const isGroundCh=t=>t==='#'||SLOPES[t]!==undefined;
+const inner=(c,r)=>SLOPES[tileAt(c,r-1)]!==undefined; // Erde unter einer Schräge
+function slopeSurface(x,y){ const c=Math.floor(x/TS), r=Math.floor(y/TS);
+  for(const rr of [r,r+1,r-1]){ const f=SLOPES[tileAt(c,rr)]; if(f) return rr*TS+f(Math.min(TS-.01,Math.max(0,x-c*TS))); }
+  return null; }
 const solid=(c,r)=>{ if(c<0||c>=L.w||r<0) return true; if(r>=L.h) return false; const t=L.grid[r][c]; return t==='#'||t==='='||t==='B'||t==='X'; };
 const tier=()=>flow>=99?3:flow>=66?2:flow>=33?1:0;
 function addFlow(v){ flow=Math.max(0,Math.min(100,flow+v)); }
@@ -814,7 +834,7 @@ function showMsg(t){ msgEl.textContent=t; msgEl.classList.add('show'); clearTime
 function wallContact(){
   const r0=Math.floor((P.y+2)/TS), r1=Math.floor((P.y+P.h-2)/TS);
   const cl=Math.floor((P.x-1)/TS), cr=Math.floor((P.x+P.w+.5)/TS);
-  for(let r=r0;r<=r1;r++){ if(solid(cr,r)) return 1; if(solid(cl,r)) return -1; }
+  for(let r=r0;r<=r1;r++){ if(solid(cr,r)&&!inner(cr,r)) return 1; if(solid(cl,r)&&!inner(cl,r)) return -1; }
   return 0;
 }
 function inUpdraft(){
@@ -835,7 +855,12 @@ function moveX(dt){
   const r0=Math.floor(P.y/TS), r1=Math.floor((P.y+P.h-.01)/TS);
   const c=side>0?Math.floor((P.x+P.w)/TS):Math.floor(P.x/TS);
   if(P.dashT>0) for(let r=r0;r<=r1;r++) if(tileAt(c,r)==='X') breakCrack(c,r);
-  let hit=false; for(let r=r0;r<=r1;r++) if(solid(c,r)) hit=true;
+  let hit=false, step=null;
+  for(let r=r0;r<=r1;r++) if(solid(c,r)){
+    if(r===r1&&inner(c,r)) continue;                      // Erde unter Hängen bremst nicht
+    if(r===r1&&(P.ground||P.slope)&&P.y+P.h-r*TS<=8&&!solid(c,r-1)){ step=r*TS; continue; } // kleine Kante hochsteigen
+    hit=true; }
+  if(!hit&&step!==null) P.y=step-P.h;
   if(hit){
     if(Math.abs(P.vx)>70&&P.dashT<=0&&!(save.ab.wall&&!P.ground)) addFlow(-12);
     P.x=side>0?c*TS-P.w:(c+1)*TS; P.vx=0; P.dashT=0;
@@ -846,9 +871,15 @@ function moveY(dt){
   const wasGround=P.ground, prevBottom=P.y+P.h; P.ground=false;
   P.y+=P.vy*dt;
   const c0=Math.floor(P.x/TS), c1=Math.floor((P.x+P.w-.01)/TS);
-  if(P.vy>0){ const r=Math.floor((P.y+P.h)/TS); for(let c=c0;c<=c1;c++) if(solid(c,r)){
+  if(P.vy>0){ const r=Math.floor((P.y+P.h)/TS); for(let c=c0;c<=c1;c++) if(solid(c,r)&&!inner(c,r)){
       P.y=r*TS-P.h; if(wasGround) P.vy=0; else land(); P.ground=true; break; } }
   else if(P.vy<0){ const r=Math.floor(P.y/TS); for(let c=c0;c<=c1;c++) if(solid(c,r)){P.y=(r+1)*TS;P.vy=0;break;} }
+  // Schrägen: auf die Oberfläche unter der Fußmitte setzen; bergab angeklebt bleiben
+  P.slope=false;
+  if(P.vy>=0){ const foot=P.y+P.h, sy=slopeSurface(P.x+P.w/2,foot-1);
+    if(sy!==null){
+      if(foot>sy){ P.y=sy-P.h; if(!wasGround&&!P.ground) land(); else P.vy=0; P.ground=true; P.slope=true; }
+      else if(!P.ground&&wasGround&&sy-foot<=8){ P.y=sy-P.h; P.vy=0; P.ground=true; P.slope=true; } } }
   P.plat=null;
   if(P.vy>=0) for(const m of L.movers){
     if(P.x+P.w>m.x+1 && P.x<m.x+m.w-1 && prevBottom<=m.y+2+Math.max(0,-m.dy) && P.y+P.h>=m.y){
@@ -1236,17 +1267,29 @@ function drawDecorFront(d){
   else if(d.k==='ice'){ ctx.fillStyle='#bfe8ff'; ctx.fillRect(x+1,y-6,1,6); ctx.fillRect(x,y-3,3,1); ctx.globalAlpha=.6; ctx.fillStyle='#ffffff'; ctx.fillRect(x+1,y-6,1,2); ctx.globalAlpha=1; }
 }
 
+const slopeCache={};
+function slopeTile(style,ch){
+  const k=style+ch; if(slopeCache[k]) return slopeCache[k];
+  const f=SLOPES[ch], c=mk(16,24), g=c.getContext('2d'), pal=PAL[style].top;
+  g.save(); g.beginPath(); g.moveTo(0,24); for(let x=0;x<=16;x++) g.lineTo(x,f(Math.min(15.99,x))); g.lineTo(16,24); g.closePath(); g.clip();
+  g.drawImage(T.body[style][1],0,0); g.drawImage(T.body[style][2],0,16); g.restore();
+  for(let x=0;x<16;x++){ const y=Math.round(f(x+.5)), px=(yy,col)=>{ if(yy>=0&&yy<24){ g.fillStyle=col; g.fillRect(x,yy,1,1); } };
+    px(y-1,'rgba(26,16,32,.45)'); px(y,pal[0]); px(y+1,pal[1]); px(y+2,pal[1]); px(y+3,pal[1]); px(y+4,pal[2]); if(x%3) px(y+5,pal[2]); px(y+(x%3?6:5),pal[3]); }
+  return slopeCache[k]=c;
+}
 function drawTiles(c0,c1,r0,r1){
+  const slopes=[];
   for(let r=r0;r<=r1;r++) for(let c=c0;c<=c1;c++){
     const t=L.grid[r][c]; if(t===' '||t==='~') continue;
+    if(SLOPES[t]){ slopes.push([c,r,t]); continue; }
     const x=c*TS, y=r*TS, v=(c*7+r*3)%3;
     if(t==='#'){
-      const top=(r===0||L.grid[r-1][c]!=='#');
+      const top=(r===0||!isGroundCh(L.grid[r-1][c]));
       const st=styleAt(c);
       ctx.drawImage(top?T.top[st][v]:T.body[st][v],x,y);
       ctx.fillStyle='rgba(26,16,32,.55)';
-      if(c>0&&L.grid[r][c-1]!=='#') ctx.fillRect(x,y,1,TS);
-      if(c<L.w-1&&L.grid[r][c+1]!=='#') ctx.fillRect(x+TS-1,y,1,TS);
+      if(c>0&&!isGroundCh(L.grid[r][c-1])) ctx.fillRect(x,y,1,TS);
+      if(c<L.w-1&&!isGroundCh(L.grid[r][c+1])) ctx.fillRect(x+TS-1,y,1,TS);
       if(r<L.h-1&&L.grid[r+1][c]===' ') ctx.fillRect(x,y+TS-1,TS,1);
     }
     else if(t==='=') ctx.drawImage(T.wood,x,y);
@@ -1254,6 +1297,7 @@ function drawTiles(c0,c1,r0,r1){
     else if(t==='^') ctx.drawImage(SPIKE,x,y);
     else if(t==='B'){ const b=L.crumbles.get(c+','+r); const j=b&&!b.gone?Math.round((Math.random()-.5)*2):0; ctx.drawImage(T.crumble,x+j,y); }
   }
+  for(const [c,r,t] of slopes) ctx.drawImage(slopeTile(styleAt(c),t),c*TS,r*TS);
 }
 function drawWater(c0,c1,r0,r1){
   for(let r=r0;r<=r1;r++) for(let c=c0;c<=c1;c++){ if(L.grid[r][c]!=='~') continue;
