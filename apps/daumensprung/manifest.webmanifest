@@ -1,0 +1,15 @@
+{
+  "name": "Daumensprung",
+  "short_name": "Daumensprung",
+  "description": "Jump'n'Run fürs Handy im Querformat, gesteuert mit zwei Daumen.",
+  "lang": "de",
+  "start_url": "./",
+  "scope": "./",
+  "display": "fullscreen",
+  "orientation": "landscape",
+  "background_color": "#16233a",
+  "theme_color": "#16233a",
+  "icons": [
+    { "src": "icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any" }
+  ]
+}

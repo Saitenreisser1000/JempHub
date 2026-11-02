@@ -2,7 +2,7 @@
 
 Jeder Merge nach `main` veröffentlicht die geänderten Apps von selbst auf dem
 VPS (Workflow `.github/workflows/deploy.yml`). Betroffen sind Hub, GuitarJemp,
-NoteJemp, EarJemp und ConductJemp. Der StemPlayer bleibt vorerst manuell.
+NoteJemp, EarJemp, ConductJemp und Daumensprung. Der StemPlayer bleibt vorerst manuell.
 
 Von Hand: auf GitHub unter **Actions → Deploy → Run workflow** eine App oder
 `all` wählen.
