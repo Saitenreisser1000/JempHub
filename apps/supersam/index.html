@@ -166,7 +166,7 @@ canvas{position:fixed;inset:0;width:100vw;height:100vh;display:block;image-rende
 (()=>{
 const cv=document.getElementById('c'); let ctx=cv.getContext('2d');
 const bgCanvas=document.createElement('canvas'), bgCtx=bgCanvas.getContext('2d');
-const TS=16, SKY_H=270; let VIEW_H=180; // VIEW_H: sichtbare Welthöhe (kleiner = näher dran)
+const TS=16, SKY_H=270; let VIEW_H=150; // VIEW_H: sichtbare Welthöhe (kleiner = näher dran)
 const C={ember:'#f2a65a',cream:'#f6ead2',ink:'#0d1524',gold:'#ffd166',sky:'#7fe0ff',
   grassD:'#457a3a',earthD:'#523726',stoneD:'#5b6372',stoneL:'#98a1b0',water:'#3f7fb0',waterL:'#7fb8dc',waterD:'#2e5f88',
   pine:'#2f5e3f',pineD:'#234a31',leaf:'#4f8a43',bark:'#5a3b26',beetle:'#d84a4a',crumble:'#c69a6a'};
@@ -551,9 +551,9 @@ function addFlow(v){ flow=Math.max(0,Math.min(100,flow+v)); }
 // ---------- Spieler ----------
 const P={w:10,h:14,x:0,y:0,vx:0,vy:0,ground:false,face:1,coyote:0,buffer:0,squash:0,run:0,hold:0,rising:false,cut:false,plat:null,
   usedDouble:false,airDash:false,dashT:0,dashDir:1,dashCD:0,wallDir:0,kickT:0,glide:false};
-const PH={max:60,accG:700,accA:450,fricG:800,fricA:90,tierBonus:10,grav:1150,jump:300,airJump:270,fall:420,coyote:.1,buffer:.13,
+const PH={max:150,accG:700,accA:450,fricG:800,fricA:90,tierBonus:10,grav:1150,jump:300,airJump:270,fall:420,coyote:.1,buffer:.13,
   holdMax:.18,holdGrav:.3,cutGrav:2.0,spring:560,stomp:280,
-  camLook:1,camSmooth:4,camZoom:.18,fxDark:1,fxBloom:1,kickX:95,kickY:330,kickT:.14,slide:70,dashSpeed:220,dashT:.2,glideFall:40,upLift:2000,upMax:220,upSpeed:45};
+  camLook:1.4,camSmooth:7,camSmoothY:12,camZoom:.28,fxDark:1,fxBloom:1,kickX:95,kickY:330,kickT:.14,slide:70,dashSpeed:220,dashT:.2,glideFall:40,upLift:2000,upMax:220,upSpeed:45};
 
 function resetPlayer(p){
   Object.assign(P,{x:p.x,y:p.y,vx:0,vy:0,ground:false,buffer:0,plat:null,rising:false,usedDouble:false,airDash:false,dashT:0,kickT:0,glide:false,wallDir:0});
@@ -1425,14 +1425,14 @@ function camera(dt){
   const feet=P.y+P.h;
   if(P.ground) camGround=feet;
   let fy=camGround;
-  if(feet<camGround-TS*2.5) fy=feet+TS*2.5;
+  if(feet<camGround-TS*1.5) fy=feet+TS*1.5;
   if(feet>camGround) fy=feet;
   const ahead=surfaceAhead(dir);
-  if(ahead.y!==null) camAheadY+=(ahead.y-camAheadY)*Math.min(1,dt*3); else camAheadY+=(fy+TS*2-camAheadY)*Math.min(1,dt*2);
-  fy=fy*(1-.35*PH.camLook)+camAheadY*.35*PH.camLook;
+  if(ahead.y!==null) camAheadY+=(ahead.y-camAheadY)*Math.min(1,dt*6); else camAheadY+=(fy+TS*2-camAheadY)*Math.min(1,dt*4);
+  const ab=Math.min(.35,.25*PH.camLook); fy=fy*(1-ab)+camAheadY*ab;
   if(P.vy>150&&!P.glide) fy+=(P.vy-150)*.3;
   const ty=fy-viewH*.62;
-  const ySpeed=PH.camSmooth*(P.vy>200?1.6:1);
+  const ySpeed=PH.camSmoothY*(P.vy>200||feet<camGround-TS*1.5?1.8:1);
   camY+=(ty-camY)*Math.min(1,dt*ySpeed);
   // Zoom: schneller, Dash, Schwung oder Abgrund voraus = etwas mehr Überblick
   const want=Math.min(1,sp/(PH.max*1.5)+(P.dashT>0?.5:0)+tier()*.12+(ahead.gaps>=4?.35:0));
@@ -1444,7 +1444,7 @@ function camera(dt){
 }
 
 // ---------- Debug ----------
-const PH_DEFAULT={...PH}, VIEW_DEFAULT=180, TUNE_KEY='daumensprung-tune';
+const PH_DEFAULT={...PH}, VIEW_DEFAULT=150, TUNE_KEY='daumensprung-tune';
 const dbg={info:false,hitbox:false,god:false,fx:true};
 const TUNES=[
   ['max','Höchsttempo Laufen',20,150,1],
@@ -1463,7 +1463,8 @@ const TUNES=[
   ['glideFall','Fallen beim Gleiten',10,100,1],
   ['viewH','Zoom: sichtbare Höhe (kleiner = näher)',120,270,6],
   ['camLook','Kamera: Vorausschau',0,2,0.05],
-  ['camSmooth','Kamera: Nachführtempo',1,12,0.5],
+  ['camSmooth','Kamera: Nachführtempo seitlich',1,12,0.5],
+  ['camSmoothY','Kamera: Nachführtempo vertikal',1,24,0.5],
   ['camZoom','Kamera: Herauszoomen bei Tempo',0,0.5,0.01],
   ['fxDark','Licht: Stärke der Dunkelheit',0,1.5,0.05],
   ['fxBloom','Licht: Überstrahlen',0,1.5,0.05]];
@@ -1673,7 +1674,7 @@ function frame(now){
   requestAnimationFrame(frame);
 }
 resize(); loadLevel('hub'); requestAnimationFrame(frame);
-window.__dz={setFlow:v=>{flow=v;},startCelebrate,ITEM,playStep,schedule,audioInit,playSong,sfx,SFX,AU,loadLevel,update,P,save,get L(){return L;},setState:s=>{state=s;},finishLevel};
+window.__dz={PH,setFlow:v=>{flow=v;},startCelebrate,ITEM,playStep,schedule,audioInit,playSong,sfx,SFX,AU,loadLevel,update,P,save,get L(){return L;},setState:s=>{state=s;},finishLevel};
 })();
 </script>
 

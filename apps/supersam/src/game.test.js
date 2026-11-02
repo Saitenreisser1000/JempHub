@@ -75,7 +75,7 @@ test('Höchsttempo wird eingehalten', () => {
   listeners.keydown({ key: 'ArrowRight', preventDefault() {} });
   let max = 0;
   for (let i = 0; i < 120; i++) { run(1); max = Math.max(max, Math.abs(dz.P.vx)); }
-  assert.ok(max <= 60.001, `vx ${max}`);
+  assert.ok(max <= dz.PH.max + 0.001, `vx ${max}`);
 });
 
 test('Musik und Effekte laufen ohne Fehler', () => {
