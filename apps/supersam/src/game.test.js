@@ -115,3 +115,39 @@ test('Kamera schlägt beim Landen auf einer höheren Plattform nicht nach unten 
   assert.ok(dz.P.y < 15 * 16, 'Sam steht auf der Plattform');
   assert.ok(maxY <= before + 0.5, `Kamera ging um ${(maxY - before).toFixed(1)} px nach unten`);
 });
+
+test('Neue Gegner bewegen sich und bleiben im Level', () => {
+  const { dz, run } = boot();
+  const seen = new Set();
+  for (const lv of [1, 2, 3, 4]) {
+    dz.setState('play'); dz.loadLevel(lv);
+    for (const e of dz.L.enemies) {
+      if (e.type === 'beetle') continue;
+      seen.add(e.type);
+      const x0 = e.x, y0 = e.y;
+      dz.P.x = e.spawn.x + 64; dz.P.y = e.spawn.y - 40; dz.P.vy = 0;
+      if (e.type === 'fisch') { e.state = 'leap'; e.vy = -340; }
+      let moved = 0;
+      for (let i = 0; i < 120; i++) { run(1); moved = Math.max(moved, Math.abs(e.x - x0) + Math.abs(e.y - y0)); }
+      assert.ok(Number.isFinite(e.x) && Number.isFinite(e.y), `${e.type} hat gültige Position`);
+      assert.ok(e.y < dz.L.h * 16, `${e.type} ist nicht aus dem Level gefallen`);
+      assert.ok(moved > 1 || !e.alive, `${e.type} bewegt sich`);
+    }
+  }
+  assert.deepEqual([...seen].sort(), ['fisch', 'frosch', 'geist', 'igel', 'skorpion', 'wespe']);
+});
+
+test('Geheimgänge werden aufgedeckt und Sternmünzen sind erreichbar', () => {
+  const { dz, listeners, run } = boot();
+  const key = (k, d) => d ? listeners.keydown({ key: k, preventDefault() {} }) : listeners.keyup({ key: k });
+  const setup = (lv, col, row) => { dz.setState('play'); dz.loadLevel(lv); dz.L.enemies.length = 0; dz.P.x = col * 16 + 3; dz.P.y = (row + 1) * 16 - 14; dz.P.vx = 0; dz.P.vy = 0; run(3); };
+  setup(1, 174, 18); key('ArrowRight', 1); for (let i = 0; i < 200 && !dz.L.stars[0].got; i++) run(1); key('ArrowRight', 0);
+  assert.ok(dz.L.reveal.size > 0 && dz.L.stars[0].got, 'Wald: Geheimgang unter dem Boden');
+  setup(2, 174, 22); key('ArrowRight', 1); for (let i = 0; i < 150 && !dz.L.stars[0].got; i++) run(1); key('ArrowRight', 0);
+  assert.ok(dz.L.stars[0].got, 'Felsen: Geheimgang im Tafelberg');
+  setup(3, 218, 22); key('ArrowRight', 1); for (let i = 0; i < 200 && !dz.L.stars[1].got; i++) run(1); key('ArrowRight', 0);
+  assert.ok(dz.L.stars[1].got, 'See: Geheimraum im Felsen');
+  Object.assign(dz.save.ab, { double: true, wall: true, dash: true, glide: true });
+  setup(4, 212, 24); key('ArrowRight', 1); run(3); listeners.keydown({ key: 'Shift' }); run(40); key('ArrowRight', 0);
+  assert.equal(dz.L.grid[21][214], ' ', 'Gipfel: Höhlenausgang per Dash');
+});

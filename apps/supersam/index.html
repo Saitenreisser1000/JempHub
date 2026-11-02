@@ -173,7 +173,7 @@ const C={ember:'#f2a65a',cream:'#f6ead2',ink:'#0d1524',gold:'#ffd166',sky:'#7fe0
 
 // ---------- Speicherstand ----------
 const SAVE_KEY='daumensprung-v2';
-const blankSave=()=>({ab:{double:false,wall:false,dash:false,glide:false},crystals:{},done:{},best:{},wallet:0});
+const blankSave=()=>({ab:{double:false,wall:false,dash:false,glide:false},crystals:{},stars:{},done:{},best:{},wallet:0});
 let save=blankSave();
 try{ const s=JSON.parse(localStorage.getItem(SAVE_KEY)||'null'); if(s){ save=Object.assign(blankSave(),s); save.ab=Object.assign(blankSave().ab,s.ab||{}); } }catch(_){}
 function persist(){ try{ localStorage.setItem(SAVE_KEY,JSON.stringify(save)); }catch(_){} }
@@ -241,6 +241,44 @@ const BEETLE=[
   "................"];
 const BEETLE_A=pair(spr(BEETLE,BEETLE_PAL));
 const BEETLE_B=pair(spr(withRows(BEETLE,{9:"...k..k..k.k....",10:"...k..k...k.k..."}),BEETLE_PAL));
+// Weitere Gegner (Sprites mit Blick nach links)
+const pairL=c=>({l:c,r:flipX(c)});
+const EPAL={igel:{k:'#1a1020',s:'#e8e0d0',b:'#8a5a3a',B:'#5a3a22',f:'#e8c8a0',w:'#ffffff',n:'#1a1020'},
+  wespe:{k:'#1a1020',w:'#ffffff',y:'#ffd23f',e:'#1a1020'},skorpion:{k:'#1a1020',r:'#c8502e',R:'#7a2a18',w:'#ffe08a'},
+  frosch:{k:'#1a1020',g:'#6ac04a',G:'#3f8a34',y:'#e8f0a0',w:'#ffffff',e:'#1a1020'},fisch:{k:'#1a1020',o:'#ff8a3a',Y:'#ffd23f',w:'#ffffff'},
+  geist:{k:'#2a3560',w:'#e8f4ff',b:'#3a5aa8'}};
+const ES={
+  igel:[pairL(spr(["..k.k.k.k.......",".kskskskskk.....","kssbsbsbsssk....","ksbsbsbsbsssk...","kffbbbbbbbbsk...","kwfbbbbbbbbbk...","nffBbbbbbbbbk...",".kffBBBBBBBk....","..kkkkkkkkkk....","...kk...kk......","................","................"],EPAL.igel)),pairL(spr(["..k.k.k.k.......",".kskskskskk.....","kssbsbsbsssk....","ksbsbsbsbsssk...","kffbbbbbbbbsk...","kwfbbbbbbbbbk...","nffBbbbbbbbbk...",".kffBBBBBBBk....","..kkkkkkkkkk....","..kk...kk.......","................","................"],EPAL.igel))],
+  wespe:[pairL(spr(["......ww..ww....",".....wwwwwwww...","......ww..ww....","....kkkkkkk.....","...kyykkyykk....","..kewkyykyyyk...","..kkkkyykyykkk..","...kyykkyyk..k..","....kkkkkkk.....","................","................","................"],EPAL.wespe)),pairL(spr(["................","......ww..ww....",".....wwwwwwww...","....kkkkkkk.....","...kyykkyykk....","..kewkyykyyyk...","..kkkkyykyykkk..","...kyykkyyk..k..","....kkkkkkk.....","................","................","................"],EPAL.wespe))],
+  skorpion:[pairL(spr(["......kkk.......",".....krrrk......","....krk.krk.....","....kk...krk....","..........krk...","..kk..kkkkkrrk..",".krrkkrrrrrrrk..","krwrrrrrrrrrk...","krrrRRRRRRRk....",".kkkkkkkkkk.....","..k.k.k.k.k.....","................"],EPAL.skorpion)),pairL(spr(["......kkk.......",".....krrrk......","....krk.krk.....","....kk...krk....","..........krk...","..kk..kkkkkrrk..",".krrkkrrrrrrrk..","krwrrrrrrrrrk...","krrrRRRRRRRk....",".kkkkkkkkkk.....",".k.k.k.k.k......","................"],EPAL.skorpion))],
+  frosch:[pairL(spr(["................","................","...kk....kk.....","..kwek..kwek....","..kggkkkkggk....",".kggggggggggk...",".kgGggggggGgk...","kgGGggyyggGGgk..","kGGGgyyyygGGGk..","kkGGkkkkkkGGkk..",".kkk......kkk...","................"],EPAL.frosch)),pairL(spr(["................","...kk....kk.....","..kwek..kwek....","..kggkkkkggk....",".kggggggggggk...",".kgGggggggGgk...","kgGGggyyggGGgk..","kGGGgyyyygGGGk..","kkGGkkkkkkGGkk..","kGk........kGk..","kk..........kk..","................"],EPAL.frosch))],
+  fisch:[pairL(spr(["................","................","....kkkkkk......","..kkoooooYk..kk.",".kowkoooooYkkok.",".kookoooooookok.",".koooooooooYkok.","..kkoooooYk..kk.","....kkkkkk......","................","................","................"],EPAL.fisch)),pairL(spr(["................","................","....kkkkkk......","..kkoooooYk.kk..",".kowkoooooYkok..",".kookoooooookk..",".koooooooooYkok.","..kkoooooYk..kk.","....kkkkkk......","................","................","................"],EPAL.fisch))],
+  geist:[pairL(spr([".....kkkkk......","....kwwwwwk.....","...kwwwwwwwk....","..kwwwwwwwwwk...","..kwkkwkkwwwk...","..kwbkwbkwwwk...","..kwwwwwwwwwk...","..kwwwkkwwwwk...","..kwwwwwwwwwk...","..kwwwwwwwwwk...","..kwkwwkwwkwk...","..kk.kk.kk.kk..."],EPAL.geist)),pairL(spr([".....kkkkk......","....kwwwwwk.....","...kwwwwwwwk....","..kwwwwwwwwwk...","..kwkkwkkwwwk...","..kwbkwbkwwwk...","..kwwwwwwwwwk...","..kwwwkkwwwwk...","..kwwwwwwwwwk...","..kwwwwwwwwwk...","..kwwkwwkwwkk...","...kk.kk.kk....."],EPAL.geist))]
+};
+// Eigenschaften: stomp = von oben besiegbar, dash = per Dash besiegbar, fly = ohne Boden, foot = Abstand Sprite-Fuß
+const ETYPE={
+  beetle:{w:12,h:10,stomp:true,dash:true,foot:11,light:'#ff5a5a',col:'#d84a4a'},
+  igel:{w:12,h:10,stomp:false,dash:true,foot:10,light:'#e8c8a0',col:'#8a5a3a'},
+  wespe:{w:12,h:9,fly:true,stomp:true,dash:true,light:'#ffd23f',col:'#ffd23f'},
+  skorpion:{w:13,h:10,stomp:true,dash:true,foot:11,light:'#ff8a5a',col:'#c8502e'},
+  frosch:{w:12,h:9,stomp:true,dash:true,foot:11,light:'#9be06a',col:'#6ac04a'},
+  fisch:{w:11,h:9,fly:true,stomp:false,dash:false,light:'#ff8a3a',col:'#ff8a3a'},
+  geist:{w:12,h:12,fly:true,stomp:true,dash:true,light:'#bfe8ff',col:'#e8f4ff'}
+};
+// Sternmünze: Geheimnis-Sammelobjekt, 12x12
+const STAR=spr([
+  ".....kk.....",
+  "....kyyk....",
+  "....kyyk....",
+  "kkkkyyyykkkk",
+  "kyyyyyyyyyyk",
+  ".kyyywwyyyk.",
+  "..kyyyyyyk..",
+  "..kyyyyyyk..",
+  ".kyyykkyyyk.",
+  ".kyyk..kyyk.",
+  "kyyk....kyyk",
+  "kkk......kkk"],{k:'#8a4a00',y:'#ffe14d',w:'#ffffff'});
 const COIN_PAL={b:'#8a5a14',l:'#fff3b0',y:'#ffd166',Y:'#e0a030'};
 const COIN=[
   spr(["..bbbb..",".blllyb.","blyyyyYb","blyYYyYb","blyYyyYb","blyYyyYb","blyyyyYb","bYyyyyYb",".bYYYYb.","..bbbb.."],COIN_PAL),
@@ -419,81 +457,121 @@ const DEFS={
     b.updraft(44,47,4,22); b.plat(5,39,42); b.crystal(41,4);          // Geheimnis: nur mit Gleiten
     b.dip(49,1,2,true); b.coins(23,51,52);
     b.rect(58,11,63,25); b.door(61,10,3); b.hill(65,1,1);                              // Welt 3 auf hoher Säule: Wandsprung
-    b.rect(74,0,95,18); b.crack(76,19,77,22); b.door(90,22,4); b.coins(22,80,86); // Welt 4 hinter Rissfels: Dash
+    b.rect(74,0,95,18); b.back(74,19,95,22); b.crack(76,19,77,22); b.door(90,22,4); b.coins(22,80,86); // Welt 4 hinter Rissfels: Dash
   }},
-  1:{name:'Wald',w:150,h:22,top:19,style:'forest',sky:.15,build(b){
+  1:{name:'Wald',w:240,h:22,top:19,style:'forest',sky:.15,build(b){
     b.ground(0,25); b.ground(28,59); b.ground(62,97); b.ground(110,149);
     b.water(26,27,20); b.water(60,61,20); b.water(98,109,20);
     b.start(3,18); b.hill(6,2,2,true); b.coins(16,10,11); b.coins(18,16,17); b.enemy(20,18);
     b.plat(15,33,36); b.coins(14,33,36); b.plat(12,38,41); b.coins(11,38,41);
-    b.coins(16,26,27); b.enemy(45,18);
-    b.cp(48,18); b.spring(52,18); b.plat(11,54,57); b.crystal(56,10);
-    b.coins(16,60,61);
+    b.coins(16,26,27); b.enemy(45,18,'igel');
+    b.enemy(36,13,'wespe',{range:2}); b.cp(48,18); b.spring(52,18); b.plat(11,54,57); b.crystal(56,10);
+    b.coins(16,60,61); b.enemy(61,14,'wespe',{range:2});
     b.dip(64,1,2,true); b.enemy(72,18); b.spikes(18,76,77); b.enemy(80,18);
     b.plat(12,88,92); b.crystal(90,11);                                // Kristall: braucht Doppelsprung
     b.coins(18,85,94);
     b.cp(95,18); b.mover(99,17,6,0,3,3.6); b.coins(15,101,106);
     b.cp(112,18);
     b.updraft(113,116,3,18); b.plat(4,119,122); b.crystal(121,3);      // Kristall: braucht Gleiten
-    b.enemy(126,18); b.spikes(18,131,132); b.enemy(137,18); b.hill(139,2,1); b.coins(16,141,141); b.coins(18,144,145);
-    b.goal(146,18);
+    b.enemy(126,18,'igel'); b.spikes(18,131,132); b.enemy(137,18); b.hill(139,2,1); b.coins(16,141,141); b.coins(18,144,145);
+    // Erweiterung: Baumkronen, Geheimgang unter dem Boden, Doppelsprung-Versteck
+    b.ground(150,239); b.cp(150,18); b.dip(152,1,2,true);
+    b.plat(15,160,163); b.coins(14,160,163); b.plat(12,166,169); b.coins(11,166,169); b.plat(15,172,175); b.coins(14,172,175);
+    b.enemy(167,9,'wespe',{range:2});
+    b.clear(176,20,186,20); b.back(176,20,186,20); b.hidden(177,19,177,19); b.hidden(186,19,186,19); b.coins(20,179,182); b.star(184,20);   // ★ Geheimgang
+    b.enemy(190,18,'igel'); b.hill(192,2,2);
+    b.spikes(18,200,201); b.spring(204,18); b.plat(10,206,210); b.coins(9,206,210); b.enemy(212,18);
+    b.hill(214,1,3,true); b.enemy(224,14,'wespe',{range:3});
+    b.plat(11,226,229); b.star(228,10);                                 // ★ nur mit Doppelsprung
+    b.coins(18,230,233);
+    b.goal(236,18);
   }},
-  2:{name:'Felsen',w:150,h:26,top:23,style:'stone',sky:.42,build(b){
+  2:{name:'Felsen',w:240,h:26,top:23,style:'stone',sky:.42,build(b){
     b.ground(0,17); b.start(3,22); b.coins(22,6,12);
     b.rect(18,16,40,25);                                               // 7 Kacheln hoch: nur mit Doppelsprung
-    b.coins(15,20,24); b.enemy(26,15); b.enemy(33,15); b.crystal(38,15);
+    b.coins(15,20,24); b.enemy(26,15); b.enemy(33,15,'skorpion'); b.crystal(38,15);
     b.ground(41,60); b.spikes(22,42,47); b.crumb(16,41,48);
     b.rect(49,16,60,25); b.cp(52,15); b.coins(15,53,58);
     b.ground(61,105);
-    b.rect(70,6,73,25); b.clear(70,20,73,22); b.crystal(72,5);         // Kristall: braucht Wandsprung
-    b.coins(22,64,68); b.dip(75,1,2,true); b.enemy(82,22); b.spikes(22,85,86); b.enemy(90,22);
+    b.rect(70,6,73,25); b.clear(70,20,73,22); b.back(70,20,73,22); b.crystal(72,5);         // Kristall: braucht Wandsprung
+    b.coins(22,64,68); b.dip(75,1,2,true); b.enemy(82,22); b.spikes(22,85,86); b.enemy(90,22,'skorpion'); b.enemy(98,17,'wespe',{range:2});
     b.spikes(22,94,99); b.rect(96,20,97,25); b.coins(19,95,98);
     b.cp(103,22);
-    b.rect(106,19,149,25); b.clear(106,20,120,22); b.crack(108,20,109,22); b.crystal(118,22); // Kristall: braucht Dash
+    b.rect(106,19,149,25); b.clear(106,20,120,22); b.back(106,20,120,22); b.crack(108,20,109,22); b.crystal(118,22); // Kristall: braucht Dash
     b.cp(123,18);
     b.clear(126,19,131,25); b.water(126,131,24); b.crumb(19,126,131);
-    b.coins(18,127,130); b.enemy(134,18); b.hill(136,1,1,false,19); b.enemy(141,18); b.coins(17,137,137); b.coins(18,139,140);
-    b.goal(146,18);
+    b.coins(18,127,130); b.enemy(134,18); b.hill(136,1,1,false,19); b.enemy(141,18,'skorpion'); b.coins(17,137,137); b.coins(18,139,140);
+    // Erweiterung: Canyonboden, Tafelberge mit Geheimgang und Rissfels-Kammer
+    b.ramp(150,19,23); b.ground(154,239); b.cp(156,22);
+    b.coins(22,158,161); b.enemy(162,22,'skorpion'); b.spikes(22,166,167); b.enemy(172,22,'skorpion');
+    b.rect(178,16,190,25); b.clear(180,20,188,22); b.back(178,20,188,22); b.hidden(178,20,179,22); b.coins(22,181,184); b.star(186,22);  // ★ Geheimgang im Tafelberg
+    b.coins(15,180,188); b.enemy(184,15);
+    b.crumb(16,191,196);
+    b.rect(197,16,205,25); b.clear(198,20,204,22); b.back(197,20,204,22); b.crack(197,20,197,22); b.star(202,22);   // ★ nur mit Dash
+    b.ramp(206,16,23);
+    b.coins(22,216,224); b.enemy(220,17,'wespe',{range:3}); b.enemy(228,22);
+    b.goal(236,22);
   }},
-  3:{name:'See',w:160,h:26,top:23,style:'lake',sky:.62,build(b){
+  3:{name:'See',w:250,h:26,top:23,style:'lake',sky:.62,build(b){
     b.ground(0,29); b.start(3,22); b.hill(5,1,2,true); b.coins(21,7,8); b.coins(22,11,13); b.enemy(16,22);
     b.rect(30,10,50,25);                                               // 13 Kacheln hohe Klippe: Wandsprung
     b.coins(9,33,38); b.cp(34,9); b.crystal(40,9); b.enemy(45,9);
-    b.water(51,75,23); b.mover(53,18,7,0,3,3.8); b.mover(65,16,0,4,3,3); b.plat(18,70,71); b.plat(17,74,75); b.coins(15,55,60);
-    b.ground(76,95); b.cp(78,22); b.enemy(80,22);
-    b.rect(84,16,92,16); b.rect(92,17,92,22); b.crack(84,17,84,22); b.crystal(88,22); // Kristall: braucht Dash
-    b.water(96,122,23); b.mover(97,19,8,0,3,3.6); b.mover(110,18,8,0,3,3.2); b.coins(15,99,104);
+    b.water(51,75,23); b.enemy(63,23,'fisch'); b.mover(53,18,7,0,3,3.8); b.mover(65,16,0,4,3,3); b.plat(18,70,71); b.plat(17,74,75); b.coins(15,55,60);
+    b.ground(76,95); b.cp(78,22); b.enemy(80,22,'frosch');
+    b.rect(84,16,92,16); b.rect(92,17,92,22); b.back(84,17,91,22); b.crack(84,17,84,22); b.crystal(88,22); // Kristall: braucht Dash
+    b.water(96,122,23); b.enemy(108,23,'fisch'); b.mover(97,19,8,0,3,3.6); b.mover(110,18,8,0,3,3.2); b.coins(15,99,104);
     b.updraft(115,118,3,22); b.plat(4,121,124); b.crystal(123,3);      // Kristall: braucht Gleiten
     b.ground(123,159); b.cp(128,22);
     b.rect(135,12,140,25); b.coins(11,136,139);
-    b.enemy(144,22); b.dip(146,1,1,true); b.enemy(152,22); b.coins(22,142,144); b.coins(23,148,148);
-    b.goal(155,22);
+    b.enemy(143,22,'frosch'); b.dip(146,1,1,true); b.enemy(152,22); b.coins(22,142,144); b.coins(23,148,148);
+    // Erweiterung: Säulen im See, Felsen mit Geheimraum
+    b.ground(160,160); b.cp(157,22); b.water(161,195,23);
+    b.mover(162,20,0,-5,3,3.2);
+    b.rect(166,14,167,25); b.rect(176,12,177,25); b.rect(186,14,187,25);
+    b.mover(169,16,3,0,3,3); b.mover(179,16,3,0,3,3.4); b.mover(189,17,3,0,3,3);
+    b.enemy(172,23,'fisch'); b.enemy(182,23,'fisch');
+    b.coins(13,166,167); b.coins(11,176,177); b.coins(13,186,187);
+    b.plat(5,175,178); b.star(176,4);                                   // ★ hoch über der mittleren Säule
+    b.ground(196,249); b.enemy(203,22,'frosch'); b.hill(206,2,2,true); b.coins(20,210,211); b.enemy(218,22,'frosch');
+    b.rect(222,16,232,25); b.clear(224,18,230,22); b.back(222,18,230,22); b.hidden(222,20,223,22); b.coins(22,225,227); b.star(229,22);  // ★ Geheimraum im Felsen
+    b.coins(15,223,231); b.enemy(238,22);
+    b.goal(246,22);
   }},
-  4:{name:'Gipfel',w:170,h:28,top:25,style:'snow',sky:1,build(b){
+  4:{name:'Gipfel',w:260,h:28,top:25,style:'snow',sky:1,build(b){
     b.ground(0,59); b.start(3,24); b.coins(24,7,12);
-    b.rect(18,0,30,20); b.crack(20,21,21,24);                          // Rissfels: nur mit Dash
+    b.rect(18,0,30,20); b.back(18,21,30,24); b.crack(20,21,21,24);                          // Rissfels: nur mit Dash
     b.hill(33,2,2); b.coins(22,35,36); b.enemy(41,24); b.coins(24,39,42);
     b.clear(44,25,52,27); b.water(44,52,26); b.crumb(25,44,52); b.coins(23,45,51);
     b.plat(20,55,58); b.crystal(57,19);
     b.ground(60,99); b.cp(60,24); b.hill(62,1,2,true);
     b.updraft(69,72,3,24); b.plat(4,75,78); b.crystal(77,3);           // Kristall: braucht Gleiten
-    b.enemy(82,24); b.spikes(24,86,87); b.enemy(92,24); b.coins(24,80,84);
-    b.ground(100,169); b.rect(100,8,104,27); b.clear(100,22,104,24); b.crystal(102,7); // Kristall: Wandsprung
+    b.enemy(82,24,'igel'); b.spikes(24,86,87); b.enemy(92,24); b.enemy(88,20,'geist'); b.coins(24,80,84);
+    b.ground(100,169); b.rect(100,8,104,27); b.clear(100,22,104,24); b.back(100,22,104,24); b.crystal(102,7); // Kristall: Wandsprung
     b.cp(108,24);
     b.clear(115,25,135,27); b.water(115,135,26); b.mover(116,22,8,0,3,3.4); b.mover(129,21,4,0,3,3); b.coins(19,118,126);
-    b.cp(140,24); b.enemy(142,24); b.spikes(24,146,147); b.enemy(152,24); b.hill(155,2,1); b.coins(22,157,157); b.coins(24,160,162);
-    b.goal(165,24);
+    b.cp(140,24); b.enemy(142,24); b.spikes(24,146,147); b.enemy(152,24,'igel'); b.enemy(146,20,'geist'); b.hill(155,2,1); b.coins(22,157,157); b.coins(24,160,162);
+    // Erweiterung: Eishöhle mit Geheimkammer, Eiswand, Aufwind-Versteck
+    b.ground(170,259); b.cp(167,24);
+    b.rect(172,0,215,17); b.back(172,18,215,24);
+    b.enemy(180,21,'geist'); b.coins(24,176,182);
+    b.clear(185,25,192,27); b.water(185,192,26); b.crumb(25,185,192); b.coins(23,186,191);
+    b.spring(196,24); b.hidden(195,15,197,17); b.clear(191,11,201,14); b.back(191,11,201,17); b.coins(14,192,193); b.star(200,14);   // ★ Geheimkammer: Feder + Doppelsprung
+    b.spikes(24,201,202); b.enemy(204,21,'geist'); b.enemy(207,24,'igel'); b.coins(24,208,212);
+    b.crack(214,18,214,24);
+    b.coins(24,217,222); b.rect(225,12,228,27); b.coins(11,225,228);
+    b.updraft(236,239,4,24); b.plat(4,242,245); b.star(243,3);         // ★ nur mit Gleiten
+    b.enemy(250,24); b.goal(256,24);
   }}
 };
 
 function makeLevel(id){
   const d=DEFS[id], w=d.w, h=d.h;
   const L={id,name:d.name,style:d.style,zones:d.zones||null,w,h,
-    grid:Array.from({length:h},()=>Array(w).fill(' ')),up:Array.from({length:h},()=>Array(w).fill(false)),
-    coins:[],crystals:[],movers:[],enemies:[],springs:[],checkpoints:[],doors:[],goal:null,start:{x:48,y:0},decor:[],crumbles:new Map()};
+    grid:Array.from({length:h},()=>Array(w).fill(' ')),up:Array.from({length:h},()=>Array(w).fill(false)),back:Array.from({length:h},()=>Array(w).fill(false)),
+    coins:[],crystals:[],stars:[],reveal:new Set(),movers:[],enemies:[],springs:[],checkpoints:[],doors:[],goal:null,start:{x:48,y:0},decor:[],crumbles:new Map()};
   const set=(c,r,ch)=>{ if(c>=0&&c<w&&r>=0&&r<h) L.grid[r][c]=ch; };
   const rect=(c0,r0,c1,r1,ch='#')=>{ for(let r=r0;r<=r1;r++) for(let c=c0;c<=c1;c++) set(c,r,ch); };
-  let ci=0;
+  let ci=0, si=0;
   const b={
     ground:(c0,c1,top=d.top)=>rect(c0,top,c1,h-1),
     rect, clear:(c0,r0,c1,r1)=>rect(c0,r0,c1,r1,' '),
@@ -503,8 +581,14 @@ function makeLevel(id){
     updraft:(c0,c1,r0,r1)=>{ for(let r=r0;r<=r1;r++) for(let c=c0;c<=c1;c++) if(L.up[r]) L.up[r][c]=true; },
     coin:(c,r)=>L.coins.push({x:c*TS+8,y:r*TS+8,got:false}),
     coins:(r,c0,c1)=>{ for(let c=c0;c<=c1;c++) b.coin(c,r); },
+    star:(c,r)=>{ const sid=id+'-s'+(si++); L.stars.push({id:sid,x:c*TS+8,y:r*TS+8,got:!!save.stars[sid]}); },
+    hidden:(c0,r0,c1,r1)=>rect(c0,r0,c1,r1,'H'),
+    back:(c0,r0,c1,r1)=>{ for(let r=r0;r<=r1;r++) for(let c=c0;c<=c1;c++) if(L.back[r]) L.back[r][c]=true; },   // dunkle Felswand hinter Höhlen   // Geheimgang: sieht aus wie Boden, ist durchlässig
     crystal:(c,r)=>{ const cid=id+'-'+(ci++); L.crystals.push({id:cid,x:c*TS+8,y:r*TS+8,got:!!save.crystals[cid]}); },
-    enemy:(c,r)=>{ const x=c*TS+2,y=(r+1)*TS-10; L.enemies.push({x,y,x0:x,w:12,h:10,dir:-1,alive:true,squish:0}); },
+    enemy:(c,r,type='beetle',o={})=>{ const T=ETYPE[type], w=T.w, h=T.h;
+      const x=c*TS+(TS-w)/2, y=type==='fisch'?r*TS+14:T.fly?r*TS+(TS-h)/2:(r+1)*TS-h;
+      const e={type,x,y,w,h,dir:-1,alive:true,squish:0,t:hash(c*13+r)*6,vx:0,vy:0,state:'idle',timer:1+hash(c*7)*1.5,range:3,bob:0,ground:true,...o};
+      e.spawn={...e}; L.enemies.push(e); },
     spring:(c,r)=>L.springs.push({x:c*TS,top:(r+1)*TS-11,bottom:(r+1)*TS,t:0}),
     cp:(c,r)=>L.checkpoints.push({x:c*TS,bottom:(r+1)*TS,on:false}),
     mover:(c,r,dc,dr,mw=3,period=3.5)=>L.movers.push({x0:c*TS,y0:r*TS,x1:(c+dc)*TS,y1:(r+dr)*TS,w:mw*TS,period,x:c*TS,y:r*TS,dx:0,dy:0}),
@@ -518,6 +602,11 @@ function makeLevel(id){
       for(let i=hh-1;i>=0;i--){ const r=base-1-i; if(gentle){ set(x,r,'['); down(x,r+1); x++; set(x,r,']'); down(x,r+1); x++; } else { set(x,r,'\\'); down(x,r+1); x++; } }
       return x; },
     // Senke: h Kacheln tief in den Boden
+    // Rampe von Oberflächenreihe a nach b (steil oder sanft)
+    ramp:(c,a,bb,gentle=false)=>{ let x=c; const down=(x,r)=>rect(x,r,x,h-1);
+      if(bb>a){ for(let r=a;r<bb;r++){ if(gentle){ set(x,r,'['); down(x,r+1); x++; set(x,r,']'); down(x,r+1); x++; } else { set(x,r,'\\'); down(x,r+1); x++; } } }
+      else { for(let r=a-1;r>=bb;r--){ if(gentle){ set(x,r,'('); down(x,r+1); x++; set(x,r,')'); down(x,r+1); x++; } else { set(x,r,'/'); down(x,r+1); x++; } } }
+      return x; },
     dip:(c,hh,flat,gentle=false,base=d.top)=>{ let x=c; const carve=(x,r)=>{ for(let k=base;k<r;k++) set(x,k,' '); };
       for(let i=0;i<hh;i++){ const r=base+i; if(gentle){ carve(x,r); set(x,r,'['); x++; carve(x,r); set(x,r,']'); x++; } else { carve(x,r); set(x,r,'\\'); x++; } }
       for(let k=0;k<flat;k++){ carve(x,base+hh); x++; }
@@ -559,7 +648,7 @@ const tileAt=(c,r)=>(r<0||r>=L.h||c<0||c>=L.w)?' ':L.grid[r][c];
 // Schrägen: Funktion liefert die Oberfläche (y innerhalb der Kachel) für die lokale x-Position.
 // '/' steil hoch nach rechts, '\' steil runter; '(' ')' sanft hoch (zwei Kacheln), '[' ']' sanft runter.
 const SLOPES={'/':lx=>TS-lx,'\\':lx=>lx,'(':lx=>TS-lx/2,')':lx=>8-lx/2,'[':lx=>lx/2,']':lx=>8+lx/2};
-const isGroundCh=t=>t==='#'||SLOPES[t]!==undefined;
+const isGroundCh=t=>t==='#'||t==='H'||SLOPES[t]!==undefined;
 const inner=(c,r)=>SLOPES[tileAt(c,r-1)]!==undefined; // Erde unter einer Schräge
 function slopeSurface(x,y){ const c=Math.floor(x/TS), r=Math.floor(y/TS);
   for(const rr of [r,r+1,r-1]){ const f=SLOPES[tileAt(c,rr)]; if(f) return rr*TS+f(Math.min(TS-.01,Math.max(0,x-c*TS))); }
@@ -584,7 +673,7 @@ function respawn(){
   resetPlayer(cpPos||L.start);
   for(const k of L.crumbles.keys()){ const [c,r]=k.split(',').map(Number); L.grid[r][c]='B'; }
   L.crumbles.clear();
-  for(const e of L.enemies){ e.alive=true; e.squish=0; e.x=e.x0; e.dir=-1; }
+  for(const e of L.enemies) Object.assign(e,e.spawn);
   flow=0; trail=[];
 }
 function loadLevel(id,spawnDoor){
@@ -707,6 +796,7 @@ const SFX={
   splash:()=>{ const t=atime(); noise(t,.4,{vol:.2,freq:1200,to:300}); },
   checkpoint:()=>{ const t=atime(); tone(t,660,.1,{wave:'p25',vol:.09}); tone(t+.1,990,.2,{wave:'p25',vol:.09}); },
   door:()=>{ const t=atime(); tone(t,300,.4,{wave:'triangle',vol:.15,to:1200}); noise(t,.4,{vol:.06,freq:800,to:4000}); },
+  secret:()=>{ const t=atime(); [79,74,70,67,74,79,86].forEach((m,i)=>tone(t+i*.07,mtof(m),.35,{wave:'triangle',vol:.12})); noise(t,.6,{vol:.05,type:'highpass',freq:5000,to:9000}); },
   unlock:()=>{ const t=atime(); [60,64,67,72,76,79,84,88].forEach((m,i)=>tone(t+i*.06,mtof(m),.3,{wave:'p25',vol:.1}));
     [72,76,79].forEach(m=>tone(t+.55,mtof(m),.9,{wave:'triangle',vol:.12})); tone(t+.55,mtof(96),.9,{wave:'p12',vol:.05}); noise(t+.5,.6,{vol:.08,type:'highpass',freq:6000}); },
   fanfare:()=>{ const t=atime(); [[67,0],[72,.12],[76,.24],[79,.36],[84,.5]].forEach(([m,d])=>tone(t+d,mtof(m),d===.5?.7:.14,{wave:'p25',vol:.11}));
@@ -716,7 +806,7 @@ const SFX={
 // ---------- Juice: Trefferpause, Kamera-Impuls, Vibration ----------
 let hitstop=0, punch=0, punchT=0;
 // Trefferpause nur bei echten Treffern; beim Einsammeln nur ein weicher Zoom-Stoß
-const JUICE={stomp:{hs:.05,p:.025,v:25},smash:{hs:.05,p:.035,v:35},crystal:{p:.035,v:30},spring:{p:.025,v:20},
+const JUICE={secret:{p:.03,v:[20,30,20]},stomp:{hs:.05,p:.025,v:25},smash:{hs:.05,p:.035,v:35},crystal:{p:.035,v:30},spring:{p:.025,v:20},
   land:{v:10},hurt:{v:[40,30,60]},dash:{p:.015,v:15},tier:{p:.015,v:12},unlock:{p:.06,v:[30,40,30,40,80]},kick:{v:10},double:{v:8}};
 function juice(name){ const j=JUICE[name]; if(!j) return;
   if(j.hs) hitstop=Math.max(hitstop,j.hs); if(j.p) punchT=Math.max(punchT,j.p);
@@ -821,7 +911,7 @@ function finishLevel(celebrated){
   persist();
   document.getElementById('donetitle').textContent=`Welt ${n} · ${NAMES[n]} geschafft`;
   document.getElementById('donestats').innerHTML=
-    `Zeit ${time.toFixed(1)} s${prev.time&&time<prev.time?' · neue Bestzeit':''}<br>Münzen ${levelCoins}/${L.coins.length} · Kristalle ${got}/${L.crystals.length}<br>Höchster Schwung ×${bestTier+1}`;
+    `Zeit ${time.toFixed(1)} s${prev.time&&time<prev.time?' · neue Bestzeit':''}<br>Münzen ${levelCoins}/${L.coins.length} · Kristalle ${got}/${L.crystals.length} · Sterne ${L.stars.filter(k=>k.got).length}/${L.stars.length}<br>Höchster Schwung ×${bestTier+1}`;
   const nw=document.getElementById('donenew'); nw.hidden=!isNew;
   if(isNew){ document.getElementById('newname').textContent='Neu: '+AB_INFO[ab].name; document.getElementById('newhow').textContent=AB_INFO[ab].how; }
   document.getElementById('donehint').textContent= got<L.crystals.length ? 'Einige Kristalle erreichst du erst mit Fähigkeiten aus anderen Welten.' : 'Alle Kristalle dieser Welt gefunden.';
@@ -991,19 +1081,13 @@ function update(dt){
   for(const s of L.springs){ s.t=Math.max(0,s.t-dt);
     if(P.vy>0&&P.x+P.w>s.x+2&&P.x<s.x+14&&P.y+P.h>=s.top&&P.y+P.h<=s.top+10){
       P.y=s.top-P.h; P.vy=-PH.spring; P.rising=true; P.cut=false; P.hold=PH.holdMax; P.ground=false; P.usedDouble=false; s.t=.25; P.squash=-1; addFlow(4); sfx('spring'); burst(s.x+8,s.top,C.cream,6,50); } }
-  // Käfer
-  for(const e of L.enemies){
-    if(!e.alive){ e.squish=Math.max(0,e.squish-dt); continue; }
-    e.x+=e.dir*28*dt;
-    const front=e.dir>0?e.x+e.w:e.x, fc=Math.floor(front/TS), er=Math.floor((e.y+e.h-1)/TS);
-    if(solid(fc,er)||!solid(fc,er+1)){ e.dir*=-1; e.x+=e.dir*2; }
-    if(P.x+P.w>e.x+1&&P.x<e.x+e.w-1&&P.y+P.h>e.y+1&&P.y<e.y+e.h){
-      if(P.dashT>0||(P.vy>0&&P.y+P.h-e.y<9)){ e.alive=false; e.squish=.5; sfx('stomp'); if(P.dashT<=0){ P.vy=-PH.stomp; P.rising=true; P.cut=false; P.hold=0; P.usedDouble=false; } addFlow(12); burst(e.x+6,e.y+4,C.beetle,8,60); }
-      else if(!dbg.god){ die(); return; }
-    }
-  }
+  // Gegner
+  if(updateEnemies(dt)) return;
   // Münzen, Kristalle
   for(const k of L.coins) if(!k.got&&Math.abs(P.x+P.w/2-k.x)<10&&Math.abs(P.y+P.h/2-k.y)<12){ k.got=true; levelCoins++; sfx('coin'); save.wallet+=1+tier(); if(tier()>0) floaters.push({x:k.x,y:k.y-6,txt:'+'+(1+tier()),t:.7,col:'#ffd166'}); addFlow(1.5); burst(k.x,k.y,C.gold); }
+  for(const k of L.stars) if(!k.got&&Math.abs(P.x+P.w/2-k.x)<11&&Math.abs(P.y+P.h/2-k.y)<12){ k.got=true; save.stars[k.id]=true; persist(); sfx('secret'); addFlow(20); burst(k.x,k.y,'#ffe14d',14,90); showMsg('Geheimnis gefunden!'); floaters.push({x:k.x,y:k.y-8,txt:'★',t:1.1,col:'#ffe14d'}); }
+  { const c0=Math.floor(P.x/TS), c1=Math.floor((P.x+P.w-.01)/TS), r0=Math.floor(P.y/TS), r1=Math.floor((P.y+P.h-.01)/TS);
+    for(let r=r0;r<=r1;r++) for(let c=c0;c<=c1;c++) if(tileAt(c,r)==='H'&&!L.reveal.has(c+','+r)) revealHidden(c,r); }
   for(const k of L.crystals) if(!k.got&&Math.abs(P.x+P.w/2-k.x)<11&&Math.abs(P.y+P.h/2-k.y)<13){ k.got=true; save.crystals[k.id]=true; sfx('crystal'); persist(); addFlow(20); burst(k.x,k.y,C.sky,12,80); showMsg('Kristall gefunden!'); floaters.push({x:k.x,y:k.y-8,txt:'◆',t:1,col:'#7fe0ff'}); }
   // Checkpoints
   for(const k of L.checkpoints) if(!k.on&&P.x>k.x&&Math.abs(P.y+P.h-k.bottom)<48){ k.on=true; cpPos={x:k.x+3,y:k.bottom-P.h}; burst(k.x+1,k.bottom-30,C.ember,10,60); showMsg('Checkpoint'); sfx('checkpoint'); }
@@ -1022,6 +1106,63 @@ function update(dt){
   }
 }
 let ribbon=[], floaters=[];
+// ---------- Gegner-Verhalten ----------
+function walkStep(e,speed,dt){ e.x+=e.dir*speed*dt; const front=e.dir>0?e.x+e.w:e.x, fc=Math.floor(front/TS), er=Math.floor((e.y+e.h-1)/TS);
+  if(solid(fc,er)||!solid(fc,er+1)||tileAt(fc,er)==='^'){ e.dir*=-1; e.x+=e.dir*2; return true; } return false; }
+function revealHidden(c,r){
+  const st=[[c,r]]; let n=0;
+  while(st.length){ const [x,y]=st.pop(), k=x+','+y; if(tileAt(x,y)!=='H'||L.reveal.has(k)) continue; L.reveal.add(k); n++; st.push([x+1,y],[x-1,y],[x,y+1],[x,y-1]); }
+  if(n){ sfx('secret'); showMsg('Geheimgang!'); }
+}
+function killEnemy(e,bounce){ e.alive=false; e.squish=.5; sfx('stomp');
+  if(bounce){ P.vy=-PH.stomp; P.rising=true; P.cut=false; P.hold=0; P.usedDouble=false; }
+  addFlow(12); burst(e.x+e.w/2,e.y+4,ETYPE[e.type].col,8,60); }
+function updateEnemies(dt){
+  const pcx=P.x+P.w/2, pcy=P.y+P.h/2;
+  for(const e of L.enemies){
+    if(!e.alive){ e.squish=Math.max(0,e.squish-dt); continue; }
+    e.t+=dt; const dx=pcx-(e.x+e.w/2), dy=pcy-(e.y+e.h/2);
+    switch(e.type){
+      case 'beetle': walkStep(e,28,dt); break;
+      case 'igel': walkStep(e,22,dt); break;
+      case 'wespe': { const nx=e.spawn.x+Math.sin(e.t*.9)*e.range*TS; e.dir=nx>e.x?1:-1; e.x=nx; e.y=e.spawn.y+Math.sin(e.t*3)*5; break; }
+      case 'skorpion':
+        if(e.state==='wind'){ e.timer-=dt; if(e.timer<=0){ e.state='charge'; e.timer=.9; } }
+        else if(e.state==='charge'){ e.timer-=dt; if(walkStep(e,95,dt)||e.timer<=0){ e.state='rest'; e.timer=1; } }
+        else if(e.state==='rest'){ e.timer-=dt; if(e.timer<=0) e.state='idle'; }
+        else { walkStep(e,18,dt); if(Math.abs(dx)<TS*5&&Math.abs(dy)<TS*1.5){ e.dir=Math.sign(dx)||e.dir; e.state='wind'; e.timer=.45; } }
+        break;
+      case 'frosch': {
+        e.vy+=900*dt; e.y+=e.vy*dt; e.x+=e.vx*dt;
+        const fc=Math.floor((e.vx>0?e.x+e.w:e.x)/TS), er=Math.floor((e.y+e.h-1)/TS); if(e.vx&&solid(fc,er)){ e.x-=e.vx*dt; e.vx=0; }
+        const c0=Math.floor((e.x+1)/TS), c1=Math.floor((e.x+e.w-1)/TS), rb=Math.floor((e.y+e.h)/TS);
+        e.ground=false; if(e.vy>=0) for(let c=c0;c<=c1;c++) if(solid(c,rb)){ e.y=rb*TS-e.h; e.vy=0; e.vx=0; e.ground=true; break; }
+        if(e.ground){ e.timer-=dt; if(e.timer<=0){
+          let d=Math.abs(dx)<TS*6?(Math.sign(dx)||e.dir):-e.dir;
+          const lc=Math.floor((e.x+e.w/2+d*TS*2.2)/TS); if(!solid(lc,rb)) d=-d;   // nicht in Abgründe hüpfen
+          e.dir=d; e.vx=d*55; e.vy=-270; e.timer=1.3+Math.random()*.6; } }
+        if(e.y>L.h*TS+40) e.alive=false;
+        break; }
+      case 'fisch':
+        if(e.state==='leap'){ e.vy+=650*dt; e.y+=e.vy*dt; if(e.vy>0&&e.y>=e.spawn.y){ e.y=e.spawn.y; e.state='idle'; e.timer=1.8+Math.random()*1.2; } }
+        else { e.timer-=dt; if(e.timer<=0){ e.state='leap'; e.vy=-340; } }
+        break;
+      case 'geist': {
+        const near=Math.hypot(dx,dy)<TS*7, tx=near?dx:e.spawn.x-e.x, ty=near?dy:e.spawn.y-e.y, d=Math.hypot(tx,ty)||1, sp=near?24:14;
+        if(d>2){ e.x+=tx/d*sp*dt; e.y+=ty/d*sp*dt; } if(Math.abs(tx)>1) e.dir=tx>0?1:-1; e.bob=Math.sin(e.t*2.4)*2;
+        break; }
+    }
+    const T=ETYPE[e.type];
+    if(e.type==='fisch'&&(e.state!=='leap'||e.y>e.spawn.y-10)) continue;
+    const by=e.y+e.bob;
+    if(P.x+P.w>e.x+1&&P.x<e.x+e.w-1&&P.y+P.h>by+1&&P.y<by+e.h){
+      if(P.dashT>0&&T.dash) killEnemy(e,false);
+      else if(T.stomp&&P.vy>0&&P.y+P.h-by<9) killEnemy(e,true);
+      else if(!dbg.god){ die(); return true; }
+    }
+  }
+  return false;
+}
 function tickParticles(dt){ for(const p of particles){ p.x+=p.vx*dt; p.y+=p.vy*dt; p.vy+=300*dt; p.t-=dt; } particles=particles.filter(p=>p.t>0);
   for(const r of ribbon) r.t-=dt; ribbon=ribbon.filter(r=>r.t>0);
   for(const f of floaters){ f.y-=22*dt; f.t-=dt; } floaters=floaters.filter(f=>f.t>0); }
@@ -1283,10 +1424,13 @@ function drawTiles(c0,c1,r0,r1){
     const t=L.grid[r][c]; if(t===' '||t==='~') continue;
     if(SLOPES[t]){ slopes.push([c,r,t]); continue; }
     const x=c*TS, y=r*TS, v=(c*7+r*3)%3;
-    if(t==='#'){
+    if(t==='#'||t==='H'){
       const top=(r===0||!isGroundCh(L.grid[r-1][c]));
-      const st=styleAt(c);
+      const st=styleAt(c), hid=t==='H', shown=hid&&L.reveal.has(c+','+r);
+      if(shown) ctx.globalAlpha=.32;
       ctx.drawImage(top?T.top[st][v]:T.body[st][v],x,y);
+      if(hid&&!shown){ ctx.fillStyle='rgba(26,16,32,.22)'; ctx.fillRect(x+5,y+9,2,1); ctx.fillRect(x+10,y+4,1,2); }
+      ctx.globalAlpha=1;
       ctx.fillStyle='rgba(26,16,32,.55)';
       if(c>0&&!isGroundCh(L.grid[r][c-1])) ctx.fillRect(x,y,1,TS);
       if(c<L.w-1&&!isGroundCh(L.grid[r][c+1])) ctx.fillRect(x+TS-1,y,1,TS);
@@ -1304,6 +1448,11 @@ function drawWater(c0,c1,r0,r1){
     const x=c*TS, y=r*TS, surf=r===0||L.grid[r-1][c]!=='~';
     ctx.fillStyle=surf?C.water:C.waterD; ctx.fillRect(x,surf?y+6:y,TS,surf?TS-6:TS);
     if(surf){ ctx.fillStyle=C.waterL; for(let i=0;i<TS;i+=4){ const w=Math.sin(clock*3+(x+i)*.3); ctx.fillRect(x+i,y+6+Math.round(w),3,1); } } }
+}
+function drawBack(c0,c1,r0,r1){
+  for(let r=r0;r<=r1;r++) for(let c=c0;c<=c1;c++){ if(!L.back[r]?.[c]) continue; const t=L.grid[r][c];
+    if(t!==' '&&t!=='~'&&t!=='H'&&t!=='^') continue;
+    const x=c*TS, y=r*TS; ctx.drawImage(T.body[styleAt(c)][(c*7+r*3)%3],x,y); ctx.fillStyle='rgba(8,6,18,.62)'; ctx.fillRect(x,y,TS,TS); }
 }
 function drawUpdrafts(c0,c1,r0,r1){
   for(let r=r0;r<=r1;r++) for(let c=c0;c<=c1;c++){ if(!L.up[r]?.[c]) continue;
@@ -1333,8 +1482,8 @@ function drawDoors(){ for(const d of L.doors){
   if(save.done[d.world]){ ctx.fillStyle=C.gold; ctx.fillRect(x+10,y+3,4,3); }
   ctx.textAlign='center'; ctx.font='7px Silkscreen, monospace';
   ctx.fillStyle='#1a1020'; const lbl=d.world?`${d.world} ${NAMES[d.world]}`:'⌂ Hubwelt'; ctx.fillText(lbl,d.x+9,y-13); ctx.fillStyle=C.cream; ctx.fillText(lbl,d.x+8,y-14);
-  if(d.world){ const total=Object.keys(save.crystals).filter(k=>k.startsWith(d.world+'-')).length;
-  ctx.font='6px Silkscreen, monospace'; ctx.fillStyle=C.sky; ctx.fillText(`◆ ${total}/3`,d.x+8,y-5); }
+  if(d.world){ const total=Object.keys(save.crystals).filter(k=>k.startsWith(d.world+'-')).length, st=Object.keys(save.stars||{}).filter(k=>k.startsWith(d.world+'-')).length;
+  ctx.font='6px Silkscreen, monospace'; ctx.fillStyle=C.sky; ctx.fillText(`◆ ${total}/3`,d.x+2,y-5); ctx.fillStyle='#ffe14d'; ctx.fillText(`★ ${st}/2`,d.x+20,y-5); }
   if(d.t>0){ ctx.strokeStyle=C.ember; ctx.lineWidth=2; ctx.beginPath(); ctx.arc(d.x+8,y+19,9,-Math.PI/2,-Math.PI/2+Math.PI*2*Math.min(1,d.t/.7)); ctx.stroke(); }
 } }
 function drawHubHints(){
@@ -1354,13 +1503,25 @@ function drawGoal(){ if(!L.goal) return; const x=L.goal.x-4, b=L.goal.bottom, co
 }
 function drawCoins(xl,xr){ for(const k of L.coins){ if(k.got||k.x<xl||k.x>xr) continue;
   ctx.drawImage(COIN_SEQ[Math.floor(clock*8+k.x*.05)%4],Math.round(k.x-4),Math.round(k.y-5+Math.sin(clock*2+k.x)*1.5)); } }
+function drawStars(){ for(const k of L.stars){ const w=Math.max(2,Math.round(12*Math.abs(Math.cos(clock*2.5+k.x)))), y=Math.round(k.y-6+Math.sin(clock*2+k.x)*1.5);
+  ctx.globalAlpha=k.got?.28:1; ctx.drawImage(STAR,Math.round(k.x-w/2),y,w,12); ctx.globalAlpha=1;
+  if(!k.got&&Math.random()<.06) particles.push({x:k.x+(Math.random()-.5)*12,y:k.y,vx:0,vy:-18,t:.5,col:'#ffe14d'}); } }
 function drawCrystals(){ for(const k of L.crystals){ const y=Math.round(k.y-6+Math.sin(clock*2.4+k.x)*2);
   ctx.globalAlpha=k.got?.28:1; ctx.drawImage(CRYSTAL,Math.round(k.x-5),y); ctx.globalAlpha=1;
   if(!k.got&&Math.random()<.04) particles.push({x:k.x+(Math.random()-.5)*10,y:k.y,vx:0,vy:-20,t:.5,col:C.sky}); } }
 function drawEnemies(){ for(const e of L.enemies){
-  const x=Math.round(e.x)-2, y=Math.round(e.y+e.h)-11;
-  if(!e.alive){ if(e.squish>0){ ctx.globalAlpha=Math.min(1,e.squish*2); ctx.drawImage(BEETLE_A.r,x,y+8,16,4); ctx.globalAlpha=1; } continue; }
-  ctx.drawImage((Math.floor(clock*8+e.x0)%2?BEETLE_B:BEETLE_A)[e.dir>0?'r':'l'],x,y);
+  const T=ETYPE[e.type], fr=Math.floor(clock*8+e.spawn.x*.13)%2, side=e.dir>0?'r':'l';
+  let img;
+  if(e.type==='beetle') img=(fr?BEETLE_B:BEETLE_A)[side];
+  else { let f=fr; if(e.type==='frosch') f=e.ground?0:1; else if(e.type==='skorpion'&&e.state==='charge') f=Math.floor(clock*16)%2; img=ES[e.type][f][side]; }
+  const sh=img.height, x=Math.round(e.x+e.w/2-8);
+  const y=T.fly?Math.round(e.y+e.h/2-sh/2+e.bob):Math.round(e.y+e.h)-T.foot;
+  if(!e.alive){ if(e.squish>0){ ctx.globalAlpha=Math.min(1,e.squish*2); ctx.drawImage(img,x,y+sh-4,16,4); ctx.globalAlpha=1; } continue; }
+  if(e.type==='fisch'){ if(e.state!=='leap'||e.y>e.spawn.y-8) continue;
+    ctx.save(); ctx.translate(x+8,y+sh/2); ctx.rotate(e.vy<0?Math.PI/2:-Math.PI/2); ctx.drawImage(ES.fisch[fr].l,-8,-sh/2); ctx.restore(); continue; }
+  if(e.type==='geist') ctx.globalAlpha=.85;
+  if(e.type==='skorpion'&&e.state==='wind'&&Math.floor(clock*20)%2) ctx.globalAlpha=.45;
+  ctx.drawImage(img,x,y); ctx.globalAlpha=1;
 } }
 function heroFrame(){
   if(P.dashT>0) return HERO_FR.runA;
@@ -1421,10 +1582,10 @@ function draw(){
   const r0=Math.max(0,Math.floor(cy/TS)-1), r1=Math.min(L.h-1,Math.ceil((cy+viewH)/TS)+1);
   const xl=c0*TS-40, xr=(c1+1)*TS+40;
   for(const d of L.decor) if(d.back&&d.x>xl&&d.x<xr) drawDecorBack(d);
-  drawUpdrafts(c0,c1,r0,r1); drawWater(c0,c1,r0,r1); drawTiles(c0,c1,r0,r1); drawMovers(); drawSprings();
+  drawBack(c0,c1,r0,r1); drawUpdrafts(c0,c1,r0,r1); drawWater(c0,c1,r0,r1); drawTiles(c0,c1,r0,r1); drawMovers(); drawSprings();
   for(const d of L.decor) if(!d.back&&d.x>xl&&d.x<xr) drawDecorFront(d);
   if(tint>0){ ctx.fillStyle=`rgba(10,16,40,${tint})`; ctx.fillRect(cx-4,cy-4,viewW+8,viewH+8); }
-  drawCheckpoints(); drawDoors(); drawHubHints(); drawGoal(); drawCoins(xl,xr); drawCrystals(); drawEnemies();
+  drawCheckpoints(); drawDoors(); drawHubHints(); drawGoal(); drawCoins(xl,xr); drawCrystals(); drawStars(); drawEnemies();
   for(const p of particles){ ctx.globalAlpha=Math.max(0,Math.min(1,p.t/.4)); ctx.fillStyle=p.col; ctx.fillRect(Math.round(p.x),Math.round(p.y),2,2); }
   ctx.globalAlpha=1;
   drawRibbon();
@@ -1676,10 +1837,11 @@ function collectLights(){
   add(P.x+P.w/2,P.y+P.h/2,state==='celebrate'?130:(L.style==='snow'?90:72),state==='celebrate'?wc:'#ffe2b8',state==='celebrate'?1.4:1,.3,0);
   if(L.goal) add(L.goal.x+8,L.goal.bottom-24,48,wc,1,1,1);
   for(const k of L.crystals) if(!k.got) add(k.x,k.y,32,'#7fe0ff',.9,1,1);
+  for(const k of L.stars) if(!k.got) add(k.x,k.y,30,'#ffe14d',.9,1,1);
   for(const d of L.doors) add(d.x+8,d.bottom-16,40,WORLD_COL[d.world]||'#f6ead2',.8,.8,2);
   for(const k of L.checkpoints) add(k.x+8,k.bottom-28,k.on?34:20,k.on?'#f2a65a':'#9aa4b8',k.on?.8:.35,.8,2);
   for(const k of L.coins) if(!k.got) add(k.x,k.y,15,'#ffd166',.7,1,3);
-  for(const e of L.enemies) if(e.alive) add(e.x+6,e.y+4,11,'#ff5a5a',.5,.5,3);
+  for(const e of L.enemies) if(e.alive&&!(e.type==='fisch'&&e.state!=='leap')) add(e.x+e.w/2,e.y+e.h/2+e.bob,e.type==='geist'?26:11,ETYPE[e.type].light,e.type==='geist'?.7:.5,.5,3);
   if(out.length>MAX_LIGHTS){ const px=.5; out.sort((a,b)=>a[8]-b[8]||Math.abs(a[0]-px)-Math.abs(b[0]-px)); out.length=MAX_LIGHTS; }
   return out;
 }
@@ -1699,10 +1861,10 @@ function updateHud(){
   if(dbg.info) dbgInfo.textContent=`vx ${P.vx.toFixed(0)} · vy ${P.vy.toFixed(0)} · max ${(PH.max+tier()*PH.tierBonus).toFixed(0)} · Schwung ${flow.toFixed(0)}`;
   if(L.id==='hub'){
     const total=Object.keys(save.crystals).length;
-    hc.textContent=`◆ ${total}/13 · ● ${save.wallet}`;
+    hc.textContent=`◆ ${total}/13 · ★ ${Object.keys(save.stars||{}).length}/8 · ● ${save.wallet}`;
     hr.innerHTML=['double','wall','dash','glide'].map(a=>`<span class="pill${save.ab[a]?' on':''}">${AB_INFO[a].short}</span>`).join('');
   } else {
-    hc.textContent=`◆ ${L.crystals.filter(k=>k.got).length}/${L.crystals.length} · ● ${levelCoins}/${L.coins.length}`;
+    hc.textContent=`◆ ${L.crystals.filter(k=>k.got).length}/${L.crystals.length} · ★ ${L.stars.filter(k=>k.got).length}/${L.stars.length} · ● ${levelCoins}/${L.coins.length}`;
     hr.textContent=time.toFixed(1)+'s';
   }
   flowFill.style.width=flow+'%';
