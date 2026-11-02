@@ -18,6 +18,7 @@
   --pixel:"Silkscreen", ui-monospace, "Courier New", monospace;
   color-scheme:dark;
 }
+[hidden]{display:none!important}
 html,body{height:100%;margin:0;overflow:hidden;background:var(--night);color:var(--cream);
   touch-action:none;user-select:none;-webkit-user-select:none;-webkit-touch-callout:none;overscroll-behavior:none}
 canvas{position:fixed;inset:0;width:100vw;height:100vh;display:block;image-rendering:pixelated}
@@ -120,6 +121,7 @@ canvas{position:fixed;inset:0;width:100vw;height:100vh;display:block;image-rende
   </div>
 </div>
 <div class="panel" id="debug" hidden>
+  <button class="btn ghost" id="dbgx" type="button" style="align-self:flex-end">✕ Schließen</button>
   <h1>Debug</h1>
   <p>Änderungen wirken sofort und bleiben in diesem Browser gespeichert.</p>
   <div class="tunes" id="tunes"></div>
@@ -1118,15 +1120,16 @@ document.getElementById('pmain').addEventListener('click',()=>{ pauseEl.hidden=t
 function openDebug(from){ debugFrom=from; if(from==='pause') pauseEl.hidden=true; else startEl.hidden=true; dbgOut.hidden=true; buildTunes(); debugEl.hidden=false; }
 // Debug ist versteckt: „Spielen“ bzw. „☰ Menü“ 1,5 Sekunden gedrückt halten
 function longPress(el,ms,onLong,onShort){
-  let timer=0, fired=false;
-  el.addEventListener('pointerdown',e=>{ e.stopPropagation(); fired=false; clearTimeout(timer); timer=setTimeout(()=>{ fired=true; onLong(); },ms); });
-  for(const ev of ['pointerup','pointerleave','pointercancel']) el.addEventListener(ev,()=>clearTimeout(timer));
-  el.addEventListener('click',e=>{ if(fired){ fired=false; e.preventDefault(); return; } onShort(); });
+  let downAt=0;
+  el.addEventListener('pointerdown',e=>{ e.stopPropagation(); downAt=performance.now(); });
+  el.addEventListener('pointercancel',()=>{ downAt=0; });
+  el.addEventListener('click',()=>{ const held=downAt&&performance.now()-downAt>=ms; downAt=0; held?onLong():onShort(); });
   el.addEventListener('contextmenu',e=>e.preventDefault());
 }
 longPress(document.getElementById('play'),1500,()=>openDebug('start'),begin);
 const gearBtn=document.getElementById('gear');
 longPress(gearBtn,1500,()=>{ if(state==='play'){ state='pause'; clearInput(); openDebug('pause'); } },()=>{ if(state==='play') openPause(); });
+document.getElementById('dbgx').addEventListener('click',()=>document.getElementById('dbgclose').click());
 document.getElementById('dbgclose').addEventListener('click',()=>{ debugEl.hidden=true; if(debugFrom==='pause') resume(); else startEl.hidden=false; });
 document.getElementById('dbgreset').addEventListener('click',()=>{ Object.assign(PH,PH_DEFAULT); VIEW_H=VIEW_DEFAULT; resize(); saveTune(); buildTunes(); });
 document.getElementById('dbgcopy').addEventListener('click',()=>{
