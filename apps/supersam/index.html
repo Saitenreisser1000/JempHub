@@ -662,7 +662,7 @@ const P={w:10,h:14,x:0,y:0,vx:0,vy:0,ground:false,face:1,coyote:0,buffer:0,squas
   usedDouble:false,airDash:false,dashT:0,dashDir:1,dashCD:0,wallDir:0,kickT:0,glide:false};
 const PH={max:150,accG:700,accA:450,fricG:800,fricA:90,tierBonus:10,grav:1150,jump:300,airJump:270,fall:420,coyote:.1,buffer:.13,
   holdMax:.18,holdGrav:.3,cutGrav:2.0,spring:560,stomp:280,
-  camLook:1.4,camSmooth:7,camSmoothY:12,camZoom:.28,fxDark:1,fxBloom:1,kickX:95,kickY:330,kickT:.14,slide:70,dashSpeed:220,dashT:.2,glideFall:40,upLift:2000,upMax:220,upSpeed:45};
+  camLook:1.4,camSmooth:7,camSmoothY:12,camZoom:.28,camFrame:1,fxDark:1,fxBloom:1,kickX:95,kickY:330,kickT:.14,slide:70,dashSpeed:220,dashT:.2,glideFall:40,upLift:2000,upMax:220,upSpeed:45};
 
 function resetPlayer(p){
   Object.assign(P,{x:p.x,y:p.y,vx:0,vy:0,ground:false,buffer:0,plat:null,rising:false,usedDouble:false,airDash:false,dashT:0,kickT:0,glide:false,wallDir:0});
@@ -1602,7 +1602,7 @@ function draw(){
 // Federnd gedämpft (kein Ruck), Mittelpunkt-basiert (Zoom verschiebt nichts),
 // Blickrichtung mit Verzögerung, Bodenhöhe als Anker, Fenster für große Höhen, Vorausschau aufs Gelände.
 let zoom=1, viewH=150;
-const CAM={cx:0,cy:0,vx:0,vy:0,look:0,vlook:0,lookDir:1,dirT:0,base:0,ahead:0,vahead:0,fall:0,vfall:0,zv:0,spd:0,snap:true};
+const CAM={fz:1,fk:0,fcy:0,vfk:0,vfcy:0,cx:0,cy:0,vx:0,vy:0,look:0,vlook:0,lookDir:1,dirT:0,base:0,ahead:0,vahead:0,fall:0,vfall:0,zv:0,spd:0,snap:true};
 function applyZoom(){ viewH=VIEW_H*zoom*(1-punch); scale=cv.height/viewH; viewW=cv.width/scale; }
 function damp(cur,target,st,key,dt,obj){ // kritisch gedämpfte Feder (SmoothDamp)
   const o=2/Math.max(.0001,st), x=o*dt, e=1/(1+x+.48*x*x+.235*x*x*x), ch=cur-target, tmp=(obj[key]+o*ch)*dt;
@@ -1622,9 +1622,25 @@ function surfaceAhead(dir){
   }
   return {y:wsum?sum/wsum:null, gaps};
 }
+function frameAhead(dir){
+  // Sucht in Laufrichtung (2–12 Kacheln) die höchste und tiefste Fläche, auf der Sam landen könnte (auch Wasser/Abgrund)
+  const c0=Math.floor((P.x+P.w/2)/TS), base=CAM.base, r0=Math.floor(base/TS);
+  let up=0, down=0, gap=false;
+  for(let d=2;d<=12;d++){ const c=c0+dir*d; if(c<0||c>=L.w) break;
+    let any=false;
+    for(let r=Math.max(1,r0-14);r<=Math.min(L.h-1,r0+10);r++){
+      const t=tileAt(c,r), above=tileAt(c,r-1);
+      const stand=(solid(c,r)||t==='~')&&!solid(c,r-1)&&above!=='~'&&t!=='^';
+      if(!stand) continue; any=true; const y=r*TS;
+      if(y<base) up=Math.max(up,base-y); else down=Math.max(down,y-base); }
+    for(const m of L.movers) if(c*TS+8>m.x&&c*TS+8<m.x+m.w&&Math.abs(m.y-base)<TS*12){ any=true; if(m.y<base) up=Math.max(up,base-m.y); else down=Math.max(down,m.y-base); }
+    if(!any) gap=true; }
+  if(gap) down=Math.max(down,Math.min(TS*6,L.h*TS-base));
+  return {up,down};
+}
 function cameraSnap(){
   CAM.base=P.y+P.h; CAM.lookDir=P.face; CAM.dirT=0; CAM.look=P.face*viewW*.1; CAM.vlook=0; CAM.ahead=0; CAM.vahead=0; CAM.fall=0; CAM.vfall=0;
-  CAM.vx=0; CAM.vy=0; CAM.zv=0; CAM.spd=0; zoom=1; applyZoom();
+  CAM.vx=0; CAM.vy=0; CAM.zv=0; CAM.spd=0; CAM.fk=0; CAM.fkT=0; CAM.fzT=1; CAM.vfk=0; CAM.fcy=0; CAM.vfcy=0; zoom=1; applyZoom();
   CAM.cx=P.x+P.w/2+CAM.look; CAM.cy=CAM.base-viewH*.17; clampCam(); CAM.snap=true;
 }
 function clampCam(){
@@ -1654,17 +1670,28 @@ function camera(dt){
     let d=a.y!==null?Math.max(-TS*3,Math.min(TS*4,a.y-CAM.base))*.4:0; if(a.gaps>=5) d=Math.max(d,TS*1.2);
     CAM.aheadT=d*PH.camLook/1.4; }
   CAM.ahead=damp(CAM.ahead,CAM.aheadT||0,.4,'vahead',dt,CAM);
+  // Einrahmen: liegt die nächste Fläche deutlich höher/tiefer, auszoomen und beides zeigen
+  if(P.ground){ const f=frameAhead(CAM.lookDir);
+    const top=CAM.base-f.up-TS*2.6, bot=CAM.base+f.down+TS*1.3, need=bot-top;
+    const fz=Math.min(1+1.05*PH.camFrame,Math.max(1,need/VIEW_H));
+    CAM.fzT=fz; CAM.fkT=Math.max(0,Math.min(1,(f.up+f.down-TS*3)/(TS*2)))*(PH.camFrame>0?1:0);
+    const vmax=VIEW_H*fz;   // passt nicht alles hinein: so weit wie möglich Richtung Ziel, Sam bleibt im Bild
+    CAM.fcyT=need<=vmax?(top+bot)/2:(f.up>=f.down?CAM.base+TS*1.3-vmax/2:CAM.base-TS*2.6+vmax/2); }
+  CAM.fk=damp(CAM.fk,CAM.fkT||0,.35,'vfk',dt,CAM);
+  CAM.fcy=CAM.fcy?damp(CAM.fcy,CAM.fcyT||CAM.cy,.3,'vfcy',dt,CAM):(CAM.fcyT||CAM.cy);
   // Blick nach unten nur beim Fall unter die Standhöhe
   const fallT=(!P.ground&&!P.glide&&P.vy>120&&feet>CAM.base+TS*.25)?Math.min(TS*3,(P.vy-120)*.35):0;
   CAM.fall=damp(CAM.fall,fallT,fallT>CAM.fall?.22:.15,'vfall',dt,CAM);
   // Zoom: nur bei anhaltendem Tempo und Schwung, langsam
   const want=Math.min(1,sf*.7+tier()*.1);
-  zoom=damp(zoom,1+PH.camZoom*want,1.1,'zv',dt,CAM);
+  const zT=Math.max(1+PH.camZoom*want,1+((CAM.fzT||1)-1)*CAM.fk);
+  zoom=damp(zoom,zT,zT>zoom?.45:1,'zv',dt,CAM);          // schnell hinaus, langsam wieder hinein
   punch+=(punchT-punch)*Math.min(1,dt*14); punchT=Math.max(0,punchT-dt*.18);
   applyZoom();
   // Ziele und Federn
   const tx=P.x+P.w/2+CAM.look;
-  const ty=anchor+CAM.ahead+CAM.fall-viewH*.17;   // Füße bei ca. 67 % der Bildhöhe
+  const ty0=anchor+CAM.ahead+CAM.fall-viewH*.17;   // Füße bei ca. 67 % der Bildhöhe
+  const fk=P.ground||feet<=CAM.base+TS?CAM.fk:CAM.fk*.5, ty=ty0+(Math.min(CAM.fcy,anchor+viewH*.33-TS)-ty0)*fk;
   const W=L.w*TS, H=L.h*TS, ctx_=Math.max(viewW/2,Math.min(W-viewW/2,tx)), cty=Math.max(viewH/2,Math.min(H-viewH/2,ty));
   // Nachführzeit: stufenlos kürzer, je tiefer Sam unter die Standhöhe fällt oder je schneller er ist
   const fallK=Math.max(0,Math.min(1,(feet-CAM.base)/(TS*2)));
@@ -1706,6 +1733,7 @@ const TUNES=[
   ['camSmooth','Kamera: Nachführtempo seitlich',1,20,0.5],
   ['camSmoothY','Kamera: Nachführtempo vertikal',1,24,0.5],
   ['camZoom','Kamera: Herauszoomen bei Tempo',0,0.5,0.01],
+  ['camFrame','Kamera: Auszoomen für hohe/tiefe Plattformen',0,1.5,0.05],
   ['fxDark','Licht: Stärke der Dunkelheit',0,1.5,0.05],
   ['fxBloom','Licht: Überstrahlen',0,1.5,0.05]];
 try{ const t=JSON.parse(localStorage.getItem(TUNE_KEY)||'null'); if(t){ Object.assign(PH,t.ph||{}); if(t.viewH) VIEW_H=t.viewH; Object.assign(dbg,t.dbg||{}); } }catch(_){}
@@ -1933,7 +1961,7 @@ function frame(now){
   requestAnimationFrame(frame);
 }
 resize(); loadLevel('hub'); requestAnimationFrame(frame);
-window.__dz={get cam(){return {camX,camY,cx:CAM.cx,cy:CAM.cy};},PH,setFlow:v=>{flow=v;},startCelebrate,ITEM,playStep,schedule,audioInit,playSong,sfx,SFX,AU,loadLevel,update,P,save,get L(){return L;},setState:s=>{state=s;},finishLevel};
+window.__dz={get cam(){return {camX,camY,cx:CAM.cx,cy:CAM.cy,zoom,viewH,viewW};},PH,setFlow:v=>{flow=v;},startCelebrate,ITEM,playStep,schedule,audioInit,playSong,sfx,SFX,AU,loadLevel,update,P,save,get L(){return L;},setState:s=>{state=s;},finishLevel};
 })();
 </script>
 
