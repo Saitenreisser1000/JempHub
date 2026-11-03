@@ -187,6 +187,7 @@ body.title .hud,body.title .zone,body.title #msg,body.title #tut{display:none!im
   <div class="row" style="flex-direction:column;align-items:stretch;min-width:220px">
     <button class="btn" id="presume" type="button">Weiter</button>
     <button class="btn ghost" id="phub" type="button">Zur Hubwelt</button>
+    <button class="btn ghost" id="ppractice" type="button">Übungswiese</button>
     <button class="btn ghost" id="pmain" type="button">Hauptmenü</button>
   </div>
   <div class="tunes" style="max-width:380px">
@@ -556,6 +557,16 @@ const DEFS={
     b.updraft(143,145,2,22); b.plat(3,146,149); b.crystal(148,2);                  // Geheimnis: nur mit Gleiten
     b.door(152,22,'b1',7); b.door(162,22,'b2',10); b.door(172,22,'b3',12);   // Endgegner-Tore: Diamanten nötig
   }},
+  // Übungswiese beim ersten Start: jede Station verlangt genau einen Handgriff, ohne Gegner und Abgründe
+  uebung:{name:'Übungswiese',w:96,h:20,top:17,style:'meadow',noReturn:true,build(b){
+    b.ground(0,95); b.rect(0,0,0,16); b.start(6,16); b.coins(16,9,14); b.coins(16,2,4);
+    b.rect(26,16,27,16); b.coins(14,26,27);                                   // Station 3: Kiste – kurz springen
+    b.rect(38,14,39,16); b.coins(12,38,39);                                   // Station 4: Mauer – länger halten
+    b.clear(47,17,49,18); b.coins(15,47,49);                                  // Station 5: Graben – Anlauf und springen
+    b.rect(54,12,62,14); b.coins(16,55,61);                                   // Station 6: niedriger Gang …
+    b.rect(65,14,72,16); b.coins(12,65,68);                                   // … dann steil nach oben auf den Block
+    b.coins(16,76,80); b.door(86,16,0);
+  }},
   b1:{name:'Igelkönig',w:36,h:16,top:13,style:'forest',arena:{floor:13,left:1,right:35,bx:24,ceil:0,view:4},build(b){
     b.ground(0,35); b.rect(0,0,0,15); b.rect(35,0,35,15); b.start(3,12); b.plat(9,8,11); b.plat(9,24,27);
   }},
@@ -908,7 +919,7 @@ function makeLevel(id){
       return x; }
   };
   d.build(b);
-  if(id!=='hub') L.doors.push({x:1*TS,bottom:L.start.y+14,world:0,t:0});
+  if(id!=='hub'&&!d.noReturn) L.doors.push({x:1*TS,bottom:L.start.y+14,world:0,t:0});
   if(d.arena){ L.arena=true; L.boss=initBoss(id); }
   // Deko
   const rnd=rngFrom(typeof id==='number'?id*101+7:5);
@@ -1175,12 +1186,13 @@ function playSong(id){ if(!AU.ctx) return; const s=SONGS[id]||SONGS.hub; if(AU.s
 const startEl=document.getElementById('start'), doneEl=document.getElementById('done');
 // ---------- Bewegungstutorial (beim ersten Start) ----------
 const TUT_STEPS=[
-  {t:'Halte den Daumen rechts – Sam läuft nach rechts.',zone:'r'},
-  {t:'Halte den Daumen links – Sam läuft zurück.',zone:'l'},
-  {t:'Lauf nach rechts und tipp kurz mit dem zweiten Daumen links dazu – Sprung!',zone:'both'},
-  {t:'Halte den Sprungdaumen länger – Sam springt höher.',zone:'both'},
-  {t:'Bleib stehen und setz beide Daumen gleichzeitig auf – senkrecht hoch. Danach lenkt der Daumen, den du liegen lässt.',zone:'both'},
-  {t:'Super! Steh still in einer Tür, um eine Welt zu betreten.',zone:null,end:true}];
+  {t:'Halte einen Daumen auf der rechten Hälfte – Sam läuft nach rechts.',zone:'r'},
+  {t:'Jetzt links halten – Sam läuft zurück und holt die Münzen.',zone:'l'},
+  {t:'Kiste! Lauf mit rechts hin und tipp mit dem zweiten Daumen kurz links – Sprung.',zone:'both'},
+  {t:'Die Mauer ist höher: Halte den Sprungdaumen länger – Sam springt höher.',zone:'both'},
+  {t:'Graben: Lauf an und spring kurz vor der Kante.',zone:'both'},
+  {t:'Im Gang ist es zu niedrig. Am Ende stehen bleiben, beide Daumen gleichzeitig aufsetzen – senkrecht hoch. Lass rechts liegen, um auf den Block zu lenken.',zone:'both'},
+  {t:'Geschafft! Lauf zur Tür und bleib darin stehen – sie bringt dich in die Hubwelt.',zone:'r',end:true}];
 const tutEl=document.getElementById('tut'), tutStep=document.getElementById('tstep'), tutText=document.getElementById('ttext');
 const TUT={on:false,i:0,ok:0,x0:0,y0:0,peak:0,air:false,endT:0};
 function startTutorial(){ TUT.on=true; TUT.i=0; tutShow(); }
@@ -1194,26 +1206,27 @@ function tutEnd(){ TUT.on=false; tutEl.hidden=true; zl.classList.remove('hint');
 function tutNext(){ sfx('checkpoint'); tutText.classList.add('ok'); TUT.ok=.7; }
 function tickTutorial(dt){
   if(!TUT.on||state!=='play') return;
+  if(L.id!=='uebung'){ tutEnd(); return; }
   const st=TUT_STEPS[TUT.i];
   if(TUT.ok>0){ TUT.ok-=dt; if(TUT.ok<=0){ TUT.i++; tutShow(); } return; }
-  if(st.end){ TUT.endT-=dt; if(TUT.endT<=0) tutEnd(); return; }
-  const feet=P.y+P.h;
-  if(!P.ground){ if(!TUT.air){ TUT.air=true; TUT.y0=feet; TUT.peak=0; TUT.neutral=neutral; } TUT.peak=Math.max(TUT.peak,TUT.y0-feet); }
-  const landed=P.ground&&TUT.air; if(P.ground) TUT.air=false;
+  if(st.end) return;
+  const c=(P.x+P.w/2)/TS, feet=P.y+P.h;
   switch(TUT.i){
-    case 0: if(P.x-TUT.x0>TS*3) tutNext(); break;
-    case 1: if(TUT.x0-P.x>TS*1.5||P.x<TUT.x0-TS) tutNext(); else if(P.x>TUT.x0) TUT.x0=P.x; break;
-    case 2: if(landed&&TUT.peak>TS*.8) tutNext(); break;
-    case 3: if(landed&&TUT.peak>TS*3.4) tutNext(); break;
-    case 4: if(landed&&TUT.neutral&&TUT.peak>TS*1) tutNext(); break;
+    case 0: if(c>13) tutNext(); break;
+    case 1: TUT.x0=Math.max(TUT.x0,P.x); if(TUT.x0-P.x>TS*2.5) tutNext(); break;
+    case 2: if(c>29&&P.ground) tutNext(); break;
+    case 3: if(c>41&&P.ground) tutNext(); break;
+    case 4: if(c>51&&P.ground) tutNext(); break;
+    case 5: if(c>64.5&&P.ground&&feet<=14*TS+1) tutNext(); break;
   }
 }
+function startPractice(){ loadLevel('uebung'); state='play'; startTutorial(); }
 document.getElementById('tskip').addEventListener('pointerdown',e=>e.stopPropagation());
-document.getElementById('tskip').addEventListener('click',()=>{ tutEnd(); showMsg('Tutorial übersprungen'); });
+document.getElementById('tskip').addEventListener('click',()=>{ tutEnd(); if(L.id==='uebung') loadLevel('hub'); showMsg('Übung übersprungen'); });
 function begin(){
   document.body?.classList.remove('title');
-  audioInit(); startEl.hidden=true; loadLevel('hub'); state='play';
-  if(!save.tutorialDone) startTutorial();
+  audioInit(); startEl.hidden=true;
+  if(!save.tutorialDone) startPractice(); else { loadLevel('hub'); state='play'; }
   try{ const p=document.documentElement.requestFullscreen?.({navigationUI:'hide'}); p?.then(()=>screen.orientation?.lock?.('landscape').catch(()=>{})).catch(()=>{}); }catch(_){}
 }
 document.getElementById('wipe').addEventListener('click',()=>{ save=blankSave(); persist(); document.getElementById('wipeinfo').hidden=false; });
@@ -1480,7 +1493,7 @@ function update(dt){
     const inside=d.armed&&over&&P.ground&&Math.abs(P.y+P.h-d.bottom)<4&&Math.abs(P.vx)<25;
     d.t=inside?d.t+dt:Math.max(0,d.t-dt*2);
     if(d.t>=.7&&d.need&&crystalTotal()<d.need){ d.t=0; d.armed=false; sfx('locked'); showMsg(`Noch ${d.need-crystalTotal()} Diamanten nötig`); continue; }
-    if(d.t>=.7){ clearInput(); sfx('door'); const n=d.world; if(n===0){ const w=L.id; loadLevel('hub',w); showMsg('Hubwelt'); } else { loadLevel(n); showMsg(typeof n==='number'?`Welt ${WNO(n)} · ${NAMES[n]}`:`Endgegner: ${NAMES[n]}`); } return; }
+    if(d.t>=.7){ clearInput(); sfx('door'); const n=d.world; if(n===0){ const w=L.id; if(w==='uebung'){ tutEnd(); loadLevel('hub'); showMsg('Willkommen in der Hubwelt!'); } else { loadLevel('hub',w); showMsg('Hubwelt'); } } else { loadLevel(n); showMsg(typeof n==='number'?`Welt ${WNO(n)} · ${NAMES[n]}`:`Endgegner: ${NAMES[n]}`); } return; }
   }
 }
 let ribbon=[], floaters=[];
@@ -2447,7 +2460,8 @@ function syncVol(){ document.getElementById('v-vib').checked=AU.vol.vib!==false;
 function openPause(){ syncVol(); state='pause'; clearInput(); document.getElementById('phub').hidden=(L.id==='hub'); pauseEl.hidden=false; }
 function resume(){ pauseEl.hidden=true; state='play'; last=performance.now(); }
 document.getElementById('presume').addEventListener('click',resume);
-document.getElementById('phub').addEventListener('click',()=>{ const w=L.id; loadLevel('hub',w); resume(); });
+document.getElementById('phub').addEventListener('click',()=>{ const w=L.id; if(w==='uebung') tutEnd(); loadLevel('hub',w); resume(); });
+document.getElementById('ppractice').addEventListener('click',()=>{ startPractice(); resume(); });
 document.getElementById('pmain').addEventListener('click',()=>{ document.body?.classList.add('title'); if(TUT.on){ TUT.on=false; tutEl.hidden=true; zl.classList.remove('hint'); zr.classList.remove('hint'); } pauseEl.hidden=true; state='start'; document.getElementById('wipeinfo').hidden=true; startEl.hidden=false; });
 function openDebug(from){ debugFrom=from; if(from==='pause') pauseEl.hidden=true; else startEl.hidden=true; dbgOut.hidden=true; buildTunes(); debugEl.hidden=false; }
 // Debug ist versteckt: „Spielen“ bzw. „☰ Menü“ 1,5 Sekunden gedrückt halten
@@ -2610,6 +2624,7 @@ function updateHud(){
   if(L.boss){ scoreBox.hidden=true; const B=L.boss; bossName.textContent=B.state==='gone'?'Sieg! Hol dir die Krone':BOSS_INFO[B.id].name;
     bFill.style.width=(Math.max(0,B.hp)/B.max*100)+'%'; bFill.style.background=BOSS_INFO[B.id].col;
     hcol.textContent=B.state==='intro'?BOSS_INFO[B.id].tip:''; hr.textContent=time.toFixed(1)+'s'; }
+  else if(L.id==='uebung'){ scoreBox.hidden=true; hcol.style.fontSize='14px'; hcol.textContent='Übungswiese'; hr.textContent=''; }
   else if(L.id==='hub'){
     const total=Object.keys(save.crystals).length;
     scoreBox.hidden=true; hcol.style.fontSize='14px';
@@ -2664,7 +2679,7 @@ function frame(now){
 }
 document.body?.classList.add('title');
 resize(); loadLevel('hub'); requestAnimationFrame(frame);
-window.__dz={WNO,totals,TUT,startTutorial,get neutral(){return neutral;},HF,dress,HERO_ROWS,showEnding,get endingVisible(){return !endEl.hidden;},get boss(){return L.boss;},get bossFx(){return bossFx;},die:()=>die(),get gate(){return {door:gateDoor,t:gateT};},kill:()=>{ kills++; },score,scoreParts,get cage(){return {open:cageOpen,anim:cageAnim};},addCoins:n=>{levelCoins+=n;},get cam(){return {camX,camY,cx:CAM.cx,cy:CAM.cy,zoom,viewH,viewW};},PH,setFlow:v=>{flow=v;},startCelebrate,ITEM,playStep,schedule,audioInit,playSong,sfx,SFX,AU,loadLevel,update,P,save,get L(){return L;},setState:s=>{state=s;},finishLevel};
+window.__dz={WNO,totals,TUT,startTutorial,startPractice,begin,get neutral(){return neutral;},HF,dress,HERO_ROWS,showEnding,get endingVisible(){return !endEl.hidden;},get boss(){return L.boss;},get bossFx(){return bossFx;},die:()=>die(),get gate(){return {door:gateDoor,t:gateT};},kill:()=>{ kills++; },score,scoreParts,get cage(){return {open:cageOpen,anim:cageAnim};},addCoins:n=>{levelCoins+=n;},get cam(){return {camX,camY,cx:CAM.cx,cy:CAM.cy,zoom,viewH,viewW};},PH,setFlow:v=>{flow=v;},startCelebrate,ITEM,playStep,schedule,audioInit,playSong,sfx,SFX,AU,loadLevel,update,P,save,get L(){return L;},setState:s=>{state=s;},finishLevel};
 })();
 </script>
 
