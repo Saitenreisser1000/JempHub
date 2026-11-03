@@ -21,7 +21,7 @@
 [hidden]{display:none!important}
 html,body{height:100%;margin:0;overflow:hidden;background:var(--night);color:var(--cream);
   touch-action:none;user-select:none;-webkit-user-select:none;-webkit-touch-callout:none;overscroll-behavior:none}
-canvas{position:fixed;inset:0;width:100vw;height:100vh;display:block;image-rendering:pixelated}
+canvas{position:fixed;left:0;top:0;width:100%;height:100vh;height:var(--vh,100dvh);display:block;image-rendering:pixelated}
 .hud{position:fixed;font-family:var(--pixel);font-size:14px;text-shadow:2px 2px 0 var(--ink);pointer-events:none;font-variant-numeric:tabular-nums;letter-spacing:.04em}
 #hl{top:calc(env(safe-area-inset-top,0px) + 8px);left:calc(env(safe-area-inset-left,0px) + 10px);display:flex;align-items:center;gap:10px}
 #hc{top:calc(env(safe-area-inset-top,0px) + 6px);left:50%;transform:translateX(-50%);white-space:nowrap;display:flex;flex-direction:column;align-items:center;gap:3px}
@@ -1594,13 +1594,15 @@ function die(){ shake=.25; sfx('hurt'); respawn(); P.inv=2; if(L.boss){ bossDeat
 // ---------- Darstellung ----------
 function resize(){
   const dpr=Math.min(devicePixelRatio||1,2);
+  // Bild exakt auf den sichtbaren Bereich legen (Handy-Browser: 100vh reicht unter die Adressleiste)
+  document.documentElement.style?.setProperty('--vh',innerHeight+'px');
   cv.width=Math.round(innerWidth*dpr); cv.height=Math.round(innerHeight*dpr);
   applyZoom(); skyW=cv.width/(cv.height/SKY_H);
   bgCanvas.width=cv.width; bgCanvas.height=cv.height;
   if(typeof FX!=='undefined') FX.resize(cv.width,cv.height);
   ctx.imageSmoothingEnabled=false;
 }
-addEventListener('resize',resize);
+addEventListener('resize',resize); addEventListener('orientationchange',()=>setTimeout(resize,250)); window.visualViewport?.addEventListener('resize',resize);
 
 // ---------- Themen der Welten ----------
 // Jede Welt hat eigenen Himmel, eigene Hintergrundebenen, Partikel und Bodenkacheln.
@@ -2295,7 +2297,7 @@ const FX=(()=>{
   let c, gl;
   try{
     c=document.createElement('canvas');
-    c.style.cssText='position:fixed;inset:0;width:100vw;height:100vh;display:block;pointer-events:none;image-rendering:pixelated';
+    c.style.cssText='position:fixed;left:0;top:0;width:100%;height:100vh;height:var(--vh,100dvh);display:block;pointer-events:none;image-rendering:pixelated';
     gl=c.getContext('webgl',{alpha:false,antialias:false,premultipliedAlpha:false,preserveDrawingBuffer:false});
   }catch(_){ gl=null; }
   if(!gl) return off;
