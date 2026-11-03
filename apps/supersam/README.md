@@ -1,6 +1,6 @@
 # Supersam
 
-Jump'n'Run fürs Handy im Querformat mit Sam, einem kleinen blonden Jungen, gesteuert mit zwei Daumen: ein Daumen läuft, der zweite springt. Eine Hubwelt verbindet vier Welten (Wald, Felsen, See, Gipfel); jede schenkt eine Fähigkeit (Doppelsprung, Wandsprung, Dash, Gleiten), mit der man woanders weiterkommt. Kristalle hinter späteren Fähigkeiten sorgen für Wiederspielwert, das Schwung-System belohnt flüssiges Spielen. Am Ziel sitzt das Fähigkeits-Item in einem Käfig, der erst mit genug Punkten aufgeht (Münze 10, Diamant 100, Stern 200, Restzeit 2 pro Sekunde; 3 Minuten je Welt).
+Jump'n'Run fürs Handy im Querformat mit Sam, einem kleinen blonden Jungen, gesteuert mit zwei Daumen: ein Daumen läuft, der zweite springt. Eine Hubwelt verbindet vier Welten (Wald, Felsen, See, Gipfel); jede schenkt eine Fähigkeit (Doppelsprung, Wandsprung, Dash, Gleiten), mit der man woanders weiterkommt. Kristalle hinter späteren Fähigkeiten sorgen für Wiederspielwert, das Schwung-System belohnt flüssiges Spielen. Am Ziel sitzt das Fähigkeits-Item in einem Käfig, der erst mit genug Punkten aufgeht (Münze 10, Diamant 100, Stern 200, Gegner +50, Tod −100, Restzeit 2 pro Sekunde; 3 Minuten je Welt). Mit zu wenig Punkten wird der Käfig zur Tür, die die Welt neu startet.
 
 ## Technik
 

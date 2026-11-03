@@ -584,10 +584,10 @@ function makeLevel(id){
     updraft:(c0,c1,r0,r1)=>{ for(let r=r0;r<=r1;r++) for(let c=c0;c<=c1;c++) if(L.up[r]) L.up[r][c]=true; },
     coin:(c,r)=>L.coins.push({x:c*TS+8,y:r*TS+8,got:false}),
     coins:(r,c0,c1)=>{ for(let c=c0;c<=c1;c++) b.coin(c,r); },
-    star:(c,r)=>{ const sid=id+'-s'+(si++); L.stars.push({id:sid,x:c*TS+8,y:r*TS+8,got:!!save.stars[sid]}); },
+    star:(c,r)=>{ const sid=id+'-s'+(si++); L.stars.push({id:sid,x:c*TS+8,y:r*TS+8,got:false,known:!!save.stars[sid]}); },
     hidden:(c0,r0,c1,r1)=>rect(c0,r0,c1,r1,'H'),
     back:(c0,r0,c1,r1)=>{ for(let r=r0;r<=r1;r++) for(let c=c0;c<=c1;c++) if(L.back[r]) L.back[r][c]=true; },   // dunkle Felswand hinter Höhlen   // Geheimgang: sieht aus wie Boden, ist durchlässig
-    crystal:(c,r)=>{ const cid=id+'-'+(ci++); L.crystals.push({id:cid,x:c*TS+8,y:r*TS+8,got:!!save.crystals[cid]}); },
+    crystal:(c,r)=>{ const cid=id+'-'+(ci++); L.crystals.push({id:cid,x:c*TS+8,y:r*TS+8,got:false,known:!!save.crystals[cid]}); },
     enemy:(c,r,type='beetle',o={})=>{ const T=ETYPE[type], w=T.w, h=T.h;
       const x=c*TS+(TS-w)/2, y=type==='fisch'?r*TS+14:T.fly?r*TS+(TS-h)/2:(r+1)*TS-h;
       const e={type,x,y,w,h,dir:-1,alive:true,squish:0,t:hash(c*13+r)*6,vx:0,vy:0,state:'idle',timer:1+hash(c*7)*1.5,range:3,bob:0,ground:true,...o};
@@ -679,15 +679,16 @@ function respawn(){
   flow=0; trail=[];
 }
 // ---------- Punkte und Zeit ----------
-const PTS={coin:10,crystal:100,star:200,sec:2};
+const PTS={coin:10,crystal:100,star:200,sec:2,enemy:50,death:-100};
+let kills=0, deaths=0;
 const timeLeft=()=>L&&L.timeLimit?Math.max(0,L.timeLimit-time):0;
 function scoreParts(){ const c=L.crystals.filter(k=>k.got).length, st=L.stars.filter(k=>k.got).length, t=Math.floor(timeLeft());
-  return {coins:levelCoins*PTS.coin, crystals:c*PTS.crystal, stars:st*PTS.star, time:t*PTS.sec, nc:c, ns:st, nt:t,
-    get total(){ return this.coins+this.crystals+this.stars+this.time; }}; }
+  return {coins:levelCoins*PTS.coin, crystals:c*PTS.crystal, stars:st*PTS.star, time:t*PTS.sec, enemies:kills*PTS.enemy, deaths:deaths*PTS.death, nc:c, ns:st, nt:t, nk:kills, nd:deaths,
+    get total(){ return Math.max(0,this.coins+this.crystals+this.stars+this.time+this.enemies+this.deaths); }}; }
 const score=()=>scoreParts().total;
-let cageOpen=false, cageAnim=0, cageHintT=0, lastTick=-1;
+let gateDoor=0, gateT=0, cageOpen=false, cageAnim=0, cageHintT=0, lastTick=-1;
 function loadLevel(id,spawnDoor){
-  L=makeLevel(id); cpPos=null; particles=[]; trail=[]; time=0; flow=0; levelCoins=0; bestTier=0; cageOpen=false; cageAnim=0; lastTick=-1;
+  L=makeLevel(id); cpPos=null; particles=[]; trail=[]; time=0; flow=0; levelCoins=0; bestTier=0; cageOpen=false; cageAnim=0; lastTick=-1; kills=0; deaths=0; gateDoor=0; gateT=0;
   L.need=DEFS[id].need||0; L.timeLimit=DEFS[id].timeLimit||0;
   let p=L.start;
   if(id==='hub'&&spawnDoor){ const d=L.doors.find(d=>d.world===spawnDoor); if(d) p={x:d.x+24,y:d.bottom-14}; }
@@ -918,7 +919,7 @@ function finishLevel(celebrated){
   const n=L.id; state='done'; clearInput(); doneWorld=n; AU.song=null; if(!celebrated) sfx('fanfare');
   save.done[n]=true;
   const prev=save.best[n]||{};
-  const got=L.crystals.filter(k=>k.got).length;
+  const got=L.crystals.filter(k=>k.known).length;
   const sp=scoreParts(), total=sp.total;
   save.best[n]={time:prev.time?Math.min(prev.time,time):time,coins:Math.max(prev.coins||0,levelCoins),score:Math.max(prev.score||0,total)};
   const ab=AB_OF[n], isNew=!save.ab[ab];
@@ -928,7 +929,7 @@ function finishLevel(celebrated){
   document.getElementById('donestats').innerHTML=
     `<b style="font-size:20px;color:var(--ember)">${total} Punkte</b>${prev.score&&total>prev.score?' · neuer Rekord':''}<br>`+
     `Münzen ${levelCoins}/${L.coins.length} = ${sp.coins} · Diamanten ${sp.nc}/${L.crystals.length} = ${sp.crystals} · Sterne ${sp.ns}/${L.stars.length} = ${sp.stars}<br>`+
-    `Restzeit ${sp.nt} s = ${sp.time} · Zeit ${time.toFixed(1)} s · Höchster Schwung ×${bestTier+1}`;
+    `Gegner ${sp.nk} = +${sp.enemies} · Tode ${sp.nd} = ${sp.deaths} · Restzeit ${sp.nt} s = ${sp.time}<br>Zeit ${time.toFixed(1)} s · Höchster Schwung ×${bestTier+1}`;
   const nw=document.getElementById('donenew'); nw.hidden=!isNew;
   if(isNew){ document.getElementById('newname').textContent='Neu: '+AB_INFO[ab].name; document.getElementById('newhow').textContent=AB_INFO[ab].how; }
   document.getElementById('donehint').textContent= got<L.crystals.length ? 'Einige Diamanten und Sterne erreichst du erst mit Fähigkeiten aus anderen Welten.' : 'Alle Diamanten dieser Welt gefunden.';
@@ -1103,10 +1104,10 @@ function update(dt){
   if(updateEnemies(dt)) return;
   // Münzen, Kristalle
   for(const k of L.coins) if(!k.got&&Math.abs(P.x+P.w/2-k.x)<10&&Math.abs(P.y+P.h/2-k.y)<12){ k.got=true; levelCoins++; sfx('coin'); save.wallet+=1+tier(); if(tier()>0) floaters.push({x:k.x,y:k.y-6,txt:'+'+(1+tier()),t:.7,col:'#ffd166'}); addFlow(1.5); burst(k.x,k.y,C.gold); }
-  for(const k of L.stars) if(!k.got&&Math.abs(P.x+P.w/2-k.x)<11&&Math.abs(P.y+P.h/2-k.y)<12){ k.got=true; save.stars[k.id]=true; persist(); sfx('secret'); addFlow(20); burst(k.x,k.y,'#ffe14d',14,90); showMsg('Geheimnis gefunden!'); floaters.push({x:k.x,y:k.y-8,txt:'★',t:1.1,col:'#ffe14d'}); }
+  for(const k of L.stars) if(!k.got&&Math.abs(P.x+P.w/2-k.x)<11&&Math.abs(P.y+P.h/2-k.y)<12){ k.got=true; sfx('secret'); addFlow(20); burst(k.x,k.y,'#ffe14d',14,90); floaters.push({x:k.x,y:k.y-8,txt:'+'+PTS.star,t:1.1,col:'#ffe14d'}); if(!k.known){ k.known=true; save.stars[k.id]=true; persist(); showMsg('Geheimnis gefunden!'); } }
   { const c0=Math.floor(P.x/TS), c1=Math.floor((P.x+P.w-.01)/TS), r0=Math.floor(P.y/TS), r1=Math.floor((P.y+P.h-.01)/TS);
     for(let r=r0;r<=r1;r++) for(let c=c0;c<=c1;c++) if(tileAt(c,r)==='H'&&!L.reveal.has(c+','+r)) revealHidden(c,r); }
-  for(const k of L.crystals) if(!k.got&&Math.abs(P.x+P.w/2-k.x)<11&&Math.abs(P.y+P.h/2-k.y)<13){ k.got=true; save.crystals[k.id]=true; sfx('crystal'); persist(); addFlow(20); burst(k.x,k.y,C.sky,12,80); showMsg('Diamant gefunden!'); floaters.push({x:k.x,y:k.y-8,txt:'◆',t:1,col:'#7fe0ff'}); }
+  for(const k of L.crystals) if(!k.got&&Math.abs(P.x+P.w/2-k.x)<11&&Math.abs(P.y+P.h/2-k.y)<13){ k.got=true; sfx('crystal'); addFlow(20); burst(k.x,k.y,C.sky,12,80); floaters.push({x:k.x,y:k.y-8,txt:'+'+PTS.crystal,t:1,col:'#7fe0ff'}); if(!k.known){ k.known=true; save.crystals[k.id]=true; persist(); showMsg('Diamant gefunden!'); } }
   // Checkpoints
   for(const k of L.checkpoints) if(!k.on&&P.x>k.x&&Math.abs(P.y+P.h-k.bottom)<48){ k.on=true; cpPos={x:k.x+3,y:k.bottom-P.h}; burst(k.x+1,k.bottom-30,C.ember,10,60); showMsg('Checkpoint'); sfx('checkpoint'); }
   // Gefahren
@@ -1116,11 +1117,21 @@ function update(dt){
   // Ziel / Türen
   if(L.goal){
     const gx=L.goal.x+8, near=Math.abs(P.x+P.w/2-gx)<TS*3.5&&Math.abs(P.y+P.h-L.goal.bottom)<TS*3;
-    if(!cageOpen&&near&&(score()>=L.need||dbg.nolock)){ cageOpen=true; cageAnim=0; sfx('cage'); burst(gx,L.goal.bottom-18,'#ffe14d',16,90); showMsg('Käfig geöffnet!'); }
+    const enough=score()>=L.need||dbg.nolock;
+    // Ankunft: genug Punkte = Käfig öffnet; zu wenig = Käfig wird zur Tür zurück zum Start
+    if(!cageOpen&&near){
+      if(enough){ cageOpen=true; cageAnim=0; gateDoor=0; sfx('cage'); burst(gx,L.goal.bottom-18,'#ffe14d',16,90); showMsg('Käfig geöffnet!'); }
+      else if(gateDoor===0){ gateDoor=.001; sfx('locked'); burst(gx,L.goal.bottom-18,'#ff6a6a',14,70); showMsg(`Zu wenig Punkte: ${score()} / ${L.need}`); }
+    }
+    if(gateDoor>0) gateDoor=Math.min(1,gateDoor+dt*3);
+    if(!near&&gateDoor>=1&&!cageOpen){ gateDoor=0; }      // weggegangen: beim nächsten Mal neu prüfen
     if(cageOpen) cageAnim=Math.min(1,cageAnim+dt*2.5);
     const touch=P.x+P.w>L.goal.x-2&&P.x<L.goal.x+18&&P.y+P.h>L.goal.bottom-34&&P.y<L.goal.bottom;
-    if(touch&&!cageOpen){ cageHintT-=dt; if(cageHintT<=0){ cageHintT=1.4; sfx('locked'); showMsg(`Noch ${L.need-score()} Punkte nötig`); }
-      const side=P.x+P.w/2<gx?-1:1; P.x=side<0?L.goal.x-2-P.w:L.goal.x+18; P.vx=0; }    // Gitter hält Sam ab
+    if(gateDoor>=1&&!cageOpen){
+      const inside=touch&&P.ground&&Math.abs(P.vx)<25;
+      gateT=inside?gateT+dt:Math.max(0,gateT-dt*2);
+      if(gateT>=.8){ const id=L.id; clearInput(); sfx('door'); loadLevel(id); showMsg('Neuer Versuch – Punkte zurückgesetzt'); return; }
+    }
     if(touch&&cageOpen&&cageAnim>=1){ const ab=AB_OF[L.id]; if(!save.ab[ab]) startCelebrate(ab); else finishLevel(); return; }
   }
   for(const d of L.doors){
@@ -1141,6 +1152,7 @@ function revealHidden(c,r){
   if(n){ sfx('secret'); showMsg('Geheimgang!'); }
 }
 function killEnemy(e,bounce){ e.alive=false; e.squish=.5; sfx('stomp');
+  if(L.need){ kills++; floaters.push({x:e.x+e.w/2,y:e.y-4,txt:'+'+PTS.enemy,t:.9,col:'#9be06a'}); }
   if(bounce){ P.vy=-PH.stomp; P.rising=true; P.cut=false; P.hold=0; P.usedDouble=false; }
   addFlow(12); burst(e.x+e.w/2,e.y+4,ETYPE[e.type].col,8,60); }
 function updateEnemies(dt){
@@ -1214,7 +1226,8 @@ function drawSpeedlines(){
     ctx.globalAlpha=(.12+r*.18)*(P.dashT>0?1.4:1); ctx.fillRect(Math.round(x+(side?0:-len*.3*(dir<0?0:1))),y,Math.round(len),th); }
   ctx.globalAlpha=1;
 }
-function die(){ shake=.25; sfx('hurt'); respawn(); }
+function die(){ shake=.25; sfx('hurt'); respawn();
+  if(L.need){ deaths++; floaters.push({x:P.x+P.w/2,y:P.y-6,txt:String(PTS.death),t:1.4,col:'#ff6a6a'}); showMsg(`${PTS.death} Punkte`); } }
 
 // ---------- Darstellung ----------
 function resize(){
@@ -1522,13 +1535,29 @@ function drawHubHints(){
 function drawGoal(){ if(!L.goal) return; const x=L.goal.x-4, b=L.goal.bottom, col=WORLD_COL[L.id];
   ctx.fillStyle='#1a1020'; ctx.fillRect(x,b-12,24,12); ctx.fillStyle='#98a1b0'; ctx.fillRect(x+1,b-11,22,11); ctx.fillStyle='#c9d0da'; ctx.fillRect(x+1,b-11,22,2);
   if(state==='celebrate') return;
+  if(gateDoor>=1&&!cageOpen){ drawCage(x,b); return; }
   const bob=Math.round(Math.sin(clock*3)*2), owned=save.ab[AB_OF[L.id]];
   ctx.fillStyle=col; ctx.globalAlpha=(owned?.15:.3)+.1*Math.sin(clock*4); ctx.beginPath(); ctx.arc(x+12,b-24+bob,12,0,7); ctx.fill(); ctx.globalAlpha=1;
   ctx.globalAlpha=owned?.55:1; ctx.drawImage(ITEM[AB_OF[L.id]],x+4,b-32+bob); ctx.globalAlpha=1;
   if(!owned&&Math.random()<.15) particles.push({x:x+4+Math.random()*16,y:b-30+Math.random()*12,vx:0,vy:-18,t:.5,col:'#ffffff'});
   drawCage(x,b);
 }
+function drawGateDoor(x,b){
+  const k=gateDoor, y=b-34, h=Math.round(34*k);
+  ctx.fillStyle='#1a1020'; ctx.fillRect(x-1,b-h,26,h);
+  ctx.fillStyle='#7a2a36'; ctx.fillRect(x,b-h+1,24,h-1); ctx.fillStyle='#a8404a'; ctx.fillRect(x,b-h+1,24,2);
+  if(k<1) return;
+  ctx.fillStyle='#1a1020'; ctx.fillRect(x+5,y+7,14,27);
+  ctx.fillStyle='#ff6a6a'; ctx.globalAlpha=.5+.25*Math.sin(clock*4); ctx.fillRect(x+6,y+8,12,26); ctx.globalAlpha=1;
+  ctx.fillStyle='#ffffff'; ctx.fillRect(x+11,y+17,6,2); ctx.beginPath(); ctx.moveTo(x+7,y+18); ctx.lineTo(x+11,y+14); ctx.lineTo(x+11,y+22); ctx.fill();   // Pfeil zurück zum Start
+  ctx.textAlign='center'; ctx.font='6px Silkscreen, monospace';
+  const t1='Neuer Versuch', t2=`${score()} / ${L.need} Punkte`;
+  ctx.fillStyle='#1a1020'; ctx.fillText(t1,x+13,y-11); ctx.fillText(t2,x+13,y-3);
+  ctx.fillStyle='#ffd0d0'; ctx.fillText(t1,x+12,y-12); ctx.fillStyle='#ffd166'; ctx.fillText(t2,x+12,y-4);
+  if(gateT>0){ ctx.strokeStyle=C.ember; ctx.lineWidth=2; ctx.beginPath(); ctx.arc(x+12,y+21,9,-Math.PI/2,-Math.PI/2+Math.PI*2*Math.min(1,gateT/.8)); ctx.stroke(); }
+}
 function drawCage(x,b){
+  if(gateDoor>0&&!cageOpen){ drawGateDoor(x,b); return; }
   // Gitterkäfig: hebt sich beim Öffnen nach oben weg
   const lift=Math.round(cageAnim*cageAnim*44), top=b-40-lift, h=28, ok=score()>=L.need;
   if(cageAnim<1||lift<44){
@@ -1551,10 +1580,10 @@ function drawCage(x,b){
 function drawCoins(xl,xr){ for(const k of L.coins){ if(k.got||k.x<xl||k.x>xr) continue;
   ctx.drawImage(COIN_SEQ[Math.floor(clock*8+k.x*.05)%4],Math.round(k.x-4),Math.round(k.y-5+Math.sin(clock*2+k.x)*1.5)); } }
 function drawStars(){ for(const k of L.stars){ const w=Math.max(2,Math.round(12*Math.abs(Math.cos(clock*2.5+k.x)))), y=Math.round(k.y-6+Math.sin(clock*2+k.x)*1.5);
-  ctx.globalAlpha=k.got?.28:1; ctx.drawImage(STAR,Math.round(k.x-w/2),y,w,12); ctx.globalAlpha=1;
+  if(k.got) continue; ctx.globalAlpha=k.known?.6:1; ctx.drawImage(STAR,Math.round(k.x-w/2),y,w,12); ctx.globalAlpha=1;
   if(!k.got&&Math.random()<.06) particles.push({x:k.x+(Math.random()-.5)*12,y:k.y,vx:0,vy:-18,t:.5,col:'#ffe14d'}); } }
 function drawCrystals(){ for(const k of L.crystals){ const y=Math.round(k.y-6+Math.sin(clock*2.4+k.x)*2);
-  ctx.globalAlpha=k.got?.28:1; ctx.drawImage(CRYSTAL,Math.round(k.x-5),y); ctx.globalAlpha=1;
+  if(k.got) continue; ctx.globalAlpha=k.known?.6:1; ctx.drawImage(CRYSTAL,Math.round(k.x-5),y); ctx.globalAlpha=1;
   if(!k.got&&Math.random()<.04) particles.push({x:k.x+(Math.random()-.5)*10,y:k.y,vx:0,vy:-20,t:.5,col:C.sky}); } }
 function drawEnemies(){ for(const e of L.enemies){
   const T=ETYPE[e.type], fr=Math.floor(clock*8+e.spawn.x*.13)%2, side=e.dir>0?'r':'l';
@@ -2010,7 +2039,7 @@ function frame(now){
   requestAnimationFrame(frame);
 }
 resize(); loadLevel('hub'); requestAnimationFrame(frame);
-window.__dz={score,scoreParts,get cage(){return {open:cageOpen,anim:cageAnim};},addCoins:n=>{levelCoins+=n;},get cam(){return {camX,camY,cx:CAM.cx,cy:CAM.cy,zoom,viewH,viewW};},PH,setFlow:v=>{flow=v;},startCelebrate,ITEM,playStep,schedule,audioInit,playSong,sfx,SFX,AU,loadLevel,update,P,save,get L(){return L;},setState:s=>{state=s;},finishLevel};
+window.__dz={get gate(){return {door:gateDoor,t:gateT};},kill:()=>{ kills++; },score,scoreParts,get cage(){return {open:cageOpen,anim:cageAnim};},addCoins:n=>{levelCoins+=n;},get cam(){return {camX,camY,cx:CAM.cx,cy:CAM.cy,zoom,viewH,viewW};},PH,setFlow:v=>{flow=v;},startCelebrate,ITEM,playStep,schedule,audioInit,playSong,sfx,SFX,AU,loadLevel,update,P,save,get L(){return L;},setState:s=>{state=s;},finishLevel};
 })();
 </script>
 
