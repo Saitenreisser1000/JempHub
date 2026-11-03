@@ -151,3 +151,16 @@ test('Geheimgänge werden aufgedeckt und Sternmünzen sind erreichbar', () => {
   setup(4, 212, 24); key('ArrowRight', 1); run(3); listeners.keydown({ key: 'Shift' }); run(40); key('ArrowRight', 0);
   assert.equal(dz.L.grid[21][214], ' ', 'Gipfel: Höhlenausgang per Dash');
 });
+
+test('Kamera bleibt bei kurzen Hüpfern ruhig und folgt ohne Ruck', () => {
+  const { dz, listeners, run } = boot();
+  const key = (k, d) => d ? listeners.keydown({ key: k, preventDefault() {} }) : listeners.keyup({ key: k });
+  dz.setState('play'); dz.loadLevel('hub'); dz.P.x = 20 * 16; dz.P.y = 23 * 16 - 14; run(90);
+  let mn = Infinity, mx = -Infinity;
+  for (let i = 0; i < 300; i++) { if (i % 40 === 0) key(' ', 1); if (i % 40 === 4) key(' ', 0); run(1); mn = Math.min(mn, dz.cam.cy); mx = Math.max(mx, dz.cam.cy); }
+  assert.ok(mx - mn < 1, `Kamera bewegte sich bei kurzen Hüpfern um ${(mx - mn).toFixed(1)} px`);
+  dz.setState('play'); dz.loadLevel(2); dz.L.enemies.length = 0; dz.P.x = 146 * 16; dz.P.y = 19 * 16 - 14; run(90);
+  const ys = []; key('ArrowRight', 1); for (let i = 0; i < 120; i++) { run(1); ys.push(dz.cam.cy); } key('ArrowRight', 0);
+  let jerk = 0; for (let i = 2; i < ys.length; i++) jerk = Math.max(jerk, Math.abs((ys[i] - ys[i - 1]) - (ys[i - 1] - ys[i - 2])));
+  assert.ok(jerk < 1, `Ruck auf der Rampe ${jerk.toFixed(2)}`);
+});
