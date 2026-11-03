@@ -166,7 +166,7 @@ canvas{position:fixed;inset:0;width:100vw;height:100vh;display:block;image-rende
 (()=>{
 const cv=document.getElementById('c'); let ctx=cv.getContext('2d');
 const bgCanvas=document.createElement('canvas'), bgCtx=bgCanvas.getContext('2d');
-const TS=16, SKY_H=270; let VIEW_H=150; // VIEW_H: sichtbare Welthöhe (kleiner = näher dran)
+const TS=16, SKY_H=270; let VIEW_H=120; // VIEW_H: sichtbare Welthöhe (kleiner = näher dran)
 const C={ember:'#f2a65a',cream:'#f6ead2',ink:'#0d1524',gold:'#ffd166',sky:'#7fe0ff',
   grassD:'#457a3a',earthD:'#523726',stoneD:'#5b6372',stoneL:'#98a1b0',water:'#3f7fb0',waterL:'#7fb8dc',waterD:'#2e5f88',
   pine:'#2f5e3f',pineD:'#234a31',leaf:'#4f8a43',bark:'#5a3b26',beetle:'#d84a4a',crumble:'#c69a6a'};
@@ -265,6 +265,8 @@ const ETYPE={
   fisch:{w:11,h:9,fly:true,stomp:false,dash:false,light:'#ff8a3a',col:'#ff8a3a'},
   geist:{w:12,h:12,fly:true,stomp:true,dash:true,light:'#bfe8ff',col:'#e8f4ff'}
 };
+const ESCALE=1.5;   // Gegnergröße (Darstellung und Trefferzone)
+for(const T of Object.values(ETYPE)){ T.w*=ESCALE; T.h*=ESCALE; if(T.foot) T.foot*=ESCALE; }
 // Sternmünze: Geheimnis-Sammelobjekt, 12x12
 const STAR=spr([
   ".....kk.....",
@@ -662,12 +664,11 @@ const P={w:10,h:14,x:0,y:0,vx:0,vy:0,ground:false,face:1,coyote:0,buffer:0,squas
   usedDouble:false,airDash:false,dashT:0,dashDir:1,dashCD:0,wallDir:0,kickT:0,glide:false};
 const PH={max:150,accG:700,accA:450,fricG:800,fricA:90,tierBonus:10,grav:1150,jump:300,airJump:270,fall:420,coyote:.1,buffer:.13,
   holdMax:.18,holdGrav:.3,cutGrav:2.0,spring:560,stomp:280,
-  camLook:1.4,camSmooth:7,camSmoothY:12,camZoom:.28,fxDark:1,fxBloom:1,kickX:95,kickY:330,kickT:.14,slide:70,dashSpeed:220,dashT:.2,glideFall:40,upLift:2000,upMax:220,upSpeed:45};
+  camLook:1.4,camSmooth:7,camSmoothY:12,camZoom:.28,camFrame:1,fxDark:1,fxBloom:1,kickX:95,kickY:330,kickT:.14,slide:70,dashSpeed:220,dashT:.2,glideFall:40,upLift:2000,upMax:220,upSpeed:45};
 
 function resetPlayer(p){
   Object.assign(P,{x:p.x,y:p.y,vx:0,vy:0,ground:false,buffer:0,plat:null,rising:false,usedDouble:false,airDash:false,dashT:0,kickT:0,glide:false,wallDir:0});
-  camGround=P.y+P.h; camFall=0; camLook=P.face*viewW*.12; zoom=1; applyZoom();
-  camX=Math.max(0,Math.min(L.w*TS-viewW,P.x+P.w/2-viewW/2+camLook)); camY=Math.max(0,Math.min(L.h*TS-viewH,camGround-viewH*.62));
+  cameraSnap();
 }
 function respawn(){
   resetPlayer(cpPos||L.start);
@@ -806,8 +807,8 @@ const SFX={
 // ---------- Juice: Trefferpause, Kamera-Impuls, Vibration ----------
 let hitstop=0, punch=0, punchT=0;
 // Trefferpause nur bei echten Treffern; beim Einsammeln nur ein weicher Zoom-Stoß
-const JUICE={secret:{p:.03,v:[20,30,20]},stomp:{hs:.05,p:.025,v:25},smash:{hs:.05,p:.035,v:35},crystal:{p:.035,v:30},spring:{p:.025,v:20},
-  land:{v:10},hurt:{v:[40,30,60]},dash:{p:.015,v:15},tier:{p:.015,v:12},unlock:{p:.06,v:[30,40,30,40,80]},kick:{v:10},double:{v:8}};
+const JUICE={secret:{p:.03,v:[20,30,20]},stomp:{hs:.05,p:.025,v:25},smash:{hs:.05,p:.035,v:35},crystal:{p:.035,v:30},spring:{v:20},
+  land:{v:10},hurt:{v:[40,30,60]},dash:{v:15},tier:{v:12},unlock:{p:.06,v:[30,40,30,40,80]},kick:{v:10},double:{v:8}};
 function juice(name){ const j=JUICE[name]; if(!j) return;
   if(j.hs) hitstop=Math.max(hitstop,j.hs); if(j.p) punchT=Math.max(punchT,j.p);
   if(j.v&&AU.vol.vib!==false){ try{ navigator.vibrate?.(j.v); }catch(_){} } }
@@ -1157,7 +1158,7 @@ function updateEnemies(dt){
     const by=e.y+e.bob;
     if(P.x+P.w>e.x+1&&P.x<e.x+e.w-1&&P.y+P.h>by+1&&P.y<by+e.h){
       if(P.dashT>0&&T.dash) killEnemy(e,false);
-      else if(T.stomp&&P.vy>0&&P.y+P.h-by<9) killEnemy(e,true);
+      else if(T.stomp&&P.vy>0&&P.y+P.h-by<Math.max(9,e.h*.6)) killEnemy(e,true);
       else if(!dbg.god){ die(); return true; }
     }
   }
@@ -1514,14 +1515,14 @@ function drawEnemies(){ for(const e of L.enemies){
   let img;
   if(e.type==='beetle') img=(fr?BEETLE_B:BEETLE_A)[side];
   else { let f=fr; if(e.type==='frosch') f=e.ground?0:1; else if(e.type==='skorpion'&&e.state==='charge') f=Math.floor(clock*16)%2; img=ES[e.type][f][side]; }
-  const sh=img.height, x=Math.round(e.x+e.w/2-8);
-  const y=T.fly?Math.round(e.y+e.h/2-sh/2+e.bob):Math.round(e.y+e.h)-T.foot;
-  if(!e.alive){ if(e.squish>0){ ctx.globalAlpha=Math.min(1,e.squish*2); ctx.drawImage(img,x,y+sh-4,16,4); ctx.globalAlpha=1; } continue; }
+  const dw=img.width*ESCALE, sh=img.height*ESCALE, x=Math.round(e.x+e.w/2-dw/2);
+  const y=T.fly?Math.round(e.y+e.h/2-sh/2+e.bob):Math.round(e.y+e.h-T.foot);
+  if(!e.alive){ if(e.squish>0){ ctx.globalAlpha=Math.min(1,e.squish*2); ctx.drawImage(img,x,y+sh-6,dw,6); ctx.globalAlpha=1; } continue; }
   if(e.type==='fisch'){ if(e.state!=='leap'||e.y>e.spawn.y-8) continue;
-    ctx.save(); ctx.translate(x+8,y+sh/2); ctx.rotate(e.vy<0?Math.PI/2:-Math.PI/2); ctx.drawImage(ES.fisch[fr].l,-8,-sh/2); ctx.restore(); continue; }
+    ctx.save(); ctx.translate(x+dw/2,y+sh/2); ctx.rotate(e.vy<0?Math.PI/2:-Math.PI/2); ctx.drawImage(ES.fisch[fr].l,-dw/2,-sh/2,dw,sh); ctx.restore(); continue; }
   if(e.type==='geist') ctx.globalAlpha=.85;
   if(e.type==='skorpion'&&e.state==='wind'&&Math.floor(clock*20)%2) ctx.globalAlpha=.45;
-  ctx.drawImage(img,x,y); ctx.globalAlpha=1;
+  ctx.drawImage(img,x,y,dw,sh); ctx.globalAlpha=1;
 } }
 function heroFrame(){
   if(P.dashT>0) return HERO_FR.runA;
@@ -1576,7 +1577,7 @@ function draw(){
   const snowW=(bl.a==='snow'?1-bl.t:0)+(bl.b==='snow'?bl.t:0);
   ctx.setTransform(scale,0,0,scale,0,0);
   let sx=0,sy=0; if(shake>0){ sx=(Math.random()-.5)*4; sy=(Math.random()-.5)*4; }
-  const cx=Math.round(camX-sx), cy=Math.round(camY-sy);
+  const cx=Math.round((camX-sx)*scale)/scale, cy=Math.round((camY-sy)*scale)/scale;
   ctx.save(); ctx.translate(-cx,-cy);
   const c0=Math.max(0,Math.floor(cx/TS)-2), c1=Math.min(L.w-1,Math.ceil((cx+viewW)/TS)+2);
   const r0=Math.max(0,Math.floor(cy/TS)-1), r1=Math.min(L.h-1,Math.ceil((cy+viewH)/TS)+1);
@@ -1599,16 +1600,20 @@ function draw(){
   if(snowW>.02){ ctx.setTransform(ss,0,0,ss,0,0); snowFlakes(26,.9*snowW,2); }
   if(flash>0){ ctx.setTransform(1,0,0,1,0,0); ctx.globalAlpha=flash*.8; ctx.fillStyle='#ffffff'; ctx.fillRect(0,0,cv.width,cv.height); ctx.globalAlpha=1; }
 }
-// ---------- Dynamische Kamera ----------
-// Schaut je nach Tempo voraus, hält bei Sprüngen die Bodenhöhe, folgt beim Fallen,
-// peilt die nächste Plattform in Laufrichtung an und zoomt bei hohem Tempo leicht heraus.
-let camGround=0, camLook=0, camAheadY=0, camFall=0, zoom=1, viewH=180;
+// ---------- Kamera ----------
+// Federnd gedämpft (kein Ruck), Mittelpunkt-basiert (Zoom verschiebt nichts),
+// Blickrichtung mit Verzögerung, Bodenhöhe als Anker, Fenster für große Höhen, Vorausschau aufs Gelände.
+let zoom=1, viewH=150;
+const CAM={fz:1,fk:0,fcy:0,vfk:0,vfcy:0,cx:0,cy:0,vx:0,vy:0,look:0,vlook:0,lookDir:1,dirT:0,base:0,ahead:0,vahead:0,fall:0,vfall:0,zv:0,spd:0,snap:true};
 function applyZoom(){ viewH=VIEW_H*zoom*(1-punch); scale=cv.height/viewH; viewW=cv.width/scale; }
+function damp(cur,target,st,key,dt,obj){ // kritisch gedämpfte Feder (SmoothDamp)
+  const o=2/Math.max(.0001,st), x=o*dt, e=1/(1+x+.48*x*x+.235*x*x*x), ch=cur-target, tmp=(obj[key]+o*ch)*dt;
+  obj[key]=(obj[key]-o*tmp)*e; let out=target+(ch+tmp)*e;
+  if((target-cur>0)===(out>target)){ out=target; obj[key]=0; } return out; }
 function surfaceAhead(dir){
-  // Mittelwert der begehbaren Oberflächen 3–11 Kacheln voraus (nähere zählen mehr); null = Abgrund
-  const c0=Math.floor((P.x+P.w/2)/TS), feet=camGround, r0=Math.floor(feet/TS);
+  const c0=Math.floor((P.x+P.w/2)/TS), feet=CAM.base, r0=Math.floor(feet/TS);
   let sum=0, wsum=0, gaps=0;
-  for(let d=3;d<=11;d++){
+  for(let d=2;d<=10;d++){
     const c=c0+dir*d; if(c<0||c>=L.w) break;
     let found=null;
     for(let k=0;k<=7&&found===null;k++) for(const r of k?[r0+k,r0-k]:[r0]){
@@ -1619,40 +1624,96 @@ function surfaceAhead(dir){
   }
   return {y:wsum?sum/wsum:null, gaps};
 }
+function frameAhead(dir){
+  // Sucht in Laufrichtung (2–12 Kacheln) die höchste und tiefste Fläche, auf der Sam landen könnte (auch Wasser/Abgrund)
+  const c0=Math.floor((P.x+P.w/2)/TS), base=CAM.base, r0=Math.floor(base/TS);
+  let up=0, down=0, gap=false;
+  for(let d=2;d<=12;d++){ const c=c0+dir*d; if(c<0||c>=L.w) break;
+    let any=false;
+    for(let r=Math.max(1,r0-14);r<=Math.min(L.h-1,r0+10);r++){
+      const t=tileAt(c,r), above=tileAt(c,r-1);
+      const stand=(solid(c,r)||t==='~')&&!solid(c,r-1)&&above!=='~'&&t!=='^';
+      if(!stand) continue; any=true; const y=r*TS;
+      if(y<base) up=Math.max(up,base-y); else down=Math.max(down,y-base); }
+    for(const m of L.movers) if(c*TS+8>m.x&&c*TS+8<m.x+m.w&&Math.abs(m.y-base)<TS*12){ any=true; if(m.y<base) up=Math.max(up,base-m.y); else down=Math.max(down,m.y-base); }
+    if(!any) gap=true; }
+  if(gap) down=Math.max(down,Math.min(TS*6,L.h*TS-base));
+  return {up,down};
+}
+function cameraSnap(){
+  CAM.base=P.y+P.h; CAM.lookDir=P.face; CAM.dirT=0; CAM.look=P.face*viewW*.1; CAM.vlook=0; CAM.ahead=0; CAM.vahead=0; CAM.fall=0; CAM.vfall=0;
+  CAM.vx=0; CAM.vy=0; CAM.zv=0; CAM.spd=0; CAM.fk=0; CAM.fkT=0; CAM.fzT=1; CAM.vfk=0; CAM.fcy=0; CAM.vfcy=0; zoom=1; applyZoom();
+  CAM.cx=P.x+P.w/2+CAM.look; CAM.cy=CAM.base-viewH*.17; clampCam(); CAM.snap=true;
+}
+function clampCam(){
+  const W=L.w*TS, H=L.h*TS;
+  CAM.cx=Math.max(viewW/2,Math.min(W-viewW/2,CAM.cx)); CAM.cy=Math.max(viewH/2,Math.min(H-viewH/2,CAM.cy));
+  camX=CAM.cx-viewW/2; camY=CAM.cy-viewH/2;
+}
 function camera(dt){
-  const sp=Math.abs(P.vx), dir=Math.abs(P.vx)>8?Math.sign(P.vx):P.face;
-  // Horizontal: Vorausschau wächst mit dem Tempo
-  const lookT=dir*viewW*.1*PH.camLook + P.vx*.9*PH.camLook;
-  camLook+=(Math.max(-viewW*.3,Math.min(viewW*.3,lookT))-camLook)*Math.min(1,dt*2.2);
-  const tx=P.x+P.w/2-viewW/2+camLook;
-  camX+=(tx-camX)*Math.min(1,dt*PH.camSmooth*1.3);
-  // Vertikal: Bodenhöhe halten, nur bei großen Höhen oder beim Fallen folgen
-  const feet=P.y+P.h;
-  if(P.ground) camGround=feet;
-  let fy=camGround;
-  if(feet<camGround-TS*1.5) fy=feet+TS*1.5;
-  if(feet>camGround) fy=feet;
-  const ahead=surfaceAhead(dir);
-  if(ahead.y!==null) camAheadY+=(ahead.y-camAheadY)*Math.min(1,dt*6); else camAheadY+=(fy+TS*2-camAheadY)*Math.min(1,dt*4);
-  const ab=Math.min(.35,.25*PH.camLook); fy=fy*(1-ab)+camAheadY*ab;
-  // Blick nach unten nur, wenn Sam unter seine letzte Standhöhe fällt (nicht beim Landen auf höheren Plattformen)
-  const fallT=(P.vy>150&&!P.glide&&!P.ground&&feet>camGround-TS*.5)?(P.vy-150)*.3:0;
-  camFall+=(fallT-camFall)*Math.min(1,dt*(fallT>camFall?3:8));
-  fy+=camFall;
-  const ty=fy-viewH*.62;
-  const ySpeed=PH.camSmoothY*((P.vy>200&&feet>camGround)||feet<camGround-TS*1.5?1.8:1);
-  camY+=(ty-camY)*Math.min(1,dt*ySpeed);
-  // Zoom: schneller, Dash, Schwung oder Abgrund voraus = etwas mehr Überblick
-  const want=Math.min(1,sp/(PH.max*1.5)+(P.dashT>0?.5:0)+tier()*.12+(ahead.gaps>=4?.35:0));
-  zoom+=(1+PH.camZoom*want-zoom)*Math.min(1,dt*1.4);
+  const sp=Math.abs(P.vx), feet=P.y+P.h;
+  // Blickrichtung: wechselt erst nach anhaltender Bewegung (kein Hin-und-her bei kurzem Tippen)
+  const moveDir=sp>25?Math.sign(P.vx):0;
+  if(moveDir&&moveDir!==CAM.lookDir){ CAM.dirT+=dt; if(CAM.dirT>.22||P.dashT>0||P.kickT>0){ CAM.lookDir=moveDir; CAM.dirT=0; } } else CAM.dirT=0;
+  CAM.spd+=(sp-CAM.spd)*Math.min(1,dt*2.5);   // geglättetes Tempo
+  const sf=Math.min(1,CAM.spd/Math.max(40,PH.max));
+  const lookT=Math.max(-.26,Math.min(.26,CAM.lookDir*(.06+.14*sf)*PH.camLook))*viewW;
+  CAM.look=damp(CAM.look,lookT,.55,'vlook',dt,CAM);
+  // Vertikal: Bodenhöhe ist Anker; in der Luft nur folgen, wenn Sam das Fenster verlässt
+  const onWall=P.wallDir&&!P.ground;
+  if(P.ground) CAM.base=feet;
+  else if(onWall&&feet<CAM.base) CAM.base=Math.min(CAM.base,feet+TS*.5);
+  let anchor=CAM.base;
+  const up=TS*2.4;
+  if(feet<CAM.base-up) anchor=feet+up;           // weit hoch (Feder, Wand, Aufwind)
+  if(feet>CAM.base) anchor=feet;                  // unter die letzte Standhöhe gefallen
+  // Vorausschau aufs Gelände: nur am Boden messen, sanft einblenden
+  if(P.ground){ const a=surfaceAhead(CAM.lookDir);
+    let d=a.y!==null?Math.max(-TS*3,Math.min(TS*4,a.y-CAM.base))*.4:0; if(a.gaps>=5) d=Math.max(d,TS*1.2);
+    CAM.aheadT=d*PH.camLook/1.4; }
+  CAM.ahead=damp(CAM.ahead,CAM.aheadT||0,.4,'vahead',dt,CAM);
+  // Einrahmen: liegt die nächste Fläche deutlich höher/tiefer, auszoomen und beides zeigen
+  if(P.ground){ const f=frameAhead(CAM.lookDir);
+    const top=CAM.base-f.up-TS*2.6, bot=CAM.base+f.down+TS*1.3, need=bot-top;
+    const fz=Math.min(1+1.05*PH.camFrame,Math.max(1,need/VIEW_H));
+    CAM.fzT=fz; CAM.fkT=Math.max(0,Math.min(1,(f.up+f.down-TS*3)/(TS*2)))*(PH.camFrame>0?1:0);
+    const vmax=VIEW_H*fz;   // passt nicht alles hinein: so weit wie möglich Richtung Ziel, Sam bleibt im Bild
+    CAM.fcyT=need<=vmax?(top+bot)/2:(f.up>=f.down?CAM.base+TS*1.3-vmax/2:CAM.base-TS*2.6+vmax/2); }
+  CAM.fk=damp(CAM.fk,CAM.fkT||0,.35,'vfk',dt,CAM);
+  CAM.fcy=CAM.fcy?damp(CAM.fcy,CAM.fcyT||CAM.cy,.3,'vfcy',dt,CAM):(CAM.fcyT||CAM.cy);
+  // Blick nach unten nur beim Fall unter die Standhöhe
+  const fallT=(!P.ground&&!P.glide&&P.vy>120&&feet>CAM.base+TS*.25)?Math.min(TS*3,(P.vy-120)*.35):0;
+  CAM.fall=damp(CAM.fall,fallT,fallT>CAM.fall?.22:.15,'vfall',dt,CAM);
+  // Zoom: nur bei anhaltendem Tempo und Schwung, langsam
+  const want=Math.min(1,sf*.7+tier()*.1);
+  const zT=Math.max(1+PH.camZoom*want,1+((CAM.fzT||1)-1)*CAM.fk);
+  zoom=damp(zoom,zT,zT>zoom?.45:1,'zv',dt,CAM);          // schnell hinaus, langsam wieder hinein
   punch+=(punchT-punch)*Math.min(1,dt*14); punchT=Math.max(0,punchT-dt*.18);
   applyZoom();
-  camX=Math.max(0,Math.min(L.w*TS-viewW,camX));
-  camY=Math.max(0,Math.min(L.h*TS-viewH,camY));
+  // Ziele und Federn
+  const tx=P.x+P.w/2+CAM.look;
+  const ty0=anchor+CAM.ahead+CAM.fall-viewH*.17;   // Füße bei ca. 67 % der Bildhöhe
+  const fk=P.ground||feet<=CAM.base+TS?CAM.fk:CAM.fk*.5, ty=ty0+(Math.min(CAM.fcy,anchor+viewH*.33-TS)-ty0)*fk;
+  const W=L.w*TS, H=L.h*TS, ctx_=Math.max(viewW/2,Math.min(W-viewW/2,tx)), cty=Math.max(viewH/2,Math.min(H-viewH/2,ty));
+  // Nachführzeit: stufenlos kürzer, je tiefer Sam unter die Standhöhe fällt oder je schneller er ist
+  const fallK=Math.max(0,Math.min(1,(feet-CAM.base)/(TS*2)));
+  const stX=(1-.35*Math.min(1,sp/220))/Math.max(1,PH.camSmooth), stY=(1-.45*fallK)/Math.max(1,PH.camSmoothY);
+  // Weiche Ränder: läuft Sam Richtung Bildrand, rückt das Ziel nach, statt die Kamera hart zu versetzen
+  const mx=viewW*.36, my=viewH*.34, pcx=P.x+P.w/2;
+  let gx=ctx_, gy=cty;
+  gx=Math.min(Math.max(gx,pcx-mx),pcx+mx);            // stufenlos: Ziel hält Sam innerhalb der Ränder
+  gy=Math.min(Math.max(gy,feet-my),P.y+my);
+  CAM.cx=damp(CAM.cx,gx,stX,'vx',dt,CAM);
+  CAM.cy=damp(CAM.cy,gy,stY,'vy',dt,CAM);
+  // Sicherheitsgrenze nur ganz am Rand
+  const hx=viewW*.46, hy=viewH*.5-3;
+  if(pcx>CAM.cx+hx) CAM.cx=pcx-hx; if(pcx<CAM.cx-hx) CAM.cx=pcx+hx;
+  if(feet>CAM.cy+hy) CAM.cy=feet-hy; if(P.y<CAM.cy-hy) CAM.cy=P.y+hy;
+  clampCam();
 }
 
 // ---------- Debug ----------
-const PH_DEFAULT={...PH}, VIEW_DEFAULT=150, TUNE_KEY='daumensprung-tune';
+const PH_DEFAULT={...PH}, VIEW_DEFAULT=120, TUNE_KEY='daumensprung-tune';
 const dbg={info:false,hitbox:false,god:false,fx:true};
 const TUNES=[
   ['max','Höchsttempo Laufen',20,150,1],
@@ -1671,9 +1732,10 @@ const TUNES=[
   ['glideFall','Fallen beim Gleiten',10,100,1],
   ['viewH','Zoom: sichtbare Höhe (kleiner = näher)',120,270,6],
   ['camLook','Kamera: Vorausschau',0,2,0.05],
-  ['camSmooth','Kamera: Nachführtempo seitlich',1,12,0.5],
+  ['camSmooth','Kamera: Nachführtempo seitlich',1,20,0.5],
   ['camSmoothY','Kamera: Nachführtempo vertikal',1,24,0.5],
   ['camZoom','Kamera: Herauszoomen bei Tempo',0,0.5,0.01],
+  ['camFrame','Kamera: Auszoomen für hohe/tiefe Plattformen',0,1.5,0.05],
   ['fxDark','Licht: Stärke der Dunkelheit',0,1.5,0.05],
   ['fxBloom','Licht: Überstrahlen',0,1.5,0.05]];
 try{ const t=JSON.parse(localStorage.getItem(TUNE_KEY)||'null'); if(t){ Object.assign(PH,t.ph||{}); if(t.viewH) VIEW_H=t.viewH; Object.assign(dbg,t.dbg||{}); } }catch(_){}
@@ -1841,7 +1903,7 @@ function collectLights(){
   for(const d of L.doors) add(d.x+8,d.bottom-16,40,WORLD_COL[d.world]||'#f6ead2',.8,.8,2);
   for(const k of L.checkpoints) add(k.x+8,k.bottom-28,k.on?34:20,k.on?'#f2a65a':'#9aa4b8',k.on?.8:.35,.8,2);
   for(const k of L.coins) if(!k.got) add(k.x,k.y,15,'#ffd166',.7,1,3);
-  for(const e of L.enemies) if(e.alive&&!(e.type==='fisch'&&e.state!=='leap')) add(e.x+e.w/2,e.y+e.h/2+e.bob,e.type==='geist'?26:11,ETYPE[e.type].light,e.type==='geist'?.7:.5,.5,3);
+  for(const e of L.enemies) if(e.alive&&!(e.type==='fisch'&&e.state!=='leap')) add(e.x+e.w/2,e.y+e.h/2+e.bob,(e.type==='geist'?26:11)*ESCALE,ETYPE[e.type].light,e.type==='geist'?.7:.5,.5,3);
   if(out.length>MAX_LIGHTS){ const px=.5; out.sort((a,b)=>a[8]-b[8]||Math.abs(a[0]-px)-Math.abs(b[0]-px)); out.length=MAX_LIGHTS; }
   return out;
 }
@@ -1873,17 +1935,35 @@ function updateHud(){
 
 // ---------- Loop mit festem Zeitschritt ----------
 const STEP=1/60; let acc=0, last=performance.now(), hudT=0;
+// Zwischenbilder: Spieler, Kamera und Plattformen zwischen zwei Rechenschritten weich überblenden
+const PREV={px:0,py:0,cx:0,cy:0,z:1,pu:0,m:[]};
+function snapshot(){ PREV.px=P.x; PREV.py=P.y; PREV.cx=CAM.cx; PREV.cy=CAM.cy; PREV.z=zoom; PREV.pu=punch;
+  PREV.m=L.movers.map(m=>[m.x,m.y]); }
+function withInterp(a,fn){
+  if(a>=1||!L||PREV.m.length!==L.movers.length){ fn(); return; }
+  const lerp=(p,c)=>p+(c-p)*a;
+  const sv={px:P.x,py:P.y,cx:CAM.cx,cy:CAM.cy,z:zoom,pu:punch,m:L.movers.map(m=>[m.x,m.y])};
+  if(Math.abs(P.x-PREV.px)<64&&Math.abs(P.y-PREV.py)<64){ P.x=lerp(PREV.px,P.x); P.y=lerp(PREV.py,P.y); }
+  CAM.cx=lerp(PREV.cx,CAM.cx); CAM.cy=lerp(PREV.cy,CAM.cy); zoom=lerp(PREV.z,zoom); punch=lerp(PREV.pu,punch);
+  L.movers.forEach((m,i)=>{ m.x=lerp(PREV.m[i][0],m.x); m.y=lerp(PREV.m[i][1],m.y); });
+  applyZoom(); camX=CAM.cx-viewW/2; camY=CAM.cy-viewH/2;
+  try{ fn(); } finally {
+    P.x=sv.px; P.y=sv.py; CAM.cx=sv.cx; CAM.cy=sv.cy; zoom=sv.z; punch=sv.pu; L.movers.forEach((m,i)=>{ m.x=sv.m[i][0]; m.y=sv.m[i][1]; });
+    applyZoom(); camX=CAM.cx-viewW/2; camY=CAM.cy-viewH/2; }
+}
 function frame(now){
   let dt=Math.min(.1,(now-last)/1000); last=now;
   if(matchMedia('(orientation: portrait)').matches&&innerWidth<900) dt=0;
   acc+=dt;
-  while(acc>=STEP){ clock+=STEP; if(L){ if(hitstop>0) hitstop-=STEP; else { update(STEP); tickCelebrate(STEP); tickParticles(STEP); } camera(STEP); } if(shake>0) shake-=STEP; acc-=STEP; }
-  if(L){ draw(); fxRender(); }
+  while(acc>=STEP){ clock+=STEP;
+    if(L){ snapshot(); if(hitstop>0) hitstop-=STEP; else { update(STEP); tickCelebrate(STEP); tickParticles(STEP); } camera(STEP); }
+    if(shake>0) shake-=STEP; acc-=STEP; }
+  if(L){ const a=CAM.snap?1:acc/STEP; CAM.snap=false; withInterp(a,()=>{ draw(); fxRender(); }); }
   hudT-=dt; if(hudT<=0){ updateHud(); hudT=.1; }
   requestAnimationFrame(frame);
 }
 resize(); loadLevel('hub'); requestAnimationFrame(frame);
-window.__dz={get cam(){return {camX,camY};},PH,setFlow:v=>{flow=v;},startCelebrate,ITEM,playStep,schedule,audioInit,playSong,sfx,SFX,AU,loadLevel,update,P,save,get L(){return L;},setState:s=>{state=s;},finishLevel};
+window.__dz={get cam(){return {camX,camY,cx:CAM.cx,cy:CAM.cy,zoom,viewH,viewW};},PH,setFlow:v=>{flow=v;},startCelebrate,ITEM,playStep,schedule,audioInit,playSong,sfx,SFX,AU,loadLevel,update,P,save,get L(){return L;},setState:s=>{state=s;},finishLevel};
 })();
 </script>
 
