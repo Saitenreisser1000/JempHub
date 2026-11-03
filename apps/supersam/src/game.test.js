@@ -34,7 +34,7 @@ function boot() {
     matchMedia: () => ({ matches: false }),
     localStorage: { getItem: () => null, setItem() {} },
     performance: { now: () => time },
-    requestAnimationFrame: fn => { frame = fn; },
+    requestAnimationFrame: fn => { if (fn.name === 'frame') frame = fn; return 1; }, cancelAnimationFrame() {},
     setInterval: () => 0, setTimeout: () => 0, clearTimeout() {},
     AudioContext: function () { return stub(); },
     navigator: {}, screen: {},
@@ -211,4 +211,67 @@ test('Tür bei zu wenig Punkten startet die Welt neu; Gegner und Tod ändern die
   assert.ok(dz.score() - s0 >= 45, 'Gegner bringt Punkte');
   const s1 = dz.score(); dz.P.y = 40 * 16; run(3);
   assert.equal(dz.scoreParts().nd, 1, 'Tod zählt'); assert.ok(s1 - dz.score() >= 95, 'Tod kostet Punkte');
+});
+
+test('Nach dem Wiedereinstieg 2 Sekunden unverwundbar', () => {
+  const { dz, run } = boot();
+  dz.setState('play'); dz.loadLevel(1);
+  dz.die(); const d0 = dz.scoreParts().nd;
+  const e = dz.L.enemies.find(e => e.type === 'beetle');
+  const hold = () => { e.x = dz.P.x; e.y = dz.P.y + dz.P.h - e.h; };
+  for (let i = 0; i < 100; i++) { hold(); run(1); }
+  assert.equal(dz.scoreParts().nd, d0, 'in der Schutzzeit kein Tod');
+  let died = false; for (let i = 0; i < 40 && !died; i++) { hold(); run(1); died = dz.scoreParts().nd > d0; }
+  assert.ok(died, 'nach der Schutzzeit wieder verwundbar');
+});
+
+test('Endgegner: Tore brauchen Diamanten, Bosse brauchen Fähigkeiten', () => {
+  const { dz, listeners, run } = boot();
+  const key = (k, d) => d ? listeners.keydown({ key: k, preventDefault() {} }) : listeners.keyup({ key: k });
+  dz.setState('play'); dz.loadLevel('hub');
+  assert.equal(dz.L.coins.length, 0, 'keine Münzen in der Hubwelt');
+  const gates = dz.L.doors.filter(d => d.need).map(d => [d.world, d.need]);
+  assert.equal(JSON.stringify(gates), JSON.stringify([['b1', 7], ['b2', 10], ['b3', 12]]));
+  Object.assign(dz.save.ab, { double: true, wall: true, dash: true, glide: true });
+  // Igelkönig: Draufspringen hilft nicht, Dash im benommenen Zustand trifft
+  dz.setState('play'); dz.loadLevel('b1'); run(80); let B = dz.boss;
+  B.state = 'dizzy'; B.timer = 3; B.x = 20 * 16; dz.P.inv = 0; dz.P.face = 1; dz.P.x = B.x - 24; dz.P.y = 13 * 16 - 14; run(1);
+  key('ArrowRight', 1); run(1); listeners.keydown({ key: 'Shift' }); run(12); key('ArrowRight', 0);
+  assert.equal(B.hp, 2, 'Dash trifft den Igelkönig');
+  for (let i = 0; i < 30; i++) { dz.P.inv = 5; run(1); }
+  for (let k = 0; k < 2; k++) { B.state = 'dizzy'; B.timer = 3; B.inv = 0; B.x = 20 * 16; dz.P.inv = 0; dz.P.face = 1; dz.P.x = B.x - 24; dz.P.y = 13 * 16 - 14; dz.P.vx = 0; dz.P.dashCD = 0; run(1);
+    key('ArrowRight', 1); run(1); listeners.keydown({ key: 'Shift' }); run(14); key('ArrowRight', 0); for (let i = 0; i < 30; i++) { dz.P.inv = 5; run(1); } }
+  for (let i = 0; i < 160; i++) { dz.P.inv = 5; run(1); }
+  assert.ok(B.trophy, 'Igelkönig lässt die Krone fallen');
+  dz.P.x = B.trophy.x - 5; dz.P.y = 13 * 16 - 14; run(220);
+  assert.equal(dz.save.bosses.b1, true, 'Igelkönig-Sieg gespeichert');
+  // Felsgolem: Einzelsprung erreicht den Kopf nicht, Kopftreffer von oben zählt
+  dz.setState('play'); dz.loadLevel('b2'); run(60); B = dz.boss;
+  dz.save.ab.double = false; dz.P.inv = 5; dz.P.x = 4 * 16; dz.P.y = 15 * 16 - 14; run(5);
+  key(' ', 1); let top = 1e9; for (let i = 0; i < 40; i++) { run(1); top = Math.min(top, dz.P.y + dz.P.h); } key(' ', 0);
+  assert.ok(top > B.y, 'Kopf ohne Doppel-/Wandsprung unerreichbar');
+  dz.save.ab.double = true; B.inv = 0; dz.P.inv = 0; dz.P.x = B.x + B.w / 2 - 5; dz.P.y = B.y - 60; dz.P.vy = 150; run(20);
+  assert.equal(B.hp, 2, 'Kopftreffer am Golem');
+  // Sturmgeist: drei Treffer von oben, dann Krone und Sieg
+  dz.setState('play'); dz.loadLevel('b3'); run(60); B = dz.boss;
+  for (let k = 0; k < 3; k++) { B.inv = 0; dz.P.inv = 0; for (let i = 0; i < 4; i++) { dz.P.x = B.x + B.w / 2 - 5; dz.P.y = B.y - 16 + i * 3; dz.P.vy = 150; run(1); } for (let i = 0; i < 20; i++) { dz.P.inv = 5; run(1); } }
+  assert.equal(B.hp, 0, 'Sturmgeist besiegt');
+  for (let i = 0; i < 150; i++) { dz.P.inv = 5; run(1); }
+  assert.ok(B.trophy, 'Krone erscheint');
+  dz.P.x = B.trophy.x - 5; dz.P.y = 17 * 16 - 14; run(220);
+  assert.equal(dz.save.bosses.b3, true, 'Sieg gespeichert');
+});
+
+test('Nach dem letzten Endgegner kommt der Abschluss-Bildschirm', () => {
+  const { dz, run } = boot();
+  Object.assign(dz.save.ab, { double: true, wall: true, dash: true, glide: true });
+  dz.save.bosses.b1 = true; dz.save.bosses.b2 = true;
+  dz.setState('play'); dz.loadLevel('b3'); run(60); const B = dz.boss;
+  for (let k = 0; k < 3; k++) { B.inv = 0; dz.P.inv = 0; for (let i = 0; i < 4; i++) { dz.P.x = B.x + B.w / 2 - 5; dz.P.y = B.y - 16 + i * 3; dz.P.vy = 150; run(1); } for (let i = 0; i < 20; i++) { dz.P.inv = 5; run(1); } }
+  for (let i = 0; i < 150; i++) { dz.P.inv = 5; run(1); }
+  assert.equal(dz.save.endingSeen, false, 'noch nicht vor dem Sieg');
+  dz.P.x = B.trophy.x - 5; dz.P.y = 17 * 16 - 14;
+  for (let i = 0; i < 220 && !dz.save.endingSeen; i++) run(1);
+  assert.equal(dz.save.bosses.b3, true, 'dritter Boss besiegt');
+  assert.equal(dz.save.endingSeen, true, 'Abschluss-Bildschirm gezeigt');
 });
