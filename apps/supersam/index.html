@@ -558,14 +558,20 @@ const DEFS={
     b.door(152,22,'b1',7); b.door(162,22,'b2',10); b.door(172,22,'b3',12);   // Endgegner-Tore: Diamanten nötig
   }},
   // Übungswiese beim ersten Start: jede Station verlangt genau einen Handgriff, ohne Gegner und Abgründe
-  uebung:{name:'Übungswiese',w:96,h:20,top:17,style:'meadow',noReturn:true,build(b){
-    b.ground(0,95); b.rect(0,0,0,16); b.start(6,16); b.coins(16,9,14); b.coins(16,2,4);
+  uebung:{name:'Übungswiese',w:194,h:20,top:17,style:'meadow',noReturn:true,build(b){
+    b.ground(0,193); b.rect(0,0,0,16); b.start(6,16); b.coins(16,9,14); b.coins(16,2,4);
     b.rect(26,16,27,16); b.coins(14,26,27);                                   // Station 3: Kiste – kurz springen
     b.rect(38,14,39,16); b.coins(12,38,39);                                   // Station 4: Mauer – länger halten
     b.clear(47,17,49,18); b.coins(15,47,49);                                  // Station 5: Graben – Anlauf und springen
     b.rect(54,12,62,14); b.coins(16,55,61);                                   // Station 6: niedriger Gang …
     b.rect(65,14,72,16); b.coins(12,65,68);                                   // … dann steil nach oben auf den Block
-    b.coins(16,76,80); b.door(86,16,0);
+    b.rect(78,16,81,16); b.rect(82,15,85,16); b.rect(86,13,89,16); b.coins(15,78,81); b.coins(14,82,85); b.coins(12,86,89);   // Station 7: Treppe
+    b.clear(96,17,120,18); b.plat(15,99,101); b.plat(14,105,107); b.plat(15,111,113); b.plat(15,117,119);                    // Station 8: Bretter über dem Graben
+    b.coins(14,99,101); b.coins(13,105,107); b.coins(14,111,113); b.coins(14,117,119);
+    b.rect(128,12,136,14); b.coins(16,129,135); b.rect(139,14,146,16); b.coins(13,139,142);                                    // Station 9: noch einmal senkrecht
+    b.rect(152,16,153,16); b.rect(158,14,159,16); b.clear(164,17,166,18); b.plat(14,170,172); b.rect(176,14,177,16);       // Station 10: Parcours
+    b.coins(15,152,153); b.coins(13,158,159); b.coins(15,164,166); b.coins(13,170,172); b.coins(13,176,177); b.coins(16,180,184);
+    b.door(188,16,0);
   }},
   b1:{name:'Igelkönig',w:36,h:16,top:13,style:'forest',arena:{floor:13,left:1,right:35,bx:24,ceil:0,view:4},build(b){
     b.ground(0,35); b.rect(0,0,0,15); b.rect(35,0,35,15); b.start(3,12); b.plat(9,8,11); b.plat(9,24,27);
@@ -1192,6 +1198,10 @@ const TUT_STEPS=[
   {t:'Die Mauer ist höher: Halte den Sprungdaumen länger – Sam springt höher.',zone:'both'},
   {t:'Graben: Lauf an und spring kurz vor der Kante.',zone:'both'},
   {t:'Im Gang ist es zu niedrig. Am Ende stehen bleiben, beide Daumen gleichzeitig aufsetzen – senkrecht hoch. Lass rechts liegen, um auf den Block zu lenken.',zone:'both'},
+  {t:'Treppe: Für kleine Stufen kurz tippen, für die große Stufe länger halten.',zone:'both'},
+  {t:'Hüpf von Brett zu Brett. Fällst du in den Graben, kletterst du einfach wieder raus.',zone:'both'},
+  {t:'Noch einmal: im Gang laufen, am Ende stehen bleiben, beide Daumen aufsetzen und auf den Block lenken.',zone:'both'},
+  {t:'Jetzt alles zusammen – der Parcours ohne Hilfe!',zone:null},
   {t:'Geschafft! Lauf zur Tür und bleib darin stehen – sie bringt dich in die Hubwelt.',zone:'r',end:true}];
 const tutEl=document.getElementById('tut'), tutStep=document.getElementById('tstep'), tutText=document.getElementById('ttext');
 const TUT={on:false,i:0,ok:0,x0:0,y0:0,peak:0,air:false,endT:0};
@@ -1218,6 +1228,10 @@ function tickTutorial(dt){
     case 3: if(c>41&&P.ground) tutNext(); break;
     case 4: if(c>51&&P.ground) tutNext(); break;
     case 5: if(c>64.5&&P.ground&&feet<=14*TS+1) tutNext(); break;
+    case 6: if(c>90&&P.ground) tutNext(); break;
+    case 7: if(c>121&&P.ground&&feet<=17*TS+1) tutNext(); break;
+    case 8: if(c>138.5&&P.ground&&feet<=14*TS+1) tutNext(); break;
+    case 9: if(c>180&&P.ground) tutNext(); break;
   }
 }
 function startPractice(){ loadLevel('uebung'); state='play'; startTutorial(); }
