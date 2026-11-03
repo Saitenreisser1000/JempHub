@@ -1207,7 +1207,7 @@ const tutEl=document.getElementById('tut'), tutStep=document.getElementById('tst
 const TUT={on:false,i:0,ok:0,x0:0,y0:0,peak:0,air:false,endT:0};
 function startTutorial(){ TUT.on=true; TUT.i=0; tutShow(); }
 function tutShow(){
-  const st=TUT_STEPS[TUT.i]; tutEl.hidden=false; tutText.classList.remove('ok');
+  const st=TUT_STEPS[TUT.i]; tutEl.hidden=true; tutText.classList.remove('ok');   // Übungswiese erklärt sich selbst: keine Textleiste, nur pulsierende Hälften
   tutStep.textContent=st.end?'GESCHAFFT':`SCHRITT ${TUT.i+1} VON ${TUT_STEPS.length-1}`; tutText.textContent=st.t;
   zl.classList.toggle('hint',st.zone==='l'||st.zone==='both'); zr.classList.toggle('hint',st.zone==='r'||st.zone==='both');
   TUT.x0=P.x; TUT.y0=P.y+P.h; TUT.peak=0; TUT.air=false; TUT.ok=0; TUT.endT=st.end?4:0;
