@@ -25,7 +25,7 @@ function boot() {
   const element = () => ({
     classList: { add() {}, remove() {}, toggle() {} },
     addEventListener() {}, append() {}, querySelectorAll: () => [],
-    style: {}, hidden: false, textContent: '', innerHTML: '', getContext: () => stub(), width: 16, height: 16,
+    style: { setProperty() {} }, hidden: false, textContent: '', innerHTML: '', getContext: () => stub(), width: 16, height: 16,
   });
   const ctx = {
     document: { getElementById: element, createElement: element, documentElement: {}, addEventListener() {} },
@@ -176,4 +176,39 @@ test('Kamera zoomt aus, wenn die nächste Plattform hoch oder tief liegt', () =>
     assert.ok(ty >= c.camY + 8 && ty <= c.camY + c.viewH - 4, `Welt ${lv} Spalte ${col}: Ziel Reihe ${targetRow} nicht im Bild`);
     assert.ok(dz.P.y >= c.camY && dz.P.y + 14 <= c.camY + c.viewH, `Welt ${lv} Spalte ${col}: Sam nicht im Bild`);
   }
+});
+
+test('Käfig am Ziel öffnet erst mit genug Punkten', () => {
+  const { dz, listeners, run } = boot();
+  const key = (k, d) => d ? listeners.keydown({ key: k, preventDefault() {} }) : listeners.keyup({ key: k });
+  for (const lv of [1, 2, 3, 4]) {
+    Object.assign(dz.save.ab, { double: false, wall: false, dash: false, glide: false });
+    dz.setState('play'); dz.loadLevel(lv); dz.L.enemies.length = 0;
+    const g = dz.L.goal; dz.P.x = g.x - 80; dz.P.y = g.bottom - 14; run(10);
+    assert.ok(dz.score() < dz.L.need, `Welt ${lv}: Restzeit allein reicht nicht`);
+    key('ArrowRight', 1); run(120); key('ArrowRight', 0);
+    assert.equal(dz.cage.open, false, `Welt ${lv}: Käfig bleibt zu`);
+    assert.ok(dz.gate.door >= 1, `Welt ${lv}: Käfig wird zur Tür`);
+    dz.addCoins(Math.ceil((dz.L.need - dz.score()) / 10) + 5);
+    key('ArrowLeft', 1); run(20); key('ArrowLeft', 0); key('ArrowRight', 1); run(200); key('ArrowRight', 0); run(200);
+    assert.equal(dz.cage.open, true, `Welt ${lv}: Käfig öffnet mit genug Punkten`);
+    assert.equal(dz.save.ab[['', 'double', 'wall', 'dash', 'glide'][lv]], true, `Welt ${lv}: Fähigkeit erhalten`);
+  }
+});
+
+test('Tür bei zu wenig Punkten startet die Welt neu; Gegner und Tod ändern die Punkte', () => {
+  const { dz, run } = boot();
+  dz.setState('play'); dz.loadLevel(1); dz.L.enemies.length = 0; const g = dz.L.goal;
+  dz.addCoins(12); run(300);
+  dz.P.x = g.x + 3; dz.P.y = g.bottom - 14; dz.P.vx = 0;
+  let restarted = false; for (let i = 0; i < 120 && !restarted; i++) { run(1); restarted = dz.P.x < 20 * 16; }
+  assert.ok(restarted, 'Stillstand in der Tür startet neu');
+  assert.equal(dz.scoreParts().coins, 0, 'Münzpunkte zurückgesetzt');
+  dz.setState('play'); dz.loadLevel(1);
+  const e = dz.L.enemies.find(e => e.type === 'beetle'), s0 = dz.score();
+  dz.P.x = e.x; dz.P.y = e.y - 40; dz.P.vy = 200; run(20);
+  assert.equal(dz.scoreParts().nk, 1, 'Käfer zählt als besiegt');
+  assert.ok(dz.score() - s0 >= 45, 'Gegner bringt Punkte');
+  const s1 = dz.score(); dz.P.y = 40 * 16; run(3);
+  assert.equal(dz.scoreParts().nd, 1, 'Tod zählt'); assert.ok(s1 - dz.score() >= 95, 'Tod kostet Punkte');
 });
