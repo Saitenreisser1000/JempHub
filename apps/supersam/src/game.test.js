@@ -326,3 +326,11 @@ test('Neue Welten: Türen in der Hubwelt und Abschluss ohne neue Fähigkeit', ()
   assert.equal(JSON.stringify(Object.keys(dz.save.ab).filter(k => dz.save.ab[k])), JSON.stringify(['double']), 'keine neue Fähigkeit');
   assert.equal(warnings.length, 0, 'keine Fehler');
 });
+
+test('Weltnummern: Teil 1 und Teil 2 je Fähigkeitswelt, Summen aus allen Welten', () => {
+  const { dz } = boot();
+  assert.equal([1, 5, 2, 6, 3, 7, 4, 8].map(dz.WNO).join(' '), '1-1 1-2 2-1 2-2 3-1 3-2 4-1 4-2');
+  const t = dz.totals();
+  assert.equal(t.cr, Object.values(t.per).reduce((a, b) => a + b, 0), 'Gesamtsumme passt');
+  assert.ok(t.per.hub >= 1, 'Hub-Diamant mitgezählt');
+});

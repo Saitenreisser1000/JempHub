@@ -246,6 +246,8 @@ function persist(){ try{ localStorage.setItem(SAVE_KEY,JSON.stringify(save)); }c
 const NAMES={0:'Hubwelt',1:'Wald',2:'Felsen',3:'See',4:'Gipfel',5:'Wipfelwald',6:'Schlucht',7:'Lagune',8:'Sturmgrat',b1:'Igelkönig',b2:'Felsgolem',b3:'Sturmgeist'};
 const WORLD_COL={b1:'#9be06a',b2:'#e0884a',b3:'#b07aff',0:'#f6ead2',1:'#6aa84f',2:'#c69a6a',3:'#4fa3d9',4:'#b9a7ff',5:'#9be06a',6:'#e0a050',7:'#5fd0e0',8:'#d0c0ff'};
 const AB_OF={1:'double',2:'wall',3:'dash',4:'glide'};
+// Anzeige-Nummer: jede Fähigkeitswelt hat zwei Teile (Wald 1-1, Wipfelwald 1-2 …)
+const WNO=n=>n>4?`${n-4}-2`:`${n}-1`;
 const AB_TIP={double:'In der Luft nochmal springen',wall:'An Wänden abstoßen und klettern',dash:'Laufdaumen zweimal tippen',glide:'Daumen halten und segeln'};
 const AB_INFO={
   double:{name:'Doppelsprung',short:'2×',how:'In der Luft den Sprungdaumen kurz heben und wieder aufsetzen. Damit erreichst du Kanten, die etwa doppelt so hoch liegen.'},
@@ -854,7 +856,7 @@ const DEFS={
 // Gesamtzahl der Diamanten und Sterne (aus allen Welten gezählt)
 let TOTALS=null;
 function totals(){ if(TOTALS) return TOTALS; const t={cr:0,st:0,per:{}};
-  for(const id of Object.keys(DEFS)){ const n=+id; if(!n) continue; const lv=makeLevel(n); t.per[n]=lv.crystals.length; t.cr+=lv.crystals.length; t.st+=lv.stars.length; }
+  for(const id of Object.keys(DEFS)){ if(DEFS[id].arena) continue; const n=isNaN(+id)?id:+id, lv=makeLevel(n); t.per[n]=lv.crystals.length; t.cr+=lv.crystals.length; t.st+=lv.stars.length; }
   return TOTALS=t; }
 function makeLevel(id){
   const d=DEFS[id], w=d.w, h=d.h;
@@ -1260,7 +1262,7 @@ function finishLevel(celebrated){
   const ab=AB_OF[n], isNew=!!ab&&!save.ab[ab];
   if(isNew) save.ab[ab]=true;
   persist();
-  document.getElementById('donetitle').textContent=`Welt ${n} · ${NAMES[n]} geschafft`;
+  document.getElementById('donetitle').textContent=`Welt ${WNO(n)} · ${NAMES[n]} geschafft`;
   document.getElementById('donestats').innerHTML=
     `<b style="font-size:20px;color:var(--ember)">${total} Punkte</b>${prev.score&&total>prev.score?' · neuer Rekord':''}<br>`+
     `Münzen ${levelCoins}/${L.coins.length} = ${sp.coins} · Diamanten ${sp.nc}/${L.crystals.length} = ${sp.crystals} · Sterne ${sp.ns}/${L.stars.length} = ${sp.stars}<br>`+
@@ -1478,7 +1480,7 @@ function update(dt){
     const inside=d.armed&&over&&P.ground&&Math.abs(P.y+P.h-d.bottom)<4&&Math.abs(P.vx)<25;
     d.t=inside?d.t+dt:Math.max(0,d.t-dt*2);
     if(d.t>=.7&&d.need&&crystalTotal()<d.need){ d.t=0; d.armed=false; sfx('locked'); showMsg(`Noch ${d.need-crystalTotal()} Diamanten nötig`); continue; }
-    if(d.t>=.7){ clearInput(); sfx('door'); const n=d.world; if(n===0){ const w=L.id; loadLevel('hub',w); showMsg('Hubwelt'); } else { loadLevel(n); showMsg(typeof n==='number'?`Welt ${n} · ${NAMES[n]}`:`Endgegner: ${NAMES[n]}`); } return; }
+    if(d.t>=.7){ clearInput(); sfx('door'); const n=d.world; if(n===0){ const w=L.id; loadLevel('hub',w); showMsg('Hubwelt'); } else { loadLevel(n); showMsg(typeof n==='number'?`Welt ${WNO(n)} · ${NAMES[n]}`:`Endgegner: ${NAMES[n]}`); } return; }
   }
 }
 let ribbon=[], floaters=[];
@@ -2077,7 +2079,7 @@ function drawDoors(){ for(const d of L.doors){
   ctx.fillStyle=col; ctx.globalAlpha=.55+.25*Math.sin(clock*3+d.world); ctx.fillRect(x+6,y+8,12,24); ctx.globalAlpha=1;
   if(save.done[d.world]){ ctx.fillStyle=C.gold; ctx.fillRect(x+10,y+3,4,3); }
   ctx.textAlign='center'; ctx.font='7px Silkscreen, monospace';
-  ctx.fillStyle='#1a1020'; const lbl=!d.world?'⌂ Hubwelt':typeof d.world==='number'?`${d.world} ${NAMES[d.world]}`:NAMES[d.world]; ctx.fillText(lbl,d.x+9,y-13); ctx.fillStyle=C.cream; ctx.fillText(lbl,d.x+8,y-14);
+  ctx.fillStyle='#1a1020'; const lbl=!d.world?'⌂ Hubwelt':typeof d.world==='number'?`${WNO(d.world)} ${NAMES[d.world]}`:NAMES[d.world]; ctx.fillText(lbl,d.x+9,y-13); ctx.fillStyle=C.cream; ctx.fillText(lbl,d.x+8,y-14);
   if(d.need){ const have=crystalTotal(), open=have>=d.need;
     if(!open){ ctx.fillStyle='rgba(13,21,36,.7)'; ctx.fillRect(x+5,y+7,14,25);
       ctx.fillStyle='#8a94a8'; for(let i=0;i<3;i++) ctx.fillRect(x+3,y+11+i*7,18,2);
@@ -2662,7 +2664,7 @@ function frame(now){
 }
 document.body?.classList.add('title');
 resize(); loadLevel('hub'); requestAnimationFrame(frame);
-window.__dz={TUT,startTutorial,get neutral(){return neutral;},HF,dress,HERO_ROWS,showEnding,get endingVisible(){return !endEl.hidden;},get boss(){return L.boss;},get bossFx(){return bossFx;},die:()=>die(),get gate(){return {door:gateDoor,t:gateT};},kill:()=>{ kills++; },score,scoreParts,get cage(){return {open:cageOpen,anim:cageAnim};},addCoins:n=>{levelCoins+=n;},get cam(){return {camX,camY,cx:CAM.cx,cy:CAM.cy,zoom,viewH,viewW};},PH,setFlow:v=>{flow=v;},startCelebrate,ITEM,playStep,schedule,audioInit,playSong,sfx,SFX,AU,loadLevel,update,P,save,get L(){return L;},setState:s=>{state=s;},finishLevel};
+window.__dz={WNO,totals,TUT,startTutorial,get neutral(){return neutral;},HF,dress,HERO_ROWS,showEnding,get endingVisible(){return !endEl.hidden;},get boss(){return L.boss;},get bossFx(){return bossFx;},die:()=>die(),get gate(){return {door:gateDoor,t:gateT};},kill:()=>{ kills++; },score,scoreParts,get cage(){return {open:cageOpen,anim:cageAnim};},addCoins:n=>{levelCoins+=n;},get cam(){return {camX,camY,cx:CAM.cx,cy:CAM.cy,zoom,viewH,viewW};},PH,setFlow:v=>{flow=v;},startCelebrate,ITEM,playStep,schedule,audioInit,playSong,sfx,SFX,AU,loadLevel,update,P,save,get L(){return L;},setState:s=>{state=s;},finishLevel};
 })();
 </script>
 
