@@ -212,3 +212,15 @@ test('Tür bei zu wenig Punkten startet die Welt neu; Gegner und Tod ändern die
   const s1 = dz.score(); dz.P.y = 40 * 16; run(3);
   assert.equal(dz.scoreParts().nd, 1, 'Tod zählt'); assert.ok(s1 - dz.score() >= 95, 'Tod kostet Punkte');
 });
+
+test('Nach dem Wiedereinstieg 2 Sekunden unverwundbar', () => {
+  const { dz, run } = boot();
+  dz.setState('play'); dz.loadLevel(1);
+  dz.die(); const d0 = dz.scoreParts().nd;
+  const e = dz.L.enemies.find(e => e.type === 'beetle');
+  const hold = () => { e.x = dz.P.x; e.y = dz.P.y + dz.P.h - e.h; };
+  for (let i = 0; i < 100; i++) { hold(); run(1); }
+  assert.equal(dz.scoreParts().nd, d0, 'in der Schutzzeit kein Tod');
+  let died = false; for (let i = 0; i < 40 && !died; i++) { hold(); run(1); died = dz.scoreParts().nd > d0; }
+  assert.ok(died, 'nach der Schutzzeit wieder verwundbar');
+});
