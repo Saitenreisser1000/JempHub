@@ -481,13 +481,13 @@ const T={
 const DEFS={
   hub:{name:'Hubwelt',w:128,h:26,top:23,style:'meadow',zones:[{to:13,s:'meadow'},{to:27,s:'forest'},{to:44,s:'stone'},{to:69,s:'lake'},{to:96,s:'snow'},{to:128,s:'stone'}],build(b){
     b.ground(0,127); b.start(4,22);
-    b.hill(6,2,2,true); b.coins(20,10,11);
-    b.door(18,22,1); b.coins(22,21,26);
-    b.rect(30,17,38,25); b.coins(16,31,34); b.door(35,16,2);          // Welt 2 liegt 6 Kacheln hoch: Doppelsprung
+    b.hill(6,2,2,true);
+    b.door(18,22,1);
+    b.rect(30,17,38,25); b.door(35,16,2);          // Welt 2 liegt 6 Kacheln hoch: Doppelsprung
     b.updraft(44,47,4,22); b.plat(5,39,42); b.crystal(41,4);          // Geheimnis: nur mit Gleiten
-    b.dip(49,1,2,true); b.coins(23,51,52);
+    b.dip(49,1,2,true);
     b.rect(58,11,63,25); b.door(61,10,3); b.hill(65,1,1);                              // Welt 3 auf hoher Säule: Wandsprung
-    b.rect(74,0,95,18); b.back(74,19,95,22); b.crack(76,19,77,22); b.door(90,22,4); b.coins(22,80,86); // Welt 4 hinter Rissfels: Dash
+    b.rect(74,0,95,18); b.back(74,19,95,22); b.crack(76,19,77,22); b.door(90,22,4); // Welt 4 hinter Rissfels: Dash
     b.door(104,22,'b1',7); b.door(114,22,'b2',10); b.door(124,22,'b3',12);   // Endgegner-Tore: Diamanten nötig
   }},
   b1:{name:'Igelkönig',w:36,h:16,top:13,style:'forest',arena:{floor:13,left:1,right:35,bx:24,ceil:0,view:4},build(b){
@@ -1248,7 +1248,7 @@ function updateBoss(dt){
     else if(B.state==='dizzy'){ B.timer-=dt; if(B.timer<=0){ B.state='walk'; B.timer=1.2+Math.random(); } }
     B.x=Math.max(left,Math.min(right-B.w,B.x));
     if(overlapP(B.x+4,B.y+6,B.w-8,B.h-6)){
-      if(B.state==='dizzy'&&P.dashT>0&&B.inv<=0){ hitBoss(B,false); B.state='walk'; B.timer=1.5; B.x+=(B.x+B.w/2<pcx?-30:30); }
+      if(B.state==='dizzy'&&P.dashT>0&&B.inv<=0){ hitBoss(B,false); if(!B.dead){ B.state='walk'; B.timer=1.5; B.x+=(B.x+B.w/2<pcx?-30:30); } }
       else if(B.inv<=0||B.state==='roll'){ if(hurtPlayer()) return true; }
     }
   }
@@ -1750,7 +1750,7 @@ function drawDoors(){ for(const d of L.doors){
     ctx.font='6px Silkscreen, monospace'; ctx.fillStyle=open?C.sky:'#ff8a8a'; ctx.fillText(`◆ ${Math.min(have,d.need)}/${d.need}`,d.x+8,y-5);
     if(save.bosses&&save.bosses[d.world]) ctx.drawImage(CROWN,d.x,y-30,16,11); }
   else if(d.world&&typeof d.world==='number'){ const total=Object.keys(save.crystals).filter(k=>k.startsWith(d.world+'-')).length, st=Object.keys(save.stars||{}).filter(k=>k.startsWith(d.world+'-')).length;
-  ctx.font='6px Silkscreen, monospace'; ctx.fillStyle=C.sky; ctx.fillText(`◆ ${total}/3`,d.x+2,y-5); ctx.fillStyle='#ffe14d'; ctx.fillText(`★ ${st}/2`,d.x+20,y-5); }
+  ctx.font='6px Silkscreen, monospace'; ctx.fillStyle=C.sky; ctx.fillText(`◆ ${total}/3`,d.x+8,y-5); }
   if(d.t>0){ ctx.strokeStyle=C.ember; ctx.lineWidth=2; ctx.beginPath(); ctx.arc(d.x+8,y+19,9,-Math.PI/2,-Math.PI/2+Math.PI*2*Math.min(1,d.t/.7)); ctx.stroke(); }
 } }
 function drawHubHints(){
@@ -2241,11 +2241,11 @@ function updateHud(){
   else if(L.id==='hub'){
     const total=Object.keys(save.crystals).length;
     scoreBox.hidden=true; hcol.style.fontSize='14px';
-    hcol.textContent=`◆ ${total}/13 · ★ ${Object.keys(save.stars||{}).length}/8 · ♛ ${Object.keys(save.bosses||{}).length}/3 · ● ${save.wallet}`;
+    hcol.textContent=`◆ ${total}/13`;
     hr.innerHTML=['double','wall','dash','glide'].map(a=>`<span class="pill${save.ab[a]?' on':''}">${AB_INFO[a].short}</span>`).join('');
   } else {
     hcol.style.fontSize='';
-    hcol.textContent=`◆ ${L.crystals.filter(k=>k.got).length}/${L.crystals.length} · ★ ${L.stars.filter(k=>k.got).length}/${L.stars.length} · ● ${levelCoins}/${L.coins.length}`;
+    hcol.textContent=`◆ ${L.crystals.filter(k=>k.got).length}/${L.crystals.length}`;
     const tl=Math.ceil(timeLeft()), sc=score(), ok=sc>=L.need;
     scoreBox.hidden=false; scoreBox.classList.toggle('ok',ok);
     scNeed.textContent=`/ ${L.need}`; sFill.style.width=Math.min(100,sc/L.need*100)+'%';

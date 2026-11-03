@@ -229,6 +229,7 @@ test('Endgegner: Tore brauchen Diamanten, Bosse brauchen Fähigkeiten', () => {
   const { dz, listeners, run } = boot();
   const key = (k, d) => d ? listeners.keydown({ key: k, preventDefault() {} }) : listeners.keyup({ key: k });
   dz.setState('play'); dz.loadLevel('hub');
+  assert.equal(dz.L.coins.length, 0, 'keine Münzen in der Hubwelt');
   const gates = dz.L.doors.filter(d => d.need).map(d => [d.world, d.need]);
   assert.equal(JSON.stringify(gates), JSON.stringify([['b1', 7], ['b2', 10], ['b3', 12]]));
   Object.assign(dz.save.ab, { double: true, wall: true, dash: true, glide: true });
@@ -237,6 +238,12 @@ test('Endgegner: Tore brauchen Diamanten, Bosse brauchen Fähigkeiten', () => {
   B.state = 'dizzy'; B.timer = 3; B.x = 20 * 16; dz.P.inv = 0; dz.P.face = 1; dz.P.x = B.x - 24; dz.P.y = 13 * 16 - 14; run(1);
   key('ArrowRight', 1); run(1); listeners.keydown({ key: 'Shift' }); run(12); key('ArrowRight', 0);
   assert.equal(B.hp, 2, 'Dash trifft den Igelkönig');
+  for (let k = 0; k < 2; k++) { B.state = 'dizzy'; B.timer = 3; B.inv = 0; B.x = 20 * 16; dz.P.inv = 0; dz.P.face = 1; dz.P.x = B.x - 24; dz.P.y = 13 * 16 - 14; dz.P.vx = 0; dz.P.dashCD = 0; run(1);
+    key('ArrowRight', 1); run(1); listeners.keydown({ key: 'Shift' }); run(14); key('ArrowRight', 0); for (let i = 0; i < 30; i++) { dz.P.inv = 5; run(1); } }
+  for (let i = 0; i < 160; i++) { dz.P.inv = 5; run(1); }
+  assert.ok(B.trophy, 'Igelkönig lässt die Krone fallen');
+  dz.P.x = B.trophy.x - 5; dz.P.y = 13 * 16 - 14; run(220);
+  assert.equal(dz.save.bosses.b1, true, 'Igelkönig-Sieg gespeichert');
   // Felsgolem: Einzelsprung erreicht den Kopf nicht, Kopftreffer von oben zählt
   dz.setState('play'); dz.loadLevel('b2'); run(60); B = dz.boss;
   dz.save.ab.double = false; dz.P.inv = 5; dz.P.x = 4 * 16; dz.P.y = 15 * 16 - 14; run(5);
