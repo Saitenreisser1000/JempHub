@@ -238,6 +238,7 @@ test('Endgegner: Tore brauchen Diamanten, Bosse brauchen Fähigkeiten', () => {
   B.state = 'dizzy'; B.timer = 3; B.x = 20 * 16; dz.P.inv = 0; dz.P.face = 1; dz.P.x = B.x - 24; dz.P.y = 13 * 16 - 14; run(1);
   key('ArrowRight', 1); run(1); listeners.keydown({ key: 'Shift' }); run(12); key('ArrowRight', 0);
   assert.equal(B.hp, 2, 'Dash trifft den Igelkönig');
+  for (let i = 0; i < 30; i++) { dz.P.inv = 5; run(1); }
   for (let k = 0; k < 2; k++) { B.state = 'dizzy'; B.timer = 3; B.inv = 0; B.x = 20 * 16; dz.P.inv = 0; dz.P.face = 1; dz.P.x = B.x - 24; dz.P.y = 13 * 16 - 14; dz.P.vx = 0; dz.P.dashCD = 0; run(1);
     key('ArrowRight', 1); run(1); listeners.keydown({ key: 'Shift' }); run(14); key('ArrowRight', 0); for (let i = 0; i < 30; i++) { dz.P.inv = 5; run(1); } }
   for (let i = 0; i < 160; i++) { dz.P.inv = 5; run(1); }
