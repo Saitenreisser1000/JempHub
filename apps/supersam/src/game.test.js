@@ -34,7 +34,7 @@ function boot() {
     matchMedia: () => ({ matches: false }),
     localStorage: { getItem: () => null, setItem() {} },
     performance: { now: () => time },
-    requestAnimationFrame: fn => { frame = fn; },
+    requestAnimationFrame: fn => { if (fn.name === 'frame') frame = fn; return 1; }, cancelAnimationFrame() {},
     setInterval: () => 0, setTimeout: () => 0, clearTimeout() {},
     AudioContext: function () { return stub(); },
     navigator: {}, screen: {},
@@ -260,4 +260,18 @@ test('Endgegner: Tore brauchen Diamanten, Bosse brauchen Fähigkeiten', () => {
   assert.ok(B.trophy, 'Krone erscheint');
   dz.P.x = B.trophy.x - 5; dz.P.y = 17 * 16 - 14; run(220);
   assert.equal(dz.save.bosses.b3, true, 'Sieg gespeichert');
+});
+
+test('Nach dem letzten Endgegner kommt der Abschluss-Bildschirm', () => {
+  const { dz, run } = boot();
+  Object.assign(dz.save.ab, { double: true, wall: true, dash: true, glide: true });
+  dz.save.bosses.b1 = true; dz.save.bosses.b2 = true;
+  dz.setState('play'); dz.loadLevel('b3'); run(60); const B = dz.boss;
+  for (let k = 0; k < 3; k++) { B.inv = 0; dz.P.inv = 0; for (let i = 0; i < 4; i++) { dz.P.x = B.x + B.w / 2 - 5; dz.P.y = B.y - 16 + i * 3; dz.P.vy = 150; run(1); } for (let i = 0; i < 20; i++) { dz.P.inv = 5; run(1); } }
+  for (let i = 0; i < 150; i++) { dz.P.inv = 5; run(1); }
+  assert.equal(dz.save.endingSeen, false, 'noch nicht vor dem Sieg');
+  dz.P.x = B.trophy.x - 5; dz.P.y = 17 * 16 - 14;
+  for (let i = 0; i < 220 && !dz.save.endingSeen; i++) run(1);
+  assert.equal(dz.save.bosses.b3, true, 'dritter Boss besiegt');
+  assert.equal(dz.save.endingSeen, true, 'Abschluss-Bildschirm gezeigt');
 });
