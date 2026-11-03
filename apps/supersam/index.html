@@ -112,6 +112,7 @@ canvas{position:fixed;inset:0;width:100vw;height:100vh;display:block;image-rende
 #endbtn{animation:rise .5s 1.1s both}
 @media (max-width:560px){.endstats{grid-template-columns:repeat(2,minmax(0,1fr))}}
 @media (prefers-reduced-motion:reduce){#endtitle,.endsub,.endstats,#endbtn{animation:none}}
+body.title .hud,body.title .zone,body.title #msg{display:none!important}
 #rotate{display:none;z-index:20;background:var(--night)}
 @media (orientation:portrait){#rotate{display:flex}}
 .phone{width:40px;height:66px;border:4px solid var(--cream);border-radius:8px;animation:turn 2s ease-in-out infinite}
@@ -267,13 +268,36 @@ const HERO=[
   "...kbBk.kBbk....",
   "...kffk.kffk....",
   "...kkkk.kkkk...."];
-const HERO_FR={
-  idle:pair(spr(HERO,HERO_PAL)),
-  blink:pair(spr(withRows(HERO,{5:"..kYyssssssk....",6:"..kYsssskksk...."}),HERO_PAL)),
-  runA:pair(spr(withRows(HERO,{13:"..kbBk...kBbk...",14:"..kffk....kffk..",15:"..kkkk....kkkk.."}),HERO_PAL)),
-  runB:pair(spr(withRows(HERO,{13:"....kbBBk.......",14:".....kffk.......",15:".....kkkk......."}),HERO_PAL)),
-  jump:pair(spr(withRows(HERO,{13:"....kbbbbk......",14:"....kffffk......",15:"................"}),HERO_PAL))
+const HERO_ROWS={
+  idle:HERO,
+  blink:withRows(HERO,{5:"..kYyssssssk....",6:"..kYsssskksk...."}),
+  runA:withRows(HERO,{13:"..kbBk...kBbk...",14:"..kffk....kffk..",15:"..kkkk....kkkk.."}),
+  runB:withRows(HERO,{13:"....kbBBk.......",14:".....kffk.......",15:".....kkkk......."}),
+  jump:withRows(HERO,{13:"....kbbbbk......",14:"....kffffk......",15:"................"})
 };
+// Outfits: jede Fähigkeit verändert Sams Aussehen, die Teile kombinieren sich
+const OUTFIT_PAL={u:'#bfe8ff',W:'#eaf8ff',n:'#e03c3c',g:'#8a5a3a',v:'#3a3a5a',V:'#24243a',L:'#ffe14d',c:'#4f9a4a',C:'#2f6e3a',l:'#7cd36a'};
+const OUTFIT_NAME={double:'Flügelschuhe',wall:'Stirnband und Kletterhandschuh',dash:'Blitz-Shirt',glide:'Blätter-Umhang'};
+function dress(rows,ab){
+  const R=rows.map(r=>r.split('')), at=(y,x)=>R[y]&&R[y][x], put=(y,x,c,only)=>{ if(R[y]&&x>=0&&x<16&&(!only||only.includes(R[y][x]))) R[y][x]=c; };
+  if(ab.double){ for(let y=12;y<16;y++){ for(let x=0;x<16;x++) if(R[y][x]==='f') R[y][x]='u';
+      for(let x=1;x<16;x++) if(R[y][x]==='k'&&R[y][x+1]==='u'&&R[y][x-1]==='.'){ put(y,x-1,'W'); put(y-1,x-1,'W','.'); } } }
+  if(ab.wall){ for(let x=3;x<12;x++) put(3,x,'n','yYh'); for(let y=9;y<12;y++) for(let x=0;x<16;x++) if(R[y][x]==='s') R[y][x]='g'; }
+  if(ab.dash){ for(let y=9;y<12;y++) for(let x=0;x<16;x++){ if(R[y][x]==='r') R[y][x]='v'; else if(R[y][x]==='R') R[y][x]='V'; }
+    put(9,7,'L','vV'); put(10,6,'L','vV'); put(10,7,'L','vV'); put(11,6,'L','vV'); }
+  if(ab.glide){ for(let y=9;y<13;y++){ const k=R[y].indexOf('k'); if(k>0){ put(y,k-1,'c','.'); if(y>=11) put(y,k-2,'C','.'); } }
+    put(0,6,'l'); put(0,7,'l'); }
+  return R.map(r=>r.join(''));
+}
+const heroCache={};
+function HF(extra){
+  const ab={...save.ab}; if(extra) ab[extra]=true;
+  const key=['double','wall','dash','glide'].map(a=>ab[a]?1:0).join('');
+  if(!heroCache[key]){ const pal={...HERO_PAL,...OUTFIT_PAL}, fr={};
+    for(const [n,rows] of Object.entries(HERO_ROWS)) fr[n]=pair(spr(dress(rows,ab),pal));
+    heroCache[key]=fr; }
+  return heroCache[key];
+}
 const BEETLE_PAL={k:'#1a1020',r:'#d84a4a',R:'#8e2a36',l:'#ff9a8a',w:'#ffffff'};
 const BEETLE=[
   "....kkkkkk......",
@@ -941,6 +965,7 @@ function playSong(id){ if(!AU.ctx) return; const s=SONGS[id]||SONGS.hub; if(AU.s
 // ---------- Panels ----------
 const startEl=document.getElementById('start'), doneEl=document.getElementById('done');
 function begin(){
+  document.body?.classList.remove('title');
   audioInit(); startEl.hidden=true; loadLevel('hub'); state='play';
   try{ const p=document.documentElement.requestFullscreen?.({navigationUI:'hide'}); p?.then(()=>screen.orientation?.lock?.('landscape').catch(()=>{})).catch(()=>{}); }catch(_){}
 }
@@ -996,7 +1021,7 @@ function finishLevel(celebrated){
     `Münzen ${levelCoins}/${L.coins.length} = ${sp.coins} · Diamanten ${sp.nc}/${L.crystals.length} = ${sp.crystals} · Sterne ${sp.ns}/${L.stars.length} = ${sp.stars}<br>`+
     `Gegner ${sp.nk} = +${sp.enemies} · Tode ${sp.nd} = ${sp.deaths} · Restzeit ${sp.nt} s = ${sp.time}<br>Zeit ${time.toFixed(1)} s · Höchster Schwung ×${bestTier+1}`;
   const nw=document.getElementById('donenew'); nw.hidden=!isNew;
-  if(isNew){ document.getElementById('newname').textContent='Neu: '+AB_INFO[ab].name; document.getElementById('newhow').textContent=AB_INFO[ab].how; }
+  if(isNew){ document.getElementById('newname').textContent='Neu: '+AB_INFO[ab].name; document.getElementById('newhow').textContent=AB_INFO[ab].how+' Neues Outfit: '+OUTFIT_NAME[ab]+'.'; }
   document.getElementById('donehint').textContent= got<L.crystals.length ? 'Einige Diamanten und Sterne erreichst du erst mit Fähigkeiten aus anderen Welten.' : 'Alle Diamanten dieser Welt gefunden.';
   doneEl.hidden=false;
 }
@@ -1405,7 +1430,7 @@ function endFrame(now){
   // Jubelnder Sam mit Krone unten
   const hop=Math.abs(Math.sin(endT*4))*22*s, cx=Math.max(34*s,W*.1), sy=H-60*s-hop;
   g.fillStyle='rgba(13,21,36,.4)'; g.beginPath(); g.ellipse(cx,H-12*s,18*s*(1-hop/(60*s)),4*s,0,0,7); g.fill();
-  g.drawImage((Math.sin(endT*4)>0?HERO_FR.jump:HERO_FR.idle).r,cx-24*s,sy,48*s,48*s);
+  g.drawImage((Math.sin(endT*4)>0?HF().jump:HF().idle).r,cx-24*s,sy,48*s,48*s);
   g.drawImage(CROWN,cx-12*s,sy-12*s,24*s,16*s);
   // die drei Boss-Kronen rechts unten
   for(let i=0;i<3;i++){ const bx=W-Math.max(34*s,W*.1)-(2-i)*30*s, by=H-34*s-Math.abs(Math.sin(endT*4+i*1.1))*12*s;
@@ -1891,6 +1916,7 @@ function drawEnemies(){ for(const e of L.enemies){
   ctx.drawImage(img,x,y,dw,sh); ctx.globalAlpha=1;
 } }
 function heroFrame(){
+  const HERO_FR=HF(state==='celebrate'?celebAb:null);
   if(P.dashT>0) return HERO_FR.runA;
   if(P.wallDir&&P.vy>0) return HERO_FR.runB;
   if(!P.ground) return P.vy<0?HERO_FR.jump:HERO_FR.runB;
@@ -1909,32 +1935,66 @@ function drawPlayer(){
   ctx.drawImage(img,x,y,w,h);
   ctx.globalAlpha=1;
 }
+const TITLE_TOUR=['meadow','forest','stone','lake','snow'];
+let titleKids=[], titleNext=0, titleCoins=[];
 function drawTitle(){
   const ss=cv.height/SKY_H; ctx.setTransform(ss,0,0,ss,0,0);
-  const W=skyW, H=SKY_H, scroll=clock*40, keep=camX;
-  camX=scroll; drawScene('meadow'); camX=keep;
+  const W=skyW, H=SKY_H, speed=70, scroll=clock*speed, keep=camX;
+  // Rundreise durch die Welten mit weicher Überblendung
+  const seg=6, tt=clock/seg, i0=Math.floor(tt)%TITLE_TOUR.length, i1=(i0+1)%TITLE_TOUR.length, fade=Math.max(0,Math.min(1,(tt%1-.8)/.2));
+  const stA=TITLE_TOUR[i0], stB=TITLE_TOUR[i1];
+  camX=scroll; drawScene(stA);
+  if(fade>0){ const main=ctx; ctx=bgCtx; ctx.setTransform(ss,0,0,ss,0,0); drawScene(stB); ctx=main; ctx.setTransform(1,0,0,1,0,0); ctx.globalAlpha=fade; ctx.drawImage(bgCanvas,0,0); ctx.globalAlpha=1; ctx.setTransform(ss,0,0,ss,0,0); }
+  camX=keep;
   const gy=H-44, off=Math.floor(scroll)%16, base=Math.floor(scroll/16);
-  for(let i=-1;i*16<W+16;i++){ const x=i*16-off, k=((i+base)%3+3)%3;
-    ctx.drawImage(T.top.meadow[k],x,gy); ctx.drawImage(T.body.meadow[k],x,gy+16); ctx.drawImage(T.body.meadow[(k+1)%3],x,gy+32); }
-  // Sam läuft und springt über Münzen
-  const ph=(clock%1.8)/1.8, air=ph<.45, hop=air?Math.sin(ph/.45*Math.PI)*46:0;
-  const f=air?(ph<.22?HERO_FR.jump:HERO_FR.runB):(Math.floor(clock*10)%2?HERO_FR.runA:HERO_FR.runB);
-  const hx=Math.round(W*.5-32), hy=Math.round(gy-64-hop);
-  ctx.fillStyle='rgba(13,21,36,.25)'; ctx.fillRect(hx+14,gy-2,36-hop*.3,3);
-  ctx.drawImage(f.r,hx,hy,64,64);
-  for(let i=0;i<6;i++){ const cx=Math.round(((i*46-scroll*1)%(W+60)+W+60)%(W+60)-30); ctx.drawImage(COIN_SEQ[Math.floor(clock*8+i)%4],cx,gy-74,8,10); }
-  ctx.drawImage(CRYSTAL,Math.round(W*.82),Math.round(46+Math.sin(clock*2)*4),20,22);
-  // Schriftzug
-  const size=Math.min(48,Math.floor(W/8.2)), y=Math.round(H*.27);
-  ctx.textAlign='center'; ctx.textBaseline='middle'; ctx.font=`700 ${size}px Silkscreen, monospace`;
-  ctx.fillStyle='#0d1524'; ctx.fillText('SUPERSAM',W/2+4,y+5);
-  ctx.lineJoin='round'; ctx.lineWidth=Math.max(6,size/6); ctx.strokeStyle='#1a1020'; ctx.strokeText('SUPERSAM',W/2,y);
-  const g=ctx.createLinearGradient(0,y-size/2,0,y+size/2); g.addColorStop(0,'#fff3b0'); g.addColorStop(.45,'#ffd166'); g.addColorStop(.55,'#f2a65a'); g.addColorStop(1,'#c4703a');
-  ctx.fillStyle=g; ctx.fillText('SUPERSAM',W/2,y);
-  ctx.font=`${Math.max(8,Math.round(size/5))}px Silkscreen, monospace`; ctx.fillStyle='#f6ead2';
+  for(let i=-1;i*16<W+16;i++){ const x=i*16-off, k=((i+base)%3+3)%3, st=fade>.5?stB:stA;
+    ctx.drawImage(T.top[st][k],x,gy); ctx.drawImage(T.body[st][k],x,gy+16); ctx.drawImage(T.body[st][(k+1)%3],x,gy+32); }
+  if(THEMES[fade>.5?stB:stA].tint>0){ ctx.fillStyle=`rgba(10,16,40,${THEMES[fade>.5?stB:stA].tint*.6})`; ctx.fillRect(0,0,W,H); }
+  // Gegner laufen auf Sam zu, Sam springt drüber; Münzbögen werden eingesammelt
+  const samX=W*.3;
+  if(clock>titleNext){ titleNext=clock+1.6+Math.random()*1.4; const type=Math.random()<.6?'beetle':'igel'; titleKids.push({type,x:W+20,vx:-(speed+18)});
+    if(Math.random()<.7){ const cx=W+60; for(let k=0;k<5;k++) titleCoins.push({x:cx+k*12,y:gy-40-Math.sin(k/4*Math.PI)*22,got:0}); } }
+  let jumpT=-1; for(const e of titleKids){ e.x+=e.vx/60; const d=e.x-samX; if(d>0&&d<46) jumpT=Math.max(jumpT,1-d/46); }
+  titleKids=titleKids.filter(e=>e.x>-40);
+  for(const c of titleCoins){ c.x-=speed/60; if(!c.got&&Math.abs(c.x-samX)<10) c.got=1; if(c.got) c.got+=.06; }
+  titleCoins=titleCoins.filter(c=>c.x>-20&&c.got<1.6);
+  // Sprungkurve: vor dem Gegner abspringen
+  titleHop=jumpT>=0&&titleHop<=0?1:titleHop; if(titleHop>0) titleHop-=1/42;
+  const hop=titleHop>0?Math.sin((1-titleHop)*Math.PI)*58:0;
+  for(const e of titleKids){ const img=e.type==='beetle'?BEETLE_A.l:ES.igel[Math.floor(clock*8)%2].l; ctx.drawImage(img,Math.round(e.x-12),gy-18,24,18); }
+  for(const c of titleCoins){ if(c.got){ ctx.globalAlpha=Math.max(0,1.6-c.got); ctx.fillStyle='#ffe14d'; ctx.fillRect(Math.round(c.x),Math.round(c.y-(c.got-1)*30),2,2); ctx.globalAlpha=1; continue; }
+    ctx.drawImage(COIN_SEQ[Math.floor(clock*8+c.x*.1)%4],Math.round(c.x-4),Math.round(c.y-5)); }
+  const fr=HF(), f=hop>0?(titleHop>.5?fr.jump:fr.runB):(Math.floor(clock*10)%2?fr.runA:fr.runB);
+  const hx=Math.round(samX-24), hy=Math.round(gy-48-hop);
+  ctx.fillStyle='rgba(13,21,36,.25)'; ctx.fillRect(Math.round(samX-12+hop*.1),gy-2,Math.round(24-hop*.2),3);
+  ctx.drawImage(f.r,hx,hy,48,48);
+  ctx.drawImage(CRYSTAL,Math.round(W*.84),Math.round(46+Math.sin(clock*2)*4),20,22);
+  // Schriftzug: Buchstaben springen herein, wippen, Glanz streift darüber
+  const word='SUPERSAM', size=Math.min(46,Math.floor(W/8.6)), y=Math.round(H*.27);
+  ctx.font=`700 ${size}px Silkscreen, monospace`; ctx.textBaseline='middle'; ctx.textAlign='left';
+  const widths=[...word].map(ch=>ctx.measureText(ch).width), total=widths.reduce((a,b)=>a+b,0);
+  let x0=W/2-total/2;
+  const grad=ctx.createLinearGradient(0,y-size/2,0,y+size/2); grad.addColorStop(0,'#fff3b0'); grad.addColorStop(.45,'#ffd166'); grad.addColorStop(.55,'#f2a65a'); grad.addColorStop(1,'#c4703a');
+  [...word].forEach((ch,k)=>{
+    const t=Math.max(0,Math.min(1,(clock-.15*k)/.5)), drop=(1-t)*(1-t)*-120, bounce=t<1?Math.sin(t*Math.PI)*-8:0, wob=Math.sin(clock*2.4+k*.6)*2.5;
+    const yy=y+drop+bounce+wob;
+    ctx.fillStyle='#0d1524'; ctx.fillText(ch,x0+4,yy+5);
+    ctx.lineJoin='round'; ctx.lineWidth=Math.max(6,size/6); ctx.strokeStyle='#1a1020'; ctx.strokeText(ch,x0,yy);
+    ctx.fillStyle=grad; ctx.fillText(ch,x0,yy);
+    x0+=widths[k]; });
+  // Glanz
+  const sh=((clock*.35)%1.6)-.3, sx=W/2-total/2+sh*total;
+  if(sh>-.2&&sh<1.2){ ctx.save(); ctx.beginPath(); ctx.rect(sx-6,y-size/2,12,size); ctx.clip();
+    ctx.globalAlpha=.55; ctx.fillStyle='#ffffff'; x0=W/2-total/2;
+    [...word].forEach((ch,k)=>{ const wob=Math.sin(clock*2.4+k*.6)*2.5; ctx.fillText(ch,x0,y+wob); x0+=widths[k]; }); ctx.restore(); }
+  ctx.textAlign='center'; ctx.font=`${Math.max(8,Math.round(size/5))}px Silkscreen, monospace`; ctx.fillStyle='#f6ead2';
+  ctx.globalAlpha=Math.max(0,Math.min(1,(clock-1.4)/.5));
   ctx.fillText('Ein Daumen läuft · zwei springen',W/2,y+size*.78);
-  ctx.textBaseline='alphabetic';
+  const nd=Object.keys(save.crystals).length, nb=Object.keys(save.bosses||{}).length;
+  if(nd||nb){ ctx.font=`${Math.max(7,Math.round(size/6))}px Silkscreen, monospace`; ctx.fillStyle='#7fe0ff'; ctx.fillText(`◆ ${nd}/13`+(nb?`   ♛ ${nb}/3`:''),W/2,y+size*1.2); }
+  ctx.globalAlpha=1; ctx.textBaseline='alphabetic';
 }
+let titleHop=0;
 function draw(){
   if(state==='start'){ drawTitle(); return; }
   const bl=themeBlend(), ss=cv.height/SKY_H;
@@ -2139,7 +2199,7 @@ function openPause(){ syncVol(); state='pause'; clearInput(); document.getElemen
 function resume(){ pauseEl.hidden=true; state='play'; last=performance.now(); }
 document.getElementById('presume').addEventListener('click',resume);
 document.getElementById('phub').addEventListener('click',()=>{ const w=L.id; loadLevel('hub',w); resume(); });
-document.getElementById('pmain').addEventListener('click',()=>{ pauseEl.hidden=true; state='start'; document.getElementById('wipeinfo').hidden=true; startEl.hidden=false; });
+document.getElementById('pmain').addEventListener('click',()=>{ document.body?.classList.add('title'); pauseEl.hidden=true; state='start'; document.getElementById('wipeinfo').hidden=true; startEl.hidden=false; });
 function openDebug(from){ debugFrom=from; if(from==='pause') pauseEl.hidden=true; else startEl.hidden=true; dbgOut.hidden=true; buildTunes(); debugEl.hidden=false; }
 // Debug ist versteckt: „Spielen“ bzw. „☰ Menü“ 1,5 Sekunden gedrückt halten
 function longPress(el,ms,onLong,onShort){
@@ -2353,8 +2413,9 @@ function frame(now){
   hudT-=dt; if(hudT<=0){ updateHud(); hudT=.05; }
   requestAnimationFrame(frame);
 }
+document.body?.classList.add('title');
 resize(); loadLevel('hub'); requestAnimationFrame(frame);
-window.__dz={showEnding,get endingVisible(){return !endEl.hidden;},get boss(){return L.boss;},get bossFx(){return bossFx;},die:()=>die(),get gate(){return {door:gateDoor,t:gateT};},kill:()=>{ kills++; },score,scoreParts,get cage(){return {open:cageOpen,anim:cageAnim};},addCoins:n=>{levelCoins+=n;},get cam(){return {camX,camY,cx:CAM.cx,cy:CAM.cy,zoom,viewH,viewW};},PH,setFlow:v=>{flow=v;},startCelebrate,ITEM,playStep,schedule,audioInit,playSong,sfx,SFX,AU,loadLevel,update,P,save,get L(){return L;},setState:s=>{state=s;},finishLevel};
+window.__dz={HF,dress,HERO_ROWS,showEnding,get endingVisible(){return !endEl.hidden;},get boss(){return L.boss;},get bossFx(){return bossFx;},die:()=>die(),get gate(){return {door:gateDoor,t:gateT};},kill:()=>{ kills++; },score,scoreParts,get cage(){return {open:cageOpen,anim:cageAnim};},addCoins:n=>{levelCoins+=n;},get cam(){return {camX,camY,cx:CAM.cx,cy:CAM.cy,zoom,viewH,viewW};},PH,setFlow:v=>{flow=v;},startCelebrate,ITEM,playStep,schedule,audioInit,playSong,sfx,SFX,AU,loadLevel,update,P,save,get L(){return L;},setState:s=>{state=s;},finishLevel};
 })();
 </script>
 
