@@ -275,3 +275,17 @@ test('Nach dem letzten Endgegner kommt der Abschluss-Bildschirm', () => {
   assert.equal(dz.save.bosses.b3, true, 'dritter Boss besiegt');
   assert.equal(dz.save.endingSeen, true, 'Abschluss-Bildschirm gezeigt');
 });
+
+test('Outfits verändern Sam je nach Fähigkeiten', () => {
+  const { dz } = boot();
+  const base = dz.HERO_ROWS.idle.join('\n');
+  const look = ab => dz.dress(dz.HERO_ROWS.idle, ab).join('\n');
+  assert.equal(look({}), base, 'ohne Fähigkeit unverändert');
+  assert.match(look({ double: true }), /u/, 'Flügelschuhe');
+  assert.match(look({ wall: true }), /n/, 'Stirnband');
+  assert.match(look({ dash: true }), /L/, 'Blitz-Shirt');
+  assert.match(look({ glide: true }), /c/, 'Umhang');
+  const all = look({ double: true, wall: true, dash: true, glide: true });
+  for (const ch of ['u', 'n', 'L', 'c', 'l']) assert.ok(all.includes(ch), `alle Teile kombiniert: ${ch}`);
+  for (const r of all.split('\n')) assert.equal(r.length, 16, 'Zeilenbreite bleibt 16');
+});
