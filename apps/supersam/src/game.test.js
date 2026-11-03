@@ -308,3 +308,21 @@ test('Bewegungstutorial beim ersten Start', () => {
   assert.equal(dz.TUT.on, false, 'Tutorial beendet');
   assert.equal(dz.save.tutorialDone, true, 'nur beim ersten Start');
 });
+
+test('Neue Welten: Türen in der Hubwelt und Abschluss ohne neue Fähigkeit', () => {
+  const { dz, run, warnings } = boot();
+  dz.setState('play'); dz.loadLevel('hub');
+  const worlds = dz.L.doors.map(d => String(d.world)).sort();
+  assert.equal(JSON.stringify(worlds), JSON.stringify(['1', '2', '3', '4', '5', '6', '7', '8', 'b1', 'b2', 'b3']), 'alle Türen vorhanden');
+  for (const n of [5, 6, 7, 8]) {
+    dz.setState('play'); dz.loadLevel(n); run(30);
+    assert.ok(dz.L.goal, `Welt ${n} hat ein Ziel`);
+    assert.ok(dz.L.crystals.length >= 3 && dz.L.stars.length >= 2, `Welt ${n} hat Diamanten und Sterne`);
+    assert.ok(dz.L.need > 0 && dz.L.timeLimit > 0, `Welt ${n} hat Punkteziel und Zeit`);
+  }
+  for (const n of [1, 2, 3, 4]) { dz.loadLevel(n); assert.ok(dz.L.w >= 360, `Welt ${n} ist größer geworden`); }
+  dz.save.ab.double = true; dz.setState('play'); dz.loadLevel(5); dz.finishLevel();
+  assert.equal(dz.save.done[5], true, 'Wipfelwald geschafft');
+  assert.equal(JSON.stringify(Object.keys(dz.save.ab).filter(k => dz.save.ab[k])), JSON.stringify(['double']), 'keine neue Fähigkeit');
+  assert.equal(warnings.length, 0, 'keine Fehler');
+});
