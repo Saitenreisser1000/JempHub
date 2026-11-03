@@ -290,21 +290,52 @@ test('Outfits verändern Sam je nach Fähigkeiten', () => {
   for (const r of all.split('\n')) assert.equal(r.length, 16, 'Zeilenbreite bleibt 16');
 });
 
-test('Bewegungstutorial beim ersten Start', () => {
+test('Übungswiese beim ersten Start: Stationen nacheinander, dann Hubwelt', () => {
   const { dz, listeners, run } = boot();
   const kd = key => listeners.keydown({ key, preventDefault() {} }), ku = key => listeners.keyup({ key });
-  assert.equal(dz.save.tutorialDone, false, 'neuer Spielstand ohne Tutorial');
-  dz.setState('play'); dz.loadLevel('hub'); dz.startTutorial(); run(20);
-  const until = (n, max = 200) => { for (let i = 0; i < max && dz.TUT.i < n; i++) run(1); return dz.TUT.i >= n; };
-  kd('ArrowRight'); assert.ok(until(1), 'Schritt 1: nach rechts laufen'); ku('ArrowRight');
-  kd('ArrowLeft'); assert.ok(until(2), 'Schritt 2: zurück laufen'); ku('ArrowLeft'); run(10);
-  kd('ArrowRight'); run(10); kd('ArrowLeft'); run(2); ku('ArrowLeft');
-  assert.ok(until(3), 'Schritt 3: kurzer Sprung'); ku('ArrowRight'); run(30);
-  kd('ArrowRight'); run(8); kd('ArrowLeft'); run(16); ku('ArrowLeft');
-  assert.ok(until(4), 'Schritt 4: hoher Sprung'); ku('ArrowRight'); run(60);
-  kd('ArrowLeft'); kd('ArrowRight'); run(14); ku('ArrowLeft');
-  assert.ok(until(5), 'Schritt 5: senkrecht hoch'); ku('ArrowRight');
-  run(320);
-  assert.equal(dz.TUT.on, false, 'Tutorial beendet');
-  assert.equal(dz.save.tutorialDone, true, 'nur beim ersten Start');
+  assert.equal(dz.save.tutorialDone, false, 'neuer Spielstand ohne Übung');
+  dz.begin(); run(10);
+  assert.equal(dz.L.id, 'uebung', 'erster Start beginnt auf der Übungswiese');
+  const until = (n, max = 300) => { for (let i = 0; i < max && dz.TUT.i < n; i++) run(1); return dz.TUT.i >= n; };
+  kd('ArrowRight'); assert.ok(until(1), 'Station 1: rechts laufen'); ku('ArrowRight');
+  kd('ArrowLeft'); assert.ok(until(2), 'Station 2: zurück laufen'); ku('ArrowLeft');
+  kd('ArrowRight');
+  let w = 0; const W = [[24, 25.3], [35, 37], [45, 46.5]], win = c => c > W[w][0] && c < W[w][1];
+  const hop = frames => { for (let i = 0; i < 200; i++) { const c = (dz.P.x + 5) / 16; if (dz.P.ground && dz.P.vx > 100 && win(c)) break; run(1); } kd(' '); run(frames); ku(' '); w++; };
+  hop(3); assert.ok(until(3), 'Station 3: Kiste übersprungen');
+  hop(14); assert.ok(until(4), 'Station 4: Mauer mit langem Sprung');
+  hop(10); assert.ok(until(5), 'Station 5: Graben');
+  for (let i = 0; i < 300 && (dz.P.x + 5) / 16 < 63.3; i++) run(1);
+  ku('ArrowRight'); run(20); kd(' '); run(4); kd('ArrowRight'); run(14); ku(' ');
+  assert.ok(until(6), 'Station 6: senkrecht auf den Block'); 
+  for (let i = 0; i < 400 && dz.L.id === 'uebung'; i++) { if ((dz.P.x + 5) / 16 > 85) ku('ArrowRight'); run(1); }
+  assert.equal(dz.L.id, 'hub', 'Tür führt in die Hubwelt');
+  assert.equal(dz.save.tutorialDone, true, 'Übung gilt als erledigt');
+  assert.equal(dz.TUT.on, false, 'Übungsleiste ausgeblendet');
+});
+
+test('Neue Welten: Türen in der Hubwelt und Abschluss ohne neue Fähigkeit', () => {
+  const { dz, run, warnings } = boot();
+  dz.setState('play'); dz.loadLevel('hub');
+  const worlds = dz.L.doors.map(d => String(d.world)).sort();
+  assert.equal(JSON.stringify(worlds), JSON.stringify(['1', '2', '3', '4', '5', '6', '7', '8', 'b1', 'b2', 'b3']), 'alle Türen vorhanden');
+  for (const n of [5, 6, 7, 8]) {
+    dz.setState('play'); dz.loadLevel(n); run(30);
+    assert.ok(dz.L.goal, `Welt ${n} hat ein Ziel`);
+    assert.ok(dz.L.crystals.length >= 3 && dz.L.stars.length >= 2, `Welt ${n} hat Diamanten und Sterne`);
+    assert.ok(dz.L.need > 0 && dz.L.timeLimit > 0, `Welt ${n} hat Punkteziel und Zeit`);
+  }
+  for (const n of [1, 2, 3, 4]) { dz.loadLevel(n); assert.ok(dz.L.w >= 360, `Welt ${n} ist größer geworden`); }
+  dz.save.ab.double = true; dz.setState('play'); dz.loadLevel(5); dz.finishLevel();
+  assert.equal(dz.save.done[5], true, 'Wipfelwald geschafft');
+  assert.equal(JSON.stringify(Object.keys(dz.save.ab).filter(k => dz.save.ab[k])), JSON.stringify(['double']), 'keine neue Fähigkeit');
+  assert.equal(warnings.length, 0, 'keine Fehler');
+});
+
+test('Weltnummern: Teil 1 und Teil 2 je Fähigkeitswelt, Summen aus allen Welten', () => {
+  const { dz } = boot();
+  assert.equal([1, 5, 2, 6, 3, 7, 4, 8].map(dz.WNO).join(' '), '1-1 1-2 2-1 2-2 3-1 3-2 4-1 4-2');
+  const t = dz.totals();
+  assert.equal(t.cr, Object.values(t.per).reduce((a, b) => a + b, 0), 'Gesamtsumme passt');
+  assert.ok(t.per.hub >= 1, 'Hub-Diamant mitgezählt');
 });
