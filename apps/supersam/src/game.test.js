@@ -289,3 +289,22 @@ test('Outfits verändern Sam je nach Fähigkeiten', () => {
   for (const ch of ['u', 'n', 'L', 'c', 'l']) assert.ok(all.includes(ch), `alle Teile kombiniert: ${ch}`);
   for (const r of all.split('\n')) assert.equal(r.length, 16, 'Zeilenbreite bleibt 16');
 });
+
+test('Bewegungstutorial beim ersten Start', () => {
+  const { dz, listeners, run } = boot();
+  const kd = key => listeners.keydown({ key, preventDefault() {} }), ku = key => listeners.keyup({ key });
+  assert.equal(dz.save.tutorialDone, false, 'neuer Spielstand ohne Tutorial');
+  dz.setState('play'); dz.loadLevel('hub'); dz.startTutorial(); run(20);
+  const until = (n, max = 200) => { for (let i = 0; i < max && dz.TUT.i < n; i++) run(1); return dz.TUT.i >= n; };
+  kd('ArrowRight'); assert.ok(until(1), 'Schritt 1: nach rechts laufen'); ku('ArrowRight');
+  kd('ArrowLeft'); assert.ok(until(2), 'Schritt 2: zurück laufen'); ku('ArrowLeft'); run(10);
+  kd('ArrowRight'); run(10); kd('ArrowLeft'); run(2); ku('ArrowLeft');
+  assert.ok(until(3), 'Schritt 3: kurzer Sprung'); ku('ArrowRight'); run(30);
+  kd('ArrowRight'); run(8); kd('ArrowLeft'); run(16); ku('ArrowLeft');
+  assert.ok(until(4), 'Schritt 4: hoher Sprung'); ku('ArrowRight'); run(60);
+  kd('ArrowLeft'); kd('ArrowRight'); run(14); ku('ArrowLeft');
+  assert.ok(until(5), 'Schritt 5: senkrecht hoch'); ku('ArrowRight');
+  run(320);
+  assert.equal(dz.TUT.on, false, 'Tutorial beendet');
+  assert.equal(dz.save.tutorialDone, true, 'nur beim ersten Start');
+});
