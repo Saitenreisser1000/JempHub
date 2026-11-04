@@ -613,48 +613,36 @@ const DEFS={
     b.ground(0,43); b.rect(0,0,0,19); b.rect(43,0,43,19); b.start(3,16);
     b.updraft(7,9,2,16); b.updraft(21,23,2,16); b.updraft(34,36,2,16); b.plat(14,13,16); b.plat(14,27,30);
   }},
-  1:{name:'Wald',need:1000,timeLimit:260,w:360,h:30,top:19,style:'forest',sky:.15,build(b){
-    b.ground(0,25); b.ground(28,59); b.ground(62,97); b.ground(110,149);
-    b.water(26,27,20); b.water(60,61,20); b.water(98,109,20);
-    b.start(3,18); b.hill(6,2,2,true); b.coins(16,10,11); b.coins(18,16,17); b.enemy(20,18);
-    b.plat(15,33,36); b.coins(14,33,36); b.plat(12,38,41); b.coins(11,38,41);
-    b.coins(16,26,27); b.enemy(45,18,'igel');
-    b.enemy(36,13,'wespe',{range:2}); b.cp(48,18); b.spring(52,18); b.plat(11,54,57); b.crystal(56,10);
-    b.coins(16,60,61); b.enemy(61,14,'wespe',{range:2});
-    b.dip(64,1,2,true); b.enemy(72,18); b.spikes(18,76,77); b.enemy(80,18);
-    b.plat(12,88,92); b.crystal(90,11);                                // Kristall: braucht Doppelsprung
-    b.coins(18,85,94);
-    b.cp(95,18); b.mover(99,17,6,0,3,3.6); b.coins(15,101,106);
-    b.cp(112,18);
-    b.updraft(113,116,3,18); b.plat(4,119,122); b.crystal(121,3);      // Kristall: braucht Gleiten
-    b.enemy(126,18,'igel'); b.spikes(18,131,132); b.enemy(137,18); b.hill(139,2,1); b.coins(16,141,141); b.coins(18,144,145);
-    // Erweiterung: Baumkronen, Geheimgang unter dem Boden, Doppelsprung-Versteck
-    b.ground(150,239); b.cp(150,18); b.dip(152,1,2,true);
-    b.plat(15,160,163); b.coins(14,160,163); b.plat(12,166,169); b.coins(11,166,169); b.plat(15,172,175); b.coins(14,172,175);
-    b.enemy(167,9,'wespe',{range:2});
-    b.clear(176,20,186,20); b.back(176,20,186,20); b.hidden(177,19,177,19); b.hidden(186,19,186,19); b.coins(20,179,182); b.star(184,20);   // ★ Geheimgang
-    b.enemy(190,18,'igel'); b.hill(192,2,2);
-    b.spikes(18,200,201); b.spring(204,18); b.plat(10,206,210); b.coins(9,206,210); b.enemy(212,18);
-    b.hill(214,1,3,true); b.enemy(224,14,'wespe',{range:3});
-    b.plat(11,226,229); b.star(228,10);                                 // ★ nur mit Doppelsprung
-    b.coins(18,230,233);
-    // Abschnitt 4: Wurzelhöhle unter dem Waldboden – oben Stachelpfad, unten Schätze
-    b.ground(240,359); b.cp(238,18);
-    b.clear(244,21,300,26); b.back(244,21,300,26); b.clear(244,19,246,20); b.back(244,19,246,20);
-    b.coins(26,248,256); b.enemy(252,26); b.enemy(262,26,'igel'); b.spikes(26,266,268); b.coins(24,265,269);
-    b.clear(274,27,277,28); b.water(274,277,27); b.coins(25,274,277); b.enemy(282,26);
-    b.clear(286,20,288,20); b.back(286,20,288,20); b.crystal(287,20);                  // Kristall: Doppelsprung in der Höhle
-    b.coins(26,290,293); b.plat(24,294,296); b.clear(298,19,300,20); b.back(298,19,300,20); b.plat(21,298,300);
-    b.spikes(18,256,258); b.enemy(264,14,'wespe',{range:3}); b.spikes(18,270,272); b.enemy(279,18); b.coins(16,256,258); b.coins(16,270,272);
-    // Abschnitt 5: Baumriesen – unten durch hohle Stämme, oben über den Kronenpfad
-    b.cp(303,18);
-    const tree=c=>{ b.rect(c,11,c+1,18); b.clear(c,17,c+1,18); b.back(c,17,c+1,18); };
-    tree(312); b.plat(16,308,317); b.plat(13,318,322); b.coins(15,308,311); b.coins(12,318,322);
-    b.plat(10,323,352); tree(324); tree(336); tree(348);
-    b.clear(331,10,333,10); b.crumb(10,340,342); b.coins(9,324,330); b.coins(9,334,339); b.coins(8,340,342);
-    b.enemy(332,6,'wespe',{range:3}); b.enemy(345,9); b.crystal(346,9);                 // Kristall auf dem Kronenpfad
-    b.enemy(318,18,'igel'); b.enemy(330,18); b.coins(18,326,334); b.enemy(342,18,'igel');
-    b.plat(5,354,356); b.star(355,4);                                                   // ★ über den Kronen: Doppelsprung
+  // 1-1 Wald: auf Schwung gebaut – eine Ideallinie ohne Anhalten, wer sie verliert, läuft unten weiter
+  1:{name:'Wald',need:1900,timeLimit:240,w:360,h:30,top:19,style:'forest',sky:.15,build(b){
+    // Abschnitt 1: Anlauf – flache Mulden, ein Hügel, der erste Käfer zum Draufspringen
+    b.ground(0,159); b.start(3,18); b.coins(18,7,13);
+    for(const c of [18,28,38]){ b.clear(c,19,c+2,20); b.coins(16,c-1,c+3); }
+    b.hill(46,2,4,true); b.coins(16,50,53); b.plat(11,50,52); b.crystal(51,10);          // ◆ über dem Hügel: Doppelsprung
+    b.enemy(62,18); b.coins(15,60,64); b.cp(67,18);
+    // Abschnitt 2: Kronenweg – oben Brücken mit Lücken und Bröckelstrecke, unten der Waldboden
+    b.ramp(70,19,15,true);
+    b.plat(15,78,88); b.plat(15,92,99); b.plat(15,104,110); b.crumb(15,111,116); b.plat(15,117,124); b.plat(14,129,135); b.plat(15,140,150);
+    b.coins(14,79,87); b.coins(12,89,91); b.coins(14,93,98); b.coins(12,100,103); b.coins(14,105,110); b.coins(13,111,116); b.coins(14,118,123); b.coins(11,125,128); b.coins(13,130,134); b.coins(11,136,139); b.coins(14,141,149);
+    b.crystal(113,13);                                                                     // ◆ über der Bröckelstrecke
+    b.enemy(95,14); b.enemy(120,14); b.enemy(145,14); b.plat(8,118,121); b.star(119,7);   // ★ über den Brücken: Doppelsprung
+    b.enemy(100,18,'igel'); b.rect(112,18,112,18); b.enemy(126,18,'igel'); b.rect(138,18,138,18); b.coins(18,104,110); b.coins(18,130,136);
+    b.cp(152,18); b.coins(18,152,158);
+    // Abschnitt 3: Bachbett – immer schmalere Felsplatten, unten das trockene Bachbett
+    b.rect(160,25,249,29);
+    for(const [c0,c1] of [[162,167],[172,177],[182,186],[191,195],[200,203],[208,211],[216,219],[224,227],[232,236]]){ b.rect(c0,19,c1,20); b.coins(18,c0,c1); }
+    for(const c of [168,178,187,196,204,212,220,228]) b.coins(16,c,c+3);
+    b.enemy(174,18); b.enemy(193,18); b.enemy(226,18);
+    b.enemy(185,24,'igel'); b.coins(24,170,180); b.crystal(215,24); b.enemy(222,24,'igel'); b.coins(24,226,234);   // ◆ unten im Bachbett
+    b.hidden(158,23,159,24); b.clear(152,23,157,24); b.back(152,23,157,24); b.star(153,24);   // ★ Versteck hinter der Bachbett-Wand
+    b.updraft(205,207,5,24); b.plat(6,209,212); b.crystal(211,5);                         // ◆ hoch über dem Bachbett: Gleiten
+    b.ramp(237,25,19,true);
+    // Abschnitt 4: Endspurt – Feder über die Baummauer, Käferkette, Bröckelbrücke, Abfahrt ins Ziel
+    b.ground(249,359); b.cp(252,18);
+    b.spring(259,18); b.spring(260,18); b.spring(261,18); b.rect(262,11,263,18); b.coins(12,258,261); b.coins(9,262,266); b.star(263,4);   // ★ hoch über der Mauer: Feder + Doppelsprung
+    b.enemy(275,18); b.enemy(280,18); b.enemy(285,18); b.coins(15,274,287);
+    b.clear(292,19,302,20); b.crumb(19,292,302); b.coins(17,292,302); b.crystal(297,11);   // ◆ über der Bröckelbrücke: Doppelsprung
+    b.ramp(306,19,16,true); b.rect(312,16,325,18); b.coins(15,312,324); b.enemy(318,15); b.ramp(326,16,19,true); b.coins(18,334,350);
     b.goal(356,18);
   }},
   2:{name:'Felsen',need:1050,timeLimit:260,w:360,h:34,top:23,style:'stone',sky:.42,build(b){
