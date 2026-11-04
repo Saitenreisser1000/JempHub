@@ -261,6 +261,7 @@ const AB_INFO={
 const NEED_FOR_DOOR={2:'double',3:'wall',4:'dash',5:'double',6:'wall',7:'dash',8:'glide',b0:'double',b2:'wall',b1:'dash',b3:'glide'};
 // Abschnitte der Hubwelt: Boss je Abschnitt, Kronentor zum nächsten Abschnitt
 const BOSS_ORDER=['b0','b2','b1','b3'];
+const BOSS_NEEDS_WORLD={b0:5,b2:6,b1:7,b3:8};   // Boss-Tür öffnet erst, wenn auch Welt X-2 geschafft ist
 
 // ---------- Sprites (SNES-Stil) ----------
 function mk(w,h){const c=document.createElement('canvas');c.width=w;c.height=h;return c;}
@@ -599,7 +600,7 @@ const DEFS={
     b.cp(266,16); b.enemy(274,16); b.hill(278,1,2,true); b.coins(16,286,290);
     b.door(294,16,0);
   }},
-  b0:{name:'Wespenkönigin',w:38,h:18,top:15,style:'forest',arena:{floor:15,left:1,right:37,bx:19,by:6,range:12,ceil:0,view:5},build(b){
+  b0:{name:'Wespenkönigin',w:38,h:18,top:15,style:'forest',arena:{floor:15,left:1,right:37,bx:19,by:6,range:9,ceil:0,view:5},build(b){
     b.ground(0,37); b.rect(0,0,0,17); b.rect(37,0,37,17); b.start(3,14);
   }},
   b1:{name:'Igelkönig',w:36,h:16,top:13,style:'lake',arena:{floor:13,left:1,right:35,bx:24,ceil:0,view:4},build(b){
@@ -1546,6 +1547,7 @@ function update(dt){
     const inside=d.armed&&over&&P.ground&&Math.abs(P.y+P.h-d.bottom)<4&&Math.abs(P.vx)<25;
     d.t=inside?d.t+dt:Math.max(0,d.t-dt*2);
     if(d.t>=.7&&d.need&&crystalTotal()<d.need){ d.t=0; d.armed=false; sfx('locked'); showMsg(`Noch ${d.need-crystalTotal()} Diamanten nötig`); continue; }
+    if(d.t>=.7&&BOSS_NEEDS_WORLD[d.world]&&!save.done[BOSS_NEEDS_WORLD[d.world]]){ const w=BOSS_NEEDS_WORLD[d.world]; d.t=0; d.armed=false; sfx('locked'); showMsg(`Erst Welt ${WNO(w)} · ${NAMES[w]} schaffen`); continue; }
     if(d.t>=.7&&NEED_FOR_DOOR[d.world]&&!save.ab[NEED_FOR_DOOR[d.world]]){ d.t=0; d.armed=false; sfx('locked'); showMsg(`Braucht ${AB_INFO[NEED_FOR_DOOR[d.world]].name}`); continue; }
     if(d.t>=.7){ clearInput(); sfx('door'); const n=d.world; if(n===0){ const w=L.id; if(w==='uebung'){ tutEnd(); loadLevel('hub'); showMsg('Willkommen in der Hubwelt!'); } else { loadLevel('hub',w); showMsg('Hubwelt'); } } else { loadLevel(n); showMsg(typeof n==='number'?`Welt ${WNO(n)} · ${NAMES[n]}`:`Endgegner: ${NAMES[n]}`); } return; }
   }
@@ -1574,7 +1576,7 @@ function initBoss(id){
   const B={id,hp:3,max:3,inv:0,t:0,state:'intro',timer:1.2,dir:-1,dead:false,deathT:0,trophy:null,shake:0};
   if(id==='b1') Object.assign(B,{w:52,h:39,x:ar.bx*TS,y:fy-39,speed:170});
   if(id==='b2') Object.assign(B,{w:64,h:96,x:ar.bx*TS,y:fy-96,lift:0});
-  if(id==='b0') Object.assign(B,{w:40,h:30,x:ar.bx*TS,y:fy-TS*6.2,cx:ar.bx*TS,hy:fy-TS*6.2,range:ar.range*TS,phase:0,drop:2,diveT:3.2,speedK:1});
+  if(id==='b0') Object.assign(B,{w:40,h:30,x:ar.bx*TS,y:fy-TS*5.7,cx:ar.bx*TS,hy:fy-TS*5.7,range:ar.range*TS,phase:0,drop:2.8,diveT:4.5,speedK:1});   // knapp über Einfachsprung-Höhe
   if(id==='b3') Object.assign(B,{w:46,h:46,x:ar.bx*TS,y:ar.by*TS,cx:ar.bx*TS,cy:ar.by*TS,range:ar.range*TS,phase:0,drop:1.4,speedK:1});
   bossFx=[];
   return B;
@@ -1628,17 +1630,17 @@ function updateBoss(dt){
   }
 
   if(B.id==='b0'){ // Wespenkönigin: schwebt zu hoch für einen einfachen Sprung, stürzt sich mit dem Stachel herab
-    if(B.state==='fly'){ B.phase+=dt*.6*B.speedK; const nx=B.cx+Math.sin(B.phase)*B.range; B.dir=nx>B.x+B.w/2?1:-1; B.x=nx-B.w/2; B.y=B.hy+Math.sin(B.t*3)*5;
-      B.drop-=dt; if(B.drop<=0){ B.drop=Math.max(.8,1.8-(3-B.hp)*.4); bossFx.push({k:'sting',x:B.x+B.w/2,y:B.y+B.h,vy:80}); sfx('tick'); }
-      B.diveT-=dt; if(B.diveT<=0){ B.state='aim'; B.timer=.6; sfx('locked'); } }
+    if(B.state==='fly'){ B.phase+=dt*.45*B.speedK; const nx=B.cx+Math.sin(B.phase)*B.range; B.dir=nx>B.x+B.w/2?1:-1; B.x=nx-B.w/2; B.y=B.hy+Math.sin(B.t*3)*5;
+      B.drop-=dt; if(B.drop<=0){ B.drop=Math.max(1.6,2.8-(3-B.hp)*.4); bossFx.push({k:'sting',x:B.x+B.w/2,y:B.y+B.h,vy:80}); sfx('tick'); }
+      B.diveT-=dt; if(B.diveT<=0){ B.state='aim'; B.timer=1; sfx('locked'); } }
     else if(B.state==='aim'){ B.timer-=dt; B.x+=Math.sin(B.t*60)*1.2; if(B.timer<=0){ B.state='dive'; B.tx=Math.max(left,Math.min(right-B.w,pcx-B.w/2)); } }
-    else if(B.state==='dive'){ B.y=Math.min(fy-B.h,B.y+420*dt); B.x+=(B.tx-B.x)*Math.min(1,dt*6); if(B.y>=fy-B.h){ B.state='rise'; shake=.2; sfx('smash'); burst(B.x+B.w/2,fy-2,'#ffd166',10,80); } }
-    else if(B.state==='rise'){ B.y=Math.max(B.hy,B.y-110*dt); if(B.y<=B.hy){ B.state='fly'; B.diveT=2.6+Math.random()*1.4-(3-B.hp)*.4; B.cx=Math.max(left+B.range,Math.min(right-B.range,B.x+B.w/2)); B.phase=0; } }
+    else if(B.state==='dive'){ B.y=Math.min(fy-B.h,B.y+300*dt); B.x+=(B.tx-B.x)*Math.min(1,dt*4); if(B.y>=fy-B.h){ B.state='rise'; shake=.2; sfx('smash'); burst(B.x+B.w/2,fy-2,'#ffd166',10,80); } }
+    else if(B.state==='rise'){ B.y=Math.max(B.hy,B.y-110*dt); if(B.y<=B.hy){ B.state='fly'; B.diveT=4+Math.random()*1.5-(3-B.hp)*.4; B.cx=Math.max(left+B.range,Math.min(right-B.range,B.x+B.w/2)); B.phase=0; } }
     B.x=Math.max(left,Math.min(right-B.w,B.x));
     const top=B.y+2, safe=B.state==='fly'||B.state==='rise';
-    if(safe&&P.vy>0&&P.y+P.h<=top+12&&P.y+P.h>=top-8&&P.x+P.w>B.x+4&&P.x<B.x+B.w-4&&B.inv<=0){ hitBoss(B,true);
-      if(!B.dead){ B.speedK+=.3; B.state='rise'; B.y=Math.max(B.hy,B.y); } }
-    else if(overlapP(B.x+5,B.y+6,B.w-10,B.h-8)&&B.inv<=0){ if(hurtPlayer()) return true; }
+    if(safe&&P.vy>0&&P.y+P.h<=top+5&&P.y+P.h>=top-12&&P.x+P.w>B.x&&P.x<B.x+B.w&&B.inv<=0){ hitBoss(B,true);
+      if(!B.dead){ B.speedK+=.15; B.state='rise'; B.y=Math.max(B.hy,B.y); } }
+    else if(overlapP(B.x+8,B.y+10,B.w-16,B.h-12)&&B.inv<=0){ if(hurtPlayer()) return true; }
   }
 
   if(B.id==='b3'){ // Sturmgeist: schwebt hoch, wirft Eissplitter; nur von oben verwundbar
@@ -2201,7 +2203,9 @@ function drawDoors(){ for(const d of L.doors){
 function drawHubHints(){
   if(L.id!=='hub') return;
   ctx.textAlign='center'; ctx.font='6px Silkscreen, monospace'; ctx.fillStyle='rgba(246,234,210,.8)';
-  for(const d of L.doors){ const need=NEED_FOR_DOOR[d.world]; if(need&&!save.ab[need]) ctx.fillText(`braucht ${AB_INFO[need].name}`,d.x+8,d.bottom-58); }
+  for(const d of L.doors){ const need=NEED_FOR_DOOR[d.world], wn=BOSS_NEEDS_WORLD[d.world];
+    if(need&&!save.ab[need]) ctx.fillText(`braucht ${AB_INFO[need].name}`,d.x+8,d.bottom-58);
+    else if(wn&&!save.done[wn]) ctx.fillText(`erst ${WNO(wn)} ${NAMES[wn]}`,d.x+8,d.bottom-58); }
   const t='Steh still in einer Tür, um sie zu betreten';
   ctx.fillText(t,18*TS+8,23*TS+12);
   for(const g of L.gates||[]){ if(g.open) continue; const x=g.x+TS, y=g.bottom-40+Math.round(Math.sin(clock*2)*2);
