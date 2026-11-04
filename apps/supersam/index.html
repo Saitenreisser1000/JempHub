@@ -505,7 +505,7 @@ function tileCanvas(seed,fn){ const c=mk(16,16),g=c.getContext('2d'),r=rngFrom(s
   const px=(x,y,col,w=1,h=1)=>{g.fillStyle=col;g.fillRect(x,y,w,h);}; fn(px,r); return c; }
 const PAL={
   meadow:{top:['#9be06a','#6aa84f','#4f8a3c','#3a2a1e'],dirt:{base:'#7a5236',dk:'#5e3c26',lt:'#a8784c',sh:'#4a2e1c'}},
-  forest:{top:['#7cc45a','#3f7a34','#2e5e28','#1e140e'],dirt:{base:'#5a3c28',dk:'#422c1c',lt:'#82603e',sh:'#30201a'}},
+  forest:{top:['#8ad466','#4c9440','#367030','#22160e'],dirt:{base:'#664430',dk:'#4c3222',lt:'#8e6a46',sh:'#38261c'}},
   stone:{top:['#f4c67c','#dca252','#b47c3a','#5a2e1a'],stone:{base:'#b8673e',lt:'#de9262',dk:'#7a3a22',speck:'#9a4f2e'}},
   lake:{top:['#fff4cc','#eed79c','#cfb272','#7a5a36'],dirt:{base:'#a47c50',dk:'#886640',lt:'#c89e6c',sh:'#6a4a2c'}},
   snow:{top:['#ffffff','#e6edf6','#c3cfdd','#5a6a88'],stone:{base:'#7f8fb2',lt:'#bccae4',dk:'#4a5878',speck:'#6a789a'}}
@@ -767,7 +767,7 @@ const DEFS={
     b.ramp(331,10,25); b.coins(24,348,354); b.enemy(352,24,'igel'); b.enemy(360,20,'geist'); b.coins(24,362,368); b.enemy(366,24);
     b.goal(376,24);
   }}
-  ,5:{name:'Wipfelwald',need:2100,timeLimit:270,w:330,h:40,top:36,style:'forest',sky:.25,build(b){
+  ,5:{name:'Wipfelwald',need:2100,timeLimit:270,w:330,h:40,top:36,style:'forest',scene:'forestDusk',sky:.25,build(b){
     const lad=(cA,cB,len,rows)=>rows.forEach((r,i)=>{ const c=i%2?cB:cA; b.plat(r,c,c+len-1); b.coins(r-1,c,c+len-1); });
     b.ground(0,329); b.start(3,35); b.coins(35,6,9); b.hill(11,2,2,true); b.enemy(19,35);
     b.rect(24,10,25,35); b.clear(24,33,25,35); b.back(24,33,25,35);                 // Felsnadel (Kristall oben, siehe unten)
@@ -1851,7 +1851,8 @@ addEventListener('resize',resize); addEventListener('orientationchange',()=>setT
 // Jede Welt hat eigenen Himmel, eigene Hintergrundebenen, Partikel und Bodenkacheln.
 const THEMES={
   meadow:{top:'#4a8ad6',mid:'#9fd2f0',bot:'#eaf6e4',r:['#8fb8da','#7fae86','#5c925c','#3d6e44'],tint:0},
-  forest:{top:'#2c6a74',mid:'#9cc684',bot:'#f4dd88',r:['#80a89c','#4f8060','#2f5e3f','#1a3926'],tint:.05},
+  forest:{top:'#3f92d8',mid:'#a9dcea',bot:'#effae0',r:['#9cc8b4','#68a272','#43814e','#2a5e36'],tint:0},   // Tag: blauer Himmel, helles Grün
+  forestDusk:{top:'#2c6a74',mid:'#9cc684',bot:'#f4dd88',r:['#80a89c','#4f8060','#2f5e3f','#1a3926'],tint:.05},   // Abendwald
   stone:{top:'#4e2a52',mid:'#e2784a',bot:'#ffc676',r:['#cf9070','#a9583e','#7a3828','#4a2016'],tint:.06},
   lake:{top:'#4fa8d6',mid:'#c3e9f0',bot:'#f7f2e4',r:['#a9d0e2','#80b5cc','#4f8ba9','#2b5d7b'],tint:0},
   snow:{top:'#060a1c',mid:'#22245a',bot:'#4b3d80',r:['#3a4478','#283062','#1b2148','#10142c'],tint:.24}
@@ -1865,7 +1866,7 @@ const stars=Array.from({length:90},(_,i)=>({x:hash(i*1.3),y:hash(i*2.9)*.62,s:i%
 function styleAt(c,lv=L){ if(!lv.zones) return lv.style; for(const z of lv.zones) if(c<z.to) return z.s; return lv.zones[lv.zones.length-1].s; }
 function themeBlend(){
   if(!L||state==='start') return {a:'meadow',b:'meadow',t:0};
-  if(!L.zones) return {a:L.style,b:L.style,t:0};
+  if(!L.zones){ const sc=DEFS[L.id].scene||L.style; return {a:sc,b:sc,t:0}; }
   const c=(camX+viewW/2)/TS, Z=L.zones, F=6;
   for(let i=0;i<Z.length;i++){
     if(c>=Z[i].to&&i<Z.length-1) continue;
@@ -1956,7 +1957,7 @@ function drawScene(style){
     clumps(c2,mix(c2,'#c8f0a0',.35),166,44,.4);
     ridge(c3,184,8,5,.02,.6,4,0);
     birds(4,'#2a3a4a',40,90);
-  } else if(style==='forest'){
+  } else if(style==='forestDusk'){   // Abendwald (1-2 Wipfelwald)
     sunDisc(skyW*.72,112,24,'#ffe48a','#ffd76a');
     ridge(c0,112,18,10,.007,.07,6,50);
     fog(118,36,'#f7e6a8',.45);
@@ -1971,6 +1972,23 @@ function drawScene(style){
     pines(c3,mix(c3,'#4f8a3c',.35),184,28,40,70,.56);
     for(let i=0;i<28;i++){ const x=Math.round(mod(hash(i*2.1)*skyW-camX*.45+Math.sin(clock*.7+i)*12,skyW)), y=Math.round(110+hash(i*6.3)*120+Math.sin(clock*1.1+i*2)*6);
       const a=Math.max(0,Math.sin(clock*2+i*3)); if(a<.05) continue; ctx.globalAlpha=a*.35; ctx.fillStyle='#e8ff8a'; ctx.fillRect(x-1,y-1,4,4); ctx.globalAlpha=a; ctx.fillRect(x,y,2,2); }
+    ctx.globalAlpha=1;
+  } else if(style==='forest'){
+    sunDisc(skyW*.74,46,20,'#fff6c8','#fff6c8');
+    clouds(6,'#ffffff','#d8eaf4',20,84,.1,7);
+    ridge(c0,112,18,10,.007,.07,6,50);
+    fog(118,36,'#f2fae8',.4);
+    pines(c1,null,146,15,16,30,.2);
+    // Lichtstrahlen
+    ctx.fillStyle='#fffbe0';
+    for(let i=0;i<4;i++){ const x=mod(i*skyW/3.2-camX*.25+skyW*.2,skyW+120)-60; ctx.globalAlpha=.05+.03*Math.sin(clock*.6+i);
+      ctx.beginPath(); ctx.moveTo(x,0); ctx.lineTo(x+26,0); ctx.lineTo(x+90,SKY_H); ctx.lineTo(x+40,SKY_H); ctx.fill(); }
+    ctx.globalAlpha=1;
+    pines(c2,mix(c2,'#9cd070',.25),162,19,22,44,.36);
+    fog(160,26,'#f0f8e4',.25);
+    pines(c3,mix(c3,'#4f8a3c',.35),184,28,40,70,.56);
+    for(let i=0;i<28;i++){ const x=Math.round(mod(hash(i*2.1)*skyW-camX*.45+Math.sin(clock*.7+i)*12,skyW)), y=Math.round(110+hash(i*6.3)*120+Math.sin(clock*1.1+i*2)*6);
+      const a=Math.max(0,Math.sin(clock*2+i*3))*.6; if(a<.05) continue; ctx.globalAlpha=a*.3; ctx.fillStyle='#ffffff'; ctx.fillRect(x-1,y-1,4,4); ctx.globalAlpha=a; ctx.fillRect(x,y,2,2); }   // Pollen im Sonnenlicht
     ctx.globalAlpha=1;
   } else if(style==='stone'){
     sunDisc(skyW*.66,150,38,'#ffd27a','#ffb060');
@@ -2556,7 +2574,8 @@ dbgInfo.hidden=!dbg.info;
 // Ohne WebGL (oder wenn abgeschaltet) bleibt einfach das 2D-Bild sichtbar.
 const FXT={
   meadow:{amb:1,   grade:[1,1,.97],    ga:.08,fog:[1,1,1],      fa:.05,vig:.28,bloom:.3},
-  forest:{amb:.8,  grade:[1.06,1,.84], ga:.22,fog:[.95,.9,.65], fa:.1, vig:.38,bloom:.4},
+  forest:{amb:1,   grade:[1.01,1.02,.97],ga:.1,fog:[.95,1,.96],  fa:.06,vig:.26,bloom:.3},
+  forestDusk:{amb:.8,grade:[1.06,1,.84], ga:.22,fog:[.95,.9,.65], fa:.1, vig:.38,bloom:.4},
   stone: {amb:.92, grade:[1.1,.93,.8], ga:.25,fog:[1,.8,.6],    fa:.08,vig:.35,bloom:.35},
   lake:  {amb:1,   grade:[.95,1,1.06], ga:.15,fog:[.9,.96,1],   fa:.1, vig:.3, bloom:.35},
   snow:  {amb:.55, grade:[.82,.88,1.15],ga:.3,fog:[.5,.55,.85], fa:.12,vig:.5, bloom:.55}
