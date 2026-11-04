@@ -369,3 +369,15 @@ test('Weltnummern: Teil 1 und Teil 2 je Fähigkeitswelt, Summen aus allen Welten
   assert.equal(t.cr, Object.values(t.per).reduce((a, b) => a + b, 0), 'Gesamtsumme passt');
   assert.ok(t.per.hub >= 1, 'Hub-Diamant mitgezählt');
 });
+
+test('Boss-Tür öffnet erst nach Welt X-2', () => {
+  const { dz, run } = boot();
+  dz.save.ab.double = true; dz.save.done[1] = true;
+  dz.setState('play'); dz.loadLevel('hub');
+  const door = dz.L.doors.find(d => d.world === 'b0');
+  const stand = () => { for (let i = 0; i < 90 && dz.L.id === 'hub'; i++) { dz.P.x = door.x + 3; dz.P.y = door.bottom - 14; dz.P.vx = 0; dz.P.vy = 0; run(1); } };
+  stand();
+  assert.equal(dz.L.id, 'hub', 'ohne 1-2 bleibt die Tür zu');
+  dz.save.done[5] = true; dz.P.x = door.x - 60; run(5); stand();   // kurz weggehen, dann wieder in die Tür
+  assert.equal(dz.L.id, 'b0', 'nach 1-2 geht es zur Wespenkönigin');
+});
