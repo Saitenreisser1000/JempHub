@@ -382,3 +382,11 @@ test('Boss-Tür öffnet erst nach Welt X-2', () => {
   dz.save.done[5] = true; dz.P.x = door.x - 60; run(5); stand();   // kurz weggehen, dann wieder in die Tür
   assert.equal(dz.L.id, 'b0', 'nach 1-2 geht es zur Wespenkönigin');
 });
+
+test('Archiv: alte Fassungen von 1-1 und 1-2 bleiben erhalten, zählen aber nicht mit', () => {
+  const { dz, run } = boot();
+  for (const id of ['archiv1', 'archiv5']) { dz.setState('play'); dz.loadLevel(id); run(10); assert.ok(dz.L.goal && dz.L.crystals.length >= 3, `${id} ladbar`); }
+  dz.setState('play'); dz.loadLevel('hub');
+  assert.ok(!dz.L.doors.some(d => String(d.world).startsWith('archiv')), 'keine Tür in der Hubwelt');
+  assert.equal(dz.totals().per.archiv1, undefined, 'nicht in den Summen');
+});

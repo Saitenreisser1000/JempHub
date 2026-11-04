@@ -892,12 +892,92 @@ const DEFS={
     b.rect(290,6,329,43); b.coins(5,293,304); b.enemy(300,5,'igel'); b.enemy(308,1,'geist'); b.crystal(312,5);   // Kristall auf der Spitze
     b.goal(322,5);
   }}
+  // Archiv: frühere Fassungen von 1-1 und 1-2 (vor dem Schwung-Umbau) – ohne Tür, zählen nicht zu den Summen, für später aufgehoben
+  ,archiv1:{name:'Wald (alt)',archived:true,need:1000,timeLimit:260,w:360,h:30,top:19,style:'forest',sky:.15,build(b){
+    b.ground(0,25); b.ground(28,59); b.ground(62,97); b.ground(110,149);
+    b.water(26,27,20); b.water(60,61,20); b.water(98,109,20);
+    b.start(3,18); b.hill(6,2,2,true); b.coins(16,10,11); b.coins(18,16,17); b.enemy(20,18);
+    b.plat(15,33,36); b.coins(14,33,36); b.plat(12,38,41); b.coins(11,38,41);
+    b.coins(16,26,27); b.enemy(45,18,'igel');
+    b.enemy(36,13,'wespe',{range:2}); b.cp(48,18); b.spring(52,18); b.plat(11,54,57); b.crystal(56,10);
+    b.coins(16,60,61); b.enemy(61,14,'wespe',{range:2});
+    b.dip(64,1,2,true); b.enemy(72,18); b.spikes(18,76,77); b.enemy(80,18);
+    b.plat(12,88,92); b.crystal(90,11);                                // Kristall: braucht Doppelsprung
+    b.coins(18,85,94);
+    b.cp(95,18); b.mover(99,17,6,0,3,3.6); b.coins(15,101,106);
+    b.cp(112,18);
+    b.updraft(113,116,3,18); b.plat(4,119,122); b.crystal(121,3);      // Kristall: braucht Gleiten
+    b.enemy(126,18,'igel'); b.spikes(18,131,132); b.enemy(137,18); b.hill(139,2,1); b.coins(16,141,141); b.coins(18,144,145);
+    // Erweiterung: Baumkronen, Geheimgang unter dem Boden, Doppelsprung-Versteck
+    b.ground(150,239); b.cp(150,18); b.dip(152,1,2,true);
+    b.plat(15,160,163); b.coins(14,160,163); b.plat(12,166,169); b.coins(11,166,169); b.plat(15,172,175); b.coins(14,172,175);
+    b.enemy(167,9,'wespe',{range:2});
+    b.clear(176,20,186,20); b.back(176,20,186,20); b.hidden(177,19,177,19); b.hidden(186,19,186,19); b.coins(20,179,182); b.star(184,20);   // ★ Geheimgang
+    b.enemy(190,18,'igel'); b.hill(192,2,2);
+    b.spikes(18,200,201); b.spring(204,18); b.plat(10,206,210); b.coins(9,206,210); b.enemy(212,18);
+    b.hill(214,1,3,true); b.enemy(224,14,'wespe',{range:3});
+    b.plat(11,226,229); b.star(228,10);                                 // ★ nur mit Doppelsprung
+    b.coins(18,230,233);
+    // Abschnitt 4: Wurzelhöhle unter dem Waldboden – oben Stachelpfad, unten Schätze
+    b.ground(240,359); b.cp(238,18);
+    b.clear(244,21,300,26); b.back(244,21,300,26); b.clear(244,19,246,20); b.back(244,19,246,20);
+    b.coins(26,248,256); b.enemy(252,26); b.enemy(262,26,'igel'); b.spikes(26,266,268); b.coins(24,265,269);
+    b.clear(274,27,277,28); b.water(274,277,27); b.coins(25,274,277); b.enemy(282,26);
+    b.clear(286,20,288,20); b.back(286,20,288,20); b.crystal(287,20);                  // Kristall: Doppelsprung in der Höhle
+    b.coins(26,290,293); b.plat(24,294,296); b.clear(298,19,300,20); b.back(298,19,300,20); b.plat(21,298,300);
+    b.spikes(18,256,258); b.enemy(264,14,'wespe',{range:3}); b.spikes(18,270,272); b.enemy(279,18); b.coins(16,256,258); b.coins(16,270,272);
+    // Abschnitt 5: Baumriesen – unten durch hohle Stämme, oben über den Kronenpfad
+    b.cp(303,18);
+    const tree=c=>{ b.rect(c,11,c+1,18); b.clear(c,17,c+1,18); b.back(c,17,c+1,18); };
+    tree(312); b.plat(16,308,317); b.plat(13,318,322); b.coins(15,308,311); b.coins(12,318,322);
+    b.plat(10,323,352); tree(324); tree(336); tree(348);
+    b.clear(331,10,333,10); b.crumb(10,340,342); b.coins(9,324,330); b.coins(9,334,339); b.coins(8,340,342);
+    b.enemy(332,6,'wespe',{range:3}); b.enemy(345,9); b.crystal(346,9);                 // Kristall auf dem Kronenpfad
+    b.enemy(318,18,'igel'); b.enemy(330,18); b.coins(18,326,334); b.enemy(342,18,'igel');
+    b.plat(5,354,356); b.star(355,4);                                                   // ★ über den Kronen: Doppelsprung
+    b.goal(356,18);
+  }}
+  ,archiv5:{name:'Wipfelwald (alt)',archived:true,need:2100,timeLimit:270,w:330,h:40,top:36,style:'forest',scene:'forestDusk',sky:.25,build(b){
+    const lad=(cA,cB,len,rows)=>rows.forEach((r,i)=>{ const c=i%2?cB:cA; b.plat(r,c,c+len-1); b.coins(r-1,c,c+len-1); });
+    b.ground(0,329); b.start(3,35); b.coins(35,6,9); b.hill(11,2,2,true); b.enemy(19,35);
+    b.rect(24,10,25,35); b.clear(24,33,25,35); b.back(24,33,25,35);                 // Felsnadel (Kristall oben, siehe unten)
+    // Abschnitt 1: Astleiter hinauf in die Kronen (Doppelsprung)
+    lad(34,40,4,[32,27,22,17]);
+    b.plat(12,45,57); b.plat(11,64,73); b.crumb(11,74,79); b.plat(11,80,87); b.plat(13,95,108);
+    b.coins(11,46,56); b.coins(9,59,62); b.coins(10,64,72); b.coins(10,80,86); b.coins(9,89,93); b.coins(12,96,107);
+    b.enemy(50,11); b.enemy(84,10); b.enemy(66,7,'wespe',{range:3}); b.enemy(91,8,'wespe',{range:2});
+    b.plat(6,69,71); b.crystal(70,5);                                                   // Kristall über den Kronen
+    // unten: Waldboden mit Felskammer
+    b.cp(46,35); b.enemy(52,35,'igel'); b.coins(35,48,56); b.spikes(35,74,76); b.enemy(82,35); b.coins(35,78,90); b.enemy(100,35,'igel');
+    b.rect(60,30,70,35); b.clear(61,32,69,35); b.back(61,32,69,35); b.crack(60,32,60,35); b.coins(29,61,69); b.star(66,35);   // ★ Felskammer: Dash
+    // Abschnitt 2: Lichtung mit Feder, zweite Astleiter
+    b.cp(112,35); b.enemy(116,35); b.spring(120,35); b.plat(28,124,128); b.coins(27,124,128);
+    lad(130,136,4,[23,18,13]);
+    b.crystal(24,9);                                                                     // Kristall auf der Felsnadel: Wandsprung
+    b.updraft(114,116,2,35);
+    b.enemy(146,35,'igel'); b.coins(35,140,150); b.enemy(162,35); b.coins(35,160,170); b.hill(172,2,3,true);
+    // Abschnitt 3: Hohe Kronen mit Fähren
+    b.plat(9,136,150); b.coins(8,138,149); b.enemy(144,8);
+    b.mover(152,9,7,0,3,3.4); b.plat(9,164,172); b.coins(8,164,172); b.plat(8,179,186); b.coins(6,174,177); b.coins(7,179,186);
+    b.plat(6,192,200); b.crystal(196,5); b.enemy(198,5); b.enemy(182,3,'wespe',{range:3});
+    b.star(115,2);                                                                       // ★ über der Lichtung: Gleiten im Aufwind
+    b.plat(8,208,218); b.coins(7,208,218); b.enemy(213,4,'wespe',{range:3});
+    b.plat(10,222,232); b.crumb(10,233,238); b.plat(10,239,250); b.coins(9,222,232); b.coins(9,239,250); b.enemy(245,9);
+    b.cp(180,35); b.enemy(190,35,'igel'); b.coins(35,192,200); b.spikes(35,210,212); b.enemy(220,35); b.coins(35,224,236); b.enemy(240,35,'igel');
+    // Abschnitt 4: Der uralte Baum – ganz nach oben zum Ziel
+    b.plat(13,254,258); b.plat(9,261,264); b.plat(5,267,270); b.coins(12,254,258); b.coins(8,261,264);
+    b.cp(255,35); b.enemy(266,35); b.coins(35,260,280); b.enemy(286,35,'igel');
+    lad(302,308,4,[32,27,22,17,12,7]);
+    b.plat(4,272,300); b.coins(3,272,290); b.enemy(282,3); b.enemy(291,1,'wespe',{range:2});
+    b.goal(296,3);
+  }}
+
 };
 
 // Gesamtzahl der Diamanten und Sterne (aus allen Welten gezählt)
 let TOTALS=null;
 function totals(){ if(TOTALS) return TOTALS; const t={cr:0,st:0,per:{}};
-  for(const id of Object.keys(DEFS)){ if(DEFS[id].arena) continue; const n=isNaN(+id)?id:+id, lv=makeLevel(n); t.per[n]=lv.crystals.length; t.cr+=lv.crystals.length; t.st+=lv.stars.length; }
+  for(const id of Object.keys(DEFS)){ if(DEFS[id].arena||DEFS[id].archived) continue; const n=isNaN(+id)?id:+id, lv=makeLevel(n); t.per[n]=lv.crystals.length; t.cr+=lv.crystals.length; t.st+=lv.stars.length; }
   return TOTALS=t; }
 function makeLevel(id){
   const d=DEFS[id], w=d.w, h=d.h;
