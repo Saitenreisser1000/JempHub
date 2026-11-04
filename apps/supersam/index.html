@@ -771,39 +771,45 @@ const DEFS={
     b.ramp(331,10,25); b.coins(24,348,354); b.enemy(352,24,'igel'); b.enemy(360,20,'geist'); b.coins(24,362,368); b.enemy(366,24);
     b.goal(376,24);
   }}
-  ,5:{name:'Wipfelwald',need:2100,timeLimit:270,w:330,h:40,top:36,style:'forest',scene:'forestDusk',sky:.25,build(b){
-    const lad=(cA,cB,len,rows)=>rows.forEach((r,i)=>{ const c=i%2?cB:cA; b.plat(r,c,c+len-1); b.coins(r-1,c,c+len-1); });
-    b.ground(0,329); b.start(3,35); b.coins(35,6,9); b.hill(11,2,2,true); b.enemy(19,35);
-    b.rect(24,10,25,35); b.clear(24,33,25,35); b.back(24,33,25,35);                 // Felsnadel (Kristall oben, siehe unten)
-    // Abschnitt 1: Astleiter hinauf in die Kronen (Doppelsprung)
-    lad(34,40,4,[32,27,22,17]);
-    b.plat(12,45,57); b.plat(11,64,73); b.crumb(11,74,79); b.plat(11,80,87); b.plat(13,95,108);
-    b.coins(11,46,56); b.coins(9,59,62); b.coins(10,64,72); b.coins(10,80,86); b.coins(9,89,93); b.coins(12,96,107);
-    b.enemy(50,11); b.enemy(84,10); b.enemy(66,7,'wespe',{range:3}); b.enemy(91,8,'wespe',{range:2});
-    b.plat(6,69,71); b.crystal(70,5);                                                   // Kristall über den Kronen
-    // unten: Waldboden mit Felskammer
-    b.cp(46,35); b.enemy(52,35,'igel'); b.coins(35,48,56); b.spikes(35,74,76); b.enemy(82,35); b.coins(35,78,90); b.enemy(100,35,'igel');
-    b.rect(60,30,70,35); b.clear(61,32,69,35); b.back(61,32,69,35); b.crack(60,32,60,35); b.coins(29,61,69); b.star(66,35);   // ★ Felskammer: Dash
-    // Abschnitt 2: Lichtung mit Feder, zweite Astleiter
-    b.cp(112,35); b.enemy(116,35); b.spring(120,35); b.plat(28,124,128); b.coins(27,124,128);
-    lad(130,136,4,[23,18,13]);
-    b.crystal(24,9);                                                                     // Kristall auf der Felsnadel: Wandsprung
-    b.updraft(114,116,2,35);
-    b.enemy(146,35,'igel'); b.coins(35,140,150); b.enemy(162,35); b.coins(35,160,170); b.hill(172,2,3,true);
-    // Abschnitt 3: Hohe Kronen mit Fähren
-    b.plat(9,136,150); b.coins(8,138,149); b.enemy(144,8);
-    b.mover(152,9,7,0,3,3.4); b.plat(9,164,172); b.coins(8,164,172); b.plat(8,179,186); b.coins(6,174,177); b.coins(7,179,186);
-    b.plat(6,192,200); b.crystal(196,5); b.enemy(198,5); b.enemy(182,3,'wespe',{range:3});
-    b.star(115,2);                                                                       // ★ über der Lichtung: Gleiten im Aufwind
-    b.plat(8,208,218); b.coins(7,208,218); b.enemy(213,4,'wespe',{range:3});
-    b.plat(10,222,232); b.crumb(10,233,238); b.plat(10,239,250); b.coins(9,222,232); b.coins(9,239,250); b.enemy(245,9);
-    b.cp(180,35); b.enemy(190,35,'igel'); b.coins(35,192,200); b.spikes(35,210,212); b.enemy(220,35); b.coins(35,224,236); b.enemy(240,35,'igel');
-    // Abschnitt 4: Der uralte Baum – ganz nach oben zum Ziel
-    b.plat(13,254,258); b.plat(9,261,264); b.plat(5,267,270); b.coins(12,254,258); b.coins(8,261,264);
-    b.cp(255,35); b.enemy(266,35); b.coins(35,260,280); b.enemy(286,35,'igel');
-    lad(302,308,4,[32,27,22,17,12,7]);
-    b.plat(4,272,300); b.coins(3,272,290); b.enemy(282,3); b.enemy(291,1,'wespe',{range:2});
-    b.goal(296,3);
+  // 1-2 Wipfelwald: Schwung über drei Kronenebenen – Doppelsprünge bei vollem Tempo, Wespen als Trittsteine,
+  // Federn am Waldboden bringen jeden, der fällt, wieder hinauf
+  ,5:{name:'Wipfelwald',need:2100,timeLimit:270,w:340,h:40,top:36,style:'forest',scene:'forestDusk',sky:.25,build(b){
+    b.ground(0,339); b.start(3,35); b.coins(35,6,12);
+    // Abschnitt 1: Absprung – Federn hinauf in die untere Krone, dann Doppelsprung in die mittlere
+    b.spring(15,35); b.spring(16,35); b.spring(17,35); b.coins(30,14,18);
+    b.plat(29,20,34); b.coins(28,21,33); b.plat(29,41,52); b.coins(26,35,40); b.coins(28,42,51); b.enemy(46,28);
+    b.plat(23,56,70); b.coins(24,53,55); b.coins(22,57,69); b.enemy(64,22);
+    b.spring(47,35); b.spring(48,35); b.spring(49,35); b.enemy(30,35,'igel'); b.coins(35,22,32);
+    b.rect(60,30,68,35); b.clear(61,32,67,35); b.back(61,32,67,35); b.crack(60,32,60,35); b.star(66,35);   // ★ Felskammer am Boden: Dash
+    // Abschnitt 2: Wipfelpfad – Lücken von 8–9 Kacheln, Wespe als Trittstein, Bröckelstrecke
+    b.plat(23,79,88); b.plat(22,97,104); b.plat(23,114,124); b.crumb(23,125,130); b.plat(23,131,140);
+    for(const [c0,c1,r] of [[71,78,19],[89,96,18],[105,113,18],[141,148,18]]) b.coins(r,c0,c1);
+    b.coins(22,80,87); b.coins(21,98,103); b.coins(22,115,123); b.coins(21,125,130); b.coins(22,132,139);
+    b.enemy(74,19,'wespe',{range:2}); b.enemy(109,19,'wespe',{range:2}); b.enemy(118,22); b.crystal(120,21);   // ◆ auf dem Wipfelpfad
+    b.spring(100,35); b.spring(101,35); b.spring(102,35); b.spring(145,35); b.spring(146,35); b.spring(147,35);
+    b.enemy(85,35,'igel'); b.coins(35,104,112); b.enemy(125,35,'igel'); b.coins(35,130,140);
+    b.cp(56,22);
+    // Abschnitt 3: Kronendach – ganz oben, schmalere Äste, Lücken von 9 Kacheln
+    b.plat(16,149,160); b.plat(16,170,176); b.plat(15,186,191); b.plat(16,201,206); b.crumb(16,207,214); b.plat(17,224,240);
+    for(const [c0,c1,r] of [[161,169,12],[177,185,11],[192,200,11],[215,223,12]]) b.coins(r,c0,c1);
+    b.coins(15,150,159); b.coins(15,171,175); b.coins(14,187,190); b.coins(15,201,206); b.coins(15,207,214); b.coins(16,225,239);
+    b.enemy(181,13,'wespe',{range:2}); b.enemy(219,14,'wespe',{range:2}); b.enemy(155,15); b.enemy(232,16);
+    b.plat(23,175,185); b.plat(23,205,215); b.coins(22,176,184); b.coins(22,206,214);   // Zwischenäste zum Wiederaufstieg
+    b.crystal(195,10);                                                                   // ◆ über dem Kronendach: Doppelsprung
+    b.spring(190,35); b.spring(191,35); b.spring(192,35); b.spring(230,35); b.spring(231,35); b.spring(232,35);
+    b.updraft(165,167,3,35); b.star(166,3);                                             // ★ ganz oben: Gleiten im Aufwind
+    b.enemy(180,35,'igel'); b.coins(35,194,204); b.enemy(215,35,'igel');
+    b.cp(150,15);
+    // Abschnitt 4: Abfahrt – Ast für Ast hinunter, Käferkette am Boden, Felsnadel, Ziel
+    b.plat(20,244,252); b.plat(23,257,266); b.plat(26,271,280); b.plat(29,285,294);
+    b.coins(19,245,251); b.coins(22,258,265); b.coins(25,272,279); b.coins(28,286,293);
+    b.enemy(248,19); b.enemy(262,22); b.enemy(276,25);
+    b.cp(298,35); b.enemy(302,35); b.enemy(306,35); b.coins(32,300,308);
+    b.rect(312,14,313,35); b.clear(312,33,313,35); b.back(312,33,313,35); b.crystal(312,13);   // ◆ auf der Felsnadel: Wandsprung
+    b.hill(316,2,3,true); b.coins(35,328,334);
+    // Waldboden als Rückfallweg: Felsbrocken bremsen, die Federn führen wieder hinauf
+    for(const c of [36,80,92,110,122,135,158,172,200,212,240,268,290]) b.rect(c,32,c+1,35);
+    b.goal(336,35);
   }}
   ,6:{name:'Schlucht',need:1550,timeLimit:300,w:300,h:48,top:40,style:'stone',sky:.5,build(b){
     // Abschnitt 1: Hochplateau und erster Canyon
