@@ -560,8 +560,8 @@ const DEFS={
     b.door(152,22,'b1',7); b.door(162,22,'b2',10); b.door(172,22,'b3',12);   // Endgegner-Tore: Diamanten nötig
   }},
   // Übungswiese beim ersten Start: jede Station verlangt genau einen Handgriff, ohne Gegner und Abgründe
-  uebung:{name:'Übungswiese',w:194,h:20,top:17,style:'meadow',noReturn:true,build(b){
-    b.ground(0,193); b.rect(0,0,0,16); b.start(6,16); b.coins(16,9,14); b.coins(16,2,4);
+  uebung:{name:'Übungswiese',w:300,h:26,top:17,style:'meadow',noReturn:true,build(b){
+    b.ground(0,299); b.rect(0,0,0,16); b.start(6,16); b.coins(16,9,14); b.coins(16,2,4);
     b.rect(26,16,27,16); b.coins(14,26,27);                                   // Station 3: Kiste – kurz springen
     b.rect(38,14,39,16); b.coins(12,38,39);                                   // Station 4: Mauer – länger halten
     b.clear(47,17,49,18); b.coins(15,47,49);                                  // Station 5: Graben – Anlauf und springen
@@ -573,7 +573,19 @@ const DEFS={
     b.rect(128,12,136,14); b.coins(16,129,135); b.rect(139,14,146,16); b.coins(13,139,142);                                    // Station 9: noch einmal senkrecht
     b.rect(152,16,153,16); b.rect(158,14,159,16); b.clear(164,17,166,18); b.plat(14,170,172); b.rect(176,14,177,16);       // Station 10: Parcours
     b.coins(15,152,153); b.coins(13,158,159); b.coins(15,164,166); b.coins(13,170,172); b.coins(13,176,177); b.coins(16,180,184);
-    b.door(188,16,0);
+    b.cp(148,16); b.enemy(182,16);                                                                                            // zweite Hälfte: erste Gegner
+    // Station 11: fahrende Plattform über einem tiefen Graben (Stufen am Rand führen wieder hinauf)
+    b.cp(192,16); b.clear(197,17,214,23); b.plat(21,197,198); b.plat(19,197,197); b.mover(199,16,9,0,3,3.6); b.coins(14,201,209);
+    b.enemy(220,16);
+    // Station 12: Aufzug auf den hohen Block
+    b.mover(223,16,0,-6,3,3.2); b.rect(226,10,232,16); b.coins(9,227,231);
+    // Station 13: Feder über die hohe Mauer
+    b.cp(236,16); b.spring(240,16); b.rect(244,10,245,16); b.coins(8,240,243); b.enemy(241,4,'wespe',{range:3});
+    // Station 14: Bröckelbrücke – nicht stehen bleiben
+    b.clear(252,17,262,23); b.plat(21,252,253); b.plat(19,252,252); b.crumb(17,254,262); b.coins(15,254,262);
+    // Station 15: Ziel – vorbei an einem Käfer, dann zur Tür
+    b.cp(266,16); b.enemy(274,16); b.hill(278,1,2,true); b.coins(16,286,290);
+    b.door(294,16,0);
   }},
   b1:{name:'Igelkönig',w:36,h:16,top:13,style:'forest',arena:{floor:13,left:1,right:35,bx:24,ceil:0,view:4},build(b){
     b.ground(0,35); b.rect(0,0,0,15); b.rect(35,0,35,15); b.start(3,12); b.plat(9,8,11); b.plat(9,24,27);
@@ -1204,6 +1216,10 @@ const TUT_STEPS=[
   {t:'Hüpf von Brett zu Brett. Fällst du in den Graben, kletterst du einfach wieder raus.',zone:'both'},
   {t:'Noch einmal: im Gang laufen, am Ende stehen bleiben, beide Daumen aufsetzen und auf den Block lenken.',zone:'both'},
   {t:'Jetzt alles zusammen – der Parcours ohne Hilfe!',zone:null},
+  {t:'Fahrende Plattform: aufspringen und mitfahren.',zone:null},
+  {t:'Aufzug: draufstellen, oben auf den Block springen.',zone:null},
+  {t:'Feder: drauflaufen und über die Mauer fliegen.',zone:null},
+  {t:'Bröckelbrücke: schnell rüber, nicht stehen bleiben.',zone:null},
   {t:'Geschafft! Lauf zur Tür und bleib darin stehen – sie bringt dich in die Hubwelt.',zone:'r',end:true}];
 const tutEl=document.getElementById('tut'), tutStep=document.getElementById('tstep'), tutText=document.getElementById('ttext');
 const TUT={on:false,i:0,ok:0,x0:0,y0:0,peak:0,air:false,endT:0};
@@ -1234,6 +1250,10 @@ function tickTutorial(dt){
     case 7: if(c>121&&P.ground&&feet<=17*TS+1) tutNext(); break;
     case 8: if(c>138.5&&P.ground&&feet<=14*TS+1) tutNext(); break;
     case 9: if(c>180&&P.ground) tutNext(); break;
+    case 10: if(c>215&&P.ground&&feet<=17*TS+1) tutNext(); break;
+    case 11: if(c>226.5&&P.ground&&feet<=10*TS+1) tutNext(); break;
+    case 12: if(c>246&&P.ground) tutNext(); break;
+    case 13: if(c>263&&P.ground&&feet<=17*TS+1) tutNext(); break;
   }
 }
 function startPractice(){ loadLevel('uebung'); state='play'; startTutorial(); }
