@@ -225,13 +225,25 @@ test('Nach dem Wiedereinstieg 2 Sekunden unverwundbar', () => {
   assert.ok(died, 'nach der Schutzzeit wieder verwundbar');
 });
 
-test('Endgegner: Tore brauchen Diamanten, Bosse brauchen Fähigkeiten', () => {
+test('Endgegner: ein Boss je Abschnitt, Kronentore, Bosse brauchen Fähigkeiten', () => {
   const { dz, listeners, run } = boot();
   const key = (k, d) => d ? listeners.keydown({ key: k, preventDefault() {} }) : listeners.keyup({ key: k });
   dz.setState('play'); dz.loadLevel('hub');
   assert.equal(dz.L.coins.length, 0, 'keine Münzen in der Hubwelt');
-  const gates = dz.L.doors.filter(d => d.need).map(d => [d.world, d.need]);
-  assert.equal(JSON.stringify(gates), JSON.stringify([['b1', 7], ['b2', 10], ['b3', 12]]));
+  const bossDoors = dz.L.doors.filter(d => typeof d.world === 'string').map(d => d.world);
+  assert.equal(JSON.stringify(bossDoors), JSON.stringify(['b0', 'b2', 'b1', 'b3']), 'Boss-Reihenfolge Wald, Felsen, See, Gipfel');
+  assert.equal(JSON.stringify(dz.L.gates.map(g => [g.boss, g.open])), JSON.stringify([['b0', false], ['b2', false], ['b1', false]]), 'Kronentore zu');
+  const gx = dz.L.gates[0].x / 16; assert.ok(dz.L.grid[0][gx] === 'K' && dz.L.grid[22][gx] === 'K', 'Kronentor sperrt die ganze Höhe');
+  dz.save.bosses.b0 = true; dz.loadLevel('hub');
+  assert.equal(dz.L.gates[0].open, true, 'Krone der Wespenkönigin öffnet das erste Tor'); assert.ok(dz.L.grid[22][gx] !== 'K', 'Durchgang frei');
+  delete dz.save.bosses.b0;
+  // Wespenkönigin: einfacher Sprung reicht nicht, von oben (Doppelsprung) trifft
+  dz.setState('play'); dz.loadLevel('b0'); run(80); let Q = dz.boss;
+  dz.P.inv = 5; dz.P.x = Q.x + Q.w / 2 - 5; dz.P.y = 15 * 16 - 14; dz.P.vy = 0; run(3);
+  key(' ', 1); let top0 = 1e9; for (let i = 0; i < 40; i++) { run(1); top0 = Math.min(top0, dz.P.y + dz.P.h); } key(' ', 0);
+  assert.ok(top0 > Q.y + 4, 'Einfacher Sprung kommt nicht über die Königin');
+  for (let k = 0; k < 3; k++) { Q.inv = 0; Q.state = 'fly'; dz.P.inv = 0; for (let i = 0; i < 4; i++) { dz.P.x = Q.x + Q.w / 2 - 5; dz.P.y = Q.y - 16 + i * 3; dz.P.vy = 150; run(1); } for (let i = 0; i < 20; i++) { dz.P.inv = 5; run(1); } }
+  assert.equal(Q.hp, 0, 'Wespenkönigin besiegt');
   Object.assign(dz.save.ab, { double: true, wall: true, dash: true, glide: true });
   // Igelkönig: Draufspringen hilft nicht, Dash im benommenen Zustand trifft
   dz.setState('play'); dz.loadLevel('b1'); run(80); let B = dz.boss;
@@ -265,7 +277,7 @@ test('Endgegner: Tore brauchen Diamanten, Bosse brauchen Fähigkeiten', () => {
 test('Nach dem letzten Endgegner kommt der Abschluss-Bildschirm', () => {
   const { dz, run } = boot();
   Object.assign(dz.save.ab, { double: true, wall: true, dash: true, glide: true });
-  dz.save.bosses.b1 = true; dz.save.bosses.b2 = true;
+  dz.save.bosses.b0 = true; dz.save.bosses.b1 = true; dz.save.bosses.b2 = true;
   dz.setState('play'); dz.loadLevel('b3'); run(60); const B = dz.boss;
   for (let k = 0; k < 3; k++) { B.inv = 0; dz.P.inv = 0; for (let i = 0; i < 4; i++) { dz.P.x = B.x + B.w / 2 - 5; dz.P.y = B.y - 16 + i * 3; dz.P.vy = 150; run(1); } for (let i = 0; i < 20; i++) { dz.P.inv = 5; run(1); } }
   for (let i = 0; i < 150; i++) { dz.P.inv = 5; run(1); }
@@ -336,7 +348,7 @@ test('Neue Welten: Türen in der Hubwelt und Abschluss ohne neue Fähigkeit', ()
   const { dz, run, warnings } = boot();
   dz.setState('play'); dz.loadLevel('hub');
   const worlds = dz.L.doors.map(d => String(d.world)).sort();
-  assert.equal(JSON.stringify(worlds), JSON.stringify(['1', '2', '3', '4', '5', '6', '7', '8', 'b1', 'b2', 'b3']), 'alle Türen vorhanden');
+  assert.equal(JSON.stringify(worlds), JSON.stringify(['1', '2', '3', '4', '5', '6', '7', '8', 'b0', 'b1', 'b2', 'b3']), 'alle Türen vorhanden');
   for (const n of [5, 6, 7, 8]) {
     dz.setState('play'); dz.loadLevel(n); run(30);
     assert.ok(dz.L.goal, `Welt ${n} hat ein Ziel`);
