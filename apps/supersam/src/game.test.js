@@ -296,6 +296,9 @@ test('Übungswiese beim ersten Start: Stationen nacheinander, dann Hubwelt', () 
   assert.equal(dz.save.tutorialDone, false, 'neuer Spielstand ohne Übung');
   dz.begin(); run(10);
   assert.equal(dz.L.id, 'uebung', 'erster Start beginnt auf der Übungswiese');
+  assert.ok(dz.L.enemies.length > 0 && dz.L.enemies.every(e => e.x > dz.L.w * 16 / 2), 'Gegner nur in der zweiten Hälfte');
+  assert.ok(dz.L.movers.length >= 2 && dz.L.springs.length >= 1, 'fahrende Plattformen und Feder vorhanden');
+  dz.L.enemies.length = 0;
   const until = (n, max = 300) => { for (let i = 0; i < max && dz.TUT.i < n; i++) run(1); return dz.TUT.i >= n; };
   kd('ArrowRight'); assert.ok(until(1), 'Station 1: rechts laufen'); ku('ArrowRight');
   kd('ArrowLeft'); assert.ok(until(2), 'Station 2: zurück laufen'); ku('ArrowLeft');
@@ -318,7 +321,11 @@ test('Übungswiese beim ersten Start: Stationen nacheinander, dann Hubwelt', () 
   assert.ok(auto(8), 'Station 8: Bretter über dem Graben');
   vertical(137.3); assert.ok(until(9), 'Station 9: noch einmal senkrecht');
   assert.ok(auto(10), 'Station 10: Parcours');
-  ku('ArrowRight'); run(30); kd('ArrowLeft'); for (let i = 0; i < 300 && (dz.P.x + 5) / 16 > 189.5; i++) run(1); ku('ArrowLeft');
+  ku('ArrowRight'); ku(' ');
+  // Stationen 11–14 zählen erst, wenn Sam hinter dem Hindernis steht
+  const place = (c, feetRow) => { dz.P.x = c * 16; dz.P.y = feetRow * 16 - 14; dz.P.vx = 0; dz.P.vy = 0; run(2); };
+  for (const [n, c, r] of [[11, 216, 17], [12, 228, 10], [13, 248, 17], [14, 264, 17]]) { place(c, r); assert.ok(until(n), `Station ${n} gezählt`); }
+  place(294, 17);
   for (let i = 0; i < 200 && dz.L.id === 'uebung'; i++) run(1);
   assert.equal(dz.L.id, 'hub', 'Tür führt in die Hubwelt');
   assert.equal(dz.save.tutorialDone, true, 'Übung gilt als erledigt');
