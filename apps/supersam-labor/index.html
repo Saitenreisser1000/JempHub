@@ -579,14 +579,14 @@ const DEFS={
   uebung:{name:'Übungswiese',w:300,h:26,top:17,style:'meadow',noReturn:true,build(b){
     b.ground(0,299); b.rect(0,0,0,16); b.start(6,16); b.coins(16,9,14); b.coins(16,2,4);
     b.rect(26,16,27,16); b.coins(14,26,27);                                   // Station 3: Kiste – kurz springen
-    b.rect(38,14,39,16); b.coins(12,38,39);                                   // Station 4: Mauer – länger halten
+    b.rect(38,14,39,16); b.coins(12,38,39); b.star(39,10);                    // Station 4: Mauer – länger halten (★ 1)
     b.clear(47,17,49,18); b.coins(15,47,49);                                  // Station 5: Graben – Anlauf und springen
     b.rect(54,12,62,14); b.coins(16,55,61);                                   // Station 6: niedriger Gang …
     b.rect(65,14,72,16); b.coins(12,65,68);                                   // … dann steil nach oben auf den Block
     b.rect(78,16,81,16); b.rect(82,15,85,16); b.rect(86,13,89,16); b.coins(15,78,81); b.coins(14,82,85); b.coins(12,86,89);   // Station 7: Treppe
     b.clear(96,17,120,18); b.plat(15,99,101); b.plat(14,105,107); b.plat(15,111,113); b.plat(15,117,119);                    // Station 8: Bretter über dem Graben
     b.coins(14,99,101); b.coins(13,105,107); b.coins(14,111,113); b.coins(14,117,119);
-    b.rect(128,12,136,14); b.coins(16,129,135); b.rect(139,14,146,16); b.coins(13,139,142);                                    // Station 9: noch einmal senkrecht
+    b.rect(128,12,136,14); b.coins(16,129,135); b.rect(139,14,146,16); b.coins(13,139,142); b.star(132,8);                    // Station 9: noch einmal senkrecht (★ 2)
     b.rect(152,16,153,16); b.rect(158,14,159,16); b.clear(164,17,166,18); b.plat(14,170,172); b.rect(176,14,177,16);       // Station 10: Parcours
     b.coins(15,152,153); b.coins(13,158,159); b.coins(15,164,166); b.coins(13,170,172); b.coins(13,176,177); b.coins(16,180,184);
     b.cp(148,16); b.enemy(182,16);                                                                                            // zweite Hälfte: erste Gegner
@@ -594,14 +594,15 @@ const DEFS={
     b.cp(192,16); b.clear(197,17,214,23); b.plat(21,197,198); b.plat(19,197,197); b.mover(199,16,9,0,3,3.6); b.coins(14,201,209);
     b.enemy(220,16);
     // Station 12: Aufzug auf den hohen Block
-    b.mover(223,16,0,-6,3,3.2); b.rect(226,10,232,16); b.coins(9,227,231);
+    b.mover(223,16,0,-6,3,3.2); b.rect(226,10,232,16); b.coins(9,227,231); b.star(229,6);   // ★ 3 über dem hohen Block
+    b.spring(234,16);                                                         // Rückweg: Feder hinter dem Block
     // Station 13: Feder über die hohe Mauer
-    b.cp(236,16); b.spring(240,16); b.rect(244,10,245,16); b.coins(8,240,243); b.enemy(241,4,'wespe',{range:3});
+    b.cp(236,16); b.spring(240,16); b.rect(244,10,245,16); b.coins(8,240,243); b.enemy(241,4,'wespe',{range:3}); b.spring(250,16);   // Feder rechts: Rückweg
     // Station 14: Bröckelbrücke – nicht stehen bleiben
     b.clear(252,17,262,23); b.plat(21,252,253); b.plat(19,252,252); b.crumb(17,254,262); b.coins(15,254,262);
     // Station 15: Ziel – vorbei an einem Käfer, dann zur Tür
     b.cp(266,16); b.enemy(274,16); b.hill(278,1,2,true); b.coins(16,286,290);
-    b.door(294,16,0);
+    b.door(294,16,0,0,{stars:3});                                             // Tür öffnet erst mit allen 3 Sternen
   }},
   b0:{name:'Wespenkönigin',w:38,h:18,top:15,style:'forest',arena:{floor:15,left:1,right:37,bx:19,by:6,range:9,ceil:0,view:5},build(b){
     b.ground(0,37); b.rect(0,0,0,17); b.rect(37,0,37,17); b.start(3,14);
@@ -1001,7 +1002,7 @@ function defFromData(D){
       case 'coin': b.coin(o.c,o.r); break; case 'crystal': b.crystal(o.c,o.r); break; case 'star': b.star(o.c,o.r); break;
       case 'enemy': b.enemy(o.c,o.r,o.t,o.range!=null?{range:o.range}:{}); break;
       case 'spring': b.spring(o.c,o.r); break; case 'cp': b.cp(o.c,o.r); break;
-      case 'mover': b.mover(o.c,o.r,o.dc,o.dr,o.w,o.p); break; case 'door': b.door(o.c,o.r,o.world,o.need||0); break; } }
+      case 'mover': b.mover(o.c,o.r,o.dc,o.dr,o.w,o.p); break; case 'door': b.door(o.c,o.r,o.world,o.need||0,{stars:o.stars||0}); break; } }
   }};
 }
 // Level → Daten: Raster, Ebenen und Objekte in Bau-Koordinaten (Spalte/Reihe)
@@ -1019,7 +1020,7 @@ function levelData(id){
   for(const sp of Lx.springs) objs.push({k:'spring',c:q(sp.x/TS),r:q(sp.bottom/TS-1)});
   for(const cp of Lx.checkpoints) objs.push({k:'cp',c:q(cp.x/TS),r:q(cp.bottom/TS-1)});
   for(const m of Lx.movers) objs.push({k:'mover',c:q(m.x0/TS),r:q(m.y0/TS),dc:q((m.x1-m.x0)/TS),dr:q((m.y1-m.y0)/TS),w:q(m.w/TS),p:m.period});
-  for(const dd of Lx.doors) if(!(dd.world===0&&dd.x===TS&&!d.noReturn)) objs.push({k:'door',c:q(dd.x/TS),r:q(dd.bottom/TS-1),world:dd.world,need:dd.need||0});
+  for(const dd of Lx.doors) if(!(dd.world===0&&dd.x===TS&&!d.noReturn)) objs.push({k:'door',c:q(dd.x/TS),r:q(dd.bottom/TS-1),world:dd.world,need:dd.need||0,...(dd.stars?{stars:dd.stars}:{})});
   return {v:1,id,name:d.name,style:d.style,scene:d.scene,w:d.w,h:d.h,top:d.top,need:d.need||0,timeLimit:d.timeLimit||0,sky:d.sky,noReturn:!!d.noReturn,
     grid:Lx.grid.map(r=>r.join('')),back:Lx.back.map(r=>r.map(v=>v?'1':'0').join('')),up:Lx.up.map(r=>r.map(v=>v?'1':'0').join('')),objs};
 }
@@ -1054,7 +1055,7 @@ function makeLevel(id,orig){
     mover:(c,r,dc,dr,mw=3,period=3.5)=>L.movers.push({x0:c*TS,y0:r*TS,x1:(c+dc)*TS,y1:(r+dr)*TS,w:mw*TS,period,x:c*TS,y:r*TS,dx:0,dy:0}),
     start:(c,r)=>{ L.start={x:c*TS+3,y:(r+1)*TS-14}; },
     goal:(c,r)=>{ L.goal={x:c*TS,bottom:(r+1)*TS}; },
-    door:(c,r,world,need=0)=>L.doors.push({x:c*TS,bottom:(r+1)*TS,world,need,t:0}),
+    door:(c,r,world,need=0,o={})=>L.doors.push({x:c*TS,bottom:(r+1)*TS,world,need,stars:o.stars||0,t:0}),   // stars: so viele Sterne dieser Welt müssen gesammelt sein
     // Kronentor: Gitter über die ganze Höhe, verschwindet mit der Krone des Abschnitts-Bosses
     gate:(c,boss)=>{ const open=!!save.bosses[boss]; if(!open) rect(c,0,c+1,d.top-1,'K'); (L.gates||(L.gates=[])).push({x:c*TS,bottom:d.top*TS,boss,open}); },
     // Hügel: h Kacheln hoch, flat Kacheln Plateau; gentle = sanfte Hänge
@@ -1669,6 +1670,7 @@ function update(dt){
     if(!over) d.armed=true; // eine Tür wirkt erst, nachdem man sie einmal verlassen hat
     const inside=d.armed&&over&&P.ground&&Math.abs(P.y+P.h-d.bottom)<4&&Math.abs(P.vx)<25;
     d.t=inside?d.t+dt:Math.max(0,d.t-dt*2);
+    if(d.t>=.7&&d.stars&&starsGot()<d.stars){ d.t=0; d.armed=false; sfx('locked'); showMsg(`★ ${starsGot()}/${d.stars}`); continue; }
     if(d.t>=.7&&d.need&&crystalTotal()<d.need){ d.t=0; d.armed=false; sfx('locked'); showMsg(`Noch ${d.need-crystalTotal()} Diamanten nötig`); continue; }
     if(d.t>=.7&&BOSS_NEEDS_WORLD[d.world]&&!save.done[BOSS_NEEDS_WORLD[d.world]]){ const w=BOSS_NEEDS_WORLD[d.world]; d.t=0; d.armed=false; sfx('locked'); showMsg(`Erst Welt ${WNO(w)} · ${NAMES[w]} schaffen`); continue; }
     if(d.t>=.7&&NEED_FOR_DOOR[d.world]&&!save.ab[NEED_FOR_DOOR[d.world]]){ d.t=0; d.armed=false; sfx('locked'); showMsg(`Braucht ${AB_INFO[NEED_FOR_DOOR[d.world]].name}`); continue; }
@@ -2305,6 +2307,7 @@ function drawCheckpoints(){ for(const k of L.checkpoints){ const x=k.x, b=k.bott
   ctx.fillStyle='#1a1020'; ctx.fillRect(x-1,b-35,4,35); ctx.fillStyle=C.cream; ctx.fillRect(x,b-34,2,34);
   ctx.fillStyle=k.on?C.ember:'#8792a3'; const w=k.on?Math.sin(clock*5)*2:0; ctx.beginPath(); ctx.moveTo(x+2,b-34); ctx.lineTo(x+14,b-29+w); ctx.lineTo(x+2,b-24); ctx.fill(); } }
 const crystalTotal=()=>Object.keys(save.crystals).length;
+const starsGot=()=>L.stars.filter(k=>k.got).length;   // in diesem Durchgang gesammelte Sterne der Welt
 function drawDoors(){ for(const d of L.doors){
   const x=d.x-4, y=d.bottom-32, col=WORLD_COL[d.world];
   ctx.fillStyle='#1a1020'; ctx.fillRect(x,y,24,32);
@@ -2314,6 +2317,11 @@ function drawDoors(){ for(const d of L.doors){
   if(save.done[d.world]){ ctx.fillStyle=C.gold; ctx.fillRect(x+10,y+3,4,3); }
   ctx.textAlign='center'; ctx.font='7px Silkscreen, monospace';
   ctx.fillStyle='#1a1020'; const lbl=!d.world?'⌂ Hubwelt':typeof d.world==='number'?`${WNO(d.world)} ${NAMES[d.world]}`:NAMES[d.world]; ctx.fillText(lbl,d.x+9,y-13); ctx.fillStyle=C.cream; ctx.fillText(lbl,d.x+8,y-14);
+  if(d.stars){ const have=starsGot(), open=have>=d.stars;
+    if(!open){ ctx.fillStyle='rgba(13,21,36,.7)'; ctx.fillRect(x+5,y+7,14,25);
+      ctx.fillStyle='#8a94a8'; for(let i=0;i<3;i++) ctx.fillRect(x+3,y+11+i*7,18,2);
+      ctx.fillStyle='#1a1020'; ctx.fillRect(x+8,y+15,8,8); ctx.fillStyle='#ffd166'; ctx.fillRect(x+9,y+16,6,6); }
+    ctx.font='6px Silkscreen, monospace'; ctx.fillStyle=open?C.gold:'#ff8a8a'; ctx.fillText(`★ ${Math.min(have,d.stars)}/${d.stars}`,d.x+8,y-5); }
   if(d.need){ const have=crystalTotal(), open=have>=d.need;
     if(!open){ ctx.fillStyle='rgba(13,21,36,.7)'; ctx.fillRect(x+5,y+7,14,25);
       ctx.fillStyle='#8a94a8'; for(let i=0;i<3;i++) ctx.fillRect(x+3,y+11+i*7,18,2);

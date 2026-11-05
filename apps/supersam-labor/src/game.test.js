@@ -345,9 +345,14 @@ test('Übungswiese beim ersten Start: Stationen nacheinander, dann Hubwelt', () 
   // Stationen 11–14 zählen erst, wenn Sam hinter dem Hindernis steht
   const place = (c, feetRow) => { dz.P.x = c * 16; dz.P.y = feetRow * 16 - 14; dz.P.vx = 0; dz.P.vy = 0; run(2); };
   for (const [n, c, r] of [[11, 216, 17], [12, 228, 10], [13, 248, 17], [14, 264, 17]]) { place(c, r); assert.ok(until(n), `Station ${n} gezählt`); }
+  assert.equal(dz.L.stars.length, 3, 'drei Sterne auf der Übungswiese');
+  dz.L.stars[0].got = dz.L.stars[1].got = true;
   place(294, 17);
   for (let i = 0; i < 200 && dz.L.id === 'uebung'; i++) run(1);
-  assert.equal(dz.L.id, 'hub', 'Tür führt in die Hubwelt');
+  assert.equal(dz.L.id, 'uebung', 'Tür bleibt zu, solange ein Stern fehlt');
+  place(280, 17); run(5); dz.L.stars[2].got = true; place(294, 17);
+  for (let i = 0; i < 200 && dz.L.id === 'uebung'; i++) run(1);
+  assert.equal(dz.L.id, 'hub', 'mit allen 3 Sternen führt die Tür in die Hubwelt');
   assert.equal(dz.save.tutorialDone, true, 'Übung gilt als erledigt');
   assert.equal(dz.TUT.on, false, 'Übungsleiste ausgeblendet');
 });
