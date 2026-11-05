@@ -19,6 +19,7 @@ button,select,input{font:inherit;color:var(--text)}
 button{background:var(--panel2);border:1px solid var(--line);border-radius:6px;padding:5px 9px;cursor:pointer}
 button:hover{border-color:var(--dim)} button:active{transform:translateY(1px)}
 button.primary{background:#3a5a2a;border-color:#5e8a40}
+button:disabled{opacity:.45;cursor:default}
 button.on{background:#3d4f7a;border-color:var(--accent)}
 select,input[type=number],input[type=text]{background:var(--panel2);border:1px solid var(--line);border-radius:6px;padding:4px 6px}
 input[type=number]{width:64px}
@@ -59,6 +60,12 @@ input[type=number]{width:64px}
 #progress i{display:block;height:100%;width:0;background:var(--accent)}
 #toast{position:fixed;left:50%;bottom:40px;transform:translateX(-50%);background:#2c3b60;border:1px solid var(--accent);padding:8px 14px;border-radius:8px;opacity:0;transition:opacity .2s;pointer-events:none;z-index:30}
 #toast.show{opacity:1}
+#notes .note{display:flex;gap:6px;align-items:flex-start;padding:5px 6px;margin:3px 0;border:1px solid var(--line);border-radius:6px;background:var(--panel2);cursor:pointer;font-size:12px}
+#notes .note:hover{border-color:var(--dim)}
+#notes .note .n{flex:none;min-width:18px;height:18px;border-radius:9px;background:#ffd166;color:#1a1a1a;font-weight:700;text-align:center;line-height:18px;font-size:11px}
+#notes .note.done .n{background:var(--ok)} #notes .note .t{flex:1;overflow:hidden}
+#notes .note .a{color:var(--ok);display:block;margin-top:2px} #notes .note .u{color:var(--accent);font-size:10.5px}
+#notes .empty{color:var(--dim);font-size:12px} #notes .acts{display:flex;gap:6px;margin-top:6px;flex-wrap:wrap}
 button.pub{background:#2a4a6a;border-color:#4f86b8}
 .modal{position:fixed;inset:0;background:rgba(4,8,16,.6);z-index:25;display:flex;align-items:center;justify-content:center}
 .modal[hidden]{display:none}
@@ -108,6 +115,7 @@ button.pub{background:#2a4a6a;border-color:#4f86b8}
       <button data-tool="select" title="Auswahl: V – ziehen, verschieben, ⌘C/⌘X/⌘V">⬚ Auswahl</button>
       <button data-tool="hand" title="Verschieben: H oder Leertaste halten">✋ Hand</button>
       <button data-tool="pick" title="Pipette: I">⌖ Pipette</button>
+      <button data-tool="note" title="Notiz für Claude: N – Bereich aufziehen oder klicken, Text schreiben">💬 Notiz</button>
     </div>
     <h3>Kacheln</h3><div class="grid" id="ptiles"></div>
     <h3>Ebenen</h3><div class="grid" id="players"></div>
@@ -131,11 +139,13 @@ button.pub{background:#2a4a6a;border-color:#4f86b8}
     <div class="row"><button id="addend" title="Am Ende anhängen">Breite am Ende +</button></div>
     <h3>Auswahl / Objekt</h3>
     <div id="objprops"><div class="empty">Mit ⬚ Auswahl auf ein Objekt klicken, um es zu bearbeiten.</div></div>
+    <h3>Notizen für Claude</h3>
+    <div id="notes"></div>
     <h3>Prüfung</h3>
     <div id="check"><div class="empty">„✓ Prüfen“ testet mit den gewählten Fähigkeiten, ob Ziel, Diamanten und Sterne erreichbar sind.</div></div>
     <h3>Tastenkürzel</h3>
     <div class="keys">
-      <kbd>B</kbd> Stift · <kbd>R</kbd> Rechteck · <kbd>E</kbd> Radierer · <kbd>V</kbd> Auswahl · <kbd>I</kbd> Pipette<br>
+      <kbd>B</kbd> Stift · <kbd>R</kbd> Rechteck · <kbd>E</kbd> Radierer · <kbd>V</kbd> Auswahl · <kbd>I</kbd> Pipette · <kbd>N</kbd> Notiz<br>
       <kbd>Leertaste</kbd> halten + ziehen: verschieben · Zwei-Finger-Wischen: scrollen · Pinch / <kbd>⌘</kbd><kbd>+</kbd><kbd>−</kbd>: Zoom<br>
       Rechtsklick: löschen · <kbd>⌘Z</kbd> / <kbd>⇧⌘Z</kbd> rückgängig/wiederholen<br>
       <kbd>⌘C</kbd> <kbd>⌘X</kbd> <kbd>⌘V</kbd> kopieren · ausschneiden · einfügen · <kbd>⌫</kbd> Auswahl leeren · Pfeile: Auswahl schieben<br>
@@ -152,6 +162,7 @@ button.pub{background:#2a4a6a;border-color:#4f86b8}
   <iframe id="playframe" title="Probespiel" allow="autoplay; fullscreen"></iframe>
 </div>
 <div id="toast"></div>
+<div id="notedlg" class="modal" hidden><div class="box" id="notebox"></div></div>
 <div id="pub" class="modal" hidden><div class="box" id="pubbox"></div></div>
 <iframe id="engine" src="../index.html?engine=1" style="display:none" title="Spiel-Engine"></iframe>
 
@@ -186,10 +197,12 @@ const isGround=t=>t==='#'||t==='H'||SLOPE[t]!==undefined;
 function fromData(D){ return {...D, g:D.grid.map(r=>r.split('')), b:D.back.map(r=>r.split('').map(v=>v==='1')), u:D.up.map(r=>r.split('').map(v=>v==='1')), objs:D.objs.map(o=>({...o}))}; }
 function toData(m){ const {g,b,u,objs,...meta}=m;
   return {...meta,v:1,grid:g.map(r=>r.join('')),back:b.map(r=>r.map(v=>v?'1':'0').join('')),up:u.map(r=>r.map(v=>v?'1':'0').join('')),objs:objs.map(o=>({...o}))}; }
-const snapM=()=>JSON.stringify(toData(M));
+const snapM=()=>JSON.stringify({...toData(M),_nc:NS.notes.map(n=>[n.id,n.c0,n.r0,n.c1,n.r1])});
+// Rückgängig stellt bei Notizen nur die Lage wieder her (nach Spalten/Zeilen einfügen), nicht ihren Text.
+function fromSnap(t){ const D=JSON.parse(t), nc=D._nc; delete D._nc; if(nc){ const m=new Map(nc.map(a=>[a[0],a])); for(const n of NS.notes){ const a=m.get(n.id); if(a&&(a[1]!==n.c0||a[2]!==n.r0||a[3]!==n.c1||a[4]!==n.r1)){ [,n.c0,n.r0,n.c1,n.r1]=a; n.dirty=true; } } saveNS(); renderNotes(); } return fromData(D); }
 function pushHist(){ hist.push(snapM()); if(hist.length>150) hist.shift(); fut=[]; }
-function undo(){ if(!hist.length) return; fut.push(snapM()); M=fromData(JSON.parse(hist.pop())); sel=null; selObj=null; changed(true); toast('Rückgängig'); }
-function redo(){ if(!fut.length) return; hist.push(snapM()); M=fromData(JSON.parse(fut.pop())); changed(true); toast('Wiederholt'); }
+function undo(){ if(!hist.length) return; fut.push(snapM()); M=fromSnap(hist.pop()); sel=null; selObj=null; changed(true); toast('Rückgängig'); }
+function redo(){ if(!fut.length) return; hist.push(snapM()); M=fromSnap(fut.pop()); changed(true); toast('Wiederholt'); }
 let saveT=0;
 function changed(props){ check=null; renderCheck(); draw(); if(props) syncProps(); $('dirty').textContent='● ungespeichert'; clearTimeout(saveT); saveT=setTimeout(saveDraft,350); }
 function saveDraft(){ try{ localStorage.setItem(DRAFT+curId,JSON.stringify(toData(M))); $('dirty').textContent='✓ Entwurf gespeichert'; markSelect(); }catch(e){ $('dirty').textContent='⚠ Speichern fehlgeschlagen'; } }
@@ -211,7 +224,7 @@ function openLevel(id){
   M=fromData(D); hist=[]; fut=[]; sel=null; selObj=null; check=null;
   prefs.level=id; savePrefs(); $('dirty').textContent=hasDraft(id)?'✓ Entwurf':'Original';
   const st=M.objs.find(o=>o.k==='start'); view.x=Math.max(0,((st?st.c:0)-6)*view.z); view.y=Math.max(0,(M.top-12)*view.z);
-  syncProps(); renderCheck(); draw();
+  syncProps(); renderCheck(); loadNotes(); draw(); pullNotes(id);
 }
 
 // ---------- Palette ----------
@@ -233,7 +246,7 @@ function brushKey(b){ return b.kind==='tile'?'t'+b.ch:b.kind==='layer'?'l'+b.lay
 function setBrush(b){ brush=b; if(tool!=='rect'&&tool!=='pen') setTool('pen'); markPalette(); }
 function markPalette(){ const k=brushKey(brush); document.querySelectorAll('.sw').forEach(s=>s.classList.toggle('on',s.dataset.key===k)); $('sbrush').textContent=brush.label; }
 function setTool(t){ tool=t; document.querySelectorAll('[data-tool]').forEach(b=>b.classList.toggle('on',b.dataset.tool===t));
-  $('stool').textContent={pen:'Stift',rect:'Rechteck',erase:'Radierer',select:'Auswahl',hand:'Hand',pick:'Pipette'}[t];
+  $('stool').textContent={pen:'Stift',rect:'Rechteck',erase:'Radierer',select:'Auswahl',hand:'Hand',pick:'Pipette',note:'Notiz'}[t];
   $('view').style.cursor=t==='hand'?'grab':t==='select'?'default':'crosshair'; draw(); }
 
 // ---------- Zeichnen ----------
@@ -299,6 +312,9 @@ function draw(){
   // Prüfergebnis
   if(check){ ctx.fillStyle='rgba(155,224,106,.5)'; for(const n of check.nodes) ctx.fillRect(n.c*z+z*.35,n.r*z+z*.75,z*.3,z*.18);
     ctx.strokeStyle='#ff5a5a'; ctx.lineWidth=3; for(const m of check.miss){ ctx.beginPath(); ctx.arc((m.c+.5)*z,(m.r+.5)*z,z*.62,0,7); ctx.stroke(); } ctx.lineWidth=1; }
+  // Notizen
+  drawNotes(z);
+  if(drag?.kind==='note'){ const s=normSel(drag); ctx.fillStyle='rgba(255,209,102,.15)'; ctx.fillRect(s.c0*z,s.r0*z,(s.c1-s.c0+1)*z,(s.r1-s.r0+1)*z); ctx.strokeStyle='#ffd166'; ctx.setLineDash([5,3]); ctx.strokeRect(s.c0*z+.5,s.r0*z+.5,(s.c1-s.c0+1)*z-1,(s.r1-s.r0+1)*z-1); ctx.setLineDash([]); }
   // Auswahl
   if(sel){ const s=normSel(sel); ctx.fillStyle='rgba(127,224,255,.12)'; ctx.fillRect(s.c0*z,s.r0*z,(s.c1-s.c0+1)*z,(s.r1-s.r0+1)*z); ctx.strokeStyle='#7fe0ff'; ctx.setLineDash([5,3]); ctx.strokeRect(s.c0*z+.5,s.r0*z+.5,(s.c1-s.c0+1)*z-1,(s.r1-s.r0+1)*z-1); ctx.setLineDash([]); }
   if(selObj!=null&&M.objs[selObj]){ const o=M.objs[selObj]; ctx.strokeStyle='#ffd166'; ctx.lineWidth=2; ctx.strokeRect(o.c*z-1,o.r*z-1,(o.w||1)*z+2,z+2); ctx.lineWidth=1; }
@@ -350,12 +366,12 @@ function drawClip(c,r){ const z=view.z; for(let y=0;y<clip.h;y++) for(let x=0;x<
   for(const o of clip.objs) drawObjIcon(ctx,o,(c+o.c)*z,(r+o.r)*z,z); ctx.strokeStyle='#ffd166'; ctx.strokeRect(c*z+.5,r*z+.5,clip.w*z-1,clip.h*z-1); }
 // Spalten/Zeilen
 function insertCols(at,n){ pushHist(); for(let r=0;r<M.h;r++){ M.g[r].splice(at,0,...Array(n).fill(r>=M.top?'#':' ')); M.b[r].splice(at,0,...Array(n).fill(false)); M.u[r].splice(at,0,...Array(n).fill(false)); }
-  for(const o of M.objs) if(o.c>=at) o.c+=n; M.w+=n; changed(true); toast(`${n} Spalten bei ${at} eingefügt`); }
+  for(const o of M.objs) if(o.c>=at) o.c+=n; shiftNotes(x=>x>=at?x+n:x,null); M.w+=n; changed(true); toast(`${n} Spalten bei ${at} eingefügt`); }
 function deleteCols(at,n){ n=Math.min(n,M.w-at-1); if(n<=0) return; pushHist(); for(let r=0;r<M.h;r++){ M.g[r].splice(at,n); M.b[r].splice(at,n); M.u[r].splice(at,n); }
-  M.objs=M.objs.filter(o=>o.k==='start'||o.k==='goal'||o.c<at||o.c>=at+n); for(const o of M.objs) if(o.c>=at+n) o.c-=n; else if(o.c>=at) o.c=at; M.w-=n; changed(true); toast(`${n} Spalten ab ${at} gelöscht`); }
+  M.objs=M.objs.filter(o=>o.k==='start'||o.k==='goal'||o.c<at||o.c>=at+n); for(const o of M.objs) if(o.c>=at+n) o.c-=n; else if(o.c>=at) o.c=at; shiftNotes(x=>x>=at+n?x-n:x>=at?at:x,null); M.w-=n; changed(true); toast(`${n} Spalten ab ${at} gelöscht`); }
 function insertRowsTop(n){ pushHist(); for(let i=0;i<n;i++){ M.g.unshift(Array(M.w).fill(' ')); M.b.unshift(Array(M.w).fill(false)); M.u.unshift(Array(M.w).fill(false)); }
-  for(const o of M.objs) o.r+=n; M.h+=n; M.top+=n; changed(true); toast(`${n} Zeilen oben eingefügt`); }
-function deleteRowsTop(n){ n=Math.min(n,M.top-1); if(n<=0) return; pushHist(); M.g.splice(0,n); M.b.splice(0,n); M.u.splice(0,n); M.objs=M.objs.filter(o=>o.r>=n||o.k==='start'||o.k==='goal'); for(const o of M.objs) o.r=Math.max(0,o.r-n); M.h-=n; M.top-=n; changed(true); }
+  for(const o of M.objs) o.r+=n; shiftNotes(null,y=>y+n); M.h+=n; M.top+=n; changed(true); toast(`${n} Zeilen oben eingefügt`); }
+function deleteRowsTop(n){ n=Math.min(n,M.top-1); if(n<=0) return; pushHist(); M.g.splice(0,n); M.b.splice(0,n); M.u.splice(0,n); M.objs=M.objs.filter(o=>o.r>=n||o.k==='start'||o.k==='goal'); for(const o of M.objs) o.r=Math.max(0,o.r-n); shiftNotes(null,y=>Math.max(0,y-n)); M.h-=n; M.top-=n; changed(true); }
 
 // ---------- Eigenschaften ----------
 function syncProps(){ if(!M) return; $('pname').value=M.name||''; $('psize').textContent=`${M.w} × ${M.h} Kacheln`; $('pneed').value=M.need||0; $('ptime').value=M.timeLimit||0; $('ptop').value=M.top; renderObjProps(); }
@@ -379,6 +395,8 @@ view$.addEventListener('pointerdown',e=>{
   if(!M) return; view$.setPointerCapture(e.pointerId); const p=cellAt(e); const erase=e.button===2||tool==='erase'||(e.ctrlKey&&e.button===0);
   if(tool==='hand'||spaceDown||e.button===1){ drag={kind:'pan',x:e.clientX,y:e.clientY,vx:view.x,vy:view.y}; view$.style.cursor='grabbing'; return; }
   if(tool==='pick'){ if(inside(p.c,p.r)) pick(p.c,p.r); return; }
+  if(tool==='note'&&e.button===0){ const n=noteAt(p.c,p.r); if(n){ openNote(n); return; } drag={kind:'note',c0:p.c,r0:p.r,c1:p.c,r1:p.r}; draw(); return; }
+  if(tool==='note') return;
   if(tool==='select'&&!erase){
     if(clip?.pasting){ pushHist(); pasteClip(p.c,p.r); clip.pasting=false; sel={c0:p.c,r0:p.r,c1:p.c+clip.w-1,r1:p.r+clip.h-1}; changed(true); return; }
     if(sel){ const s=normSel(sel); if(p.c>=s.c0&&p.c<=s.c1&&p.r>=s.r0&&p.r<=s.r1){ drag={kind:'move',sc:p.c,sr:p.r,dc:0,dr:0}; return; } }
@@ -396,13 +414,14 @@ view$.addEventListener('pointermove',e=>{
   if(drag.kind==='paint'){ if(drag.mover){ drag.mover.dc=p.c-drag.mover.c; drag.mover.dr=p.r-drag.mover.r; changed(); return; }
     const a=drag.last, n=Math.max(Math.abs(p.c-a.c),Math.abs(p.r-a.r)); for(let k=1;k<=n;k++){ const c=Math.round(a.c+(p.c-a.c)*k/n), r=Math.round(a.r+(p.r-a.r)*k/n); paintCell(c,r,brush,drag.erase); }
     drag.last=p; if(n) changed(); return; }
-  if(drag.kind==='rect'||drag.kind==='sel'){ drag.c1=p.c; drag.r1=p.r; draw(); return; }
+  if(drag.kind==='rect'||drag.kind==='sel'||drag.kind==='note'){ drag.c1=p.c; drag.r1=p.r; draw(); return; }
   if(drag.kind==='move'){ drag.dc=p.c-drag.sc; drag.dr=p.r-drag.sr; draw(); return; }
   if(drag.kind==='obj'){ const o=M.objs[drag.i]; const nc=drag.oc+p.c-drag.sc, nr=drag.or+p.r-drag.sr; if(nc!==o.c||nr!==o.r){ if(!drag.moved){ pushHist(); drag.moved=true; } o.c=nc; o.r=nr; changed(true); } }
 });
 view$.addEventListener('pointerup',e=>{
   if(!drag) return; const d=drag; drag=null; view$.style.cursor=tool==='hand'?'grab':tool==='select'?'default':'crosshair';
   if(d.kind==='rect'){ pushHist(); fillRect(d,brush,d.erase); changed(); }
+  else if(d.kind==='note'){ const s=normSel(d); const cl=(v,m)=>Math.max(0,Math.min(m-1,v)); openNote({c0:cl(s.c0,M.w),r0:cl(s.r0,M.h),c1:cl(s.c1,M.w),r1:cl(s.r1,M.h),text:'',isNew:true}); draw(); }
   else if(d.kind==='sel'){ sel=(d.c0===d.c1&&d.r0===d.r1)?null:{c0:d.c0,r0:d.r0,c1:d.c1,r1:d.r1}; renderObjProps(); draw(); }
   else if(d.kind==='move'&&(d.dc||d.dr)){ pushHist(); const cl=copySel(); clearSel(); const s=normSel(sel); pasteClip(s.c0+d.dc,s.r0+d.dr,cl); sel={c0:s.c0+d.dc,r0:s.r0+d.dr,c1:s.c1+d.dc,r1:s.r1+d.dr}; changed(true); }
   else draw();
@@ -412,7 +431,8 @@ view$.addEventListener('wheel',e=>{ e.preventDefault();
   if(e.ctrlKey||e.metaKey){ const r=cv.getBoundingClientRect(), mx=e.clientX-r.left, my=e.clientY-r.top; zoomAt(Math.exp(-e.deltaY*.01),mx,my); }
   else { view.x=Math.max(-200,view.x+e.deltaX); view.y=Math.max(-200,view.y+e.deltaY); draw(); } },{passive:false});
 function zoomAt(f,mx=cv.clientWidth/2,my=cv.clientHeight/2){ const z0=view.z, z=Math.max(6,Math.min(64,z0*f)); if(z===z0) return; view.x=(view.x+mx)*z/z0-mx; view.y=(view.y+my)*z/z0-my; view.z=z; prefs.z=z; savePrefs(); draw(); }
-function updateStatus(){ if(!hover||!M||!inside(hover.c,hover.r)){ $('sc').textContent='–'; $('sr').textContent='–'; $('st').textContent='–'; return; }
+function updateStatus(){ const hn=hover&&M?noteAt(hover.c,hover.r):null; $('shint').textContent=hn?`💬 ${noteNo(hn)}: ${hn.text}`:'';
+  if(!hover||!M||!inside(hover.c,hover.r)){ $('sc').textContent='–'; $('sr').textContent='–'; $('st').textContent='–'; return; }
   $('sc').textContent=hover.c; $('sr').textContent=hover.r; const i=objAt(hover.c,hover.r); const ch=M.g[hover.r][hover.c];
   $('st').textContent=(NAMES[ch]||ch)+(M.b[hover.r][hover.c]?' · Rückwand':'')+(M.u[hover.r][hover.c]?' · Aufwind':'')+(i>=0?' · '+(M.objs[i].k==='enemy'?ENEMIES.find(e=>e[0]===M.objs[i].t)[1]:OBJS.find(e=>e[0]===M.objs[i].k)[1]):''); }
 
@@ -420,6 +440,7 @@ function updateStatus(){ if(!hover||!M||!inside(hover.c,hover.r)){ $('sc').textC
 addEventListener('keydown',e=>{
   if(!$('play').hidden){ if(e.key==='Escape') closePlay(); return; }
   if(!$('pub').hidden){ if(e.key==='Escape') closePub(); return; }
+  if(!$('notedlg').hidden){ if(e.key==='Escape') closeNote(); if(e.key==='Enter'&&(e.metaKey||e.ctrlKey)) $('nsave')?.click(); return; }
   if(e.target.matches('input,select,textarea')) return;
   const cmd=e.metaKey||e.ctrlKey, k=e.key.toLowerCase();
   if(e.key===' '){ spaceDown=true; view$.style.cursor='grab'; e.preventDefault(); return; }
@@ -436,7 +457,7 @@ addEventListener('keydown',e=>{
   if(sel&&e.key.startsWith('Arrow')){ e.preventDefault(); const dc=e.key==='ArrowLeft'?-1:e.key==='ArrowRight'?1:0, dr=e.key==='ArrowUp'?-1:e.key==='ArrowDown'?1:0;
     pushHist(); const cl=copySel(); clearSel(); const s=normSel(sel); pasteClip(s.c0+dc,s.r0+dr,cl); sel={c0:s.c0+dc,r0:s.r0+dr,c1:s.c1+dc,r1:s.r1+dr}; changed(); return; }
   if(e.key.startsWith('Arrow')){ e.preventDefault(); const st=view.z*(e.shiftKey?10:3); if(e.key==='ArrowLeft') view.x-=st; if(e.key==='ArrowRight') view.x+=st; if(e.key==='ArrowUp') view.y-=st; if(e.key==='ArrowDown') view.y+=st; draw(); return; }
-  const tk={b:'pen',r:'rect',e:'erase',v:'select',h:'hand',i:'pick'}[k]; if(tk){ setTool(tk); return; }
+  const tk={b:'pen',r:'rect',e:'erase',v:'select',h:'hand',i:'pick',n:'note'}[k]; if(tk){ setTool(tk); return; }
   if(k==='p'){ startPlay(!e.shiftKey); return; }
   if(k==='j'){ showArcs=!showArcs; $('arcs').classList.toggle('on',showArcs); draw(); return; }
   if(k==='g'){ showGrid=!showGrid; draw(); return; }
@@ -577,7 +598,7 @@ function closePub(){ if(pubState?.busy) return; $('pub').hidden=true; pubState=n
 $('pub').onclick=e=>{ if(e.target===$('pub')) closePub(); };
 $('publish').onclick=()=>openPub();
 function openPub(){ if(!M) return; saveDraft(); $('pub').hidden=false; pubState={}; getToken()?pubReady():pubToken(); }
-function pubToken(msg){
+function pubToken(msg,then=pubReady){
   $('pubbox').innerHTML=`<h2>GitHub-Schlüssel einrichten (einmalig)</h2>
   ${msg?`<p class="bad">${msg}</p>`:''}
   <p>Der Editor stellt Levels über GitHub ins Spiel. Dafür braucht er einen Schlüssel, der nur in diesem Browser gespeichert wird.</p>
@@ -589,7 +610,7 @@ function pubToken(msg){
   $('pcancel').onclick=closePub; $('tok').focus();
   $('psave').onclick=async()=>{ const t=$('tok').value.trim(); if(!t) return; setToken(t); $('psave').disabled=true; $('psave').textContent='Prüfe …';
     const r=await gh(`/repos/${GH.repo}/contents/${GH.dir}?ref=${GH.branch}`).catch(()=>({status:0}));
-    if(r.ok){ toast('Schlüssel gespeichert'); pubReady(); } else { setToken(''); pubToken(r.status?ghErr(r,'das Repository JempHub lesen'):'GitHub ist nicht erreichbar.'); } };
+    if(r.ok){ toast('Schlüssel gespeichert'); then(); } else { setToken(''); pubToken(r.status?ghErr(r,'das Repository JempHub lesen'):'GitHub ist nicht erreichbar.',then); } };
   $('tok').onkeydown=e=>{ if(e.key==='Enter') $('psave').click(); };
 }
 async function pubReady(){
@@ -655,6 +676,78 @@ async function pubWatch(sha,head){
 function pubResult(ok,html){ $('pubbox').innerHTML=`<h2>${ok?'<span class="ok">✓</span> Veröffentlicht':'<span class="bad">✗</span> Nicht veröffentlicht'}</h2><p>${html}</p><div class="acts"><button class="primary" id="pclose">Schließen</button></div>`;
   $('pclose').onclick=closePub; if(ok) toast('Veröffentlicht'); }
 
+// ---------- Notizen für Claude ----------
+// Pro Welt eine Liste: Bereich (Spalten/Reihen) + Text. Lokal im Browser; „An Claude senden“ legt sie als
+// apps/supersam-labor/notizen/supersam-notizen-<welt>.json ins Repo. Claude setzt dort status/antwort.
+const NOTE_KEY='supersam-labor-notes-', NOTE_DIR='apps/supersam-labor/notizen';
+const notePath=id=>`${NOTE_DIR}/supersam-notizen-${id}.json`;
+let NS={notes:[],gone:[]};                      // Notizen der offenen Welt; gone = gelöschte, noch nicht gesendet
+const loadNS=id=>{ try{ const v=JSON.parse(localStorage.getItem(NOTE_KEY+id)||'null'); if(v&&Array.isArray(v.notes)) return {gone:[],...v}; }catch(_){} return {notes:[],gone:[]}; };
+const saveNS=()=>{ try{ localStorage.setItem(NOTE_KEY+curId,JSON.stringify(NS)); }catch(_){} };
+function loadNotes(){ NS=loadNS(curId); renderNotes(); }
+const noteNo=n=>NS.notes.indexOf(n)+1;
+const noteAt=(c,r)=>{ for(let i=NS.notes.length-1;i>=0;i--){ const n=NS.notes[i]; if(c>=n.c0&&c<=n.c1&&r>=n.r0&&r<=n.r1) return n; } return null; };
+const noteWhere=n=>(n.c0===n.c1?`Spalte ${n.c0}`:`Spalte ${n.c0}–${n.c1}`)+', '+(n.r0===n.r1?`Reihe ${n.r0}`:`Reihe ${n.r0}–${n.r1}`);
+function shiftNotes(fc,fr){ for(const n of NS.notes){ if(fc){ n.c0=fc(n.c0); n.c1=fc(n.c1); } if(fr){ n.r0=fr(n.r0); n.r1=fr(n.r1); } n.dirty=true; } saveNS(); renderNotes(); }
+function drawNotes(z){ ctx.font=`bold ${Math.max(10,Math.min(14,z*.45))}px ${getComputedStyle(document.body).fontFamily}`; ctx.textBaseline='middle'; ctx.textAlign='center';
+  NS.notes.forEach((n,i)=>{ const done=n.status==='erledigt', col=done?'155,224,106':'255,209,102', x=n.c0*z, y=n.r0*z, w=(n.c1-n.c0+1)*z, h=(n.r1-n.r0+1)*z;
+    ctx.fillStyle=`rgba(${col},${done?.06:.13})`; ctx.fillRect(x,y,w,h); ctx.strokeStyle=`rgba(${col},${done?.5:.95})`; ctx.lineWidth=2; ctx.setLineDash([6,4]); ctx.strokeRect(x+1,y+1,w-2,h-2); ctx.setLineDash([]); ctx.lineWidth=1;
+    const R=Math.max(8,Math.min(12,z*.4)); ctx.fillStyle=`rgb(${col})`; ctx.beginPath(); ctx.arc(x+R+1,y+R+1,R,0,7); ctx.fill(); ctx.fillStyle='#1a1a1a'; ctx.fillText(done?'✓':String(i+1),x+R+1,y+R+1.5); });
+  ctx.textAlign='left'; ctx.textBaseline='alphabetic'; }
+function renderNotes(){ const host=$('notes'); if(!host) return;
+  const open=NS.notes.filter(n=>n.status!=='erledigt').length, unsent=NS.notes.some(n=>n.dirty)||NS.gone.length>0;
+  host.innerHTML=(NS.notes.length?'':'<div class="empty">Mit 💬 Notiz (N) einen Bereich im Level aufziehen und hineinschreiben, was ich ändern soll.</div>')
+   +NS.notes.map((n,i)=>`<div class="note${n.status==='erledigt'?' done':''}" data-i="${i}"><span class="n">${n.status==='erledigt'?'✓':i+1}</span><span class="t">${esc(n.text)}${n.antwort?`<span class="a">↳ ${esc(n.antwort)}</span>`:''}${n.dirty?'<span class="u"> · nicht gesendet</span>':''}</span></div>`).join('')
+   +(NS.notes.length||NS.gone.length?`<div class="acts"><button class="pub" id="nsend"${unsent?'':' disabled'} title="Notizen ins Repo legen, damit Claude sie lesen kann">⇪ An Claude senden</button><button id="ncopy" title="Als Text kopieren, zum Einfügen in den Chat">📋 Kopieren</button></div>
+     <div class="empty" style="margin-top:4px">${open} offen${unsent?' · Änderungen noch nicht gesendet':NS.notes.length?' · alles gesendet':''}</div>`:'');
+  host.querySelectorAll('.note').forEach(el=>el.onclick=()=>{ const n=NS.notes[+el.dataset.i]; view.x=((n.c0+n.c1)/2+.5)*view.z-cv.clientWidth/2; view.y=((n.r0+n.r1)/2+.5)*view.z-cv.clientHeight/2; draw(); openNote(n); });
+  if($('nsend')) $('nsend').onclick=sendNotes; if($('ncopy')) $('ncopy').onclick=copyNotes; }
+function closeNote(){ $('notedlg').hidden=true; draw(); }
+$('notedlg').onclick=e=>{ if(e.target===$('notedlg')) closeNote(); };
+function openNote(n){ const done=n.status==='erledigt';
+  $('notebox').innerHTML=`<h2>💬 Notiz für Claude${n.isNew?'':' '+noteNo(n)}</h2>
+   <p>${esc(levelLabel(curId))} · <b>${noteWhere(n)}</b></p>
+   ${n.antwort?`<p class="ok">↳ ${esc(n.antwort)}</p>`:''}
+   <textarea id="ntext" style="height:110px" placeholder="Was soll ich hier ändern? z. B. „Lücke 2 Kacheln schmäler, Feder davor“">${esc(n.text)}</textarea>
+   <div class="acts"><span class="left">${n.isNew?'':'<button id="ndel">Löschen</button>'}${done?'<button id="nreopen">Wieder öffnen</button>':''}</span>
+   <button id="ncancel">Abbrechen</button><button class="primary" id="nsave" title="⌘↩">Speichern</button></div>`;
+  $('notedlg').hidden=false; const ta=$('ntext'); ta.focus(); ta.setSelectionRange(ta.value.length,ta.value.length);
+  $('ncancel').onclick=closeNote;
+  $('nsave').onclick=()=>{ const t=ta.value.trim();
+    if(n.isNew){ if(t) NS.notes.push({id:Date.now().toString(36)+Math.random().toString(36).slice(2,6),c0:n.c0,r0:n.r0,c1:n.c1,r1:n.r1,text:t,status:'offen',at:new Date().toISOString(),dirty:true,local:true}); }
+    else if(!t){ $('ndel').click(); return; }
+    else if(t!==n.text){ n.text=t; n.dirty=true; if(n.status==='erledigt'){ n.status='offen'; n.reopen=true; } }
+    saveNS(); renderNotes(); closeNote(); if(t) toast('Notiz gespeichert'); };
+  if($('ndel')) $('ndel').onclick=()=>{ NS.notes.splice(NS.notes.indexOf(n),1); if(!n.local) NS.gone.push(n.id); saveNS(); renderNotes(); closeNote(); };
+  if($('nreopen')) $('nreopen').onclick=()=>{ n.status='offen'; n.reopen=true; n.dirty=true; saveNS(); renderNotes(); closeNote(); };
+}
+function notesText(){ return `Supersam-Notizen – ${levelLabel(curId)}\n`+NS.notes.map((n,i)=>`${i+1}. ${noteWhere(n)}${n.status==='erledigt'?' (erledigt)':''}: ${n.text}`).join('\n'); }
+async function copyNotes(){ try{ await navigator.clipboard.writeText(notesText()); toast('Notizen kopiert – im Chat einfügen'); }catch(_){ toast('Kopieren nicht möglich'); } }
+const unb64=t=>new TextDecoder().decode(Uint8Array.from(atob(t.replace(/\s/g,'')),c=>c.charCodeAt(0)));
+async function remoteNotes(id){ const r=await gh(`/repos/${GH.repo}/contents/${notePath(id)}?ref=${GH.branch}`);
+  if(r.status===404) return {sha:null,notes:[]}; if(!r.ok) throw r; let D={}; try{ D=JSON.parse(unb64(r.j.content)); }catch(_){} return {sha:r.j.sha,notes:Array.isArray(D.notes)?D.notes:[]}; }
+// Status und Antwort gehören Claude (aus dem Repo), Text und Bereich dir (aus dem Browser).
+function mergeNotes(ns,remote){ const byId=new Map(remote.map(n=>[n.id,n]));
+  for(const n of ns.notes){ const R=byId.get(n.id); if(!R) continue; byId.delete(n.id); delete n.local;
+    if(!n.reopen){ n.status=R.status||'offen'; if(R.antwort) n.antwort=R.antwort; else delete n.antwort; }
+    if(!n.dirty) Object.assign(n,{text:R.text,c0:R.c0,r0:R.r0,c1:R.c1,r1:R.r1}); }
+  for(const R of byId.values()) if(!ns.gone.includes(R.id)){ const {wo,...rest}=R; ns.notes.push(rest); }
+  return ns; }
+async function pullNotes(id){ if(!getToken()) return; try{ const R=await remoteNotes(id); if(curId!==id) return; mergeNotes(NS,R.notes); saveNS(); renderNotes(); draw(); }catch(_){} }
+async function sendNotes(){
+  if(!getToken()){ $('pub').hidden=false; pubState={}; pubToken('',()=>{ closePub(); sendNotes(); }); return; }
+  const btn=$('nsend'); if(btn){ btn.disabled=true; btn.textContent='Sende …'; } const id=curId, lab=levelLabel(id);
+  let r; for(let t=0;t<2;t++){ let R; try{ R=await remoteNotes(id); }catch(e){ r=e; break; }
+    mergeNotes(NS,R.notes);
+    const out={level:id,name:lab,hinweis:'Notizen aus dem Supersam-Leveleditor: Bereich in Spalten (c) und Reihen (r) des Levels; status offen|erledigt und antwort setzt Claude.',
+      notes:NS.notes.map(({dirty,reopen,local,isNew,...n})=>({...n,wo:noteWhere(n)}))};
+    const open=out.notes.filter(n=>n.status!=='erledigt').length;
+    r=await gh(`/repos/${GH.repo}/contents/${notePath(id)}`,{method:'PUT',body:JSON.stringify({message:`Supersam Labor: Notizen zu ${lab} (${open} offen)`,content:b64(JSON.stringify(out,null,2)+'\n'),branch:GH.branch,...(R.sha?{sha:R.sha}:{})})}).catch(()=>({status:0}));
+    if(r.ok||(r.status!==409&&r.status!==422)) break; }
+  if(r?.ok){ for(const n of NS.notes){ delete n.dirty; delete n.reopen; delete n.local; } NS.gone=[]; saveNS(); renderNotes(); toast('An Claude gesendet'); }
+  else { renderNotes(); if(r?.status===401) setToken(''); toast(r?.status?ghErr(r,'Dateien schreiben').replace(/<[^>]+>/g,''):'GitHub ist nicht erreichbar.'); }
+}
+
 // ---------- Seitenleiste ----------
 $('pname').onchange=()=>{ pushHist(); M.name=$('pname').value; changed(); };
 $('pneed').onchange=()=>{ pushHist(); M.need=+$('pneed').value; changed(); };
@@ -682,7 +775,7 @@ addEventListener('resize',resizeCanvas);
   try{ arcs=measureArcs(); }catch(err){ console.warn('Sprungbögen', err); }
   const start=E.EDITABLE.find(x=>String(x)===String(prefs.level))??1; $('lv').value=JSON.stringify(start);
   resizeCanvas(); openLevel(start);
-  window.__editor={get view(){return view;}, cellScreen(c,r){ const b=cv.getBoundingClientRect(); return {x:b.left+c*view.z-view.x+view.z/2, y:b.top+r*view.z-view.y+view.z/2}; }, get M(){return M;},openLevel,runCheck,toData:()=>toData(M),paintCell,setBrush,setTool,insertCols,startPlay,get check(){return check;},get arcs(){return arcs;}};
+  window.__editor={get view(){return view;}, cellScreen(c,r){ const b=cv.getBoundingClientRect(); return {x:b.left+c*view.z-view.x+view.z/2, y:b.top+r*view.z-view.y+view.z/2}; }, get M(){return M;},openLevel,runCheck,toData:()=>toData(M),paintCell,setBrush,setTool,insertCols,startPlay,get check(){return check;},get arcs(){return arcs;},get notes(){return NS;},notesText};
 })();
 })();
 </script>
