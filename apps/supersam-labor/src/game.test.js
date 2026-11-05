@@ -5,7 +5,8 @@ import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import vm from 'node:vm';
 
-const html = readFileSync(resolve(import.meta.dirname, '..', 'index.html'), 'utf8');
+import { inlineLevels } from '../levels.mjs';
+const html = inlineLevels(readFileSync(resolve(import.meta.dirname, '..', 'index.html'), 'utf8'), resolve(import.meta.dirname, '..', 'levels')).html;   // mit eingebauten Editor-Levels
 const script = html.slice(html.indexOf('<script>') + 8, html.lastIndexOf('</script>'));
 
 function stub() {
@@ -389,4 +390,30 @@ test('Archiv: alte Fassungen von 1-1 und 1-2 bleiben erhalten, zählen aber nich
   dz.setState('play'); dz.loadLevel('hub');
   assert.ok(!dz.L.doors.some(d => String(d.world).startsWith('archiv')), 'keine Tür in der Hubwelt');
   assert.equal(dz.totals().per.archiv1, undefined, 'nicht in den Summen');
+});
+
+test('Leveleditor: jede Welt übersetzt sich verlustfrei in Daten und zurück', () => {
+  const { dz } = boot();
+  const E = dz.editor;
+  const sig = L => JSON.stringify({ g: L.grid.map(r => r.join('')), b: L.back.map(r => r.join()), u: L.up.map(r => r.join()),
+    co: L.coins.map(k => [k.x, k.y]), cr: L.crystals.map(k => [k.id, k.x, k.y]), st: L.stars.map(k => [k.id, k.x, k.y]),
+    en: L.enemies.map(e => [e.type, e.spawn.x, e.spawn.y, e.spawn.range]), sp: L.springs.map(s => [s.x, s.top]), cp: L.checkpoints.map(c => [c.x, c.bottom]),
+    mv: L.movers.map(m => [m.x0, m.y0, m.x1, m.y1, m.w, m.period]), dr: L.doors.map(d => [d.x, d.bottom, d.world, d.need]), s: [L.start.x, L.start.y], go: L.goal && [L.goal.x, L.goal.bottom], need: L.need });
+  for (const id of E.EDITABLE) {
+    dz.setState('play'); dz.loadLevel(id); const a = sig(dz.L);
+    const D = JSON.parse(JSON.stringify(E.levelData(id)));
+    assert.equal(D.v, 1); assert.equal(D.grid.length, D.h); assert.equal(D.grid[0].length, D.w);
+    assert.equal(sig(E.load(D, [])), a, `Welt ${id}: Daten ergeben dasselbe Level`);
+  }
+});
+
+test('Leveleditor: ein geänderter Entwurf wird gespielt, ohne den Spielstand zu verändern', () => {
+  const { dz, run } = boot();
+  const E = dz.editor, D = JSON.parse(JSON.stringify(E.levelData(1)));
+  D.grid[10] = D.grid[10].slice(0, 30) + '=====' + D.grid[10].slice(35);
+  D.objs.push({ k: 'crystal', c: 32, r: 9 });
+  const L = E.load(D, ['double']); run(10);
+  assert.equal(L.grid[10][32], '=', 'neue Plattform im Spiel');
+  assert.equal(L.crystals.length, 6, 'zusätzlicher Diamant im Spiel');
+  assert.equal(dz.save.ab.double, true, 'Probespiel mit gewählten Fähigkeiten');
 });

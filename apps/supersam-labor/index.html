@@ -244,7 +244,7 @@ const SAVE_KEY='supersam-labor-v2';
 const blankSave=()=>({ab:{double:false,wall:false,dash:false,glide:false},crystals:{},stars:{},bosses:{},done:{},best:{},wallet:0,endingSeen:false,tutorialDone:false});
 let save=blankSave();
 try{ const s=JSON.parse(localStorage.getItem(SAVE_KEY)||'null'); if(s){ save=Object.assign(blankSave(),s); save.ab=Object.assign(blankSave().ab,s.ab||{}); } }catch(_){}
-function persist(){ try{ localStorage.setItem(SAVE_KEY,JSON.stringify(save)); }catch(_){} }
+function persist(){ if(EDIT_MODE) return; try{ localStorage.setItem(SAVE_KEY,JSON.stringify(save)); }catch(_){} }   // Probespiel aus dem Editor speichert nichts
 
 const NAMES={0:'Hubwelt',1:'Wald',2:'Felsen',3:'See',4:'Gipfel',5:'Wipfelwald',6:'Schlucht',7:'Lagune',8:'Sturmgrat',b0:'Wespenkönigin',b1:'Igelkönig',b2:'Felsgolem',b3:'Sturmgeist'};
 const WORLD_COL={b0:'#ffd166',b1:'#9be06a',b2:'#e0884a',b3:'#b07aff',0:'#f6ead2',1:'#6aa84f',2:'#c69a6a',3:'#4fa3d9',4:'#b9a7ff',5:'#9be06a',6:'#e0a050',7:'#5fd0e0',8:'#d0c0ff'};
@@ -979,8 +979,50 @@ let TOTALS=null;
 function totals(){ if(TOTALS) return TOTALS; const t={cr:0,st:0,per:{}};
   for(const id of Object.keys(DEFS)){ if(DEFS[id].arena||DEFS[id].archived) continue; const n=isNaN(+id)?id:+id, lv=makeLevel(n); t.per[n]=lv.crystals.length; t.cr+=lv.crystals.length; t.st+=lv.stars.length; }
   return TOTALS=t; }
-function makeLevel(id){
-  const d=DEFS[id], w=d.w, h=d.h;
+// ---- Level als Daten (Leveleditor) ----
+// Übernommene Editor-Levels: id → Daten (ersetzen den Bau-Code dieser Welt)
+const LEVEL_FILES={};
+const EDIT_Q=(typeof URLSearchParams!=='undefined'&&typeof location!=='undefined')?new URLSearchParams(location.search):new Map(), EDIT_KEY='supersam-labor-level-';
+let EDIT_ID=EDIT_Q.get('edit'), EDIT_DRAFT=null, EDIT_MODE=false;
+try{ if(EDIT_ID){ EDIT_DRAFT=JSON.parse(localStorage.getItem(EDIT_KEY+EDIT_ID)||'null'); EDIT_MODE=!!EDIT_DRAFT; } }catch(_){}
+const EDIT_ENGINE=EDIT_Q.has('engine'); if(EDIT_ENGINE) EDIT_MODE=true;   // vom Editor unsichtbar zum Rechnen geladen: keine Spielschleife, nichts speichern
+const EDITABLE=['uebung',1,5,2,6,3,7,4,8,'archiv1','archiv5'];
+function levelDef(id){ if(EDIT_DRAFT&&String(id)===String(EDIT_ID)) return defFromData(EDIT_DRAFT); if(LEVEL_FILES[id]) return defFromData(LEVEL_FILES[id]); return DEFS[id]; }
+function defFromData(D){
+  return {name:D.name,style:D.style,scene:D.scene,w:D.w,h:D.h,top:D.top,need:D.need||0,timeLimit:D.timeLimit||0,sky:D.sky,noReturn:D.noReturn,build(b){
+    D.grid.forEach((row,r)=>{ for(let c=0;c<row.length;c++){ const ch=row[c]; if(ch!==' ') b.rect(c,r,c,r,ch); } });
+    (D.back||[]).forEach((row,r)=>{ for(let c=0;c<row.length;c++) if(row[c]==='1') b.back(c,r,c,r); });
+    (D.up||[]).forEach((row,r)=>{ for(let c=0;c<row.length;c++) if(row[c]==='1') b.updraft(c,c,r,r); });
+    for(const o of D.objs){ switch(o.k){
+      case 'start': b.start(o.c,o.r); break; case 'goal': b.goal(o.c,o.r); break;
+      case 'coin': b.coin(o.c,o.r); break; case 'crystal': b.crystal(o.c,o.r); break; case 'star': b.star(o.c,o.r); break;
+      case 'enemy': b.enemy(o.c,o.r,o.t,o.range!=null?{range:o.range}:{}); break;
+      case 'spring': b.spring(o.c,o.r); break; case 'cp': b.cp(o.c,o.r); break;
+      case 'mover': b.mover(o.c,o.r,o.dc,o.dr,o.w,o.p); break; case 'door': b.door(o.c,o.r,o.world,o.need||0); break; } }
+  }};
+}
+// Level → Daten: Raster, Ebenen und Objekte in Bau-Koordinaten (Spalte/Reihe)
+function levelData(id){
+  const d=origDef(id), Lx=makeLevel(id,true), q=v=>Math.round(v);
+  const objs=[];
+  objs.push({k:'start',c:q((Lx.start.x-3)/TS),r:q((Lx.start.y+14)/TS-1)});
+  if(Lx.goal) objs.push({k:'goal',c:q(Lx.goal.x/TS),r:q(Lx.goal.bottom/TS-1)});
+  for(const k of Lx.coins) objs.push({k:'coin',c:q((k.x-8)/TS),r:q((k.y-8)/TS)});
+  for(const k of Lx.crystals) objs.push({k:'crystal',c:q((k.x-8)/TS),r:q((k.y-8)/TS)});
+  for(const k of Lx.stars) objs.push({k:'star',c:q((k.x-8)/TS),r:q((k.y-8)/TS)});
+  for(const e of Lx.enemies){ const s=e.spawn, T=ETYPE[s.type];
+    const r=s.type==='fisch'?(s.y-14)/TS:T.fly?(s.y-(TS-T.h)/2)/TS:(s.y+T.h)/TS-1;
+    const o={k:'enemy',t:s.type,c:q((s.x-(TS-T.w)/2)/TS),r:q(r)}; if(s.range!==3) o.range=s.range; objs.push(o); }
+  for(const sp of Lx.springs) objs.push({k:'spring',c:q(sp.x/TS),r:q(sp.bottom/TS-1)});
+  for(const cp of Lx.checkpoints) objs.push({k:'cp',c:q(cp.x/TS),r:q(cp.bottom/TS-1)});
+  for(const m of Lx.movers) objs.push({k:'mover',c:q(m.x0/TS),r:q(m.y0/TS),dc:q((m.x1-m.x0)/TS),dr:q((m.y1-m.y0)/TS),w:q(m.w/TS),p:m.period});
+  for(const dd of Lx.doors) if(!(dd.world===0&&dd.x===TS&&!d.noReturn)) objs.push({k:'door',c:q(dd.x/TS),r:q(dd.bottom/TS-1),world:dd.world,need:dd.need||0});
+  return {v:1,id,name:d.name,style:d.style,scene:d.scene,w:d.w,h:d.h,top:d.top,need:d.need||0,timeLimit:d.timeLimit||0,sky:d.sky,noReturn:!!d.noReturn,
+    grid:Lx.grid.map(r=>r.join('')),back:Lx.back.map(r=>r.map(v=>v?'1':'0').join('')),up:Lx.up.map(r=>r.map(v=>v?'1':'0').join('')),objs};
+}
+function origDef(id){ return LEVEL_FILES[id]?defFromData(LEVEL_FILES[id]):DEFS[id]; }
+function makeLevel(id,orig){
+  const d=orig?origDef(id):levelDef(id), w=d.w, h=d.h;
   const L={id,name:d.name,style:d.style,zones:d.zones||null,w,h,top:d.top,
     grid:Array.from({length:h},()=>Array(w).fill(' ')),up:Array.from({length:h},()=>Array(w).fill(false)),back:Array.from({length:h},()=>Array(w).fill(false)),
     coins:[],crystals:[],stars:[],reveal:new Set(),movers:[],enemies:[],springs:[],checkpoints:[],doors:[],goal:null,start:{x:48,y:0},decor:[],crumbles:new Map()};
@@ -1105,7 +1147,7 @@ let gateDoor=0, gateT=0, cageOpen=false, cageAnim=0, cageHintT=0, lastTick=-1;
 function loadLevel(id,spawnDoor){
   lastEvScore=null; bossDeaths=0;
   L=makeLevel(id); cpPos=null; particles=[]; trail=[]; time=0; flow=0; levelCoins=0; bestTier=0; cageOpen=false; cageAnim=0; lastTick=-1; kills=0; deaths=0; gateDoor=0; gateT=0;
-  L.need=DEFS[id].need||0; L.timeLimit=DEFS[id].timeLimit||0;
+  const ld=levelDef(id); L.need=ld.need||0; L.timeLimit=ld.timeLimit||0;
   let p=L.start;
   if(id==='hub'&&spawnDoor){ const d=L.doors.find(d=>d.world===spawnDoor); if(d) p={x:d.x+24,y:d.bottom-14}; }
   resetPlayer(p);
@@ -1982,7 +2024,7 @@ const stars=Array.from({length:90},(_,i)=>({x:hash(i*1.3),y:hash(i*2.9)*.62,s:i%
 function styleAt(c,lv=L){ if(!lv.zones) return lv.style; for(const z of lv.zones) if(c<z.to) return z.s; return lv.zones[lv.zones.length-1].s; }
 function themeBlend(){
   if(!L||state==='start') return {a:'meadow',b:'meadow',t:0};
-  if(!L.zones){ const sc=DEFS[L.id].scene||L.style; return {a:sc,b:sc,t:0}; }
+  if(!L.zones){ const sc=levelDef(L.id).scene||L.style; return {a:sc,b:sc,t:0}; }
   const c=(camX+viewW/2)/TS, Z=L.zones, F=6;
   for(let i=0;i<Z.length;i++){
     if(c>=Z[i].to&&i<Z.length-1) continue;
@@ -2881,8 +2923,20 @@ function frame(now){
   requestAnimationFrame(frame);
 }
 document.body?.classList.add('title');
-resize(); loadLevel('hub'); requestAnimationFrame(frame);
-window.__dz={WNO,totals,TUT,startTutorial,startPractice,begin,get neutral(){return neutral;},HF,dress,HERO_ROWS,showEnding,get endingVisible(){return !endEl.hidden;},get boss(){return L.boss;},get bossFx(){return bossFx;},die:()=>die(),get gate(){return {door:gateDoor,t:gateT};},kill:()=>{ kills++; },score,scoreParts,get cage(){return {open:cageOpen,anim:cageAnim};},addCoins:n=>{levelCoins+=n;},get cam(){return {camX,camY,cx:CAM.cx,cy:CAM.cy,zoom,viewH,viewW};},PH,setFlow:v=>{flow=v;},startCelebrate,ITEM,playStep,schedule,audioInit,playSong,sfx,SFX,AU,loadLevel,update,P,save,get L(){return L;},setState:s=>{state=s;},finishLevel};
+resize(); loadLevel('hub');
+// Probespiel aus dem Editor: ?edit=<Welt>&c=<Spalte>&r=<Reihe>&ab=double,wall
+if(EDIT_DRAFT&&!EDIT_ENGINE){ const id=isNaN(+EDIT_ID)?EDIT_ID:+EDIT_ID, ab=(EDIT_Q.get('ab')||'').split(',').filter(Boolean);
+  save={...save,ab:{double:ab.includes('double'),wall:ab.includes('wall'),dash:ab.includes('dash'),glide:ab.includes('glide')},tutorialDone:true};
+  document.body?.classList.remove('title'); startEl.hidden=true; loadLevel(id); state='play';
+  if(EDIT_Q.has('c')){ const c=+EDIT_Q.get('c'), r=+EDIT_Q.get('r'); resetPlayer({x:c*TS+3,y:(r+1)*TS-14}); cpPos={x:c*TS+3,y:(r+1)*TS-14}; cameraSnap(); }
+  addEventListener('keydown',e=>{ try{ audioInit(); }catch(_){} if(e.key==='Escape'){ e.preventDefault(); parent.postMessage({supersam:'back'},'*'); } });
+  addEventListener('pointerdown',()=>{ try{ audioInit(); }catch(_){} }); }
+if(!EDIT_ENGINE) requestAnimationFrame(frame);
+window.__dz={editor:{levelData,EDITABLE,defFromData,PH,TS,ETYPE,NAMES,WNO,spr:{T,SPIKE,slopeTile,ES,BEETLE:BEETLE_A,STAR,COIN:COIN[0],CRYSTAL,SPRING,CROWN},
+  load(D,ab){ EDIT_ID=String(D.id); EDIT_DRAFT=D; EDIT_MODE=true; Object.assign(save.ab,{double:ab.includes('double'),wall:ab.includes('wall'),dash:ab.includes('dash'),glide:ab.includes('glide')}); loadLevel(D.id); state='play'; L.timeLimit=0; return L; },   // nur für Editor/Engine: EDIT_MODE verhindert das Speichern
+  tick(dt){ clock+=dt; update(dt); }, keys(l,r,j){ keyL=l; keyR=r; if(j&&!keyJump){ keyJump=true; triggerJump(); } else if(!j) keyJump=false; recompute(); }, dash(){ requestDash(P.face); },
+  get P(){return P;}, get L(){return L;}, get state(){return state;}, set state(v){state=v;}},
+  WNO,totals,TUT,startTutorial,startPractice,begin,get neutral(){return neutral;},HF,dress,HERO_ROWS,showEnding,get endingVisible(){return !endEl.hidden;},get boss(){return L.boss;},get bossFx(){return bossFx;},die:()=>die(),get gate(){return {door:gateDoor,t:gateT};},kill:()=>{ kills++; },score,scoreParts,get cage(){return {open:cageOpen,anim:cageAnim};},addCoins:n=>{levelCoins+=n;},get cam(){return {camX,camY,cx:CAM.cx,cy:CAM.cy,zoom,viewH,viewW};},PH,setFlow:v=>{flow=v;},startCelebrate,ITEM,playStep,schedule,audioInit,playSong,sfx,SFX,AU,loadLevel,update,P,save,get L(){return L;},setState:s=>{state=s;},finishLevel};
 })();
 </script>
 
