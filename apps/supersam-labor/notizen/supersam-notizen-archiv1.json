@@ -1,0 +1,40 @@
+{
+  "level": "archiv1",
+  "name": "Archiv: Wald (alt)",
+  "hinweis": "Notizen aus dem Supersam-Leveleditor: Bereich in Spalten (c) und Reihen (r) des Levels; status offen|erledigt und antwort setzt Claude.",
+  "notes": [
+    {
+      "id": "mw3rhotw1e9v",
+      "c0": 244,
+      "r0": 19,
+      "c1": 244,
+      "r1": 19,
+      "text": "Hier soll die Kamera oben bleiben erst wenn man nach unten auf die unter Plattform geht mit nach unten gehen, sonst wird oben die Sicht abgeschnitten",
+      "status": "offen",
+      "at": "2026-11-05T16:30:18.356Z",
+      "wo": "Spalte 244, Reihe 19"
+    },
+    {
+      "id": "mw3ri6z5lu43",
+      "c0": 298,
+      "r0": 21,
+      "c1": 298,
+      "r1": 21,
+      "text": "Diese Blöcke sollen zum Durchspringen sein",
+      "status": "offen",
+      "at": "2026-11-05T16:30:41.873Z",
+      "wo": "Spalte 298, Reihe 21"
+    },
+    {
+      "id": "mw3riuxnxyx9",
+      "c0": 356,
+      "r0": 16,
+      "c1": 356,
+      "r1": 16,
+      "text": "Hier die Welt noch etwas länger machen und nicht so aprupt beenden",
+      "status": "offen",
+      "at": "2026-11-05T16:31:12.923Z",
+      "wo": "Spalte 356, Reihe 16"
+    }
+  ]
+}
