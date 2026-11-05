@@ -35,6 +35,9 @@ npm run build    # dist/
   `levels/supersam-level-<welt>.json` auf `main`; danach testet und veröffentlicht der normale Deploy (ca. 2 Minuten).
   Der Schlüssel (fine-grained, nur JempHub, *Contents: Read and write*, *Actions: Read-only*) bleibt im Browser.
   „Online-Fassung entfernen“ löscht die Datei wieder – dann gilt die ursprüngliche Welt aus dem Code.
+- **💬 Notiz** (N): Bereich im Level aufziehen (oder klicken) und hineinschreiben, was Claude ändern soll.
+  **⇪ An Claude senden** legt die Notizen als `notizen/supersam-notizen-<welt>.json` ins Repo (gleicher Schlüssel),
+  **📋 Kopieren** liefert sie als Text für den Chat. Erledigte Notizen erscheinen grün mit Claudes Antwort.
 - Alternativ: exportierte Datei von Hand in `levels/` legen (siehe dort) – der Build baut sie ein.
 - Eine fehlerhafte Level-Datei (kein Start/Ziel, falsche Größe, kaputtes JSON, Welt doppelt) stoppt Build und Deploy.
   Die übrigen Spieltests laufen gegen die Welten aus dem Code, damit geänderte Levels sie nicht brechen.
