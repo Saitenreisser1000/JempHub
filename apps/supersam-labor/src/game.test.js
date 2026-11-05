@@ -5,9 +5,15 @@ import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import vm from 'node:vm';
 
-import { inlineLevels } from '../levels.mjs';
-const html = inlineLevels(readFileSync(resolve(import.meta.dirname, '..', 'index.html'), 'utf8'), resolve(import.meta.dirname, '..', 'levels')).html;   // mit eingebauten Editor-Levels
-const script = html.slice(html.indexOf('<script>') + 8, html.lastIndexOf('</script>'));
+import { mkdtempSync, writeFileSync, rmSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import { inlineLevels, readLevels } from '../levels.mjs';
+// Die Spieltests laufen gegen die Levels aus dem Code, damit im Editor geänderte Welten sie nicht brechen.
+// Die Dateien in levels/ (aus dem Editor) prüfen die Tests „Editor-Levels“ weiter unten.
+const LEVELS_DIR = resolve(import.meta.dirname, '..', 'levels');
+const html = readFileSync(resolve(import.meta.dirname, '..', 'index.html'), 'utf8');
+const scriptOf = h => h.slice(h.indexOf('<script>') + 8, h.lastIndexOf('</script>'));
+const script = scriptOf(html);
 
 function stub() {
   const f = function () { return stub(); };
@@ -18,7 +24,7 @@ function stub() {
   });
 }
 
-function boot() {
+function boot(src = script) {
   const listeners = {};
   const warnings = [];
   let time = 0;
@@ -42,7 +48,7 @@ function boot() {
     console: { ...console, warn: (...a) => warnings.push(a.join(' ')) },
   };
   ctx.window = ctx;
-  vm.runInNewContext(script, ctx);
+  vm.runInNewContext(src, ctx);
   const run = n => { for (let i = 0; i < n; i++) { time += 16.7; frame(time); } };
   return { dz: ctx.__dz, listeners, warnings, run };
 }
@@ -416,4 +422,53 @@ test('Leveleditor: ein geänderter Entwurf wird gespielt, ohne den Spielstand zu
   assert.equal(L.grid[10][32], '=', 'neue Plattform im Spiel');
   assert.equal(L.crystals.length, 6, 'zusätzlicher Diamant im Spiel');
   assert.equal(dz.save.ab.double, true, 'Probespiel mit gewählten Fähigkeiten');
+});
+
+const levelSig = L => JSON.stringify({ g: L.grid.map(r => r.join('')), b: L.back.map(r => r.join()), u: L.up.map(r => r.join()),
+  co: L.coins.map(k => [k.x, k.y]), cr: L.crystals.map(k => [k.x, k.y]), st: L.stars.map(k => [k.x, k.y]),
+  en: L.enemies.map(e => [e.type, e.spawn.x, e.spawn.y]), sp: L.springs.map(s => [s.x, s.top]), s: [L.start.x, L.start.y] });
+
+function playLevel(dz, listeners, run, id) {
+  dz.setState('play'); dz.loadLevel(id);
+  listeners.keydown({ key: 'ArrowRight', preventDefault() {} });
+  for (let k = 0; k < 25; k++) { run(10); listeners.keydown({ key: ' ', preventDefault() {} }); run(3); listeners.keyup({ key: ' ' }); }
+  listeners.keyup({ key: 'ArrowRight' });
+  assert.ok(Number.isFinite(dz.P.x) && Number.isFinite(dz.P.y), `Welt ${id}: Position ist eine Zahl`);
+}
+
+test('Editor-Levels in levels/: jede Datei ist gültig, gehört zu einer Welt und ist spielbar', () => {
+  const files = readLevels(LEVELS_DIR), ids = Object.keys(files);
+  const { dz, listeners, run } = boot(scriptOf(inlineLevels(html, LEVELS_DIR).html));
+  Object.assign(dz.save.ab, { double: true, wall: true, dash: true, glide: true });
+  for (const key of ids) {
+    const id = dz.editor.EDITABLE.find(x => String(x) === key);
+    assert.notEqual(id, undefined, `levels/: Welt ${key} gibt es im Spiel nicht`);
+    playLevel(dz, listeners, run, id);
+    assert.equal(dz.L.grid.length, files[key].h, `Welt ${key}: Level aus der Datei wird gespielt`);
+  }
+});
+
+test('Editor-Levels: eine veröffentlichte Datei ersetzt die Welt, eine fehlerhafte stoppt den Build', () => {
+  const dir = mkdtempSync(resolve(tmpdir(), 'supersam-levels-'));
+  try {
+    const { dz } = boot();
+    const D = JSON.parse(JSON.stringify(dz.editor.levelData(1)));
+    D.grid[10] = D.grid[10].slice(0, 30) + '=====' + D.grid[10].slice(35);
+    writeFileSync(resolve(dir, 'supersam-level-1.json'), JSON.stringify(D));
+    const b = boot(scriptOf(inlineLevels(html, dir).html));
+    b.dz.setState('play'); b.dz.loadLevel(1);
+    assert.equal(b.dz.L.grid[10][32], '=', 'Welt 1-1 kommt aus der Datei');
+    assert.equal(levelSig(b.dz.editor.load(JSON.parse(JSON.stringify(b.dz.editor.levelData(1))), [])), levelSig((b.dz.setState('play'), b.dz.loadLevel(1), b.dz.L)), 'Original im Editor = veröffentlichte Fassung');
+    playLevel(b.dz, b.listeners, b.run, 1);
+    const ohneStart = { ...D, objs: D.objs.filter(o => o.k !== 'start') };
+    writeFileSync(resolve(dir, 'supersam-level-1.json'), JSON.stringify(ohneStart));
+    assert.throws(() => readLevels(dir), /kein Start/);
+    writeFileSync(resolve(dir, 'supersam-level-1.json'), JSON.stringify({ ...D, grid: D.grid.slice(1) }));
+    assert.throws(() => readLevels(dir), /Raster/);
+    writeFileSync(resolve(dir, 'supersam-level-1.json'), '{ kaputt');
+    assert.throws(() => readLevels(dir), /kein gültiges JSON/);
+    writeFileSync(resolve(dir, 'supersam-level-1.json'), JSON.stringify(D));
+    writeFileSync(resolve(dir, 'zweite.json'), JSON.stringify(D));
+    assert.throws(() => readLevels(dir), /gibt es schon/);
+  } finally { rmSync(dir, { recursive: true, force: true }); }
 });

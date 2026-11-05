@@ -31,4 +31,10 @@ npm run build    # dist/
   erreichbar sind; Unerreichbares wird rot umkreist. **⌒** zeigt die Sprungbögen am Mauszeiger.
 - Entwürfe speichert der Browser automatisch (pro Welt). **Export** sichert das Level als Datei,
   **Import** lädt eine Datei, **Original** verwirft den Entwurf.
-- Übernehmen ins Labor: exportierte Datei in `levels/` legen (siehe dort) – der Build baut sie ein.
+- **Veröffentlichen** stellt das Level direkt ins Labor: Der Editor legt es mit dem eigenen GitHub-Schlüssel als
+  `levels/supersam-level-<welt>.json` auf `main`; danach testet und veröffentlicht der normale Deploy (ca. 2 Minuten).
+  Der Schlüssel (fine-grained, nur JempHub, *Contents: Read and write*, *Actions: Read-only*) bleibt im Browser.
+  „Online-Fassung entfernen“ löscht die Datei wieder – dann gilt die ursprüngliche Welt aus dem Code.
+- Alternativ: exportierte Datei von Hand in `levels/` legen (siehe dort) – der Build baut sie ein.
+- Eine fehlerhafte Level-Datei (kein Start/Ziel, falsche Größe, kaputtes JSON, Welt doppelt) stoppt Build und Deploy.
+  Die übrigen Spieltests laufen gegen die Welten aus dem Code, damit geänderte Levels sie nicht brechen.

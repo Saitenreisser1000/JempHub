@@ -59,6 +59,19 @@ input[type=number]{width:64px}
 #progress i{display:block;height:100%;width:0;background:var(--accent)}
 #toast{position:fixed;left:50%;bottom:40px;transform:translateX(-50%);background:#2c3b60;border:1px solid var(--accent);padding:8px 14px;border-radius:8px;opacity:0;transition:opacity .2s;pointer-events:none;z-index:30}
 #toast.show{opacity:1}
+button.pub{background:#2a4a6a;border-color:#4f86b8}
+.modal{position:fixed;inset:0;background:rgba(4,8,16,.6);z-index:25;display:flex;align-items:center;justify-content:center}
+.modal[hidden]{display:none}
+.modal .box{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:16px 18px;width:min(540px,92vw);max-height:88vh;overflow:auto;box-shadow:0 12px 40px rgba(0,0,0,.5)}
+.modal h2{font-size:15px;margin:0 0 10px} .modal p{margin:6px 0;color:var(--dim)} .modal p b{color:var(--text)}
+.modal ol{margin:6px 0 10px;padding-left:20px;color:var(--dim)} .modal ol b{color:var(--text)}
+.modal textarea,.modal input[type=password]{width:100%;background:var(--panel2);border:1px solid var(--line);border-radius:6px;padding:6px 8px;color:var(--text);font:inherit}
+.modal textarea{height:58px;resize:vertical}
+.modal .acts{display:flex;gap:8px;justify-content:flex-end;margin-top:12px;align-items:center;flex-wrap:wrap}
+.modal .acts .left{margin-right:auto;display:flex;gap:10px}
+.modal a{color:var(--sky)} .modal .ok{color:var(--ok)} .modal .bad{color:var(--bad)} .modal .warn{color:var(--accent)}
+.modal .line{margin:8px 0;font-size:12.5px}
+.modal button:disabled{opacity:.5;cursor:default}
 </style>
 </head>
 <body>
@@ -83,6 +96,7 @@ input[type=number]{width:64px}
     <button id="export" title="Als Datei sichern ⌘S">Export</button>
     <button id="import" title="Level-Datei laden">Import</button><input type="file" id="file" accept=".json,application/json" hidden>
     <button id="reset" title="Entwurf verwerfen, Original laden">Original</button>
+    <button class="pub" id="publish" title="Level direkt ins Labor-Spiel stellen (über GitHub)">⇪ Veröffentlichen</button>
   </header>
 
   <aside id="pal">
@@ -138,6 +152,7 @@ input[type=number]{width:64px}
   <iframe id="playframe" title="Probespiel" allow="autoplay; fullscreen"></iframe>
 </div>
 <div id="toast"></div>
+<div id="pub" class="modal" hidden><div class="box" id="pubbox"></div></div>
 <iframe id="engine" src="../index.html?engine=1" style="display:none" title="Spiel-Engine"></iframe>
 
 <script>
@@ -404,7 +419,8 @@ function updateStatus(){ if(!hover||!M||!inside(hover.c,hover.r)){ $('sc').textC
 // ---------- Tastatur ----------
 addEventListener('keydown',e=>{
   if(!$('play').hidden){ if(e.key==='Escape') closePlay(); return; }
-  if(e.target.matches('input,select')) return;
+  if(!$('pub').hidden){ if(e.key==='Escape') closePub(); return; }
+  if(e.target.matches('input,select,textarea')) return;
   const cmd=e.metaKey||e.ctrlKey, k=e.key.toLowerCase();
   if(e.key===' '){ spaceDown=true; view$.style.cursor='grab'; e.preventDefault(); return; }
   if(cmd&&k==='z'){ e.preventDefault(); e.shiftKey?redo():undo(); return; }
@@ -441,9 +457,8 @@ addEventListener('message',e=>{ if(e.data?.supersam==='back') closePlay(); });
 $('back').onclick=closePlay; $('playbtn').onclick=()=>startPlay(false);
 
 // ---------- Export / Import / Original ----------
-function exportLevel(){ if(!M) return; const D=toData(M);
-  const txt='{\n'+Object.entries(D).map(([k,v])=>Array.isArray(v)&&(k==='grid'||k==='back'||k==='up')?`  ${JSON.stringify(k)}: [\n${v.map(r=>'    '+JSON.stringify(r)).join(',\n')}\n  ]`:k==='objs'?`  "objs": [\n${v.map(o=>'    '+JSON.stringify(o)).join(',\n')}\n  ]`:`  ${JSON.stringify(k)}: ${JSON.stringify(v)}`).join(',\n')+'\n}\n';
-  const a=document.createElement('a'); a.href=URL.createObjectURL(new Blob([txt],{type:'application/json'})); a.download=`supersam-level-${curId}.json`; a.click(); setTimeout(()=>URL.revokeObjectURL(a.href),2000); toast('Datei gespeichert'); }
+function exportLevel(){ if(!M) return; const D=toData(M); const txt=levelText(D);
+  const a=document.createElement('a'); a.href=URL.createObjectURL(new Blob([txt],{type:'application/json'})); a.download=levelFile(curId); a.click(); setTimeout(()=>URL.revokeObjectURL(a.href),2000); toast('Datei gespeichert'); }
 $('export').onclick=exportLevel;
 $('import').onclick=()=>$('file').click();
 $('file').onchange=async()=>{ const f=$('file').files[0]; $('file').value=''; if(!f) return;
@@ -491,7 +506,7 @@ async function runCheck(){
       release(); if(E.L!==Lv){ Lv=E.load(D,ab); Lv.enemies.length=0; continue; }
       if(ok&&!dead){ for(let i=0;i<4;i++){ P.inv=5; E.tick(1/60); } if(P.ground) addNode(); } }
     if(performance.now()-slice>40){ const pr=Math.min(.98,nodes.size/(nodes.size+queue.length)); const bar=host.querySelector('#progress i'); if(bar) bar.style.width=(pr*100)+'%';
-      host.querySelector('.res').textContent=`Prüfe … ${nodes.size} Standplätze, ${sims} Sprünge`; await new Promise(r=>setTimeout(r,0)); slice=performance.now(); }
+      host.querySelector('.res').textContent=`Prüfe … ${nodes.size} Standplätze, ${sims} Sprünge`; const pc=document.getElementById('pcheck'); if(pc) pc.textContent=`Prüfung läuft … ${nodes.size} Standplätze, ${Math.round(pr*100)} %`; await new Promise(r=>setTimeout(r,0)); slice=performance.now(); }
   }
   // Ziel: Käfig – oder, wenn es keinen gibt (Übungswiese), die letzte Tür
   const g=Lv.goal||[...Lv.doors].sort((a,b)=>b.x-a.x)[0], gc=g?Math.floor(g.x/TSx):-99, gr=g?Math.floor((g.bottom-1)/TSx):-99;
@@ -529,6 +544,116 @@ function measureArcs(){
   res.push({col:'#ff8ad8',need:'double',pts:run(f=>f<20||(f>=24&&f<44),['double'])});
   return res;
 }
+
+// ---------- Veröffentlichen: Level über GitHub ins Labor stellen ----------
+// Der Editor legt die Datei mit dem eigenen GitHub-Schlüssel nach apps/supersam-labor/levels/ auf main.
+// Danach testet und veröffentlicht der normale Deploy das Labor (ca. 2 Minuten). Der Schlüssel bleibt nur in diesem Browser.
+const GH={repo:'Saitenreisser1000/JempHub',branch:'main',dir:'apps/supersam-labor/levels'}, TOKEN_KEY='supersam-labor-github-token';
+const LIVE='https://supersam.jemphub.com/labor/';
+const TOKEN_URL='https://github.com/settings/personal-access-tokens/new?'+new URLSearchParams({name:'Supersam Leveleditor',description:'Levels aus dem Supersam-Editor veröffentlichen',target_name:'Saitenreisser1000',expires_in:'365',contents:'write',actions:'read'});
+const getToken=()=>{ try{ return localStorage.getItem(TOKEN_KEY)||''; }catch(_){ return ''; } };
+const setToken=t=>{ try{ t?localStorage.setItem(TOKEN_KEY,t):localStorage.removeItem(TOKEN_KEY); }catch(_){} };
+const levelFile=id=>`supersam-level-${id}.json`, levelPath=id=>`${GH.dir}/${levelFile(id)}`;
+const esc=t=>String(t).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+function levelText(D){ return '{\n'+Object.entries(D).filter(([,v])=>v!==undefined).map(([k,v])=>Array.isArray(v)&&(k==='grid'||k==='back'||k==='up')?`  ${JSON.stringify(k)}: [\n${v.map(r=>'    '+JSON.stringify(r)).join(',\n')}\n  ]`:k==='objs'?`  "objs": [\n${v.map(o=>'    '+JSON.stringify(o)).join(',\n')}\n  ]`:`  ${JSON.stringify(k)}: ${JSON.stringify(v)}`).join(',\n')+'\n}\n'; }
+const b64=txt=>{ const u=new TextEncoder().encode(txt); let s=''; for(let i=0;i<u.length;i+=0x8000) s+=String.fromCharCode.apply(null,u.subarray(i,i+0x8000)); return btoa(s); };
+async function gh(path,opt={}){
+  const r=await fetch('https://api.github.com'+path,{...opt,cache:'no-store',headers:{Accept:'application/vnd.github+json','X-GitHub-Api-Version':'2022-11-28',Authorization:'Bearer '+getToken(),...(opt.body?{'Content-Type':'application/json'}:{})}});
+  let j=null; try{ j=await r.json(); }catch(_){} return {ok:r.ok,status:r.status,j};
+}
+const ghErr=(r,what)=>r.status===401?'Der GitHub-Schlüssel ist ungültig oder abgelaufen.'
+  :r.status===403||r.status===404?`Der Schlüssel darf ${what} nicht. Er braucht Zugriff auf JempHub mit „Contents: Read and write“.`
+  :r.status===409||r.status===422?'Die Datei wurde inzwischen woanders geändert. Bitte nochmal versuchen.'
+  :`GitHub antwortet mit Fehler ${r.status}${r.j?.message?' ('+esc(r.j.message)+')':''}.`;
+async function remoteFile(id){ const r=await gh(`/repos/${GH.repo}/contents/${levelPath(id)}?ref=${GH.branch}`); return r.ok?{sha:r.j.sha}:r.status===404?null:Promise.reject(r); }
+function validLevel(D){ const p=[];
+  if(D.grid.length!==D.h||D.grid.some(r=>r.length!==D.w)) p.push('Raster passt nicht zur Levelgröße');
+  if(!D.objs.some(o=>o.k==='start')) p.push('kein Start gesetzt');
+  if(!D.objs.some(o=>o.k==='goal'||o.k==='door')) p.push('kein Ziel gesetzt');
+  try{ E.load(JSON.parse(JSON.stringify(D)),[]); }catch(err){ p.push('Spiel kann das Level nicht laden: '+err.message); }
+  return p; }
+let pubState=null;
+function closePub(){ if(pubState?.busy) return; $('pub').hidden=true; pubState=null; }
+$('pub').onclick=e=>{ if(e.target===$('pub')) closePub(); };
+$('publish').onclick=()=>openPub();
+function openPub(){ if(!M) return; saveDraft(); $('pub').hidden=false; pubState={}; getToken()?pubReady():pubToken(); }
+function pubToken(msg){
+  $('pubbox').innerHTML=`<h2>GitHub-Schlüssel einrichten (einmalig)</h2>
+  ${msg?`<p class="bad">${msg}</p>`:''}
+  <p>Der Editor stellt Levels über GitHub ins Spiel. Dafür braucht er einen Schlüssel, der nur in diesem Browser gespeichert wird.</p>
+  <ol><li><a href="${TOKEN_URL}" target="_blank" rel="noopener">Schlüssel bei GitHub erstellen</a> (öffnet sich in neuem Tab, die Felder sind meist schon ausgefüllt).</li>
+  <li>Prüfen: <b>Repository access</b> → „Only select repositories“ → <b>JempHub</b>. <b>Permissions</b> → <b>Contents: Read and write</b>, <b>Actions: Read-only</b>.</li>
+  <li>„Generate token“ klicken, den Schlüssel (beginnt mit <b>github_pat_</b>) kopieren und hier einfügen.</li></ol>
+  <input type="password" id="tok" placeholder="github_pat_…" autocomplete="off" spellcheck="false">
+  <div class="acts"><button id="pcancel">Abbrechen</button><button class="primary" id="psave">Speichern</button></div>`;
+  $('pcancel').onclick=closePub; $('tok').focus();
+  $('psave').onclick=async()=>{ const t=$('tok').value.trim(); if(!t) return; setToken(t); $('psave').disabled=true; $('psave').textContent='Prüfe …';
+    const r=await gh(`/repos/${GH.repo}/contents/${GH.dir}?ref=${GH.branch}`).catch(()=>({status:0}));
+    if(r.ok){ toast('Schlüssel gespeichert'); pubReady(); } else { setToken(''); pubToken(r.status?ghErr(r,'das Repository JempHub lesen'):'GitHub ist nicht erreichbar.'); } };
+  $('tok').onkeydown=e=>{ if(e.key==='Enter') $('psave').click(); };
+}
+async function pubReady(){
+  const D=toData(M); D.id=curId; const lab=levelLabel(curId), probs=validLevel(D);
+  $('pubbox').innerHTML=`<h2>„${esc(lab)}“ veröffentlichen</h2>
+  <p>Das Level kommt ins Labor-Spiel (<a href="${LIVE}" target="_blank" rel="noopener">supersam.jemphub.com/labor</a>). Vorher laufen automatisch die Tests. Nach etwa 2 Minuten ist es spielbar.</p>
+  <div class="line" id="premote">Online-Fassung: wird nachgesehen …</div>
+  <div class="line" id="pcheck">${probs.length?`<span class="bad">✗ ${probs.map(esc).join(' · ')}</span>`:'Prüfung: läuft …'}</div>
+  <p style="margin-top:10px">Was hast du geändert? (optional)</p>
+  <textarea id="pnote" placeholder="z. B. Sprung am Bachbett entschärft"></textarea>
+  <div class="acts"><span class="left"><a href="#" id="pchtok">Schlüssel ändern</a><a href="#" id="pdel" hidden>Online-Fassung entfernen</a></span>
+  <button id="pcancel">Abbrechen</button><button class="primary" id="pgo" disabled>⇪ Veröffentlichen</button></div>`;
+  $('pcancel').onclick=closePub; $('pchtok').onclick=e=>{ e.preventDefault(); setToken(''); pubToken(); };
+  if(probs.length) return;
+  const st=pubState; let remote, goalOk=false;
+  try{ remote=await remoteFile(curId); }catch(r){ if(st!==pubState) return; if(r.status===401){ setToken(''); pubToken(ghErr(r)); return; } $('premote').innerHTML=`<span class="bad">${ghErr(r,'die Levels lesen')}</span>`; return; }
+  if(st!==pubState) return; st.remote=remote;
+  $('premote').innerHTML=remote?'Online-Fassung: <b>vorhanden</b>, wird ersetzt.':'Online-Fassung: noch keine, im Spiel läuft die ursprüngliche Version.';
+  $('pdel').hidden=!remote; $('pdel').onclick=e=>{ e.preventDefault(); pubDelete(); };
+  if(!check){ $('pcheck').textContent='Prüfung: läuft …'; await runCheck(); if(st!==pubState) return; }
+  if(!check){ $('pcheck').innerHTML='<span class="bad">Prüfung nicht möglich – bitte nochmal öffnen.</span>'; return; }
+  goalOk=check.goal; const c={...check,ab:check.ab.map(a=>({double:'Doppelsprung',wall:'Wandsprung',dash:'Dash',glide:'Gleiten'}[a]||a))};
+  $('pcheck').innerHTML=goalOk?`<span class="ok">✓ Ziel erreichbar</span> mit ${c.ab.join(', ')||'ohne Fähigkeiten'} · Diamanten ${c.cr[0]}/${c.cr[1]} · Sterne ${c.st[0]}/${c.st[1]}`
+    :`<span class="warn">⚠ Ziel mit ${c.ab.join(', ')||'ohne Fähigkeiten'} nicht erreichbar.</span><br><label><input type="checkbox" id="pforce"> trotzdem veröffentlichen</label>`;
+  const go=$('pgo'); go.disabled=!goalOk; if(!goalOk) $('pforce').onchange=e=>{ go.disabled=!e.target.checked; };
+  go.onclick=()=>pubUpload(D,$('pnote').value.trim());
+}
+async function pubUpload(D,note){
+  const st=pubState; st.busy=true; const lab=levelLabel(curId), id=curId;
+  const msg=`Supersam Labor: ${lab} aus dem Editor`+(note?`\n\n${note}`:'');
+  pubBusy('Lade hoch …');
+  let r; for(let tryN=0;tryN<2;tryN++){
+    let remote=null; try{ remote=await remoteFile(id); }catch(e){ r=e; break; }
+    r=await gh(`/repos/${GH.repo}/contents/${levelPath(id)}`,{method:'PUT',body:JSON.stringify({message:msg,content:b64(levelText(D)),branch:GH.branch,...(remote?{sha:remote.sha}:{})})}).catch(()=>({status:0}));
+    if(r.ok||(r.status!==409&&r.status!==422)) break; }
+  if(!r.ok){ st.busy=false; pubResult(false,r.status?ghErr(r,'Dateien schreiben'):'GitHub ist nicht erreichbar.'); return; }
+  await pubWatch(r.j.commit.sha,`„${esc(lab)}“ ist hochgeladen.`);
+}
+async function pubDelete(){
+  if(!confirm(`Online-Fassung von „${levelLabel(curId)}“ entfernen? Im Spiel läuft dann wieder die ursprüngliche Version. Dein Entwurf hier bleibt erhalten.`)) return;
+  const st=pubState; st.busy=true; pubBusy('Entferne …'); const lab=levelLabel(curId);
+  let r; try{ const remote=await remoteFile(curId); r=remote?await gh(`/repos/${GH.repo}/contents/${levelPath(curId)}`,{method:'DELETE',body:JSON.stringify({message:`Supersam Labor: ${lab} zurück auf die ursprüngliche Version`,sha:remote.sha,branch:GH.branch})}):{ok:false,status:404}; }catch(e){ r=e; }
+  if(!r.ok){ st.busy=false; pubResult(false,ghErr(r,'Dateien löschen')); return; }
+  await pubWatch(r.j.commit.sha,`Online-Fassung von „${esc(lab)}“ entfernt.`);
+}
+function pubBusy(t){ $('pubbox').innerHTML=`<h2>Veröffentlichen</h2><div class="line" id="pstat">${t}</div><div id="progress"><i style="width:8%"></i></div>`; }
+async function pubWatch(sha,head){
+  const st=pubState, t0=Date.now(), bar=()=>$('pubbox').querySelector('#progress i');
+  const show=(t,p)=>{ if($('pstat')) $('pstat').innerHTML=`${head}<br>${t}`; if(bar()) bar().style.width=(p*100)+'%'; };
+  show('Tests und Deploy starten …',.15);
+  while(Date.now()-t0<8*60e3){ await new Promise(r=>setTimeout(r,5000)); if(st!==pubState) return;
+    const r=await gh(`/repos/${GH.repo}/actions/runs?head_sha=${sha}&per_page=20`).catch(()=>({status:0}));
+    if(r.status===403||r.status===404){ st.busy=false; pubResult(true,`${head} Tests und Deploy laufen jetzt (ca. 2 Minuten). Den Fortschritt kann der Editor nicht anzeigen, weil der Schlüssel keine „Actions“-Leserechte hat.`); return; }
+    const run=r.j?.workflow_runs?.find(w=>w.name==='Deploy'); const el=(Date.now()-t0)/1000;
+    if(!run){ show('Tests und Deploy starten …',.15); continue; }
+    if(run.status!=='completed'){ show(`Tests laufen, dann wird veröffentlicht … (${Math.round(el)} s)`,Math.min(.92,.2+el/150)); continue; }
+    st.busy=false;
+    if(run.conclusion==='success') pubResult(true,`${head} Es ist jetzt online: <a href="${LIVE}" target="_blank" rel="noopener">Labor öffnen</a> (falls die alte Fassung kommt: Seite neu laden).`);
+    else pubResult(false,`${head} Aber Tests oder Deploy sind fehlgeschlagen, deshalb ist es <b>nicht</b> online. <a href="${run.html_url}" target="_blank" rel="noopener">Details bei GitHub</a>`);
+    return; }
+  st.busy=false; pubResult(true,`${head} Der Deploy dauert ungewöhnlich lange. <a href="https://github.com/${GH.repo}/actions" target="_blank" rel="noopener">Bei GitHub nachsehen</a>`);
+}
+function pubResult(ok,html){ $('pubbox').innerHTML=`<h2>${ok?'<span class="ok">✓</span> Veröffentlicht':'<span class="bad">✗</span> Nicht veröffentlicht'}</h2><p>${html}</p><div class="acts"><button class="primary" id="pclose">Schließen</button></div>`;
+  $('pclose').onclick=closePub; if(ok) toast('Veröffentlicht'); }
 
 // ---------- Seitenleiste ----------
 $('pname').onchange=()=>{ pushHist(); M.name=$('pname').value; changed(); };
