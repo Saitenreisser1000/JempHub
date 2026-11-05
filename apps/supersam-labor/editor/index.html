@@ -184,12 +184,12 @@ const savePrefs=()=>{ try{ localStorage.setItem(PREFS,JSON.stringify(prefs)); }c
 const toast=t=>{ const el=$('toast'); el.textContent=t; el.classList.add('show'); clearTimeout(toast.t); toast.t=setTimeout(()=>el.classList.remove('show'),1800); };
 
 const TILES=[
-  ['#','Boden','1'],['=','Holz','2'],['B','Bröckel','3'],['X','Rissfels','4'],['^','Stacheln','5'],['~','Wasser','6'],['H','Geheimgang','7'],[' ','Leer','0'],
+  ['#','Boden','1'],['=','Holz','2'],['B','Bröckel','3'],['X','Rissfels','4'],['^','Stacheln','5'],['~','Wasser','6'],['H','Geheimgang','7'],['-','Steg'],[' ','Leer','0'],
   ['/','Schräge ↗'],['\\','Schräge ↘'],['(','sanft ↗ unten'],[')','sanft ↗ oben'],['[','sanft ↘ oben'],[']','sanft ↘ unten']];
 const LAYERS=[['back','Rückwand','8'],['up','Aufwind','9']];
 const OBJS=[['coin','Münze'],['crystal','Diamant'],['star','Stern'],['spring','Feder'],['cp','Kontrollpunkt'],['mover','Fahrplattform'],['start','Start'],['goal','Ziel'],['door','Tür (Hub)']];
 const ENEMIES=[['beetle','Käfer'],['igel','Igel'],['wespe','Wespe'],['skorpion','Skorpion'],['frosch','Frosch'],['fisch','Fisch'],['geist','Geist']];
-const NAMES={'#':'Boden','=':'Holz','B':'Bröckelblock','X':'Rissfels','^':'Stacheln','~':'Wasser','H':'Geheimgang',' ':'leer','/':'Schräge','\\':'Schräge','(':'sanfte Schräge',')':'sanfte Schräge','[':'sanfte Schräge',']':'sanfte Schräge','K':'Kronentor'};
+const NAMES={'#':'Boden','=':'Holz','-':'Steg (durchspringbar)','B':'Bröckelblock','X':'Rissfels','^':'Stacheln','~':'Wasser','H':'Geheimgang',' ':'leer','/':'Schräge','\\':'Schräge','(':'sanfte Schräge',')':'sanfte Schräge','[':'sanfte Schräge',']':'sanfte Schräge','K':'Kronentor'};
 const SLOPE={'/':lx=>16-lx,'\\':lx=>lx,'(':lx=>16-lx/2,')':lx=>8-lx/2,'[':lx=>lx/2,']':lx=>8+lx/2};
 const isGround=t=>t==='#'||t==='H'||SLOPE[t]!==undefined;
 
@@ -214,8 +214,9 @@ function engineReady(){
   return new Promise(res=>{ const f=$('engine'); const ok=()=>{ try{ const z=f.contentWindow.__dz; if(z&&z.editor){ res(z.editor); return true; } }catch(_){} return false; };
     if(ok()) return; f.addEventListener('load',()=>{ const t=setInterval(()=>{ if(ok()) clearInterval(t); },50); }); });
 }
+const ARCHN={};
 function levelLabel(id){ const n=E.NAMES?.[id]; if(id==='uebung') return 'Übungswiese';
-  if(typeof id==='number') return `${E.WNO(id)} ${n||''}`; if(String(id).startsWith('archiv')) return `Archiv: ${id==='archiv1'?'Wald (alt)':'Wipfelwald (alt)'}`; return String(id); }
+  if(typeof id==='number') return `${E.WNO(id)} ${n||''}`; if(String(id).startsWith('archiv')){ try{ ARCHN[id]??=E.levelData(id).name; }catch(_){ ARCHN[id]=id; } return `Archiv: ${ARCHN[id]}`; } return String(id); }
 function hasDraft(id){ try{ return !!localStorage.getItem(DRAFT+id); }catch(_){ return false; } }
 function markSelect(){ for(const o of $('lv').options){ const id=JSON.parse(o.value); o.textContent=(hasDraft(id)?'● ':'')+levelLabel(id); } }
 function openLevel(id){
@@ -256,10 +257,11 @@ function drawTile(x,ch,px,py,s,style,icon){
   if(ch===' '){ if(icon){ x.strokeStyle='#5a6a8a'; x.strokeRect(px+2.5,py+2.5,s-5,s-5); x.beginPath(); x.moveTo(px+3,py+s-3); x.lineTo(px+s-3,py+3); x.stroke(); } return; }
   const st=SPR?.T?.top?.[style]?style:'forest';
   if(SPR){ let img=null;
-    if(ch==='#'||ch==='H') img=SPR.T.top[st][0]; else if(ch==='=') img=SPR.T.wood; else if(ch==='X') img=SPR.T.crack; else if(ch==='B') img=SPR.T.crumble; else if(ch==='^') img=SPR.SPIKE;
+    if(ch==='#'||ch==='H') img=SPR.T.top[st][0]; else if(ch==='=') img=SPR.T.wood; else if(ch==='-') img=SPR.T.ledge; else if(ch==='X') img=SPR.T.crack; else if(ch==='B') img=SPR.T.crumble; else if(ch==='^') img=SPR.SPIKE;
     else if(SLOPE[ch]) img=SPR.slopeTile(st,ch);
     if(img){ x.drawImage(img,px,py,s,s); if(ch==='H'){ x.fillStyle='rgba(255,209,102,.35)'; x.fillRect(px,py,s,s); x.strokeStyle='#ffd166'; x.setLineDash([3,2]); x.strokeRect(px+.5,py+.5,s-1,s-1); x.setLineDash([]); } return; } }
   if(ch==='~'){ x.fillStyle='#2f86c8'; x.fillRect(px,py,s,s); x.fillStyle='#7fd0ff'; x.fillRect(px,py,s,Math.max(1,s/8)); return; }
+  if(ch==='-'){ x.fillStyle='#b07a45'; x.fillRect(px,py,s,s*.36); return; }
   x.fillStyle={'#':'#6a4630','=':'#b07a45','B':'#c69a6a','X':'#8a8a9a','^':'#e8e8f0','H':'#8a6a40','K':'#c9a24a'}[ch]||'#a0f';
   if(SLOPE[ch]){ x.beginPath(); x.moveTo(px,py+SLOPE[ch](0)*s/16); x.lineTo(px+s,py+SLOPE[ch](16)*s/16); x.lineTo(px+s,py+s); x.lineTo(px,py+s); x.fill(); } else x.fillRect(px,py,s,s);
 }

@@ -472,3 +472,43 @@ test('Editor-Levels: eine veröffentlichte Datei ersetzt die Welt, eine fehlerha
     assert.throws(() => readLevels(dir), /gibt es schon/);
   } finally { rmSync(dir, { recursive: true, force: true }); }
 });
+
+test('Steg (-): von unten durchspringen, oben stehen und darauf laufen, Gegner drehen an der Kante um', () => {
+  const { dz } = boot(), E = dz.editor;
+  const D = JSON.parse(JSON.stringify(E.levelData(1)));
+  const st = D.objs.find(o => o.k === 'start'), r = D.top - 3, c0 = st.c + 2, c1 = st.c + 12;
+  D.objs = D.objs.filter(o => o.k === 'start' || o.k === 'goal' || o.c < c0 - 3 || o.c > c1 + 3);
+  for (let rr = 0; rr < D.top; rr++) D.grid[rr] = D.grid[rr].slice(0, c0 - 3) + ' '.repeat(c1 - c0 + 7) + D.grid[rr].slice(c1 + 4);
+  for (let rr = D.top; rr < D.h; rr++) D.grid[rr] = D.grid[rr].slice(0, c0 - 3) + '#'.repeat(c1 - c0 + 7) + D.grid[rr].slice(c1 + 4);
+  D.grid[r] = D.grid[r].slice(0, c0) + '-'.repeat(c1 - c0 + 1) + D.grid[r].slice(c1 + 1);
+  D.objs.push({ k: 'enemy', t: 'beetle', c: c0 + 1, r: r - 1, range: 3 });
+  const L = E.load(D, []), P = E.P, TS = E.TS;
+  Object.assign(P, { x: (c0 + 4) * TS, y: D.top * TS - P.h, vx: 0, vy: 0, ground: true });
+  for (let i = 0; i < 10; i++) E.tick(1 / 60);
+  let top = 1e9; E.keys(false, false, true);
+  for (let i = 0; i < 90; i++) { E.tick(1 / 60); top = Math.min(top, P.y + P.h); if (i === 20) E.keys(false, false, false); }
+  assert.ok(top < r * TS, 'Sam springt durch den Steg nach oben');
+  assert.ok(P.ground && Math.abs(P.y + P.h - r * TS) < .6, `Sam landet oben auf dem Steg (Füße ${P.y + P.h}, Steg ${r * TS})`);
+  E.keys(false, true, false); for (let i = 0; i < 20; i++) E.tick(1 / 60); E.keys(false, false, false);
+  for (let i = 0; i < 30; i++) E.tick(1 / 60);
+  assert.ok(P.ground && Math.abs(P.y + P.h - r * TS) < .6, 'Sam läuft auf dem Steg und fällt nicht durch');
+  const e = E.L.enemies.find(x => x.type === 'beetle' && Math.round(x.spawn.x / TS) === c0 + 1); assert.ok(e, 'Käfer da: ' + JSON.stringify(E.L.enemies.map(x => [x.type, x.spawn.x / TS, x.spawn.y])) + ' c0 ' + c0);
+  for (let i = 0; i < 600; i++) E.tick(1 / 60);
+  assert.ok(e.alive === false || Math.abs(e.y + e.h - r * TS) < 1, `Käfer bleibt auf dem Steg (${e.alive} ${e.x/TS} ${e.y + e.h} ${r * TS} sp ${e.spawn.y})`);
+});
+
+test('Kamera bleibt oben, wenn der Weg über einen Schacht auf gleicher Höhe weitergeht, und folgt erst beim Hinuntergehen', () => {
+  const { dz, listeners, run } = boot();
+  dz.setState('play'); dz.loadLevel('archiv1'); dz.L.enemies.length = 0;
+  const shaft = 244, ground = 19;
+  assert.equal(dz.L.grid[ground][shaft], ' ', 'Schacht bei Spalte 244');
+  dz.P.x = (shaft - 4) * 16; dz.P.y = ground * 16 - 14; dz.P.face = 1; run(240);
+  const c = dz.cam;
+  assert.ok(c.camY + c.viewH < 27 * 16, `Kamera rahmt nicht bis zum Höhlenboden (Unterkante ${((c.camY + c.viewH) / 16).toFixed(1)})`);
+  assert.ok(ground * 16 - c.camY >= 16 * 5.4,   // vorher nur 3 Kacheln
+    `oben genug Sicht (${((ground * 16 - c.camY) / 16).toFixed(1)} Kacheln)`);
+  // hineinlaufen: Kamera folgt nach unten
+  listeners.keydown({ key: 'ArrowRight', preventDefault() {} }); run(30); listeners.keyup({ key: 'ArrowRight' }); run(150);
+  assert.ok(dz.P.y > 22 * 16, 'Sam ist in die Höhle gefallen');
+  assert.ok(dz.P.y + 14 <= dz.cam.camY + dz.cam.viewH && dz.P.y >= dz.cam.camY, 'Kamera folgt in die Höhle');
+});
