@@ -1,0 +1,18 @@
+{
+  "level": "uebung",
+  "name": "Übungswiese",
+  "hinweis": "Notizen aus dem Supersam-Leveleditor: Bereich in Spalten (c) und Reihen (r) des Levels; status offen|erledigt und antwort setzt Claude.",
+  "notes": [
+    {
+      "id": "mw3vzo8b053f",
+      "c0": 294,
+      "r0": 15,
+      "c1": 294,
+      "r1": 15,
+      "text": "erst wenn 3 Sterne gesammelt wurden, ist die Tür offen",
+      "status": "offen",
+      "at": "2026-11-05T18:36:15.851Z",
+      "wo": "Spalte 294, Reihe 15"
+    }
+  ]
+}
