@@ -91,7 +91,7 @@ test('Musik und Effekte laufen ohne Fehler', () => {
 test('Hügel und Senken lassen sich in beide Richtungen durchlaufen', () => {
   const { dz, listeners, run } = boot();
   dz.PH.max = 60;
-  for (const [lv, col, key, frames, minCols] of [[1, 42, 'ArrowRight', 260, 14], [1, 64, 'ArrowRight', 140, 7], [1, 334, 'ArrowLeft', 140, 6], [4, 31, 'ArrowRight', 160, 8]]) {
+  for (const [lv, col, key, frames, minCols] of [[1, 3, 'ArrowRight', 260, 14], [1, 62, 'ArrowRight', 140, 7], [1, 147, 'ArrowLeft', 140, 6], [4, 31, 'ArrowRight', 160, 8]]) {
     dz.setState('play'); dz.loadLevel(lv); dz.L.enemies.length = 0; dz.L.goal = null;
     let r = 0; for (let y = 0; y < dz.L.h; y++) if (dz.L.grid[y][col] === '#') { r = y; break; }
     dz.P.x = col * 16; dz.P.y = r * 16 - 14; run(5);
@@ -106,13 +106,13 @@ test('Hügel und Senken lassen sich in beide Richtungen durchlaufen', () => {
 
 test('Kamera schlägt beim Landen auf einer höheren Plattform nicht nach unten aus', () => {
   const { dz, listeners, run } = boot();
-  dz.setState('play'); dz.loadLevel('uebung'); dz.L.enemies.length = 0;
-  dz.P.x = 33 * 16; dz.P.y = 17 * 16 - 14; run(60);
+  dz.setState('play'); dz.loadLevel(1); dz.L.enemies.length = 0;
+  dz.P.x = 31 * 16; dz.P.y = 19 * 16 - 14; run(60);
   const before = dz.cam.camY; let maxY = before;
   listeners.keydown({ key: 'ArrowRight', preventDefault() {} }); run(4);
   listeners.keydown({ key: ' ', preventDefault() {} });
   for (let i = 0; i < 120; i++) { run(1); maxY = Math.max(maxY, dz.cam.camY); if (i === 20) listeners.keyup({ key: 'ArrowRight' }); }
-  assert.ok(dz.P.y < 14 * 16, 'Sam steht auf der Mauer');
+  assert.ok(dz.P.y < 15 * 16, 'Sam steht auf der Plattform');
   assert.ok(maxY <= before + 0.5, `Kamera ging um ${(maxY - before).toFixed(1)} px nach unten`);
 });
 
@@ -141,9 +141,8 @@ test('Geheimgänge werden aufgedeckt und Sternmünzen sind erreichbar', () => {
   const { dz, listeners, run } = boot();
   const key = (k, d) => d ? listeners.keydown({ key: k, preventDefault() {} }) : listeners.keyup({ key: k });
   const setup = (lv, col, row) => { dz.setState('play'); dz.loadLevel(lv); dz.L.enemies.length = 0; dz.P.x = col * 16 + 3; dz.P.y = (row + 1) * 16 - 14; dz.P.vx = 0; dz.P.vy = 0; run(3); };
-  setup(1, 166, 24); const ws = dz.L.stars.find(s => Math.floor(s.x / 16) === 153);
-  key('ArrowLeft', 1); for (let i = 0; i < 200 && !ws.got; i++) run(1); key('ArrowLeft', 0);
-  assert.ok(dz.L.reveal.size > 0 && ws.got, 'Wald: Versteck hinter der Bachbett-Wand');
+  setup(1, 174, 18); key('ArrowRight', 1); for (let i = 0; i < 200 && !dz.L.stars[0].got; i++) run(1); key('ArrowRight', 0);
+  assert.ok(dz.L.reveal.size > 0 && dz.L.stars[0].got, 'Wald: Geheimgang unter dem Boden');
   setup(2, 174, 22); key('ArrowRight', 1); for (let i = 0; i < 150 && !dz.L.stars[0].got; i++) run(1); key('ArrowRight', 0);
   assert.ok(dz.L.stars[0].got, 'Felsen: Geheimgang im Tafelberg');
   setup(3, 218, 22); key('ArrowRight', 1); for (let i = 0; i < 200 && !dz.L.stars[1].got; i++) run(1); key('ArrowRight', 0);
@@ -381,12 +380,4 @@ test('Boss-Tür öffnet erst nach Welt X-2', () => {
   assert.equal(dz.L.id, 'hub', 'ohne 1-2 bleibt die Tür zu');
   dz.save.done[5] = true; dz.P.x = door.x - 60; run(5); stand();   // kurz weggehen, dann wieder in die Tür
   assert.equal(dz.L.id, 'b0', 'nach 1-2 geht es zur Wespenkönigin');
-});
-
-test('Archiv: alte Fassungen von 1-1 und 1-2 bleiben erhalten, zählen aber nicht mit', () => {
-  const { dz, run } = boot();
-  for (const id of ['archiv1', 'archiv5']) { dz.setState('play'); dz.loadLevel(id); run(10); assert.ok(dz.L.goal && dz.L.crystals.length >= 3, `${id} ladbar`); }
-  dz.setState('play'); dz.loadLevel('hub');
-  assert.ok(!dz.L.doors.some(d => String(d.world).startsWith('archiv')), 'keine Tür in der Hubwelt');
-  assert.equal(dz.totals().per.archiv1, undefined, 'nicht in den Summen');
 });

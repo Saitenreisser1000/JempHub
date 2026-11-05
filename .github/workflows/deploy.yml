@@ -25,7 +25,7 @@ on:
         description: Welche App veröffentlichen?
         type: choice
         default: all
-        options: [all, hub, guitar, note, ear, conduct, supersam]
+        options: [all, hub, guitar, note, ear, conduct, supersam, supersam-labor]
 
 concurrency:
   group: deploy
@@ -50,7 +50,7 @@ jobs:
           BEFORE: ${{ github.event.before }}
           AFTER: ${{ github.sha }}
         run: |
-          ALL='["hub","guitar","note","ear","conduct","supersam"]'
+          ALL='["hub","guitar","note","ear","conduct","supersam","supersam-labor"]'
           if [ "$EVENT" = "workflow_dispatch" ]; then
             if [ "$INPUT_APP" = "all" ]; then echo "apps=$ALL" >> "$GITHUB_OUTPUT"
             else echo "apps=[\"$INPUT_APP\"]" >> "$GITHUB_OUTPUT"; fi
@@ -65,7 +65,7 @@ jobs:
             echo "apps=$ALL" >> "$GITHUB_OUTPUT"; exit 0
           fi
           LIST=""
-          for a in hub guitar note ear conduct supersam; do
+          for a in hub guitar note ear conduct supersam supersam-labor; do
             if echo "$CHANGED" | grep -q "^apps/$a/"; then LIST="$LIST\"$a\","; fi
           done
           echo "apps=[${LIST%,}]" >> "$GITHUB_OUTPUT"
@@ -110,6 +110,7 @@ jobs:
             ear)     echo "path=/var/www/earjemp"     >> "$GITHUB_OUTPUT"; echo "url=https://earjemp.jemphub.com" >> "$GITHUB_OUTPUT";;
             conduct) echo "path=/var/www/conductjemp" >> "$GITHUB_OUTPUT"; echo "url=https://conductjemp.jemphub.com" >> "$GITHUB_OUTPUT";;
             supersam) echo "path=/var/www/supersam" >> "$GITHUB_OUTPUT"; echo "url=https://supersam.jemphub.com" >> "$GITHUB_OUTPUT";;
+            supersam-labor) echo "path=/var/www/supersam/labor" >> "$GITHUB_OUTPUT"; echo "url=https://supersam.jemphub.com/labor" >> "$GITHUB_OUTPUT";;
           esac
 
       - name: SSH vorbereiten
@@ -140,6 +141,8 @@ jobs:
           OPTS="-rlptz --delete"
           [ "$APP" = "hub" ] && OPTS="-rlptz"
           [ "$APP" = "guitar" ] && OPTS="$OPTS --exclude=config.js"
+          # Supersam-Demo: den Labor-Unterordner nicht mitlöschen
+          [ "$APP" = "supersam" ] && OPTS="$OPTS --exclude=/labor/"
           $SSH "$U@$HOST" "mkdir -p '$DEST'"
           rsync $OPTS -e "$SSH" "apps/$APP/dist/" "$U@$HOST:$DEST/"
           $SSH "$U@$HOST" "chown -R www-data:www-data '$DEST' 2>/dev/null || true"
