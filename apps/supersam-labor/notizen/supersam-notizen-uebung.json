@@ -10,9 +10,10 @@
       "c1": 294,
       "r1": 15,
       "text": "erst wenn 3 Sterne gesammelt wurden, ist die Tür offen",
-      "status": "offen",
+      "status": "erledigt",
       "at": "2026-11-05T18:36:15.851Z",
-      "wo": "Spalte 294, Reihe 15"
+      "wo": "Spalte 294, Reihe 15",
+      "antwort": "Drei Sterne auf der Wiese (über der Mauer, über dem Block bei Station 9, über dem hohen Block); die Tür zeigt ★ 0/3 und öffnet erst mit allen drei. Zwei Federn hinter den hohen Hindernissen erlauben den Rückweg, falls man einen Stern verpasst hat."
     }
   ]
 }

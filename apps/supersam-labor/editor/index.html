@@ -386,7 +386,7 @@ function renderObjProps(){ const host=$('objprops'); host.innerHTML='';
   const t=document.createElement('div'); t.className='row'; t.innerHTML=`<b>${o.k==='enemy'?ENEMIES.find(e=>e[0]===o.t)[1]:OBJS.find(e=>e[0]===o.k)[1]}</b><span style="min-width:0">Spalte ${o.c}, Reihe ${o.r}</span>`; host.append(t);
   if(o.k==='enemy'){ propRow(host,'Art',o.t,v=>o.t=v,{options:ENEMIES}); propRow(host,'Reichweite',o.range??3,v=>{ o.range=v===3?undefined:v; if(o.range==null) delete o.range; }); }
   if(o.k==='mover'){ propRow(host,'Breite',o.w,v=>o.w=Math.max(1,v)); propRow(host,'Weg waagrecht',o.dc,v=>o.dc=v); propRow(host,'Weg senkrecht',o.dr,v=>o.dr=v); propRow(host,'Dauer (s)',o.p,v=>o.p=Math.max(.5,v),{step:.1}); }
-  if(o.k==='door'){ propRow(host,'Ziel',o.world,v=>o.world=isNaN(+v)?v:+v,{options:[[0,'Hubwelt']]}); }
+  if(o.k==='door'){ propRow(host,'Ziel',o.world,v=>o.world=isNaN(+v)?v:+v,{options:[[0,'Hubwelt']]}); propRow(host,'Sterne nötig',o.stars||0,v=>{ if(v>0) o.stars=Math.round(v); else delete o.stars; }); }
   const del=document.createElement('button'); del.textContent='Objekt löschen'; del.onclick=()=>{ pushHist(); M.objs.splice(selObj,1); selObj=null; changed(true); }; host.append(del);
 }
 
