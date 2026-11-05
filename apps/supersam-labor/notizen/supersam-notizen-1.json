@@ -1,6 +1,6 @@
 {
-  "level": "archiv1",
-  "name": "Archiv: Wald (alt)",
+  "level": 1,
+  "name": "1-1 Wald",
   "hinweis": "Notizen aus dem Supersam-Leveleditor: Bereich in Spalten (c) und Reihen (r) des Levels; status offen|erledigt und antwort setzt Claude.",
   "notes": [
     {
