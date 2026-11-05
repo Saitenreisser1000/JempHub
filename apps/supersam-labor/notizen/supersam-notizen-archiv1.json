@@ -10,9 +10,10 @@
       "c1": 244,
       "r1": 19,
       "text": "Hier soll die Kamera oben bleiben erst wenn man nach unten auf die unter Plattform geht mit nach unten gehen, sonst wird oben die Sicht abgeschnitten",
-      "status": "offen",
+      "status": "erledigt",
       "at": "2026-11-05T16:30:18.356Z",
-      "wo": "Spalte 244, Reihe 19"
+      "wo": "Spalte 244, Reihe 19",
+      "antwort": "Kamera bleibt jetzt oben, solange der Weg auf gleicher Höhe weitergeht (gilt für alle Welten); erst wenn Sam in den Schacht fällt, geht sie mit nach unten."
     },
     {
       "id": "mw3ri6z5lu43",
@@ -21,9 +22,10 @@
       "c1": 298,
       "r1": 21,
       "text": "Diese Blöcke sollen zum Durchspringen sein",
-      "status": "offen",
+      "status": "erledigt",
       "at": "2026-11-05T16:30:41.873Z",
-      "wo": "Spalte 298, Reihe 21"
+      "wo": "Spalte 298, Reihe 21",
+      "antwort": "Neue Kachel „Steg“: von unten durchspringbar, oben begehbar. Die drei Blöcke über dem Schacht sind jetzt Stege – so kommt man aus der Höhle wieder hinauf."
     },
     {
       "id": "mw3riuxnxyx9",
@@ -32,9 +34,10 @@
       "c1": 356,
       "r1": 16,
       "text": "Hier die Welt noch etwas länger machen und nicht so aprupt beenden",
-      "status": "offen",
+      "status": "erledigt",
       "at": "2026-11-05T16:31:12.923Z",
-      "wo": "Spalte 356, Reihe 16"
+      "wo": "Spalte 356, Reihe 16",
+      "antwort": "34 Spalten Auslauf angehängt: Münzen, sanfter Hügel mit Münzbogen, Kontrollpunkt, ein Käfer und eine Zielgerade; das Ziel steht jetzt bei Spalte 390. Die Sternplattform blieb am Brückenende."
     }
   ]
 }
