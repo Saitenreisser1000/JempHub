@@ -27,3 +27,5 @@ Einmalig auf dem Server:
    `ln -s /etc/nginx/sites-available/supersam.conf /etc/nginx/sites-enabled/`
 3. `nginx -t && systemctl reload nginx`
 4. `certbot --nginx -d supersam.jemphub.com`
+
+Experimente laufen in `apps/supersam-labor` (veröffentlicht unter https://supersam.jemphub.com/labor/, eigener Spielstand). Diese Demo bleibt beim Stand, bis ein Labor-Stand bewusst übernommen wird.
