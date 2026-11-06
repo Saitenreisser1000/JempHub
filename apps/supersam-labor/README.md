@@ -18,6 +18,25 @@ npm test
 npm run build    # dist/
 ```
 
+## Grafikstile (Stilprobe)
+
+Auf dem Startbildschirm und im Pausenmenü steht **Grafik: Klassisch · Pixel modern ·
+Vektor** (am Rechner auch Taste `G`, als Link `?stil=vektor`). Die Wahl bleibt im
+Browser gespeichert (`supersam-labor-stil`).
+
+- **Klassisch**: die bisherigen 16-px-Sprites.
+- **Vektor**: Sam, Käfer, Wespe, Münzen, Sterne, Kacheln, Federn, Fahnen, Plattformen,
+  Türen und Deko sind aus Formen gezeichnet und in voller Bildschirmauflösung scharf.
+  Für die Wiese gibt es einen neuen Hintergrund.
+- **Pixel modern**: dieselben Modelle auf ein doppelt so feines Pixelraster gelegt
+  (2 Pixel pro Welteinheit), mit farbigen statt schwarzen Umrissen. Der Hintergrund
+  liegt auf demselben Raster.
+
+Nur die Darstellung wechselt; Raster, Trefferzonen, Levels und Editor bleiben gleich.
+Ausgearbeitet ist die Übungswiese. Gegner ohne neues Modell (Igel, Skorpion, Frosch,
+Fisch, Geist, Bosse), der Titelbildschirm und die Hintergründe der anderen Welten
+nutzen noch die klassische Grafik.
+
 ## Leveleditor
 
 **https://supersam.jemphub.com/labor/editor/** – für den Desktop (Maus/Trackpad, Tastenkürzel).

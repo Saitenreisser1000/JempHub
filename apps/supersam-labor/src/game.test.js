@@ -517,3 +517,25 @@ test('Kamera bleibt oben, wenn der Weg über einen Schacht auf gleicher Höhe we
   assert.ok(dz.P.y > 22 * 16, 'Sam ist in die Höhle gefallen');
   assert.ok(dz.P.y + 14 <= dz.cam.camY + dz.cam.viewH && dz.P.y >= dz.cam.camY, 'Kamera folgt in die Höhle');
 });
+
+test('Grafikstile (Stilprobe): Pixel modern und Vektor zeichnen jede Welt ohne Fehler, G wechselt den Stil', () => {
+  for (const skin of ['pixel', 'vektor']) {
+    const { dz, listeners, warnings, run } = boot(script.replace("let SKIN='klassik';", `let SKIN='${skin}';`));
+    assert.equal(dz.skin, skin);
+    dz.setState('play');
+    Object.assign(dz.save.ab, { double: true, wall: true, dash: true, glide: true });
+    for (const id of ['uebung', 'hub', 1, 3, 'b0']) {
+      dz.loadLevel(id);
+      listeners.keydown({ key: 'ArrowRight', preventDefault() {} });
+      for (let k = 0; k < 8; k++) { run(8); listeners.keydown({ key: ' ', preventDefault() {} }); run(3); listeners.keyup({ key: ' ' }); }
+      listeners.keyup({ key: 'ArrowRight' });
+      assert.ok(Number.isFinite(dz.P.x), `${skin}, Welt ${id}`);
+    }
+    assert.deepEqual(warnings, []);
+  }
+  const { dz, listeners } = boot();
+  assert.equal(dz.skin, 'klassik');
+  listeners.keydown({ key: 'g', preventDefault() {} }); assert.equal(dz.skin, 'pixel');
+  listeners.keydown({ key: 'g', preventDefault() {} }); assert.equal(dz.skin, 'vektor');
+  listeners.keydown({ key: 'g', preventDefault() {} }); assert.equal(dz.skin, 'klassik');
+});
