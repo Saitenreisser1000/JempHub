@@ -26,7 +26,8 @@ input[type=number]{width:64px}
 #app{display:grid;grid-template-columns:212px 1fr 260px;grid-template-rows:auto 1fr auto;height:100vh}
 #bar{grid-column:1/4;display:flex;align-items:center;gap:6px;padding:7px 10px;background:var(--panel);border-bottom:1px solid var(--line);flex-wrap:nowrap;overflow-x:auto}
 #bar button{white-space:nowrap}
-#bar h1{font-size:14px;margin:0 8px 0 0;letter-spacing:.02em} #bar h1 b{color:var(--accent)}
+#bar h1{white-space:nowrap;font-size:14px;margin:0 8px 0 0;letter-spacing:.02em} #bar h1 b{color:var(--accent)}
+@media (max-width:1400px){ #bar{gap:4px} #bar h1{display:none} #bar .sep{margin:0} }
 #bar .sep{width:1px;height:22px;background:var(--line);margin:0 2px}
 #bar label.ab{display:flex;align-items:center;gap:3px;color:var(--dim);font-size:12px}
 #dirty{font-size:11px;color:var(--dim);white-space:nowrap}
@@ -40,6 +41,25 @@ input[type=number]{width:64px}
 #pal{background:var(--panel);border-right:1px solid var(--line);overflow:auto;padding:8px}
 #pal h3,#side h3{font-size:11px;text-transform:uppercase;letter-spacing:.08em;color:var(--dim);margin:12px 0 6px}
 #pal h3:first-child,#side h3:first-child{margin-top:2px}
+details.sec{border-bottom:1px solid var(--line);padding:2px 0 8px;margin-bottom:4px}
+details.sec>summary{list-style:none;cursor:pointer;font-size:11px;text-transform:uppercase;letter-spacing:.08em;color:var(--dim);padding:7px 2px 6px;display:flex;align-items:center;gap:6px;user-select:none}
+details.sec>summary::-webkit-details-marker{display:none}
+details.sec>summary::before{content:'▸';display:inline-block;transition:transform .15s;font-size:10px}
+details.sec[open]>summary::before{transform:rotate(90deg)}
+details.sec>summary:hover{color:var(--text)} details.sec>summary .cnt{margin-left:auto;text-transform:none;letter-spacing:0;color:var(--dim);font-size:11px}
+.inshead{display:flex;align-items:center;gap:8px;margin:2px 0 8px;padding-bottom:8px;border-bottom:1px solid var(--line)}
+.inshead canvas{width:24px;height:24px;image-rendering:pixelated;flex:none}
+.inshead h3{margin:0!important;font-size:12px!important;color:var(--text)!important;flex:1}
+.inshead button{padding:2px 8px}
+#side h4{font-size:10.5px;text-transform:uppercase;letter-spacing:.08em;color:var(--dim);margin:14px 0 6px;font-weight:600}
+#side .hint{color:var(--dim);font-size:11.5px;margin-top:14px;line-height:1.45}
+#side .where{color:var(--dim);font-size:12px;margin:0 0 8px}
+#side .btns{display:flex;gap:6px;flex-wrap:wrap;margin-top:10px}
+#noteins textarea{width:100%;height:120px;background:var(--panel2);border:1px solid var(--line);border-radius:6px;padding:6px 8px;color:var(--text);font:inherit;resize:vertical}
+#noteins .a{color:var(--ok);font-size:12px;margin:6px 0}
+#lastcheck a{color:var(--sky)}
+#help .box{width:min(640px,92vw)} #help h3{font-size:11px;text-transform:uppercase;letter-spacing:.08em;color:var(--dim);margin:14px 0 6px}
+#help .lg span{display:inline-block;margin-right:12px}
 .tools{display:grid;grid-template-columns:repeat(3,1fr);gap:4px}
 .tools button{padding:6px 2px;font-size:12px}
 .grid{display:grid;grid-template-columns:repeat(3,1fr);gap:4px}
@@ -57,8 +77,8 @@ input[type=number]{width:64px}
 #check .res b.ok{color:var(--ok)} #check .res b.bad{color:var(--bad)}
 .keys{font-size:11.5px;color:var(--dim);line-height:1.6}
 .keys kbd{display:inline-block;min-width:18px;padding:0 4px;border:1px solid var(--line);border-radius:4px;background:var(--panel2);color:var(--text);font:11px var(--font);text-align:center}
-#status{grid-column:1/4;display:flex;gap:16px;padding:5px 10px;background:var(--panel);border-top:1px solid var(--line);font-size:12px;color:var(--dim)}
-#status b{color:var(--text);font-weight:600}
+#foot{grid-column:1/4;display:flex;gap:16px;padding:5px 10px;background:var(--panel);border-top:1px solid var(--line);font-size:12px;color:var(--dim)}
+#foot b{color:var(--text);font-weight:600}
 #play{position:fixed;inset:0;background:#000;z-index:20;display:flex;flex-direction:column}
 #play[hidden]{display:none}
 #play .top{display:flex;align-items:center;gap:10px;padding:6px 10px;background:var(--panel)}
@@ -96,7 +116,7 @@ button.pub{background:#2a4a6a;border-color:#4f86b8}
     <span id="status" title="Wo diese Welt gerade steht"></span>
     <span id="dirty"></span>
     <span class="sep"></span>
-    <button class="primary" id="playbtn" title="Ab Mauszeiger spielen: P · ab Start: ⇧P">▶ Probespielen</button>
+    <button class="primary" id="playbtn" title="Probespielen ab Mauszeiger: P · ab Start: ⇧P">▶ Spielen</button>
     <button id="checkbtn" title="Erreichbarkeit mit den gewählten Fähigkeiten prüfen">✓ Prüfen</button>
     <span class="sep"></span>
     <label class="ab"><input type="checkbox" data-ab="double">Doppel</label>
@@ -106,9 +126,10 @@ button.pub{background:#2a4a6a;border-color:#4f86b8}
     <span class="sep"></span>
     <button id="undo" title="Rückgängig ⌘Z">↶</button><button id="redo" title="Wiederholen ⇧⌘Z">↷</button>
     <button id="arcs" title="Sprungbögen am Mauszeiger: J">⌒</button>
-    <button id="zoomout" title="⌘−">−</button><button id="zoomin" title="⌘+">+</button>
+    
     <span class="sep"></span>
     <button class="pub" id="handover" title="Level-Entwurf und Notizen an Claude schicken – online geht dadurch noch nichts">⇪ An Claude übergeben</button>
+    <button id="helpbtn" title="Hilfe: Tastenkürzel und Ablauf (?)">ⓘ</button>
     <span class="more"><button id="morebtn" title="Weitere Aktionen">⋯</button>
       <div class="menu" id="moremenu" hidden>
         <button id="publish">↗ Direkt ins Labor stellen<small>Ohne Claude, sofort spielbar – für schnelle Proben</small></button>
@@ -119,7 +140,7 @@ button.pub{background:#2a4a6a;border-color:#4f86b8}
   </header>
 
   <aside id="pal">
-    <h3>Werkzeug</h3>
+    <details class="sec" data-sec="tools" open><summary>Werkzeug</summary>
     <div class="tools">
       <button data-tool="pen" title="Stift: B">✎ Stift</button>
       <button data-tool="rect" title="Rechteck: R">▭ Rechteck</button>
@@ -128,45 +149,38 @@ button.pub{background:#2a4a6a;border-color:#4f86b8}
       <button data-tool="hand" title="Verschieben: H oder Leertaste halten">✋ Hand</button>
       <button data-tool="pick" title="Pipette: I">⌖ Pipette</button>
       <button data-tool="note" title="Notiz für Claude: N – Bereich aufziehen oder klicken, Text schreiben">💬 Notiz</button>
-    </div>
-    <h3>Kacheln</h3><div class="grid" id="ptiles"></div>
-    <h3>Ebenen</h3><div class="grid" id="players"></div>
-    <h3>Objekte</h3><div class="grid" id="pobjs"></div>
-    <h3>Gegner</h3><div class="grid" id="penem"></div>
+    </div></details>
+    <details class="sec" data-sec="tiles" open><summary>Kacheln</summary><div class="grid" id="ptiles"></div></details>
+    <details class="sec" data-sec="layers"><summary>Ebenen</summary><div class="grid" id="players"></div></details>
+    <details class="sec" data-sec="objs"><summary>Objekte</summary><div class="grid" id="pobjs"></div></details>
+    <details class="sec" data-sec="enem"><summary>Gegner</summary><div class="grid" id="penem"></div></details>
+    <details class="sec" data-sec="notes" open><summary>Notizen für Claude <span class="cnt" id="notecnt"></span></summary><div id="notes"></div></details>
   </aside>
 
   <main id="view"><canvas id="cv"></canvas></main>
 
   <aside id="side">
-    <h3>Level</h3>
-    <div class="row"><span>Name</span><input type="text" id="pname" style="width:140px"></div>
-    <div class="row"><span>Größe</span><b id="psize"></b></div>
-    <div class="row"><span>Punkteziel</span><input type="number" id="pneed" step="50" min="0"></div>
-    <div class="row"><span>Zeit (s)</span><input type="number" id="ptime" step="10" min="0"></div>
-    <div class="row"><span>Bodenreihe</span><input type="number" id="ptop" min="1"></div>
-    <h3>Spalten &amp; Zeilen</h3>
-    <div class="row"><span>Anzahl</span><input type="number" id="ncols" value="5" min="1" max="200"></div>
-    <div class="row"><button id="inscol" title="An der Mausspalte einfügen">Spalten einfügen</button><button id="delcol">löschen</button></div>
-    <div class="row"><button id="insrow" title="Oben einfügen (mehr Himmel)">Zeilen oben +</button><button id="delrow">oben −</button></div>
-    <div class="row"><button id="addend" title="Am Ende anhängen">Breite am Ende +</button></div>
-    <h3>Auswahl / Objekt</h3>
-    <div id="objprops"><div class="empty">Mit ⬚ Auswahl auf ein Objekt klicken, um es zu bearbeiten.</div></div>
-    <h3>Notizen für Claude</h3>
-    <div id="notes"></div>
-    <h3>Prüfung</h3>
-    <div id="check"><div class="empty">„✓ Prüfen“ testet mit den gewählten Fähigkeiten, ob Ziel, Diamanten und Sterne erreichbar sind.</div></div>
-    <h3>Tastenkürzel</h3>
-    <div class="keys">
-      <kbd>B</kbd> Stift · <kbd>R</kbd> Rechteck · <kbd>E</kbd> Radierer · <kbd>V</kbd> Auswahl · <kbd>I</kbd> Pipette · <kbd>N</kbd> Notiz<br>
-      <kbd>Leertaste</kbd> halten + ziehen: verschieben · Zwei-Finger-Wischen: scrollen · Pinch / <kbd>⌘</kbd><kbd>+</kbd><kbd>−</kbd>: Zoom<br>
-      Rechtsklick: löschen · <kbd>⌘Z</kbd> / <kbd>⇧⌘Z</kbd> rückgängig/wiederholen<br>
-      <kbd>⌘C</kbd> <kbd>⌘X</kbd> <kbd>⌘V</kbd> kopieren · ausschneiden · einfügen · <kbd>⌫</kbd> Auswahl leeren · Pfeile: Auswahl schieben<br>
-      <kbd>P</kbd> ab Mauszeiger spielen · <kbd>⇧P</kbd> ab Start · <kbd>Esc</kbd> zurück<br>
-      <kbd>J</kbd> Sprungbögen · <kbd>G</kbd> Gitter · <kbd>⌘S</kbd> Export
+    <div class="inshead"><canvas id="insicon" width="16" height="16"></canvas><h3 id="institle">Level</h3><button id="insclose" title="Zurück zum Level (Esc)" hidden>×</button></div>
+    <div id="insLevel">
+      <div class="row"><span>Name</span><input type="text" id="pname" style="width:140px"></div>
+      <div class="row"><span>Größe</span><b id="psize"></b></div>
+      <div class="row"><span>Punkteziel</span><input type="number" id="pneed" step="50" min="0"></div>
+      <div class="row"><span>Zeit (s)</span><input type="number" id="ptime" step="10" min="0"></div>
+      <div class="row"><span>Bodenreihe</span><input type="number" id="ptop" min="1"></div>
+      <h4>Spalten &amp; Zeilen</h4>
+      <div class="row"><span>Anzahl</span><input type="number" id="ncols" value="5" min="1" max="200"></div>
+      <div class="row"><button id="inscol" title="An der Mausspalte einfügen">Spalten einfügen</button><button id="delcol">löschen</button></div>
+      <div class="row"><button id="insrow" title="Oben einfügen (mehr Himmel)">Zeilen oben +</button><button id="delrow">oben −</button></div>
+      <div class="row"><button id="addend" title="Am Ende anhängen">Breite am Ende +</button></div>
+      <div id="lastcheck"></div>
+      <div class="hint">Mit ⬚ Auswahl ein Objekt anklicken oder einen Bereich aufziehen, mit 💬 eine Notiz anklicken – hier erscheinen dann seine Eigenschaften.</div>
     </div>
+    <div id="objprops" hidden></div>
+    <div id="noteins" hidden></div>
+    <div id="check" hidden></div>
   </aside>
 
-  <footer id="status"><span>Spalte <b id="sc">–</b> · Reihe <b id="sr">–</b></span><span>Kachel <b id="st">–</b></span><span>Werkzeug <b id="stool">Stift</b> · <b id="sbrush">Boden</b></span><span id="shint"></span></footer>
+  <footer id="foot"><span>Spalte <b id="sc">–</b> · Reihe <b id="sr">–</b></span><span>Kachel <b id="st">–</b></span><span>Werkzeug <b id="stool">Stift</b> · <b id="sbrush">Boden</b></span><span id="shint"></span></footer>
 </div>
 
 <div id="play" hidden>
@@ -175,6 +189,26 @@ button.pub{background:#2a4a6a;border-color:#4f86b8}
 </div>
 <div id="toast"></div>
 <div id="banner" hidden></div>
+<div id="help" class="modal" hidden><div class="box">
+  <h2>ⓘ Hilfe</h2>
+  <h3>Ablauf mit Claude</h3>
+  <p>Ändern und 💬 Notizen setzen → <b>⇪ An Claude übergeben</b> → im Chat „Übergeben: …“ schreiben. Claude baut es ein; danach lädt der Editor die neue Fassung selbst.</p>
+  <p class="lg"><span>🟡 Entwurf, nur hier</span><span>🔵 bei Claude</span><span>🟢 im Labor, aktuell</span></p>
+  <h3>Inspektor (rechts)</h3>
+  <p>Zeigt, was du gerade ausgewählt hast: ohne Auswahl das Level, sonst Objekt, Bereich, Notiz oder das Ergebnis von ✓ Prüfen. <kbd>Esc</kbd> oder × führt zurück zum Level.</p>
+  <h3>Prüfen</h3>
+  <p>„✓ Prüfen“ testet mit den angehakten Fähigkeiten und der echten Spielphysik, ob Ziel, Diamanten und Sterne erreichbar sind. Unerreichbares wird rot umkreist.</p>
+  <h3>Tastenkürzel</h3>
+  <div class="keys">
+      <kbd>B</kbd> Stift · <kbd>R</kbd> Rechteck · <kbd>E</kbd> Radierer · <kbd>V</kbd> Auswahl · <kbd>I</kbd> Pipette · <kbd>N</kbd> Notiz<br>
+      <kbd>Leertaste</kbd> halten + ziehen: verschieben · Zwei-Finger-Wischen: scrollen · Pinch / <kbd>⌘</kbd><kbd>+</kbd><kbd>−</kbd>: Zoom<br>
+      Rechtsklick: löschen · <kbd>⌘Z</kbd> / <kbd>⇧⌘Z</kbd> rückgängig/wiederholen<br>
+      <kbd>⌘C</kbd> <kbd>⌘X</kbd> <kbd>⌘V</kbd> kopieren · ausschneiden · einfügen · <kbd>⌫</kbd> Auswahl leeren · Pfeile: Auswahl schieben<br>
+      <kbd>P</kbd> ab Mauszeiger spielen · <kbd>⇧P</kbd> ab Start · <kbd>Esc</kbd> zurück<br>
+      <kbd>J</kbd> Sprungbögen · <kbd>G</kbd> Gitter · <kbd>⌘S</kbd> Export · <kbd>?</kbd> diese Hilfe
+    </div>
+  <div class="acts"><button class="primary" id="helpclose">Schließen</button></div>
+</div></div>
 <div id="notedlg" class="modal" hidden><div class="box" id="notebox"></div></div>
 <div id="pub" class="modal" hidden><div class="box" id="pubbox"></div></div>
 <iframe id="engine" src="../index.html?engine=1" style="display:none" title="Spiel-Engine"></iframe>
@@ -217,10 +251,10 @@ function pushHist(){ hist.push(snapM()); if(hist.length>150) hist.shift(); fut=[
 function undo(){ if(!hist.length) return; fut.push(snapM()); M=fromSnap(hist.pop()); sel=null; selObj=null; changed(true); toast('Rückgängig'); }
 function redo(){ if(!fut.length) return; hist.push(snapM()); M=fromSnap(fut.pop()); changed(true); toast('Wiederholt'); }
 let saveT=0;
-function changed(props){ check=null; renderCheck(); draw(); if(props) syncProps(); $('dirty').textContent='● ungespeichert'; clearTimeout(saveT); saveT=setTimeout(saveDraft,350); }
+function changed(props){ check=null; renderCheck(); draw(); if(props) syncProps(); $('dirty').textContent='●'; $('dirty').title='wird gespeichert …'; clearTimeout(saveT); saveT=setTimeout(saveDraft,350); }
 function saveDraft(){ try{ const D=toData(M), id=curId;
     if(sigOf(D)===liveSig(id)){ clearDraft(id); $('dirty').textContent=''; }        // wieder gleich wie im Labor: kein Entwurf
-    else { if(!hasDraft(id)) setMeta(id,{base:liveSig(id)}); localStorage.setItem(DRAFT+id,JSON.stringify(D)); $('dirty').textContent='✓ gespeichert'; }
+    else { if(!hasDraft(id)) setMeta(id,{base:liveSig(id)}); localStorage.setItem(DRAFT+id,JSON.stringify(D)); $('dirty').textContent='✓'; $('dirty').title='Entwurf im Browser gespeichert'; }
     refreshStatus(); }catch(e){ $('dirty').textContent='⚠ Speichern fehlgeschlagen'; } }
 // ---- Wo steht eine Welt? Entwurf (nur hier) · bei Claude (übergeben) · im Labor (aktuell)
 const META='supersam-labor-meta-';
@@ -424,14 +458,55 @@ function syncProps(){ if(!M) return; $('pname').value=M.name||''; $('psize').tex
 function propRow(host,label,val,on,attrs={}){ const r=document.createElement('div'); r.className='row'; const s=document.createElement('span'); s.textContent=label; const i=document.createElement(attrs.options?'select':'input');
   if(attrs.options) for(const [v,l] of attrs.options){ const o=document.createElement('option'); o.value=v; o.textContent=l; if(String(v)===String(val)) o.selected=true; i.append(o); } else { i.type='number'; i.value=val; if(attrs.step) i.step=attrs.step; }
   i.addEventListener('change',()=>{ pushHist(); on(attrs.options?i.value:+i.value); changed(); draw(); }); r.append(s,i); host.append(r); }
-function renderObjProps(){ const host=$('objprops'); host.innerHTML='';
-  if(sel&&selObj==null){ const s=normSel(sel); host.innerHTML=`<div class="empty">Auswahl ${s.c1-s.c0+1} × ${s.r1-s.r0+1} ab Spalte ${s.c0}, Reihe ${s.r0}. Ziehen zum Verschieben, ⌘C kopieren, ⌫ leeren.</div>`; return; }
-  const o=selObj!=null?M.objs[selObj]:null; if(!o){ host.innerHTML='<div class="empty">Mit ⬚ Auswahl auf ein Objekt klicken, um es zu bearbeiten.</div>'; return; }
-  const t=document.createElement('div'); t.className='row'; t.innerHTML=`<b>${o.k==='enemy'?ENEMIES.find(e=>e[0]===o.t)[1]:OBJS.find(e=>e[0]===o.k)[1]}</b><span style="min-width:0">Spalte ${o.c}, Reihe ${o.r}</span>`; host.append(t);
+// ---------- Inspektor: zeigt das gewählte Element (Notiz, Objekt, Bereich, Prüfung) – sonst das Level
+let selNote=null, insCheck=false;
+function insContext(){ if(selNote&&NS.notes.includes(selNote)) return 'note'; selNote=null; if(selObj!=null&&M.objs[selObj]) return 'obj'; if(sel) return 'sel'; if(insCheck) return 'check'; return 'level'; }
+function insIcon(fn){ const c=$('insicon'), x=c.getContext('2d'); x.clearRect(0,0,16,16); x.imageSmoothingEnabled=false; c.style.display=fn?'':'none'; if(fn) fn(x); }
+function updateIns(){ if(!M) return; const ctx=insContext();
+  $('insLevel').hidden=ctx!=='level'; $('objprops').hidden=ctx!=='obj'&&ctx!=='sel'; $('noteins').hidden=ctx!=='note'; $('check').hidden=ctx!=='check'; $('insclose').hidden=ctx==='level';
+  if(ctx==='level'){ $('institle').textContent='Level · '+levelLabel(curId); insIcon(null); renderLastCheck(); }
+  if(ctx==='note') renderNoteIns();
+  if(ctx==='check'){ $('institle').textContent='Prüfung'; insIcon(x=>{ x.fillStyle='#9be06a'; x.font='bold 14px sans-serif'; x.fillText('✓',2,13); }); }
+}
+function clearIns(){ sel=null; selObj=null; selNote=null; insCheck=false; if(clip) clip.pasting=false; renderObjProps(); draw(); }
+$('insclose').onclick=clearIns;
+function renderLastCheck(){ const h=$('lastcheck'); if(!check){ h.innerHTML=''; return; }
+  h.innerHTML=`<h4>Letzte Prüfung</h4><div class="row" style="font-size:12px">Ziel ${check.goal?'<b class="ok" style="color:var(--ok)">✓</b>':'<b style="color:var(--bad)">✗</b>'} · ◆ ${check.cr[0]}/${check.cr[1]} · ★ ${check.st[0]}/${check.st[1]} <a href="#" id="showcheck">anzeigen</a></div>`;
+  $('showcheck').onclick=e=>{ e.preventDefault(); sel=null; selObj=null; selNote=null; insCheck=true; renderObjProps(); }; }
+function renderNoteIns(){ const n=selNote, done=n.status==='erledigt', host=$('noteins');
+  $('institle').textContent='Notiz '+noteNo(n); insIcon(x=>{ x.fillStyle=done?'#9be06a':'#ffd166'; x.beginPath(); x.arc(8,8,7,0,7); x.fill(); x.fillStyle='#1a1a1a'; x.font='bold 9px sans-serif'; x.textAlign='center'; x.fillText(done?'✓':String(noteNo(n)),8,11); });
+  host.innerHTML=`<div class="where">${noteWhere(n)} · ${done?'<span style="color:var(--ok)">erledigt</span>':'offen'}${n.dirty?' · <span style="color:var(--accent)">nicht übergeben</span>':''}</div>
+    ${n.antwort?`<div class="a">↳ ${esc(n.antwort)}</div>`:''}
+    <textarea id="nitext" placeholder="Was soll Claude hier ändern?">${esc(n.text)}</textarea>
+    <div class="btns"><button id="nidel">Löschen</button>${done?'<button id="nireopen">Wieder öffnen</button>':''}</div>`;
+  let t=0; $('nitext').oninput=e=>{ clearTimeout(t); t=setTimeout(()=>{ const v=e.target.value.trim(); if(!v||v===n.text) return; n.text=v; n.dirty=true; if(n.status==='erledigt'){ n.status='offen'; n.reopen=true; } saveNS(); renderNotes(); draw(); },300); };
+  $('nitext').onblur=e=>{ if(!e.target.value.trim()) e.target.value=n.text; };
+  $('nidel').onclick=()=>{ NS.notes.splice(NS.notes.indexOf(n),1); if(!n.local) NS.gone.push(n.id); selNote=null; saveNS(); renderNotes(); renderObjProps(); draw(); };
+  if($('nireopen')) $('nireopen').onclick=()=>{ n.status='offen'; n.reopen=true; n.dirty=true; saveNS(); renderNotes(); renderNoteIns(); draw(); };
+}
+function selectNote(n){ sel=null; selObj=null; insCheck=false; selNote=n; renderObjProps(); draw(); }
+function renderObjProps(){ const host=$('objprops'); host.innerHTML=''; updateIns();
+  if(sel&&selObj==null){ const s=normSel(sel), w=s.c1-s.c0+1, h=s.r1-s.r0+1, n=M.objs.filter(o=>o.c>=s.c0&&o.c<=s.c1&&o.r>=s.r0&&o.r<=s.r1).length;
+    $('institle').textContent='Bereich'; insIcon(x=>{ x.strokeStyle='#8cc4ff'; x.setLineDash([3,2]); x.strokeRect(1.5,2.5,13,11); });
+    host.innerHTML=`<div class="where">${w} × ${h} Kacheln · Spalte ${s.c0}–${s.c1}, Reihe ${s.r0}–${s.r1}${n?` · ${n} ${n===1?'Objekt':'Objekte'}`:''}</div>
+      <div class="hint" style="margin-top:4px">Ziehen oder Pfeiltasten verschieben den Inhalt.</div>
+      <div class="btns"><button id="scopy" title="⌘C">Kopieren</button><button id="scut" title="⌘X">Ausschneiden</button><button id="sclear" title="⌫">Leeren</button><button id="sfill" title="Mit dem gewählten Pinsel füllen">Mit ${esc(brush.label||'Pinsel')} füllen</button></div>
+      <h4>Spalten</h4><div class="btns"><button id="sinsc" title="Fügt ${w} leere Spalten vor der Auswahl ein">${w} Spalten davor einfügen</button><button id="sdelc" title="Löscht die Spalten ${s.c0}–${s.c1} über die ganze Höhe">Spalten ${s.c0}–${s.c1} löschen</button></div>`;
+    $('scopy').onclick=()=>{ clip=copySel(); toast('Kopiert – ⌘V zum Einfügen'); };
+    $('scut').onclick=()=>{ clip=copySel(); pushHist(); clearSel(); changed(); toast('Ausgeschnitten'); };
+    $('sclear').onclick=()=>{ pushHist(); clearSel(); changed(); };
+    $('sfill').onclick=()=>{ pushHist(); fillRect(s,brush,false); changed(); };
+    $('sinsc').onclick=()=>{ sel=null; insertCols(s.c0,w); };
+    $('sdelc').onclick=()=>{ sel=null; deleteCols(s.c0,w); };
+    return; }
+  const o=selObj!=null?M.objs[selObj]:null; if(!o) return;
+  const nm=o.k==='enemy'?ENEMIES.find(e=>e[0]===o.t)[1]:OBJS.find(e=>e[0]===o.k)[1];
+  $('institle').textContent=nm; insIcon(x=>{ if(o.k==='enemy'){ const T=E.ETYPE[o.t], sc=Math.min(1,16/Math.max(T.w,T.h)); x.save(); x.translate(8,8); x.scale(sc,sc); x.translate(-8,-8); drawObjIcon(x,{...o,c:0,r:0,icon:true},0,0,16); x.restore(); } else drawObjIcon(x,{...o,c:0,r:0,w:1},0,0,16); });
+  const t=document.createElement('div'); t.className='where'; t.textContent=`Spalte ${o.c} · Reihe ${o.r}`; host.append(t);
   if(o.k==='enemy'){ propRow(host,'Art',o.t,v=>o.t=v,{options:ENEMIES}); propRow(host,'Reichweite',o.range??3,v=>{ o.range=v===3?undefined:v; if(o.range==null) delete o.range; }); }
   if(o.k==='mover'){ propRow(host,'Breite',o.w,v=>o.w=Math.max(1,v)); propRow(host,'Weg waagrecht',o.dc,v=>o.dc=v); propRow(host,'Weg senkrecht',o.dr,v=>o.dr=v); propRow(host,'Dauer (s)',o.p,v=>o.p=Math.max(.5,v),{step:.1}); }
   if(o.k==='door'){ propRow(host,'Ziel',o.world,v=>o.world=isNaN(+v)?v:+v,{options:[[0,'Hubwelt']]}); propRow(host,'Sterne nötig',o.stars||0,v=>{ if(v>0) o.stars=Math.round(v); else delete o.stars; }); }
-  const del=document.createElement('button'); del.textContent='Objekt löschen'; del.onclick=()=>{ pushHist(); M.objs.splice(selObj,1); selObj=null; changed(true); }; host.append(del);
+  const b=document.createElement('div'); b.className='btns'; const del=document.createElement('button'); del.textContent='Objekt löschen'; del.title='⌫'; del.onclick=()=>{ pushHist(); M.objs.splice(selObj,1); selObj=null; changed(true); }; b.append(del); host.append(b);
 }
 
 // ---------- Maus ----------
@@ -441,7 +516,7 @@ view$.addEventListener('pointerdown',e=>{
   if(!M) return; view$.setPointerCapture(e.pointerId); const p=cellAt(e); const erase=e.button===2||tool==='erase'||(e.ctrlKey&&e.button===0);
   if(tool==='hand'||spaceDown||e.button===1){ drag={kind:'pan',x:e.clientX,y:e.clientY,vx:view.x,vy:view.y}; view$.style.cursor='grabbing'; return; }
   if(tool==='pick'){ if(inside(p.c,p.r)) pick(p.c,p.r); return; }
-  if(tool==='note'&&e.button===0){ const n=noteAt(p.c,p.r); if(n){ openNote(n); return; } drag={kind:'note',c0:p.c,r0:p.r,c1:p.c,r1:p.r}; draw(); return; }
+  if(tool==='note'&&e.button===0){ const n=noteAt(p.c,p.r); if(n){ selectNote(n); return; } drag={kind:'note',c0:p.c,r0:p.r,c1:p.c,r1:p.r}; draw(); return; }
   if(tool==='note') return;
   if(tool==='select'&&!erase){
     if(clip?.pasting){ pushHist(); pasteClip(p.c,p.r); clip.pasting=false; sel={c0:p.c,r0:p.r,c1:p.c+clip.w-1,r1:p.r+clip.h-1}; changed(true); return; }
@@ -486,6 +561,7 @@ function updateStatus(){ const hn=hover&&M?noteAt(hover.c,hover.r):null; $('shin
 addEventListener('keydown',e=>{
   if(!$('play').hidden){ if(e.key==='Escape') closePlay(); return; }
   if(!$('pub').hidden){ if(e.key==='Escape') closePub(); return; }
+  if(!$('help').hidden){ if(e.key==='Escape'||e.key==='?') $('help').hidden=true; return; }
   if(!$('notedlg').hidden){ if(e.key==='Escape') closeNote(); if(e.key==='Enter'&&(e.metaKey||e.ctrlKey)) $('nsave')?.click(); return; }
   if(e.target.matches('input,select,textarea')) return;
   const cmd=e.metaKey||e.ctrlKey, k=e.key.toLowerCase();
@@ -498,7 +574,8 @@ addEventListener('keydown',e=>{
   if(cmd&&k==='x'&&sel){ e.preventDefault(); clip=copySel(); pushHist(); clearSel(); changed(); toast('Ausgeschnitten'); return; }
   if(cmd&&k==='v'&&clip){ e.preventDefault(); setTool('select'); clip.pasting=true; sel=null; toast('Klicken zum Einfügen'); draw(); return; }
   if(cmd) return;
-  if(e.key==='Escape'){ sel=null; selObj=null; if(clip) clip.pasting=false; renderObjProps(); draw(); return; }
+  if(e.key==='Escape'){ clearIns(); return; }
+  if(e.key==='?'){ $('help').hidden=false; return; }
   if((e.key==='Backspace'||e.key==='Delete')){ e.preventDefault(); if(selObj!=null){ pushHist(); M.objs.splice(selObj,1); selObj=null; changed(true); } else if(sel){ pushHist(); clearSel(); changed(); } return; }
   if(sel&&e.key.startsWith('Arrow')){ e.preventDefault(); const dc=e.key==='ArrowLeft'?-1:e.key==='ArrowRight'?1:0, dr=e.key==='ArrowUp'?-1:e.key==='ArrowDown'?1:0;
     pushHist(); const cl=copySel(); clearSel(); const s=normSel(sel); pasteClip(s.c0+dc,s.r0+dr,cl); sel={c0:s.c0+dc,r0:s.r0+dr,c1:s.c1+dc,r1:s.r1+dr}; changed(); return; }
@@ -540,7 +617,7 @@ for(const b of ['publish','export','import']) $(b).addEventListener('click',()=>
 
 // ---------- Prüfen: Erreichbarkeit mit echter Spielphysik ----------
 async function runCheck(){
-  if(!M||runCheck.busy) return; runCheck.busy=true; const btn=$('checkbtn'); btn.disabled=true;
+  if(!M||runCheck.busy) return; runCheck.busy=true; const btn=$('checkbtn'); btn.disabled=true; sel=null; selObj=null; selNote=null; insCheck=true; renderObjProps();
   const host=$('check'); host.innerHTML='<div class="res">Prüfe …</div><div id="progress"><i></i></div>';
   const D=toData(M), ab=abil(); D.id=curId;
   let Lv=E.load(D,ab); Lv.enemies.length=0; const P=E.P, TSx=E.TS, MAXV=E.PH.max;
@@ -587,7 +664,7 @@ async function runCheck(){
   check={nodes:[...nodes.values()],miss,goal,cr:[Lv.crystals.filter(k=>k.got).length,Lv.crystals.length],st:[Lv.stars.filter(k=>k.got).length,Lv.stars.length],co:[Lv.coins.filter(k=>k.got).length,Lv.coins.length],ab,secs:(performance.now()-t0)/1000};
   runCheck.busy=false; btn.disabled=false; renderCheck(); draw();
 }
-function renderCheck(){ const host=$('check'); if(runCheck.busy) return;
+function renderCheck(){ const host=$('check'); if(runCheck.busy) return; if(M) renderLastCheck();
   if(!check){ host.innerHTML='<div class="empty">„✓ Prüfen“ testet mit den gewählten Fähigkeiten, ob Ziel, Diamanten und Sterne erreichbar sind.</div>'; return; }
   const c=check, cls=b=>b?'ok':'bad';
   host.innerHTML=`<div class="res">Fähigkeiten: ${c.ab.join(', ')||'keine'}</div>
@@ -747,10 +824,11 @@ function drawNotes(z){ ctx.font=`bold ${Math.max(10,Math.min(14,z*.45))}px ${get
 function renderNotes(){ const host=$('notes'); if(!host) return;
   const open=NS.notes.filter(n=>n.status!=='erledigt').length, unsent=NS.notes.some(n=>n.dirty)||NS.gone.length>0;
   host.innerHTML=(NS.notes.length?'':'<div class="empty">Mit 💬 Notiz (N) einen Bereich im Level aufziehen und hineinschreiben, was ich ändern soll.</div>')
-   +NS.notes.map((n,i)=>`<div class="note${n.status==='erledigt'?' done':''}" data-i="${i}"><span class="n">${n.status==='erledigt'?'✓':i+1}</span><span class="t">${esc(n.text)}${n.antwort?`<span class="a">↳ ${esc(n.antwort)}</span>`:''}${n.dirty?'<span class="u"> · nicht gesendet</span>':''}</span></div>`).join('')
+   +NS.notes.map((n,i)=>`<div class="note${n.status==='erledigt'?' done':''}" data-i="${i}"><span class="n">${n.status==='erledigt'?'✓':i+1}</span><span class="t">${esc(n.text)}${n.antwort?`<span class="a">↳ ${esc(n.antwort)}</span>`:''}${n.dirty?'<span class="u"> · nicht übergeben</span>':''}</span></div>`).join('')
    +(NS.notes.length||NS.gone.length?`<div class="empty" style="margin-top:4px">${open} offen${unsent?' · noch nicht übergeben – oben „⇪ An Claude übergeben“':NS.notes.length?' · übergeben':''}</div>
      <div class="acts"><button id="ncopy" title="Als Text kopieren, zum Einfügen in den Chat">📋 Als Text kopieren</button></div>`:'');
-  host.querySelectorAll('.note').forEach(el=>el.onclick=()=>{ const n=NS.notes[+el.dataset.i]; view.x=((n.c0+n.c1)/2+.5)*view.z-cv.clientWidth/2; view.y=((n.r0+n.r1)/2+.5)*view.z-cv.clientHeight/2; draw(); openNote(n); });
+  host.querySelectorAll('.note').forEach(el=>el.onclick=()=>{ const n=NS.notes[+el.dataset.i]; view.x=((n.c0+n.c1)/2+.5)*view.z-cv.clientWidth/2; view.y=((n.r0+n.r1)/2+.5)*view.z-cv.clientHeight/2; selectNote(n); });
+  $('notecnt').textContent=NS.notes.length?`${open} offen`:'';
   if($('ncopy')) $('ncopy').onclick=copyNotes; if(M) refreshStatus(); }
 function closeNote(){ $('notedlg').hidden=true; draw(); }
 $('notedlg').onclick=e=>{ if(e.target===$('notedlg')) closeNote(); };
@@ -852,8 +930,13 @@ $('insrow').onclick=()=>insertRowsTop(nCols()); $('delrow').onclick=()=>deleteRo
 $('addend').onclick=()=>insertCols(M.w,nCols());
 $('undo').onclick=undo; $('redo').onclick=redo;
 $('arcs').onclick=()=>{ showArcs=!showArcs; $('arcs').classList.toggle('on',showArcs); draw(); };
-$('zoomin').onclick=()=>zoomAt(1.25); $('zoomout').onclick=()=>zoomAt(.8);
+
 document.querySelectorAll('[data-tool]').forEach(b=>b.onclick=()=>setTool(b.dataset.tool));
+// Aufklappbare Abschnitte links: Zustand merken
+document.querySelectorAll('details.sec').forEach(d=>{ const k=d.dataset.sec; if(prefs.open&&k in prefs.open) d.open=prefs.open[k];
+  d.addEventListener('toggle',()=>{ prefs.open={...prefs.open,[k]:d.open}; savePrefs(); }); });
+$('helpbtn').onclick=()=>{ $('help').hidden=false; }; $('helpclose').onclick=()=>{ $('help').hidden=true; };
+$('help').onclick=e=>{ if(e.target===$('help')) $('help').hidden=true; };
 document.querySelectorAll('[data-ab]').forEach(x=>{ x.checked=!!prefs.ab?.[x.dataset.ab]; x.onchange=()=>{ prefs.ab={...prefs.ab,[x.dataset.ab]:x.checked}; savePrefs(); draw(); }; });
 $('lv').onchange=()=>openLevel(JSON.parse($('lv').value));
 addEventListener('resize',resizeCanvas);
