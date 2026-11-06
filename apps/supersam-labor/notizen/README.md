@@ -1,9 +1,11 @@
-# Notizen aus dem Leveleditor
+# Übergaben aus dem Leveleditor
 
-Hier legt der Editor („💬 Notiz“ → **⇪ An Claude senden**) pro Welt eine Datei
-`supersam-notizen-<welt>.json` ab: Bereiche im Level (Spalten `c0–c1`, Reihen `r0–r1`)
-mit einem Text, was geändert werden soll.
+„⇪ An Claude übergeben“ legt hier pro Welt ab (ein Commit, **nicht live**):
 
-- `status`: `offen` oder `erledigt` – setzt Claude nach der Umsetzung, dazu kurz `antwort`.
-- Der Editor zeigt erledigte Notizen grün mit der Antwort an.
-- Die Notizen haben keinen Einfluss auf das Spiel.
+- `supersam-notizen-<welt>.json` – Übergabe: Zeitpunkt, optionale `nachricht`, Verweis auf den Entwurf und die
+  Notizen (Bereich in Spalten `c0–c1`, Reihen `r0–r1`, Text). `status` (`offen`/`erledigt`) und `antwort` setzt Claude.
+- `supersam-entwurf-<welt>.json` – der Level-Stand aus dem Editor (gleiches Format wie `levels/`).
+
+Claude baut den Entwurf (plus Notizen) in `levels/supersam-level-<welt>.json` ein, **löscht danach den Entwurf**
+und markiert die Notizen. Der Editor erkennt die neue Labor-Fassung und lädt sie beim Öffnen.
+Diese Dateien haben keinen Einfluss auf das Spiel.

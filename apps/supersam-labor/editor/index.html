@@ -29,7 +29,14 @@ input[type=number]{width:64px}
 #bar h1{font-size:14px;margin:0 8px 0 0;letter-spacing:.02em} #bar h1 b{color:var(--accent)}
 #bar .sep{width:1px;height:22px;background:var(--line);margin:0 2px}
 #bar label.ab{display:flex;align-items:center;gap:3px;color:var(--dim);font-size:12px}
-#dirty{font-size:12px;color:var(--dim);min-width:118px;white-space:nowrap}
+#dirty{font-size:11px;color:var(--dim);white-space:nowrap}
+#status{font-size:12px;white-space:nowrap;padding:3px 9px;border-radius:12px;border:1px solid var(--line);background:var(--panel2);cursor:default}
+#status.draft{border-color:#c9a227;color:#ffd166} #status.claude{border-color:#4f86b8;color:#8cc4ff} #status.live{border-color:#4f8a40;color:var(--ok)}
+.more{position:relative} .more>.menu{position:fixed;background:var(--panel);border:1px solid var(--line);border-radius:8px;padding:4px;z-index:22;min-width:230px;box-shadow:0 8px 24px rgba(0,0,0,.45)}
+.more>.menu[hidden]{display:none} .more>.menu button{display:block;width:100%;text-align:left;border:0;background:none;padding:6px 8px;border-radius:5px}
+.more>.menu button:hover:not(:disabled){background:var(--panel2)} .more>.menu small{display:block;color:var(--dim);font-size:10.5px;white-space:normal}
+#banner{position:fixed;left:50%;transform:translateX(-50%);top:56px;z-index:21;background:#3a3216;border:1px solid #c9a227;border-radius:8px;padding:8px 12px;display:flex;gap:10px;align-items:center;max-width:min(860px,90vw);box-shadow:0 6px 20px rgba(0,0,0,.4);font-size:12.5px}
+#banner[hidden]{display:none} #banner span{flex:1}
 #pal{background:var(--panel);border-right:1px solid var(--line);overflow:auto;padding:8px}
 #pal h3,#side h3{font-size:11px;text-transform:uppercase;letter-spacing:.08em;color:var(--dim);margin:12px 0 6px}
 #pal h3:first-child,#side h3:first-child{margin-top:2px}
@@ -86,6 +93,7 @@ button.pub{background:#2a4a6a;border-color:#4f86b8}
   <header id="bar">
     <h1>Supersam <b>Editor</b></h1>
     <select id="lv" title="Welt wählen"></select>
+    <span id="status" title="Wo diese Welt gerade steht"></span>
     <span id="dirty"></span>
     <span class="sep"></span>
     <button class="primary" id="playbtn" title="Ab Mauszeiger spielen: P · ab Start: ⇧P">▶ Probespielen</button>
@@ -100,10 +108,14 @@ button.pub{background:#2a4a6a;border-color:#4f86b8}
     <button id="arcs" title="Sprungbögen am Mauszeiger: J">⌒</button>
     <button id="zoomout" title="⌘−">−</button><button id="zoomin" title="⌘+">+</button>
     <span class="sep"></span>
-    <button id="export" title="Als Datei sichern ⌘S">Export</button>
-    <button id="import" title="Level-Datei laden">Import</button><input type="file" id="file" accept=".json,application/json" hidden>
-    <button id="reset" title="Entwurf verwerfen, Original laden">Original</button>
-    <button class="pub" id="publish" title="Level direkt ins Labor-Spiel stellen (über GitHub)">⇪ Veröffentlichen</button>
+    <button class="pub" id="handover" title="Level-Entwurf und Notizen an Claude schicken – online geht dadurch noch nichts">⇪ An Claude übergeben</button>
+    <span class="more"><button id="morebtn" title="Weitere Aktionen">⋯</button>
+      <div class="menu" id="moremenu" hidden>
+        <button id="publish">↗ Direkt ins Labor stellen<small>Ohne Claude, sofort spielbar – für schnelle Proben</small></button>
+        <button id="reset">✕ Entwurf verwerfen<small>Lädt den aktuellen Labor-Stand dieser Welt</small></button>
+        <button id="export">⤓ Export<small>Als Datei sichern (⌘S)</small></button>
+        <button id="import">⤒ Import<small>Level-Datei laden</small></button>
+      </div></span><input type="file" id="file" accept=".json,application/json" hidden>
   </header>
 
   <aside id="pal">
@@ -162,6 +174,7 @@ button.pub{background:#2a4a6a;border-color:#4f86b8}
   <iframe id="playframe" title="Probespiel" allow="autoplay; fullscreen"></iframe>
 </div>
 <div id="toast"></div>
+<div id="banner" hidden></div>
 <div id="notedlg" class="modal" hidden><div class="box" id="notebox"></div></div>
 <div id="pub" class="modal" hidden><div class="box" id="pubbox"></div></div>
 <iframe id="engine" src="../index.html?engine=1" style="display:none" title="Spiel-Engine"></iframe>
@@ -205,7 +218,31 @@ function undo(){ if(!hist.length) return; fut.push(snapM()); M=fromSnap(hist.pop
 function redo(){ if(!fut.length) return; hist.push(snapM()); M=fromSnap(fut.pop()); changed(true); toast('Wiederholt'); }
 let saveT=0;
 function changed(props){ check=null; renderCheck(); draw(); if(props) syncProps(); $('dirty').textContent='● ungespeichert'; clearTimeout(saveT); saveT=setTimeout(saveDraft,350); }
-function saveDraft(){ try{ localStorage.setItem(DRAFT+curId,JSON.stringify(toData(M))); $('dirty').textContent='✓ Entwurf gespeichert'; markSelect(); }catch(e){ $('dirty').textContent='⚠ Speichern fehlgeschlagen'; } }
+function saveDraft(){ try{ const D=toData(M), id=curId;
+    if(sigOf(D)===liveSig(id)){ clearDraft(id); $('dirty').textContent=''; }        // wieder gleich wie im Labor: kein Entwurf
+    else { if(!hasDraft(id)) setMeta(id,{base:liveSig(id)}); localStorage.setItem(DRAFT+id,JSON.stringify(D)); $('dirty').textContent='✓ gespeichert'; }
+    refreshStatus(); }catch(e){ $('dirty').textContent='⚠ Speichern fehlgeschlagen'; } }
+// ---- Wo steht eine Welt? Entwurf (nur hier) · bei Claude (übergeben) · im Labor (aktuell)
+const META='supersam-labor-meta-';
+const getMeta=id=>{ try{ return JSON.parse(localStorage.getItem(META+id)||'{}')||{}; }catch(_){ return {}; } };
+const setMeta=(id,m)=>{ try{ localStorage.setItem(META+id,JSON.stringify(m)); }catch(_){} };
+const getDraft=id=>{ try{ return JSON.parse(localStorage.getItem(DRAFT+id)||'null'); }catch(_){ return null; } };
+function clearDraft(id){ try{ localStorage.removeItem(DRAFT+id); localStorage.removeItem(META+id); }catch(_){} }
+const canon=D=>JSON.stringify([D.w,D.h,D.top,D.need||0,D.timeLimit||0,D.style||null,D.scene||null,D.sky||null,!!D.noReturn,D.grid,D.back,D.up,D.objs.map(o=>JSON.stringify(Object.keys(o).sort().map(k=>[k,o[k]]))).sort()]);
+const hash=t=>{ let h=2166136261; for(let i=0;i<t.length;i++){ h^=t.charCodeAt(i); h=Math.imul(h,16777619); } return (h>>>0).toString(36)+t.length.toString(36); };
+const sigOf=D=>hash(canon(D));
+const LIVE_SIG={}; const liveSig=id=>LIVE_SIG[id]??=sigOf(E.levelData(id));      // Labor-Stand, wie er gerade online ist
+function worldStatus(id){
+  const D=getDraft(id), m=getMeta(id), ds=D?sigOf(D):null, ns=id===curId?NS:loadNS(id);
+  const open=ns.notes.filter(n=>n.status!=='erledigt').length, unsent=ns.notes.some(n=>n.dirty)||ns.gone.length>0;
+  const draft=!!D&&ds!==m.handed;
+  if(draft||unsent) return {cls:'draft',icon:'🟡',text:draft?'Entwurf – nicht übergeben':'Notizen – nicht übergeben',tip:'Nur in diesem Browser. Mit „⇪ An Claude übergeben“ schicken.'};
+  if(D||open) return {cls:'claude',icon:'🔵',text:'bei Claude'+(open?` · ${open} ${open===1?'Notiz':'Notizen'} offen`:''),tip:'Übergeben – Claude baut es ein und sagt Bescheid.'};
+  return {cls:'live',icon:'🟢',text:'im Labor, aktuell',tip:'So ist die Welt gerade im Labor spielbar.'};
+}
+function refreshStatus(){ if(!M) return; const st=worldStatus(curId), el=$('status'); el.className=st.cls; el.textContent=st.icon+' '+st.text; el.title=st.tip;
+  $('reset').disabled=!hasDraft(curId); $('handover').disabled=st.cls==='live'&&!getDraft(curId); markSelect(); }
+function showBanner(html,acts){ const b=$('banner'); b.innerHTML=`<span>${html}</span>`; for(const [label,fn,primary] of acts){ const x=document.createElement('button'); x.textContent=label; if(primary) x.className='primary'; x.onclick=()=>{ b.hidden=true; fn(); }; b.append(x); } b.hidden=false; }
 const inside=(c,r)=>M&&c>=0&&r>=0&&c<M.w&&r<M.h;
 const objAt=(c,r)=>M.objs.findIndex(o=>o.k==='mover'?(r===o.r&&c>=o.c&&c<o.c+o.w):(o.c===c&&o.r===r));
 
@@ -218,14 +255,21 @@ const ARCHN={};
 function levelLabel(id){ const n=E.NAMES?.[id]; if(id==='uebung') return 'Übungswiese';
   if(typeof id==='number') return `${E.WNO(id)} ${n||''}`; if(String(id).startsWith('archiv')){ try{ ARCHN[id]??=E.levelData(id).name; }catch(_){ ARCHN[id]=id; } return `Archiv: ${ARCHN[id]}`; } return String(id); }
 function hasDraft(id){ try{ return !!localStorage.getItem(DRAFT+id); }catch(_){ return false; } }
-function markSelect(){ for(const o of $('lv').options){ const id=JSON.parse(o.value); o.textContent=(hasDraft(id)?'● ':'')+levelLabel(id); } }
+function markSelect(){ for(const o of $('lv').options){ const id=JSON.parse(o.value), st=worldStatus(id); o.textContent=levelLabel(id)+(st.cls==='live'?'':'  '+st.icon); } }
 function openLevel(id){
-  curId=id; let D=null; try{ D=JSON.parse(localStorage.getItem(DRAFT+id)||'null'); }catch(_){}
+  curId=id; let D=getDraft(id); const m=getMeta(id), live=liveSig(id); $('banner').hidden=true;
+  if(D){ const ds=sigOf(D);
+    if(ds===live){ clearDraft(id); D=null; }                                                   // Entwurf ist schon im Labor
+    else if(m.base!==live&&m.handed===ds){ clearDraft(id); D=null; setTimeout(()=>toast('Neue Fassung von Claude geladen'),300); }   // übergeben und eingebaut
+    else if(m.base!==live) setTimeout(()=>{ if(curId!==id) return;
+      showBanner(m.base?`Diese Welt wurde im Labor geändert (z. B. von Claude), seit du deinen Entwurf begonnen hast.`:`Dein Entwurf stammt vermutlich von einem älteren Stand dieser Welt.`,
+        [['Labor-Stand laden',()=>{ clearDraft(id); openLevel(id); toast('Labor-Stand geladen'); },true],['Meinen Entwurf behalten',()=>{ setMeta(id,{...getMeta(id),base:live}); refreshStatus(); toast('Entwurf behalten – beim Übergeben baut Claude beides zusammen'); }]]); },50);
+  }
   if(!D) D=E.levelData(id);
   M=fromData(D); hist=[]; fut=[]; sel=null; selObj=null; check=null;
-  prefs.level=id; savePrefs(); $('dirty').textContent=hasDraft(id)?'✓ Entwurf':'Original';
+  prefs.level=id; savePrefs(); $('dirty').textContent='';
   const st=M.objs.find(o=>o.k==='start'); view.x=Math.max(0,((st?st.c:0)-6)*view.z); view.y=Math.max(0,(M.top-12)*view.z);
-  syncProps(); renderCheck(); loadNotes(); draw(); pullNotes(id);
+  syncProps(); renderCheck(); loadNotes(); refreshStatus(); draw(); pullNotes(id);
 }
 
 // ---------- Palette ----------
@@ -487,9 +531,12 @@ $('import').onclick=()=>$('file').click();
 $('file').onchange=async()=>{ const f=$('file').files[0]; $('file').value=''; if(!f) return;
   try{ const D=JSON.parse(await f.text()); if(D.v!==1||!D.grid||!D.objs) throw new Error('kein Supersam-Level');
     const id=E.EDITABLE.find(x=>String(x)===String(D.id)); if(id===undefined) throw new Error('unbekannte Welt '+D.id);
-    localStorage.setItem(DRAFT+id,JSON.stringify(D)); $('lv').value=JSON.stringify(id); openLevel(id); markSelect(); toast('Importiert: '+levelLabel(id)); }
+    localStorage.setItem(DRAFT+id,JSON.stringify(D)); setMeta(id,{base:liveSig(id)}); $('lv').value=JSON.stringify(id); openLevel(id); toast('Importiert: '+levelLabel(id)); }
   catch(err){ toast('Import fehlgeschlagen: '+err.message); } };
-$('reset').onclick=()=>{ if(!confirm(`Entwurf von „${levelLabel(curId)}“ verwerfen und das Original laden?`)) return; try{ localStorage.removeItem(DRAFT+curId); }catch(_){} openLevel(curId); markSelect(); toast('Original geladen'); };
+$('reset').onclick=()=>{ $('moremenu').hidden=true; if(!confirm(`Entwurf von „${levelLabel(curId)}“ verwerfen und den Labor-Stand laden?`)) return; clearDraft(curId); openLevel(curId); toast('Labor-Stand geladen'); };
+$('morebtn').onclick=e=>{ e.stopPropagation(); const m=$('moremenu'), r=$('morebtn').getBoundingClientRect(); m.style.top=(r.bottom+4)+'px'; m.style.right=(innerWidth-r.right)+'px'; m.hidden=!m.hidden; };
+document.addEventListener('click',e=>{ if(!e.target.closest('.more')) $('moremenu').hidden=true; });
+for(const b of ['publish','export','import']) $(b).addEventListener('click',()=>{ $('moremenu').hidden=true; });
 
 // ---------- Prüfen: Erreichbarkeit mit echter Spielphysik ----------
 async function runCheck(){
@@ -599,6 +646,7 @@ let pubState=null;
 function closePub(){ if(pubState?.busy) return; $('pub').hidden=true; pubState=null; }
 $('pub').onclick=e=>{ if(e.target===$('pub')) closePub(); };
 $('publish').onclick=()=>openPub();
+$('handover').title+=' (gleicher GitHub-Schlüssel)';
 function openPub(){ if(!M) return; saveDraft(); $('pub').hidden=false; pubState={}; getToken()?pubReady():pubToken(); }
 function pubToken(msg,then=pubReady){
   $('pubbox').innerHTML=`<h2>GitHub-Schlüssel einrichten (einmalig)</h2>
@@ -617,14 +665,14 @@ function pubToken(msg,then=pubReady){
 }
 async function pubReady(){
   const D=toData(M); D.id=curId; const lab=levelLabel(curId), probs=validLevel(D);
-  $('pubbox').innerHTML=`<h2>„${esc(lab)}“ veröffentlichen</h2>
+  $('pubbox').innerHTML=`<h2>„${esc(lab)}“ direkt ins Labor stellen</h2>
   <p>Das Level kommt ins Labor-Spiel (<a href="${LIVE}" target="_blank" rel="noopener">supersam.jemphub.com/labor</a>). Vorher laufen automatisch die Tests. Nach etwa 2 Minuten ist es spielbar.</p>
   <div class="line" id="premote">Online-Fassung: wird nachgesehen …</div>
   <div class="line" id="pcheck">${probs.length?`<span class="bad">✗ ${probs.map(esc).join(' · ')}</span>`:'Prüfung: läuft …'}</div>
   <p style="margin-top:10px">Was hast du geändert? (optional)</p>
   <textarea id="pnote" placeholder="z. B. Sprung am Bachbett entschärft"></textarea>
   <div class="acts"><span class="left"><a href="#" id="pchtok">Schlüssel ändern</a><a href="#" id="pdel" hidden>Online-Fassung entfernen</a></span>
-  <button id="pcancel">Abbrechen</button><button class="primary" id="pgo" disabled>⇪ Veröffentlichen</button></div>`;
+  <button id="pcancel">Abbrechen</button><button class="primary" id="pgo" disabled>↗ Ins Labor stellen</button></div>`;
   $('pcancel').onclick=closePub; $('pchtok').onclick=e=>{ e.preventDefault(); setToken(''); pubToken(); };
   if(probs.length) return;
   const st=pubState; let remote, goalOk=false;
@@ -658,7 +706,7 @@ async function pubDelete(){
   if(!r.ok){ st.busy=false; pubResult(false,ghErr(r,'Dateien löschen')); return; }
   await pubWatch(r.j.commit.sha,`Online-Fassung von „${esc(lab)}“ entfernt.`);
 }
-function pubBusy(t){ $('pubbox').innerHTML=`<h2>Veröffentlichen</h2><div class="line" id="pstat">${t}</div><div id="progress"><i style="width:8%"></i></div>`; }
+function pubBusy(t,h='Ins Labor stellen'){ $('pubbox').innerHTML=`<h2>${h}</h2><div class="line" id="pstat">${t}</div><div id="progress"><i style="width:8%"></i></div>`; }
 async function pubWatch(sha,head){
   const st=pubState, t0=Date.now(), bar=()=>$('pubbox').querySelector('#progress i');
   const show=(t,p)=>{ if($('pstat')) $('pstat').innerHTML=`${head}<br>${t}`; if(bar()) bar().style.width=(p*100)+'%'; };
@@ -675,7 +723,7 @@ async function pubWatch(sha,head){
     return; }
   st.busy=false; pubResult(true,`${head} Der Deploy dauert ungewöhnlich lange. <a href="https://github.com/${GH.repo}/actions" target="_blank" rel="noopener">Bei GitHub nachsehen</a>`);
 }
-function pubResult(ok,html){ $('pubbox').innerHTML=`<h2>${ok?'<span class="ok">✓</span> Veröffentlicht':'<span class="bad">✗</span> Nicht veröffentlicht'}</h2><p>${html}</p><div class="acts"><button class="primary" id="pclose">Schließen</button></div>`;
+function pubResult(ok,html,h){ $('pubbox').innerHTML=`<h2>${h||(ok?'<span class="ok">✓</span> Im Labor':'<span class="bad">✗</span> Nicht ins Labor gestellt')}</h2><p>${html}</p><div class="acts"><button class="primary" id="pclose">Schließen</button></div>`;
   $('pclose').onclick=closePub; if(ok) toast('Veröffentlicht'); }
 
 // ---------- Notizen für Claude ----------
@@ -700,10 +748,10 @@ function renderNotes(){ const host=$('notes'); if(!host) return;
   const open=NS.notes.filter(n=>n.status!=='erledigt').length, unsent=NS.notes.some(n=>n.dirty)||NS.gone.length>0;
   host.innerHTML=(NS.notes.length?'':'<div class="empty">Mit 💬 Notiz (N) einen Bereich im Level aufziehen und hineinschreiben, was ich ändern soll.</div>')
    +NS.notes.map((n,i)=>`<div class="note${n.status==='erledigt'?' done':''}" data-i="${i}"><span class="n">${n.status==='erledigt'?'✓':i+1}</span><span class="t">${esc(n.text)}${n.antwort?`<span class="a">↳ ${esc(n.antwort)}</span>`:''}${n.dirty?'<span class="u"> · nicht gesendet</span>':''}</span></div>`).join('')
-   +(NS.notes.length||NS.gone.length?`<div class="acts"><button class="pub" id="nsend"${unsent?'':' disabled'} title="Notizen ins Repo legen, damit Claude sie lesen kann">⇪ An Claude senden</button><button id="ncopy" title="Als Text kopieren, zum Einfügen in den Chat">📋 Kopieren</button></div>
-     <div class="empty" style="margin-top:4px">${open} offen${unsent?' · Änderungen noch nicht gesendet':NS.notes.length?' · alles gesendet':''}</div>`:'');
+   +(NS.notes.length||NS.gone.length?`<div class="empty" style="margin-top:4px">${open} offen${unsent?' · noch nicht übergeben – oben „⇪ An Claude übergeben“':NS.notes.length?' · übergeben':''}</div>
+     <div class="acts"><button id="ncopy" title="Als Text kopieren, zum Einfügen in den Chat">📋 Als Text kopieren</button></div>`:'');
   host.querySelectorAll('.note').forEach(el=>el.onclick=()=>{ const n=NS.notes[+el.dataset.i]; view.x=((n.c0+n.c1)/2+.5)*view.z-cv.clientWidth/2; view.y=((n.r0+n.r1)/2+.5)*view.z-cv.clientHeight/2; draw(); openNote(n); });
-  if($('nsend')) $('nsend').onclick=sendNotes; if($('ncopy')) $('ncopy').onclick=copyNotes; }
+  if($('ncopy')) $('ncopy').onclick=copyNotes; if(M) refreshStatus(); }
 function closeNote(){ $('notedlg').hidden=true; draw(); }
 $('notedlg').onclick=e=>{ if(e.target===$('notedlg')) closeNote(); };
 function openNote(n){ const done=n.status==='erledigt';
@@ -736,18 +784,60 @@ function mergeNotes(ns,remote){ const byId=new Map(remote.map(n=>[n.id,n]));
   for(const R of byId.values()) if(!ns.gone.includes(R.id)){ const {wo,...rest}=R; ns.notes.push(rest); }
   return ns; }
 async function pullNotes(id){ if(!getToken()) return; try{ const R=await remoteNotes(id); if(curId!==id) return; mergeNotes(NS,R.notes); saveNS(); renderNotes(); draw(); }catch(_){} }
-async function sendNotes(){
-  if(!getToken()){ $('pub').hidden=false; pubState={}; pubToken('',()=>{ closePub(); sendNotes(); }); return; }
-  const btn=$('nsend'); if(btn){ btn.disabled=true; btn.textContent='Sende …'; } const id=curId, lab=levelLabel(id);
-  let r; for(let t=0;t<2;t++){ let R; try{ R=await remoteNotes(id); }catch(e){ r=e; break; }
+// Mehrere Dateien in einem Commit auf main (Git-Data-API), bei gleichzeitiger Änderung neu versuchen.
+async function ghCommit(files,message){
+  for(let t=0;t<3;t++){
+    const ref=await gh(`/repos/${GH.repo}/git/ref/heads/${GH.branch}`); if(!ref.ok) throw ref; const head=ref.j.object.sha;
+    const c=await gh(`/repos/${GH.repo}/git/commits/${head}`); if(!c.ok) throw c;
+    const tree=await gh(`/repos/${GH.repo}/git/trees`,{method:'POST',body:JSON.stringify({base_tree:c.j.tree.sha,tree:Object.entries(files).map(([path,content])=>({path,mode:'100644',type:'blob',content}))})}); if(!tree.ok) throw tree;
+    const nc=await gh(`/repos/${GH.repo}/git/commits`,{method:'POST',body:JSON.stringify({message,tree:tree.j.sha,parents:[head]})}); if(!nc.ok) throw nc;
+    const up=await gh(`/repos/${GH.repo}/git/refs/heads/${GH.branch}`,{method:'PATCH',body:JSON.stringify({sha:nc.j.sha})});
+    if(up.ok) return nc.j.sha; if(up.status!==422&&up.status!==409) throw up; }
+  throw {status:409};
+}
+const draftPath=id=>`${NOTE_DIR}/supersam-entwurf-${id}.json`;
+// ---- An Claude übergeben: Entwurf + Notizen + Nachricht in einem Commit, nichts geht online
+$('handover').onclick=()=>openHandover();
+function openHandover(){ if(!M) return; clearTimeout(saveT); saveDraft(); $('pub').hidden=false; pubState={}; getToken()?handoverReady():pubToken('',handoverReady); }
+function handoverReady(){
+  const id=curId, lab=levelLabel(id), D=getDraft(id), m=getMeta(id), ds=D?sigOf(D):null;
+  const changedNotes=NS.notes.filter(n=>n.dirty).length, open=NS.notes.filter(n=>n.status!=='erledigt').length;
+  $('pubbox').innerHTML=`<h2>„${esc(lab)}“ an Claude übergeben</h2>
+   <p>Claude bekommt deinen Stand, baut ihn ein und sagt dir im Chat Bescheid. <b>Online geht dadurch noch nichts.</b></p>
+   <div class="line">${D?(ds===m.handed?'✓ Level-Entwurf (schon übergeben, wird nochmal geschickt)':'✓ <b>Level-Entwurf</b> – deine Änderungen gegenüber dem Labor'):'– Level: keine Änderungen'}</div>
+   <div class="line">${NS.notes.length?`✓ <b>${NS.notes.length} ${NS.notes.length===1?'Notiz':'Notizen'}</b> (${open} offen${changedNotes?`, ${changedNotes} neu oder geändert`:''})`:'– keine Notizen'}</div>
+   <p style="margin-top:10px">Nachricht an Claude (optional)</p>
+   <textarea id="hmsg" placeholder="z. B. „Die Stege am Ende bitte so lassen, Rest nach Notizen“"></textarea>
+   <div class="acts"><span class="left"><a href="#" id="pchtok">Schlüssel ändern</a></span><button id="pcancel">Abbrechen</button><button class="primary" id="hgo">⇪ Übergeben</button></div>`;
+  $('pcancel').onclick=closePub; $('pchtok').onclick=e=>{ e.preventDefault(); setToken(''); pubToken('',handoverReady); };
+  $('hgo').onclick=()=>doHandover($('hmsg').value.trim());
+}
+async function doHandover(msg){
+  const st=pubState; st.busy=true; const id=curId, lab=levelLabel(id), D=getDraft(id);
+  pubBusy('Übergebe …','An Claude übergeben');
+  try{
+    let R={notes:[]}; try{ R=await remoteNotes(id); }catch(e){ if(e.status===401) throw e; }
     mergeNotes(NS,R.notes);
-    const out={level:id,name:lab,hinweis:'Notizen aus dem Supersam-Leveleditor: Bereich in Spalten (c) und Reihen (r) des Levels; status offen|erledigt und antwort setzt Claude.',
+    const files={};
+    const rec={level:id,name:lab,uebergeben:new Date().toISOString(),...(msg?{nachricht:msg}:{}),entwurf:D?draftPath(id):null,
+      hinweis:'Übergabe aus dem Supersam-Leveleditor: entwurf = Level-Stand des Nutzers (nicht live); Notizen mit Bereich in Spalten (c) und Reihen (r); status offen|erledigt und antwort setzt Claude.',
       notes:NS.notes.map(({dirty,reopen,local,isNew,...n})=>({...n,wo:noteWhere(n)}))};
-    const open=out.notes.filter(n=>n.status!=='erledigt').length;
-    r=await gh(`/repos/${GH.repo}/contents/${notePath(id)}`,{method:'PUT',body:JSON.stringify({message:`Supersam Labor: Notizen zu ${lab} (${open} offen)`,content:b64(JSON.stringify(out,null,2)+'\n'),branch:GH.branch,...(R.sha?{sha:R.sha}:{})})}).catch(()=>({status:0}));
-    if(r.ok||(r.status!==409&&r.status!==422)) break; }
-  if(r?.ok){ for(const n of NS.notes){ delete n.dirty; delete n.reopen; delete n.local; } NS.gone=[]; saveNS(); renderNotes(); toast('An Claude gesendet'); }
-  else { renderNotes(); if(r?.status===401) setToken(''); toast(r?.status?ghErr(r,'Dateien schreiben').replace(/<[^>]+>/g,''):'GitHub ist nicht erreichbar.'); }
+    files[notePath(id)]=JSON.stringify(rec,null,2)+'\n';
+    if(D) files[draftPath(id)]=levelText({...D,id});
+    await ghCommit(files,`Supersam Labor: Übergabe ${lab} an Claude`+(msg?`
+
+${msg}`:''));
+    for(const n of NS.notes){ delete n.dirty; delete n.reopen; delete n.local; } NS.gone=[]; saveNS();
+    if(D) setMeta(id,{...getMeta(id),handed:sigOf(D)});
+    renderNotes(); refreshStatus(); st.busy=false;
+    const chat=`Übergeben: ${lab}`;
+    $('pubbox').innerHTML=`<h2><span class="ok">✓</span> Übergeben</h2><p>„${esc(lab)}“ liegt jetzt bei Claude. Sag im Chat kurz Bescheid:</p>
+      <div class="line" style="display:flex;gap:8px;align-items:center"><code style="flex:1;background:var(--panel2);padding:6px 8px;border-radius:6px">${esc(chat)}</code><button id="hcopy">📋 Kopieren</button></div>
+      <p>Sobald Claude fertig ist, zeigt die Statuszeile 🟢 und der Editor lädt die neue Fassung beim Öffnen.</p>
+      <div class="acts"><button class="primary" id="pclose">Schließen</button></div>`;
+    $('pclose').onclick=closePub; $('hcopy').onclick=async()=>{ try{ await navigator.clipboard.writeText(chat); toast('Kopiert – im Chat einfügen'); }catch(_){ toast('Kopieren nicht möglich'); } };
+    toast('An Claude übergeben');
+  }catch(r){ st.busy=false; if(r?.status===401) setToken(''); pubResult(false,r?.status?ghErr(r,'Dateien schreiben'):'GitHub ist nicht erreichbar.','<span class="bad">✗</span> Nicht übergeben'); }
 }
 
 // ---------- Seitenleiste ----------
