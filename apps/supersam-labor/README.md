@@ -31,13 +31,17 @@ npm run build    # dist/
   erreichbar sind; Unerreichbares wird rot umkreist. **⌒** zeigt die Sprungbögen am Mauszeiger.
 - Entwürfe speichert der Browser automatisch (pro Welt). **Export** sichert das Level als Datei,
   **Import** lädt eine Datei, **Original** verwirft den Entwurf.
-- **Veröffentlichen** stellt das Level direkt ins Labor: Der Editor legt es mit dem eigenen GitHub-Schlüssel als
-  `levels/supersam-level-<welt>.json` auf `main`; danach testet und veröffentlicht der normale Deploy (ca. 2 Minuten).
-  Der Schlüssel (fine-grained, nur JempHub, *Contents: Read and write*, *Actions: Read-only*) bleibt im Browser.
-  „Online-Fassung entfernen“ löscht die Datei wieder – dann gilt die ursprüngliche Welt aus dem Code.
-- **💬 Notiz** (N): Bereich im Level aufziehen (oder klicken) und hineinschreiben, was Claude ändern soll.
-  **⇪ An Claude senden** legt die Notizen als `notizen/supersam-notizen-<welt>.json` ins Repo (gleicher Schlüssel),
-  **📋 Kopieren** liefert sie als Text für den Chat. Erledigte Notizen erscheinen grün mit Claudes Antwort.
+- **Ablauf mit Claude:** Im Editor ändern und 💬 Notizen (N) setzen → **⇪ An Claude übergeben** schickt
+  Entwurf, Notizen und eine Nachricht in einem Commit nach `notizen/` (`supersam-entwurf-<welt>.json`,
+  `supersam-notizen-<welt>.json`) – **nicht live**. Claude baut es in `levels/` ein, löscht den Entwurf,
+  setzt `status`/`antwort` der Notizen und merged; danach lädt der Editor die neue Fassung beim Öffnen selbst.
+- **Statuszeile** neben der Weltauswahl: 🟡 Entwurf/Notizen nicht übergeben · 🔵 bei Claude (offene Notizen) ·
+  🟢 im Labor, aktuell. Hat sich eine Welt im Labor geändert, während ein nicht übergebener Entwurf existiert,
+  fragt ein Hinweis: „Labor-Stand laden“ oder „Meinen Entwurf behalten“.
+- **⋯ → Direkt ins Labor stellen** legt das Level ohne Claude als `levels/supersam-level-<welt>.json` auf `main`
+  (Deploy ca. 2 Minuten). Der GitHub-Schlüssel (fine-grained, nur JempHub, *Contents: Read and write*,
+  *Actions: Read-only*) bleibt im Browser. Dort auch: Entwurf verwerfen, Export, Import.
+- **📋 Als Text kopieren** liefert die Notizen für den Chat.
 - Alternativ: exportierte Datei von Hand in `levels/` legen (siehe dort) – der Build baut sie ein.
 - Eine fehlerhafte Level-Datei (kein Start/Ziel, falsche Größe, kaputtes JSON, Welt doppelt) stoppt Build und Deploy.
   Die übrigen Spieltests laufen gegen die Welten aus dem Code, damit geänderte Levels sie nicht brechen.
