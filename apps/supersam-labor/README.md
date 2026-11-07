@@ -18,24 +18,27 @@ npm test
 npm run build    # dist/
 ```
 
-## Grafikstile (Stilprobe)
+## Grafikstil „Pixel 3D“
 
-Auf dem Startbildschirm und im Pausenmenü steht **Grafik: Klassisch · Pixel modern ·
-Vektor** (am Rechner auch Taste `G`, als Link `?stil=vektor`). Die Wahl bleibt im
-Browser gespeichert (`supersam-labor-stil`).
+Standard im Labor. Auf dem Startbildschirm und im Pausenmenü lässt sich unter
+**Grafik** auf **Klassisch** zurückschalten (am Rechner auch Taste `G`, als Link
+`?stil=klassik`). Die Wahl bleibt im Browser gespeichert (`supersam-labor-stil`).
 
-- **Klassisch**: die bisherigen 16-px-Sprites.
-- **Vektor**: Sam, Käfer, Wespe, Münzen, Sterne, Kacheln, Federn, Fahnen, Plattformen,
-  Türen und Deko sind aus Formen gezeichnet und in voller Bildschirmauflösung scharf.
-  Für die Wiese gibt es einen neuen Hintergrund.
-- **Pixel modern**: dieselben Modelle auf ein doppelt so feines Pixelraster gelegt
-  (2 Pixel pro Welteinheit), mit farbigen statt schwarzen Umrissen. Der Hintergrund
-  liegt auf demselben Raster.
+- Figuren, Gelände und Hintergrund entstehen aus kleinen 3D-Körpern (Kugeln, Kapseln,
+  Kästen, Höhenfelder). Je Pixel wird die Oberflächennormale beleuchtet (Licht von links
+  oben, Schlagschatten, Glanzlichter) und auf handgewählte Farbrampen gelegt. Das Raster
+  ist 2 Pixel pro Welteinheit, also doppelt so fein wie klassisch.
+- Gelände: jede Kachel wird aus Weltkoordinaten berechnet, es wiederholt sich nichts.
+  Abgerundete Kanten mit Volumen, Kiesel, Findlinge, Lehmschichten, Wurzeln, Grasnarbe
+  mit Halmen und Überhang, nach innen dunkler.
+- Mehr Abwechslung: Büsche, Steine, Pilze, Farne, Gras und Blumen werden auf freien
+  Grasflächen verteilt (nur Darstellung, nicht neben Federn, Fahnen und Türen).
+- Wiese: neuer Hintergrund in vier Ebenen (Berge mit Schnee, Wald, Hügel mit Bäumen,
+  Wiese), Wolken als beleuchtete Körper und dunkle Halme im Vordergrund.
 
 Nur die Darstellung wechselt; Raster, Trefferzonen, Levels und Editor bleiben gleich.
-Ausgearbeitet ist die Übungswiese. Gegner ohne neues Modell (Igel, Skorpion, Frosch,
-Fisch, Geist, Bosse), der Titelbildschirm und die Hintergründe der anderen Welten
-nutzen noch die klassische Grafik.
+Igel, Skorpion, Frosch, Fisch, Geist, die Bosse, der Titelbildschirm und die Hintergründe
+der anderen Welten nutzen noch die klassische Grafik.
 
 ## Leveleditor
 
