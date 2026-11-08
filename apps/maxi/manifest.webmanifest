@@ -1,0 +1,15 @@
+{
+  "name": "Maxis Bierkiste",
+  "short_name": "Bierkiste",
+  "description": "Handyspiel im Hochformat: Maximilian Weichl fängt die Freetown-Flaschen mit der Bierkiste.",
+  "lang": "de",
+  "start_url": "./",
+  "scope": "./",
+  "display": "fullscreen",
+  "orientation": "portrait",
+  "background_color": "#1b2433",
+  "theme_color": "#1b2433",
+  "icons": [
+    { "src": "icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any" }
+  ]
+}

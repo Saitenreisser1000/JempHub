@@ -1,0 +1,14 @@
+{
+  "name": "maxi",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "engines": {
+    "node": ">=22.12.0"
+  },
+  "scripts": {
+    "dev": "node ../../scripts/serve-static.mjs . --port 5187",
+    "build": "npm test && node build.mjs",
+    "test": "node --test \"src/**/*.test.js\""
+  }
+}

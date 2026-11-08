@@ -25,7 +25,7 @@ on:
         description: Welche App veröffentlichen?
         type: choice
         default: all
-        options: [all, hub, guitar, note, ear, conduct, supersam, supersam-labor]
+        options: [all, hub, guitar, note, ear, conduct, supersam, supersam-labor, maxi]
 
 concurrency:
   group: deploy
@@ -50,7 +50,7 @@ jobs:
           BEFORE: ${{ github.event.before }}
           AFTER: ${{ github.sha }}
         run: |
-          ALL='["hub","guitar","note","ear","conduct","supersam","supersam-labor"]'
+          ALL='["hub","guitar","note","ear","conduct","supersam","supersam-labor","maxi"]'
           if [ "$EVENT" = "workflow_dispatch" ]; then
             if [ "$INPUT_APP" = "all" ]; then echo "apps=$ALL" >> "$GITHUB_OUTPUT"
             else echo "apps=[\"$INPUT_APP\"]" >> "$GITHUB_OUTPUT"; fi
@@ -65,7 +65,7 @@ jobs:
             echo "apps=$ALL" >> "$GITHUB_OUTPUT"; exit 0
           fi
           LIST=""
-          for a in hub guitar note ear conduct supersam supersam-labor; do
+          for a in hub guitar note ear conduct supersam supersam-labor maxi; do
             if echo "$CHANGED" | grep -q "^apps/$a/"; then LIST="$LIST\"$a\","; fi
           done
           echo "apps=[${LIST%,}]" >> "$GITHUB_OUTPUT"
@@ -111,6 +111,7 @@ jobs:
             conduct) echo "path=/var/www/conductjemp" >> "$GITHUB_OUTPUT"; echo "url=https://conductjemp.jemphub.com" >> "$GITHUB_OUTPUT";;
             supersam) echo "path=/var/www/supersam" >> "$GITHUB_OUTPUT"; echo "url=https://supersam.jemphub.com" >> "$GITHUB_OUTPUT";;
             supersam-labor) echo "path=/var/www/supersam/labor" >> "$GITHUB_OUTPUT"; echo "url=https://supersam.jemphub.com/labor" >> "$GITHUB_OUTPUT";;
+            maxi) echo "path=/var/www/maxi" >> "$GITHUB_OUTPUT"; echo "url=https://maxi.jemphub.com" >> "$GITHUB_OUTPUT";;
           esac
 
       - name: SSH vorbereiten
