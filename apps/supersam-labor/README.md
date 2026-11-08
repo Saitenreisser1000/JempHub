@@ -35,11 +35,9 @@ Standard im Labor. Auf dem Startbildschirm und im Pausenmenü lässt sich unter
   Grasflächen verteilt (nur Darstellung, nicht neben Federn, Fahnen und Türen).
 - Wiese: neuer Hintergrund in vier Ebenen (Berge mit Schnee, Wald, Hügel mit Bäumen,
   Wiese), Wolken als beleuchtete Körper.
-- Vordergrund mit Parallaxe (Wiese): eine Halm-Ebene und eine nahe Ebene mit großen
-  Gras- und Farnbüscheln, breiten Blättern und überhängenden Zweigen ziehen schneller
-  als das Spielfeld vorbei (1,3- und 1,75-fach), dazwischen schwebt Blütenstaub. Steigt
-  die Kamera, rutscht der Vordergrund nach unten weg. Rund um Sam wird die nahe Ebene
-  durchsichtig, damit er nie verdeckt ist.
+- Vordergrund mit Parallaxe (Wiese): dunkle Halme ziehen schneller als das Spielfeld
+  vorbei (1,3-fach), davor schwebt Blütenstaub. Steigt die Kamera, rutscht der
+  Vordergrund nach unten weg.
 
 Nur die Darstellung wechselt; Raster, Trefferzonen, Levels und Editor bleiben gleich.
 Igel, Skorpion, Frosch, Fisch, Geist, die Bosse, der Titelbildschirm und die Hintergründe
