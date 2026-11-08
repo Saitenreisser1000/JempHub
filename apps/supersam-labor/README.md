@@ -18,6 +18,15 @@ npm test
 npm run build    # dist/
 ```
 
+## Leben
+
+Jeder Spielstand hat 3 Leben (♥ oben unter der Punkteanzeige, auch in der Hubwelt). Fällt die Punktzahl in
+einer Welt mit Zeitlimit auf 0 – weil die Restzeit abläuft oder Tode Punkte kosten –, ist ein Leben weg und
+die Welt beginnt neu (oder zurück zur Hubwelt). Beim letzten Leben gibt es **Game Over**: der Spielstand
+beginnt von vorn (Diamanten, Sterne, Fähigkeiten, Bosse, erledigte Welten), nur „Einführung gesehen“ und
+die Einstellungen bleiben; danach wieder 3 Leben. Hubwelt, Übungswiese, Bosskämpfe und Probespiele aus dem
+Editor kosten keine Leben.
+
 ## Bildrate
 
 Im Pausenmenü **Bildrate anzeigen** einschalten (bleibt im Browser gespeichert, `supersam-labor-fps`).

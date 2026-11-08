@@ -25,6 +25,8 @@ canvas{position:fixed;left:0;top:0;width:100%;height:100vh;height:var(--vh,100dv
 .hud{position:fixed;font-family:var(--pixel);font-size:14px;text-shadow:2px 2px 0 var(--ink);pointer-events:none;font-variant-numeric:tabular-nums;letter-spacing:.04em}
 #hl{top:calc(env(safe-area-inset-top,0px) + 8px);left:calc(env(safe-area-inset-left,0px) + 10px);display:flex;align-items:center;gap:10px}
 #hc{top:calc(env(safe-area-inset-top,0px) + 6px);left:50%;transform:translateX(-50%);white-space:nowrap;display:flex;flex-direction:column;align-items:center;gap:3px}
+#lives{display:flex;gap:3px;font-size:13px;line-height:1;color:#ff5a6a}#lives i{font-style:normal}#lives i.off{color:rgba(255,255,255,.28)}
+#lifelost .hearts{font-size:30px;letter-spacing:6px;color:#ff5a6a;text-shadow:3px 3px 0 var(--ink)}#lifelost .hearts i{font-style:normal}#lifelost .hearts i.off{color:rgba(255,255,255,.25)}
 #scorebox{position:relative;display:flex;flex-direction:column;align-items:center;gap:3px;background:rgba(13,21,36,.22);border:0;padding:3px 12px 5px;min-width:120px;opacity:.78}
 #scorebox .sline{display:flex;align-items:baseline;gap:6px;line-height:1}
 #scnum{font-size:20px;color:#ffffff;transition:transform .12s;display:inline-block}
@@ -153,6 +155,7 @@ body.title .hud,body.title .zone,body.title #msg,body.title #tut{display:none!im
     <div class="sbar"><i id="sfill"></i></div>
     <div id="sdelta"></div>
   </div>
+  <div id="lives" hidden aria-label="Leben"></div>
   <div class="flow" id="flowbox" title="Schwung"><small id="flowlbl" hidden>Schwung ×1</small><div class="flowbar"><i id="flowfill"></i><b style="left:33%"></b><b style="left:66%"></b></div></div>
   <div id="bossbar" hidden><span id="bossname"></span><div class="bbar"><i id="bfill"></i></div></div>
   <div id="hcol"></div>
@@ -192,6 +195,15 @@ body.title .hud,body.title .zone,body.title #msg,body.title #tut{display:none!im
   <button class="btn" id="donebtn" type="button">Zur Hubwelt</button>
 </div>
 
+<div class="panel" id="lifelost" hidden>
+  <h1 id="lltitle">Leben verloren</h1>
+  <div class="hearts" id="llhearts"></div>
+  <p id="lltext"></p>
+  <div class="row" style="flex-direction:column;align-items:stretch;min-width:220px">
+    <button class="btn" id="llagain" type="button">Nochmal</button>
+    <button class="btn ghost" id="llhub" type="button">Zur Hubwelt</button>
+  </div>
+</div>
 <div class="panel" id="pause" hidden>
   <h1>Pause</h1>
   <div class="row" style="flex-direction:column;align-items:stretch;min-width:220px">
@@ -252,7 +264,7 @@ const C={ember:'#f2a65a',cream:'#f6ead2',ink:'#0d1524',gold:'#ffd166',sky:'#7fe0
 
 // ---------- Speicherstand ----------
 const SAVE_KEY='supersam-labor-v2';
-const blankSave=()=>({ab:{double:false,wall:false,dash:false,glide:false},crystals:{},stars:{},bosses:{},done:{},best:{},wallet:0,endingSeen:false,tutorialDone:false});
+const blankSave=()=>({ab:{double:false,wall:false,dash:false,glide:false},crystals:{},stars:{},bosses:{},done:{},best:{},wallet:0,endingSeen:false,tutorialDone:false,lives:3});
 let save=blankSave();
 try{ const s=JSON.parse(localStorage.getItem(SAVE_KEY)||'null'); if(s){ save=Object.assign(blankSave(),s); save.ab=Object.assign(blankSave().ab,s.ab||{}); } }catch(_){}
 function persist(){ if(EDIT_MODE) return; try{ localStorage.setItem(SAVE_KEY,JSON.stringify(save)); }catch(_){} }   // Probespiel aus dem Editor speichert nichts
@@ -1555,6 +1567,7 @@ function update(dt){
   time+=dt;
   if(P.inv>0) P.inv=Math.max(0,P.inv-dt);
   if(L.timeLimit){ const tl=Math.ceil(timeLeft()); if(tl<=10&&tl>0&&tl!==lastTick){ lastTick=tl; sfx('tick'); } }
+  if(livesCheck()){ loseLife(); return; }
   for(const m of L.movers){ const s=(1-Math.cos(clock/m.period*Math.PI*2))/2;
     const nx=m.x0+(m.x1-m.x0)*s, ny=m.y0+(m.y1-m.y0)*s; m.dx=nx-m.x; m.dy=ny-m.y; m.x=nx; m.y=ny; }
   if(P.plat){ P.x+=P.plat.dx; P.y+=P.plat.dy; }
@@ -2013,6 +2026,24 @@ function drawSpeedlines(){
     ctx.globalAlpha=(.12+r*.18)*(P.dashT>0?1.4:1); ctx.fillRect(Math.round(x+(side?0:-len*.3*(dir<0?0:1))),y,Math.round(len),th); }
   ctx.globalAlpha=1;
 }
+// ---------- Leben ----------
+// 3 Leben je Spielstand. Fällt die Punktzahl in einem Level mit Zeitlimit auf 0 (Restzeit abgelaufen, Tode),
+// ist ein Leben weg und das Level beginnt neu. Beim letzten gibt es Game Over: der Spielstand beginnt von vorn
+// (nur „Einführung gesehen“ bleibt). Probespiele aus dem Editor sind ausgenommen.
+const LIVES=3, lifeEl=document.getElementById('lifelost');
+const heartsHtml=n=>Array.from({length:LIVES},(_,i)=>`<i class="${i<n?'':'off'}">♥</i>`).join('');
+function livesCheck(){ return L&&L.need&&L.timeLimit&&!L.boss&&!EDIT_MODE&&time>1&&score()<=0; }
+function loseLife(){ state='lost'; clearInput(); sfx('hurt'); shake=.3;
+  save.lives=Math.max(0,(save.lives??LIVES)-1); const n=save.lives, over=n<=0, id=L.id;
+  if(over){ const keep={tutorialDone:save.tutorialDone}; for(const k of Object.keys(save)) delete save[k]; Object.assign(save,blankSave(),keep); }
+  persist();
+  document.getElementById('lltitle').textContent=over?'Game Over':'Leben verloren';
+  document.getElementById('llhearts').innerHTML=heartsHtml(n);
+  document.getElementById('lltext').textContent=over?'Keine Leben mehr – dein Fortschritt beginnt von vorn. Du hast wieder 3 Leben.':`Keine Punkte mehr. Noch ${n} ${n===1?'Leben':'Leben'}.`;
+  const again=document.getElementById('llagain'); again.textContent=over?'Neu beginnen':'Nochmal';
+  again.onclick=()=>{ lifeEl.hidden=true; if(over) loadLevel('hub'); else loadLevel(id); state='play'; };
+  const hub=document.getElementById('llhub'); hub.hidden=over; hub.onclick=()=>{ lifeEl.hidden=true; loadLevel('hub',id); state='play'; };
+  lifeEl.hidden=false; updateHud(); }
 function die(){ shake=.25; sfx('hurt'); respawn(); P.inv=2; if(L.boss){ bossDeaths++; bossFx=[]; }
   if(L.need){ deaths++; floaters.push({x:P.x+P.w/2,y:P.y-6,txt:String(PTS.death),t:1.4,col:'#ff6a6a'}); showMsg(`${PTS.death} Punkte`); } }
 
@@ -3578,6 +3609,8 @@ let lastEvScore=null, scT=0, sdT=0;
 const bossBar=document.getElementById('bossbar'), bossName=document.getElementById('bossname'), bFill=document.getElementById('bfill');
 function updateHud(){
   if(!L) return;
+  const lv=document.getElementById('lives'), showLv=!EDIT_MODE&&!L.boss&&(L.id==='hub'||!!(L.need&&L.timeLimit));
+  if(lv){ lv.hidden=!showLv; if(showLv){ const h=heartsHtml(save.lives??LIVES); if(lv.innerHTML!==h) lv.innerHTML=h; } }
   if(dbg.info) dbgInfo.textContent=`vx ${P.vx.toFixed(0)} · vy ${P.vy.toFixed(0)} · max ${(PH.max+tier()*PH.tierBonus).toFixed(0)} · Schwung ${flow.toFixed(0)}`;
   bossBar.hidden=!L.boss;
   if(L.boss){ scoreBox.hidden=true; const B=L.boss; bossName.textContent=B.state==='gone'?'Sieg! Hol dir die Krone':BOSS_INFO[B.id].name;

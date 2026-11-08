@@ -561,3 +561,22 @@ test('Deko aus dem Editor: von Hand gesetzt, exportiert, automatische Deko absch
   for (const [n] of E.deco.list) assert.ok(E.deco.icon(n).w > 0, n);
   assert.equal(new Set(E.deco.list.map(d => d[0])).size, E.deco.list.length, 'Namen eindeutig');
 });
+
+test('Leben: bei 0 Punkten ist ein Leben weg, nach dem dritten Game Over mit zurückgesetztem Spielstand', () => {
+  const { dz, run } = boot();
+  assert.equal(dz.save.lives, 3, 'anfangs 3 Leben');
+  dz.save.crystals['1-0'] = true; dz.save.ab.double = true; dz.save.tutorialDone = true;
+  const toZero = () => { dz.setState('play'); dz.loadLevel(1); run(80); assert.equal(dz.editor.state, 'play');
+    for (let i = 0; i < 12 && dz.score() > 0; i++) dz.die(); run(3); };
+  toZero(); assert.equal(dz.editor.state, 'lost', 'Level unterbrochen'); assert.equal(dz.save.lives, 2);
+  toZero(); assert.equal(dz.save.lives, 1);
+  assert.ok(dz.save.crystals['1-0'], 'Fortschritt bleibt, solange noch Leben da sind');
+  toZero(); assert.equal(dz.editor.state, 'lost');
+  assert.equal(dz.save.lives, 3, 'nach Game Over wieder 3 Leben');
+  assert.equal(Object.keys(dz.save.crystals).length, 0, 'Diamanten zurückgesetzt'); assert.equal(dz.save.ab.double, false, 'Fähigkeiten zurückgesetzt');
+  assert.equal(dz.save.tutorialDone, true, 'Einführung bleibt gesehen');
+  // In Welten ohne Punkteziel und im Probespiel aus dem Editor gibt es keinen Lebensverlust
+  dz.setState('play'); dz.loadLevel('hub'); run(80); assert.equal(dz.editor.state, 'play');
+  const E = dz.editor, D = JSON.parse(JSON.stringify(E.levelData(1))); const L = E.load(D, []); L.timeLimit = 240;
+  run(80); for (let i = 0; i < 12; i++) dz.die(); run(3); assert.equal(E.state, 'play', 'Probespiel ohne Leben');
+});
