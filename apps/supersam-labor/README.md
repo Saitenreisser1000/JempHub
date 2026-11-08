@@ -24,8 +24,9 @@ Jeder Spielstand hat 3 Leben (♥ oben unter der Punkteanzeige, auch in der Hubw
 einer Welt mit Zeitlimit auf 0 – weil die Restzeit abläuft oder Tode Punkte kosten –, ist ein Leben weg und
 die Welt beginnt neu (oder zurück zur Hubwelt). Beim letzten Leben gibt es **Game Over**: der Spielstand
 beginnt von vorn (Diamanten, Sterne, Fähigkeiten, Bosse, erledigte Welten), nur „Einführung gesehen“ und
-die Einstellungen bleiben; danach wieder 3 Leben. Hubwelt, Übungswiese, Bosskämpfe und Probespiele aus dem
-Editor kosten keine Leben.
+die Einstellungen bleiben; danach wieder 3 Leben. Bei den Endgegnern gibt es 300 Punkte fix, jeder Treffer
+kostet 100 (rechts oben angezeigt) – bei 0 ist ebenfalls ein Leben weg. Hubwelt, Übungswiese und Probespiele
+aus dem Editor kosten keine Leben. Extraleben sind für später geplant.
 
 ## Bildrate
 
@@ -82,11 +83,9 @@ erscheint dort nicht.
   Grasflächen verteilt (nur Darstellung, nicht neben Federn, Fahnen und Türen).
 - Wiese: neuer Hintergrund in vier Ebenen (Berge mit Schnee, Wald, Hügel mit Bäumen,
   Wiese), Wolken als beleuchtete Körper.
-- Vordergrund mit Parallaxe (Wiese): eine Halm-Ebene und eine nahe Ebene mit großen
-  Gras- und Farnbüscheln, breiten Blättern und überhängenden Zweigen ziehen schneller
-  als das Spielfeld vorbei (1,3- und 1,75-fach), dazwischen schwebt Blütenstaub. Steigt
-  die Kamera, rutscht der Vordergrund nach unten weg. Rund um Sam wird die nahe Ebene
-  durchsichtig, damit er nie verdeckt ist.
+- Vordergrund mit Parallaxe (Wiese): dunkle Halme ziehen schneller als das Spielfeld
+  vorbei (1,3-fach), davor schwebt Blütenstaub. Steigt die Kamera, rutscht der
+  Vordergrund nach unten weg.
 
 Nur die Darstellung wechselt; Raster, Trefferzonen, Levels und Editor bleiben gleich.
 Igel, Skorpion, Frosch, Fisch, Geist, die Bosse, der Titelbildschirm und die Hintergründe

@@ -2032,7 +2032,12 @@ function drawSpeedlines(){
 // (nur „Einführung gesehen“ bleibt). Probespiele aus dem Editor sind ausgenommen.
 const LIVES=3, lifeEl=document.getElementById('lifelost');
 const heartsHtml=n=>Array.from({length:LIVES},(_,i)=>`<i class="${i<n?'':'off'}">♥</i>`).join('');
-function livesCheck(){ return L&&L.need&&L.timeLimit&&!L.boss&&!EDIT_MODE&&time>1&&score()<=0; }
+// Endgegner: 300 Punkte fix, jeder Treffer kostet 100 – bei 0 ist ebenfalls ein Leben weg
+const BOSS_PTS=300, BOSS_HIT=100;
+const bossScore=()=>Math.max(0,BOSS_PTS-bossDeaths*BOSS_HIT);
+function livesCheck(){ if(!L||EDIT_MODE) return false;
+  if(L.boss) return L.boss.state!=='gone'&&bossScore()<=0;
+  return !!(L.need&&L.timeLimit&&time>1&&score()<=0); }
 function loseLife(){ state='lost'; clearInput(); sfx('hurt'); shake=.3;
   save.lives=Math.max(0,(save.lives??LIVES)-1); const n=save.lives, over=n<=0, id=L.id;
   if(over){ const keep={tutorialDone:save.tutorialDone}; for(const k of Object.keys(save)) delete save[k]; Object.assign(save,blankSave(),keep); }
@@ -2045,7 +2050,8 @@ function loseLife(){ state='lost'; clearInput(); sfx('hurt'); shake=.3;
   const hub=document.getElementById('llhub'); hub.hidden=over; hub.onclick=()=>{ lifeEl.hidden=true; loadLevel('hub',id); state='play'; };
   lifeEl.hidden=false; updateHud(); }
 function die(){ shake=.25; sfx('hurt'); respawn(); P.inv=2; if(L.boss){ bossDeaths++; bossFx=[]; }
-  if(L.need){ deaths++; floaters.push({x:P.x+P.w/2,y:P.y-6,txt:String(PTS.death),t:1.4,col:'#ff6a6a'}); showMsg(`${PTS.death} Punkte`); } }
+  if(L.boss){ floaters.push({x:P.x+P.w/2,y:P.y-6,txt:'-'+BOSS_HIT,t:1.4,col:'#ff6a6a'}); showMsg(`-${BOSS_HIT} Punkte`); }
+  else if(L.need){ deaths++; floaters.push({x:P.x+P.w/2,y:P.y-6,txt:String(PTS.death),t:1.4,col:'#ff6a6a'}); showMsg(`${PTS.death} Punkte`); } }
 
 // ---------- Darstellung ----------
 // Auflösung (Pausenmenü): Hoch = bis 2 Bildpunkte je CSS-Pixel, Mittel 1,5, Niedrig 1 – weniger Pixel entlasten
@@ -3083,36 +3089,15 @@ function bgLayer(kind){ const w=BGW, h=SKY_H, d=new Uint8ClampedArray(w*h*4), z=
     for(let x=0;x<w;x++){ const t=hill(x); for(let y=Math.floor(t)-(h2(x,3)<.35?1+Math.floor(h2(x,4)*3):0);y<h;y++) put(x,y,rampAt(R,.75-(y-t)/70+(vn(x*.5,y*.9)-.5)*.35,x,y)); }
     const r=rngFrom(51); for(let i=0;i<60;i++){ const x=Math.floor(r()*BGW), y=Math.floor(hill(x)+3+r()*14); put(x,y,cols[i%4]); } }
   return toCan({data:d,w,h}).c; }
-// Vordergrund: zwei Ebenen vor dem Spielfeld, die schneller als die Kamera ziehen (Faktor > 1 gegenüber dem Gelände).
+// Vordergrund: Halm-Ebene vor dem Spielfeld, die schneller als die Kamera ziehen (Faktor > 1 gegenüber dem Gelände).
 const FGW=1600;
 function fgBlade(put,R,x0,yb,len,a,cv,wd,dk=0){ for(let t=0;t<=1;t+=.6/len){ const x=x0+Math.sin(a)*len*t+cv*t*t*len*.35, y=yb-Math.cos(a)*len*t, ww=wd*Math.pow(1-t,.9)+.4;
     for(let q=-ww;q<=ww;q+=.5){ const rim=q<-ww+1.3&&t>.08; put(Math.round(x+q),Math.round(y),R,rim?.78+t*.22:Math.max(0,.12+t*.38+(q/ww)*-.1-dk)); } } }
-function fgLeaf(put,R,cx,cy,len,wd,a){ const ux=Math.cos(a), uy=Math.sin(a);
-  for(let u=0;u<=1;u+=.4/len){ const hw=wd*Math.pow(Math.sin(Math.PI*Math.min(1,u*1.15)),.8); for(let v=-hw;v<=hw;v+=.5){ const x=cx+ux*len*u-uy*v, y=cy+uy*len*u+ux*v;
-      const up=(-uy*Math.sign(v||1))<0, edge=Math.abs(v)>hw-1.2, rib=Math.abs(v)<.6; put(Math.round(x),Math.round(y),R,rib?.15:edge&&up?.9:(up?.5:.22)+u*.15); } } }
-function bgForeNear(top){ const w=FGW, h=top?110:SKY_H, d=new Uint8ClampedArray(w*h*4), r=rngFrom(top?92:91);
-  const RS=[['#050c0c','#08140f','#0c1e14','#122a1a','#1a3822','#28502e','#3e6e3a'],['#060c10','#0a1418','#0e1e1e','#142a26','#1c3a2e','#2a5240','#40704e']].map(a=>a.map(hex));
-  const put=(x,y,R,v)=>{ x=((x%w)+w)%w; if(y<0||y>=h) return; const c=rampAt(R,Math.max(0,Math.min(1,v)),x,y,.7), k=(y*w+x)*4; d[k]=c[0]; d[k+1]=c[1]; d[k+2]=c[2]; d[k+3]=255; };
-  // Büschel am unteren Rand: Gras, Farnwedel, breite Blätter
-  if(!top) for(let i=0;i<7;i++){ const x0=i*w/7+r()*90, R=RS[i&1], kind=i%3;
-    if(kind===0){ for(let b=0;b<14;b++) fgBlade(put,R,x0+(r()-.5)*40,h+4,45+r()*55,(r()-.5)*1.2,(r()-.5)*.8,2+r()*2.5,r()*.1); }
-    else if(kind===1){ for(let f=0;f<4;f++){ const a=(f-1.5)*.42+(r()-.5)*.2, L=60+r()*35; fgBlade(put,R,x0,h+4,L,a,a*.6,1.6,0);
-        for(let t=.15;t<.95;t+=.07){ const px=x0+Math.sin(a)*L*t+a*.6*t*t*L*.35, py=h+4-Math.cos(a)*L*t, ll=(1-t)*16+4;
-          fgLeaf(put,R,px,py,ll,2.2,a-Math.PI/2-.5); fgLeaf(put,R,px,py,ll,2.2,a-Math.PI/2+.5+Math.PI-.0); } } }
-    else { for(let b=0;b<5;b++){ const a=(r()-.5)*1.3; fgLeaf(put,R,x0+(r()-.5)*20,h+6,50+r()*35,9+r()*5,-Math.PI/2+a); }
-      for(let b=0;b<6;b++) fgBlade(put,R,x0+(r()-.5)*50,h+4,30+r()*30,(r()-.5)*1.1,0,2,0); } }
-  // Zweige mit Blättern von oben (kurz, schräg vom Rand)
-  if(top) for(let i=0;i<2;i++){ const x0=(i+.3)*w/2+r()*200, R=RS[1], len=55+r()*25, dir=i?-1:1, yy=t=>-6+t*len*.55-t*t*len*.25;
-    for(let t=0;t<1;t+=.004){ const x=x0+dir*t*len, y=yy(t), ww=3.5*(1-t)+1; for(let q=-ww;q<=ww;q+=.5) put(Math.round(x),Math.round(y+q),R,q<-ww+1.2?.6:.12); }
-    for(let k=0;k<22;k++){ const t=.1+r()*.9, x=x0+dir*t*len+(r()-.5)*10, y=yy(t)+(r()-.5)*8; fgLeaf(put,R,x,y,10+r()*9,3.5+r()*2,Math.PI/2+(r()-.5)*1.8); }
-    for(let v=0;v<2;v++){ const t0=.35+v*.35, vx=x0+dir*t0*len, vy=yy(t0), vl=18+r()*22; for(let t=0;t<vl;t+=.5) put(Math.round(vx+Math.sin(t*.12+v)*2),Math.round(vy+t),R,.25);
-      for(let t=6;t<vl;t+=7) fgLeaf(put,R,vx+Math.sin(t*.12+v)*2,vy+t,6,2.4,Math.PI/2+(t%14?.9:-.9)); } }
-  return toCan({data:d,w,h}).c; }
 function bgFore(){ const w=FGW, h=80, d=new Uint8ClampedArray(w*h*4), R=['#0c1a1a','#12241e','#183022','#203e28','#2c5030','#3e6a3a'].map(hex), r=rngFrom(77);
   const put=(x,y,R,v)=>{ x=((x%w)+w)%w; if(y<0||y>=h) return; const c=rampAt(R,Math.max(0,Math.min(1,v)),x,y,.7), k=(y*w+x)*4; d[k]=c[0]; d[k+1]=c[1]; d[k+2]=c[2]; d[k+3]=255; };
   for(let i=0;i<46;i++){ const x0=r()*w, n=3+Math.floor(r()*6), hh=12+r()*40; for(let b=0;b<n;b++) fgBlade(put,R,x0+(r()-.5)*10,h+2,hh*(.5+r()*.5),(r()-.5)*1.1,(r()-.5)*.6,1.4+r()*1.2,0); }
   return toCan({data:d,w,h}).c; }
-function bgSet(){ return BGC.m||(BGC.m={sky:bgSky(),sun:bgSun(),far:bgLayer('far'),mid:bgLayer('mid'),near:bgLayer('near'),ground:bgLayer('ground'),fore:bgFore(),near:bgForeNear(false),nearTop:bgForeNear(true),clouds:[0,1,2,3,4].map(i=>toCan(bgCloud(i)).c)}); }
+function bgSet(){ return BGC.m||(BGC.m={sky:bgSky(),sun:bgSun(),far:bgLayer('far'),mid:bgLayer('mid'),near:bgLayer('near'),ground:bgLayer('ground'),fore:bgFore(),clouds:[0,1,2,3,4].map(i=>toCan(bgCloud(i)).c)}); }
 function drawScenePix(){ const B=bgSet(), g=ctx; g.imageSmoothingEnabled=false;
   for(let x=0;x<skyW;x+=64) g.drawImage(B.sky,x,0);
   g.drawImage(B.sun,Math.round(skyW*.74),20);
@@ -3120,7 +3105,6 @@ function drawScenePix(){ const B=bgSet(), g=ctx; g.imageSmoothingEnabled=false;
   const lay=(cv_,par)=>{ const off=Math.round(mod(camX*par,BGW)), oy=Math.round(parY(par)); for(let x=-off;x<skyW;x+=BGW) g.drawImage(cv_,x,oy); };
   lay(B.far,.06); lay(B.mid,.2); lay(B.near,.38); lay(B.ground,.6); }
 function skScene(style){ if(SKIN==='klassik'||style!=='meadow') return drawScene(style); drawScenePix(); }
-let fgBuf=null;
 function skForeground(){ if(styleAt(Math.floor((camX+viewW/2)/TS))!=='meadow') return; const B=bgSet(), ss=cv.height/SKY_H, k=scale/ss, W=Math.ceil(skyW);
   const dy=f=>Math.round(Math.max(-24,Math.min(140,((L.top+3)*TS-viewH-camY)*k*(f-1))));   // Kamera hoch → Vordergrund rutscht schneller nach unten weg
   const strip=(g,img,f,y)=>{ const off=Math.round(mod(camX*k*f,img.width)); for(let x=-off;x<W;x+=img.width) g.drawImage(img,x,y); };
@@ -3130,13 +3114,7 @@ function skForeground(){ if(styleAt(Math.floor((camX+viewW/2)/TS))!=='meadow') r
   for(let i=0;i<28;i++){ const f=1.1+hash(i*1.7)*.3, x=mod(hash(i*3.1)*1400-camX*k*f+Math.sin(clock*.7+i)*12,1400)-200, y=mod(hash(i*5.3)*SKY_H+clock*(4+hash(i)*6)*(i&1?1:-1)+dy(f)*.6,SKY_H+20)-10;
     if(x<-4||x>W) continue; ctx.globalAlpha=.35+.35*Math.sin(clock*2+i*1.3); ctx.fillStyle=i%3?'#fff2b0':'#ffffff'; ctx.fillRect(Math.round(x),Math.round(y),i%4?1:2,i%4?1:2); }
   ctx.globalAlpha=1;
-  // nahe Ebene: über der Spielfigur durchsichtig, damit Sam nie verdeckt ist
-  if(!fgBuf||fgBuf.width!==W){ fgBuf=document.createElement('canvas'); fgBuf.width=W; fgBuf.height=SKY_H; }
-  const g=fgBuf.getContext('2d'); g.setTransform(1,0,0,1,0,0); g.globalCompositeOperation='source-over'; g.clearRect(0,0,W,SKY_H); g.imageSmoothingEnabled=false;
-  strip(g,B.near,1.75,Math.max(0,dy(1.75))); strip(g,B.nearTop,1.75,Math.min(0,dy(1.75))-4);
-  const hx=(P.x+P.w/2-camX)*k, hy=(P.y+P.h/2-camY)*k, rg=g.createRadialGradient(hx,hy,18,hx,hy,70);
-  rg.addColorStop(0,'rgba(0,0,0,.82)'); rg.addColorStop(1,'rgba(0,0,0,0)'); g.globalCompositeOperation='destination-out'; g.fillStyle=rg; g.fillRect(hx-70,hy-70,140,140); g.globalCompositeOperation='source-over';
-  ctx.drawImage(fgBuf,0,0); ctx.restore(); }
+  ctx.restore(); }
 
 const TITLE_TOUR=['meadow','forest','stone','lake','snow'];
 let titleKids=[], titleNext=0, titleCoins=[];
@@ -3609,13 +3587,14 @@ let lastEvScore=null, scT=0, sdT=0;
 const bossBar=document.getElementById('bossbar'), bossName=document.getElementById('bossname'), bFill=document.getElementById('bfill');
 function updateHud(){
   if(!L) return;
-  const lv=document.getElementById('lives'), showLv=!EDIT_MODE&&!L.boss&&(L.id==='hub'||!!(L.need&&L.timeLimit));
+  const lv=document.getElementById('lives'), showLv=!EDIT_MODE&&(L.id==='hub'||!!L.boss||!!(L.need&&L.timeLimit));
   if(lv){ lv.hidden=!showLv; if(showLv){ const h=heartsHtml(save.lives??LIVES); if(lv.innerHTML!==h) lv.innerHTML=h; } }
   if(dbg.info) dbgInfo.textContent=`vx ${P.vx.toFixed(0)} · vy ${P.vy.toFixed(0)} · max ${(PH.max+tier()*PH.tierBonus).toFixed(0)} · Schwung ${flow.toFixed(0)}`;
   bossBar.hidden=!L.boss;
   if(L.boss){ scoreBox.hidden=true; const B=L.boss; bossName.textContent=B.state==='gone'?'Sieg! Hol dir die Krone':BOSS_INFO[B.id].name;
     bFill.style.width=(Math.max(0,B.hp)/B.max*100)+'%'; bFill.style.background=BOSS_INFO[B.id].col;
-    hcol.textContent=B.state==='intro'?BOSS_INFO[B.id].tip:''; hr.textContent=time.toFixed(1)+'s'; }
+    hcol.textContent=B.state==='intro'?BOSS_INFO[B.id].tip:''; const bp=bossScore();
+    hr.innerHTML=`<span style="font-size:16px;color:${bp<=BOSS_HIT?'#ff6a6a':'var(--cream)'}">${bp} Punkte</span>`; }
   else if(L.id==='uebung'){ scoreBox.hidden=true; hcol.style.fontSize='14px'; hcol.textContent='Übungswiese'; hr.textContent=''; }
   else if(L.id==='hub'){
     const total=Object.keys(save.crystals).length;
