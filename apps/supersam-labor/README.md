@@ -22,7 +22,13 @@ npm run build    # dist/
 
 Im Pausenmenü **Bildrate anzeigen** einschalten (bleibt im Browser gespeichert, `supersam-labor-fps`).
 Oben links erscheinen die Bilder pro Sekunde (grün ab 55, gelb ab 40, sonst rot), darunter die mittlere
-Bildzeit, das längste Bild der letzten halben Sekunde und die Zeit fürs Zeichnen.
+Bildzeit, das längste Bild der letzten halben Sekunde, die Zeit fürs Zeichnen, die Bildgröße in Pixeln und
+ob die Lichteffekte laufen.
+
+Daneben im Pausenmenü: **Auflösung** Hoch/Mittel/Niedrig (bis 2 / 1,5 / 1 Bildpunkt je CSS-Pixel,
+`supersam-labor-aufloesung`) und **Licht** An/Aus (Lichteffekte über WebGL; dieselbe Einstellung wie im
+Debug-Menü). Die Lichteffekte kopieren jedes Bild von der Zeichenfläche auf die Grafikkarte – das ist auf
+iPhones der teuerste Schritt.
 
 ## Abschlusskacheln (klassisch)
 

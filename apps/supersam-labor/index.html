@@ -103,6 +103,7 @@ canvas{position:fixed;left:0;top:0;width:100%;height:100vh;height:var(--vh,100dv
 @media (prefers-reduced-motion:reduce){.zone.hint{animation:none;background:rgba(255,225,77,.15)}}
 .panel{position:fixed;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;
   background:rgba(13,21,36,.8);text-align:center;touch-action:pan-y;font-family:var(--pixel);padding:16px max(16px,env(safe-area-inset-right,0px)) 16px max(16px,env(safe-area-inset-left,0px));overflow:auto}
+#pause{justify-content:flex-start}#pause>:first-child{margin-top:auto}#pause>:last-of-type{margin-bottom:auto}   /* mittig, aber bei wenig Höhe scrollbar statt oben abgeschnitten */
 .panel h1{margin:0;font-size:clamp(24px,5vw,42px);color:var(--ember);text-shadow:3px 3px 0 var(--ink);text-wrap:balance}
 .panel h2{margin:0;font-size:18px;color:var(--sky);text-shadow:2px 2px 0 var(--ink)}
 .panel p{margin:0;max-width:40em;line-height:1.6;font-size:12px;color:var(--cream)}
@@ -200,6 +201,7 @@ body.title .hud,body.title .zone,body.title #msg,body.title #tut{display:none!im
     <button class="btn ghost" id="pmain" type="button">Hauptmenü</button>
   </div>
   <div class="stilwahl"><span>Grafik</span><button type="button" data-stil="klassik">Klassisch</button><button type="button" data-stil="pixel3d">Pixel 3D</button></div>
+  <div class="stilwahl"><span>Auflösung</span><button type="button" data-res="2">Hoch</button><button type="button" data-res="1.5">Mittel</button><button type="button" data-res="1">Niedrig</button><span style="margin-left:10px">Licht</span><button type="button" data-fx="1">An</button><button type="button" data-fx="0">Aus</button></div>
   <div class="tunes" style="max-width:380px">
     <label for="v-music">Musik</label><input type="range" id="v-music" min="0" max="1" step="0.05"><output id="o-music" for="v-music"></output>
     <label for="v-sfx">Effekte</label><input type="range" id="v-sfx" min="0" max="1" step="0.05"><output id="o-sfx" for="v-sfx"></output>
@@ -2015,8 +2017,12 @@ function die(){ shake=.25; sfx('hurt'); respawn(); P.inv=2; if(L.boss){ bossDeat
   if(L.need){ deaths++; floaters.push({x:P.x+P.w/2,y:P.y-6,txt:String(PTS.death),t:1.4,col:'#ff6a6a'}); showMsg(`${PTS.death} Punkte`); } }
 
 // ---------- Darstellung ----------
+// Auflösung (Pausenmenü): Hoch = bis 2 Bildpunkte je CSS-Pixel, Mittel 1,5, Niedrig 1 – weniger Pixel entlasten
+// vor allem die Lichteffekte, die jedes Bild von der Zeichenfläche auf die Grafikkarte kopieren
+const RES_KEY='supersam-labor-aufloesung'; let RES=2;
+try{ const v=+localStorage.getItem(RES_KEY); if([1,1.5,2].includes(v)) RES=v; }catch(_){}
 function resize(){
-  const dpr=Math.min(devicePixelRatio||1,2);
+  const dpr=Math.min(devicePixelRatio||1,RES);
   // Bild exakt auf den sichtbaren Bereich legen (Handy-Browser: 100vh reicht unter die Adressleiste)
   document.documentElement.style?.setProperty('--vh',innerHeight+'px');
   cv.width=Math.round(innerWidth*dpr); cv.height=Math.round(innerHeight*dpr);
@@ -2669,7 +2675,7 @@ const SKINS=['klassik','pixel3d'], SKIN_NAME={klassik:'Klassisch',pixel3d:'Pixel
 // Standard ist Klassisch; Pixel 3D ist wählbar
 let SKIN='klassik';
 try{ const q=new URLSearchParams(location.search).get('stil'), v=localStorage.getItem(SKIN_KEY); if(SKINS.includes(q)) SKIN=q; else if(SKINS.includes(v)) SKIN=v; }catch(_){}
-const skinButtons=()=>{ try{ return [...(document.querySelectorAll?.('.stilwahl button')||[])]; }catch(_){ return []; } };
+const skinButtons=()=>{ try{ return [...(document.querySelectorAll?.('.stilwahl button[data-stil]')||[])]; }catch(_){ return []; } };
 function syncSkinUi(){ for(const b of skinButtons()) b.classList.toggle('on',b.dataset.stil===SKIN); }
 function setSkin(s){ if(!SKINS.includes(s)) return; SKIN=s; try{ localStorage.setItem(SKIN_KEY,s); }catch(_){} syncSkinUi(); showMsg('Grafik: '+SKIN_NAME[s]); }
 function cycleSkin(){ setSkin(SKINS[(SKINS.indexOf(SKIN)+1)%SKINS.length]); }
@@ -3391,7 +3397,15 @@ function buildTunes(){
   for(const k of ['info','hitbox','god','fx','nolock']){ const cb=document.getElementById('d-'+k); cb.checked=dbg[k]; }
   for(const a of ['double','wall','dash','glide']){ const cb=document.getElementById('a-'+a); cb.checked=save.ab[a]; }
 }
-for(const k of ['info','hitbox','god','fx','nolock']) document.getElementById('d-'+k).addEventListener('change',e=>{ dbg[k]=e.target.checked; dbgInfo.hidden=!dbg.info; if(k==='fx') FX.setActive(dbg.fx); saveTune(); });
+for(const k of ['info','hitbox','god','fx','nolock']) document.getElementById('d-'+k).addEventListener('change',e=>{ dbg[k]=e.target.checked; dbgInfo.hidden=!dbg.info; if(k==='fx'){ FX.setActive(dbg.fx); syncPerfUi(); } saveTune(); });
+// Leistung im Pausenmenü: Auflösung und Licht
+const perfButtons=sel=>{ try{ return [...(document.querySelectorAll?.(sel)||[])]; }catch(_){ return []; } };
+function syncPerfUi(){ for(const b of perfButtons('.stilwahl button[data-res]')) b.classList.toggle('on',+b.dataset.res===RES); for(const b of perfButtons('.stilwahl button[data-fx]')) b.classList.toggle('on',(b.dataset.fx==='1')===!!dbg.fx); }
+function setRes(v){ if(![1,1.5,2].includes(v)) return; RES=v; try{ localStorage.setItem(RES_KEY,String(v)); }catch(_){} resize(); syncPerfUi(); if(FPS.on) setFps(true); }
+function setLight(on){ dbg.fx=on; FX.setActive(on); const cb=document.getElementById('d-fx'); if(cb) cb.checked=on; saveTune(); syncPerfUi(); if(FPS.on) setFps(true); }
+for(const b of perfButtons('.stilwahl button[data-res]')) b.addEventListener('click',()=>setRes(+b.dataset.res));
+for(const b of perfButtons('.stilwahl button[data-fx]')) b.addEventListener('click',()=>setLight(b.dataset.fx==='1'));
+syncPerfUi();
 for(const a of ['double','wall','dash','glide']) document.getElementById('a-'+a).addEventListener('change',e=>{ save.ab[a]=e.target.checked; persist(); });
 let debugFrom='start';
 const pauseEl=document.getElementById('pause');
@@ -3618,7 +3632,7 @@ try{ FPS.on=localStorage.getItem('supersam-labor-fps')==='1'; }catch(_){}
 function setFps(on){ FPS.on=on; try{ localStorage.setItem('supersam-labor-fps',on?'1':'0'); }catch(_){} if(FPS.el){ FPS.el.hidden=!on; if(on) FPS.el.textContent='… FPS'; } FPS.n=0; FPS.max=0; FPS.draw=0; FPS.t0=0; }
 function fpsTick(now,raw,drawMs){ FPS.n++; FPS.max=Math.max(FPS.max,raw); FPS.draw+=drawMs; if(!FPS.t0){ FPS.t0=now; return; }
   const span=now-FPS.t0; if(span<500) return; const f=FPS.n*1000/span, el=FPS.el, n1=v=>v.toFixed(1).replace('.',',');
-  if(el){ el.innerHTML=`${Math.round(f)} FPS<small>Bild ${n1(span/FPS.n)} ms · max ${Math.round(FPS.max)} · Zeichnen ${n1(FPS.draw/FPS.n)} ms</small>`; el.className=f>=55?'':f>=40?'mid':'low'; }
+  if(el){ el.innerHTML=`${Math.round(f)} FPS<small>Bild ${n1(span/FPS.n)} ms · max ${Math.round(FPS.max)} · Zeichnen ${n1(FPS.draw/FPS.n)} ms · ${cv.width}×${cv.height}${dbg.fx&&FX.ok?' · Licht':''}</small>`; el.className=f>=55?'':f>=40?'mid':'low'; }
   FPS.n=0; FPS.max=0; FPS.draw=0; FPS.t0=now; }
 function frame(now){
   const raw=now-last; let dt=Math.min(.1,raw/1000); last=now;
