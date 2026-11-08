@@ -273,17 +273,18 @@ addEventListener('resize', resize);
 function buildBg(){
   bg.width = cv.width; bg.height = cv.height;
   const b = bg.getContext('2d'); b.setTransform(dpr*S,0,0,dpr*S,dpr*OX,0);
-  const g = b.createLinearGradient(0,0,0,groundY); g.addColorStop(0,C.skyTop); g.addColorStop(1,C.skyBot);
-  b.fillStyle = g; b.fillRect(XL,0,XR-XL,groundY);
+  const gb = backY();
+  const g = b.createLinearGradient(0,0,0,gb); g.addColorStop(0,C.skyTop); g.addColorStop(1,C.skyBot);
+  b.fillStyle = g; b.fillRect(XL,0,XR-XL,gb);
   // ferne Hügel
-  b.fillStyle = '#3c4a4a'; b.beginPath(); b.moveTo(XL,groundY-170);
-  for (let x=Math.floor(XL/20)*20;x<=XR+20;x+=20) b.lineTo(x, groundY-170 - Math.sin(x/60)*14 - Math.sin(x/23)*5);
-  b.lineTo(XR,groundY); b.lineTo(XL,groundY); b.fill();
+  b.fillStyle = '#3c4a4a'; b.beginPath(); b.moveTo(XL,gb-170);
+  for (let x=Math.floor(XL/20)*20;x<=XR+20;x+=20) b.lineTo(x, gb-170 - Math.sin(x/60)*14 - Math.sin(x/23)*5);
+  b.lineTo(XR,gb); b.lineTo(XL,gb); b.fill();
   // Brauerei
-  const top = groundY-150;
+  const top = gb-150;
   b.fillStyle = C.wall; b.fillRect(20, top, W-40, 150);
   b.fillStyle = C.brick;
-  for (let y=top+6; y<groundY; y+=12) for (let x=24 + ((y/12)%2)*14; x<W-24; x+=28) b.fillRect(x, y, 24, 8);
+  for (let y=top+6; y<gb; y+=12) for (let x=24 + ((y/12)%2)*14; x<W-24; x+=28) b.fillRect(x, y, 24, 8);
   b.fillStyle = C.roof; b.beginPath(); b.moveTo(10, top); b.lineTo(W/2, top-60); b.lineTo(W-10, top); b.fill();
   // hoher Brauerei-Schornstein mit Storchennest
   { const cx = chimneyX(), ct = chimneyTop(), cb = top - 4;
@@ -317,9 +318,9 @@ function buildBg(){
   b.fillRect(sx0 + 24, sy0 + 38, sw/2 - 24 - b.measureText(sub).width/2 - 8, 1.5);
   b.fillRect(W/2 + b.measureText(sub).width/2 + 8, sy0 + 38, sw/2 - 24 - b.measureText(sub).width/2 - 8, 1.5);
   // Bar vor der Brauerei
-  const bt = groundY - 58, bl = 52, br = W - 52;
-  b.fillStyle = '#3a2416'; b.fillRect(bl, bt + 6, br - bl, groundY - bt - 6);
-  b.fillStyle = '#5b3a22'; for (let x = bl + 4; x < br - 6; x += 18) b.fillRect(x, bt + 10, 14, groundY - bt - 14);
+  const bt = gb - 58, bl = 52, br = W - 52;
+  b.fillStyle = '#3a2416'; b.fillRect(bl, bt + 6, br - bl, gb - bt - 6);
+  b.fillStyle = '#5b3a22'; for (let x = bl + 4; x < br - 6; x += 18) b.fillRect(x, bt + 10, 14, gb - bt - 14);
   b.fillStyle = '#7a5130'; b.fillRect(bl - 8, bt, br - bl + 16, 8);
   b.fillStyle = '#9b6c42'; b.fillRect(bl - 8, bt, br - bl + 16, 2);
   // Zapfhähne
@@ -331,11 +332,19 @@ function buildBg(){
   b.fillStyle = '#1f2723'; b.fillRect(bl + 6, bt - 30, 46, 28); b.strokeStyle = '#7a5130'; b.lineWidth = 2; b.strokeRect(bl + 6, bt - 30, 46, 28);
   b.fillStyle = C.cream; b.font = '700 11px "Barlow Condensed", "Arial Narrow", sans-serif'; b.textAlign = 'center'; b.textBaseline = 'middle';
   b.fillText('BAR', bl + 29, bt - 21); b.font = '500 9px "Barlow Condensed", "Arial Narrow", sans-serif'; b.fillText('Seidl 3,90', bl + 29, bt - 10);
-  // Pflaster
-  b.fillStyle = C.stone; b.fillRect(XL, groundY, XR-XL, H-groundY);
-  b.fillStyle = C.stoneLight;
-  for (let y=groundY+4, r=0; y<H; y+=14, r++) for (let x=Math.floor(XL/24)*24-24+(r%2)*12; x<XR; x+=24) { b.beginPath(); b.ellipse(x+10, y+5, 10, 5, 0, 0, Math.PI*2); b.fill(); }
-  b.fillStyle = 'rgba(0,0,0,.25)'; b.fillRect(XL, groundY, XR-XL, 3);
+  // Hof: Pflaster vom Barbereich bis nach vorne, hinten kleinere Steine (Tiefe)
+  { const pg = b.createLinearGradient(0, gb, 0, H); pg.addColorStop(0, '#4f5158'); pg.addColorStop(1, C.stone);
+    b.fillStyle = pg; b.fillRect(XL, gb, XR-XL, H-gb);
+    let y = gb + 2, r = 0;
+    while (y < H){ const k = Math.min(1, (y - gb)/(groundY - gb + 40)), rw = 5 + 5*k, rh = 2.5 + 2.5*k, step = 12 + 12*k;
+      b.fillStyle = k < 1 ? `rgba(115,117,125,${.55 + .45*k})` : C.stoneLight;
+      for (let x = Math.floor(XL/step)*step - step + (r%2)*step/2; x < XR; x += step){ b.beginPath(); b.ellipse(x + rw, y + rh, rw, rh, 0, 0, Math.PI*2); b.fill(); }
+      y += rh*2 + 2 + 3*k; r++; }
+    b.fillStyle = 'rgba(0,0,0,.28)'; b.fillRect(XL, gb, XR-XL, 3);
+  }
+  // leichter Dunst über dem Hintergrund
+  { const hz = b.createLinearGradient(0, gb - 260, 0, gb); hz.addColorStop(0, 'rgba(201,138,82,0)'); hz.addColorStop(1, 'rgba(201,138,82,.16)');
+    b.fillStyle = hz; b.fillRect(XL, gb - 260, XR-XL, 260); }
 }
 
 /* ---------- drawing ---------- */
@@ -479,7 +488,8 @@ function drawMan(x, base){
 }
 let zoneSignY = 0;
 function chimneyX(){ return W - 72; }
-function chimneyTop(){ return Math.max(185, groundY - 400); }
+function backY(){ return groundY - Math.min(90, Math.max(50, (groundY - 520)*.5 + 50)); }
+function chimneyTop(){ return Math.max(175, backY() - 370); }
 function zoneX(){ return zone === 'left' ? 38 : W-38; }
 function drawZone(){
   const zx = zoneX(), full = P.count >= CAP, pulse = full ? (Math.sin(tTotal*8)+1)/2 : 0;
@@ -782,7 +792,7 @@ function reset(){
   updateHud();
 }
 /* Barbesucher: stehen mit dem Rücken zu uns und werfen die Flaschen über die Schulter */
-const VS = .8;
+const VS = .68;
 const visitors = [
   { x: 92,  shirt: '#3b5f9a', hair: '#3a2a1c', pants: '#2c3340', cap: null },
   { x: 150, shirt: '#b5473a', hair: '#d8b25a', pants: '#3a3a3a', cap: null },
@@ -793,7 +803,7 @@ const visitors = [
 const THROW_WIND = .38;
 function throwFrom(v, kind){
   const lv = level(), g = 430;
-  const x0 = v.x + v.side * 10, y0 = groundY - 8 - 108*VS;
+  const x0 = v.x + v.side * 9, y0 = backY() - 4 - 108*VS;
   const tx = 30 + Math.random()*(W - 60);
   const T = Math.max(1.15, 2.7 - lv*.13) * (0.88 + Math.random()*.24) * (kind === 'red' ? 1.1 : 1);
   const crateTop = groundY - 66, yc = kind === 'nana' ? crateTop - 6 : crateTop - 18;
@@ -822,7 +832,7 @@ function updateVisitors(dt){
   }
 }
 function drawVisitor(v){
-  const fy = groundY - 6;
+  const fy = backY() - 2;
   ctx.save(); ctx.translate(v.x, fy); ctx.scale(VS, VS);
   const sway = Math.sin(tTotal*1.6 + v.phase) * 1.5;
   ctx.translate(sway, 0);
