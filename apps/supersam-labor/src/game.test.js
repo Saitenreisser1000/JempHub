@@ -386,13 +386,30 @@ test('Weltnummern: Teil 1 und Teil 2 je Fähigkeitswelt, Summen aus allen Welten
 test('Boss-Tür öffnet erst nach Welt X-2', () => {
   const { dz, run } = boot();
   dz.save.ab.double = true; dz.save.done[1] = true;
-  dz.setState('play'); dz.loadLevel('hub');
-  const door = dz.L.doors.find(d => d.world === 'b0');
-  const stand = () => { for (let i = 0; i < 90 && dz.L.id === 'hub'; i++) { dz.P.x = door.x + 3; dz.P.y = door.bottom - 14; dz.P.vx = 0; dz.P.vy = 0; run(1); } };
-  stand();
-  assert.equal(dz.L.id, 'hub', 'ohne 1-2 bleibt die Tür zu');
-  dz.save.done[5] = true; dz.P.x = door.x - 60; run(5); stand();   // kurz weggehen, dann wieder in die Tür
+  dz.setState('play'); dz.loadLevel('hub'); run(5);
+  assert.ok(dz.map.go('b0') >= 0, 'Wespenkönigin auf der Karte'); dz.map.enter(); run(2);
+  assert.equal(dz.L.id, 'hub', 'ohne 1-2 bleibt die Burg zu');
+  dz.save.done[5] = true; dz.map.enter(); run(2);
   assert.equal(dz.L.id, 'b0', 'nach 1-2 geht es zur Wespenkönigin');
+});
+
+test('Hubwelt als Landkarte: Punkte in Reihenfolge, Laufen, Kronentor, Rückkehr, Geheimdiamant', () => {
+  const { dz, listeners, run } = boot();
+  const key = (k, d) => d ? listeners.keydown({ key: k, preventDefault() {} }) : listeners.keyup({ key: k });
+  dz.setState('play'); dz.loadLevel('hub'); run(5);
+  assert.equal(dz.map.nodes.map(n => n.key).join(' '), 'home 1 5 b0 g-b0 2 6 b2 g-b2 3 7 b1 g-b1 4 8 secret b3', 'Reihenfolge auf der Karte');
+  assert.equal(dz.map.i, 0, 'Start bei der Übungswiese');
+  key('ArrowRight', 1); for (let i = 0; i < 400; i++) run(1); key('ArrowRight', 0); for (let i = 0; i < 120; i++) run(1);
+  assert.equal(dz.map.nodes[dz.map.i].key, 'g-b0', 'Kronentor der Wespenkönigin hält Sam auf');
+  dz.map.go(1); dz.map.enter(); run(2); assert.equal(dz.L.id, 1, 'Springen betritt 1-1');
+  dz.loadLevel('hub', 1); assert.equal(dz.map.nodes[dz.map.i].key, 1, 'zurück auf dem Punkt der Welt');
+  dz.save.bosses.b0 = true; dz.loadLevel('hub', 'b0'); run(5);
+  key('ArrowRight', 1); for (let i = 0; i < 60; i++) run(1); key('ArrowRight', 0); for (let i = 0; i < 120; i++) run(1);
+  assert.ok(dz.map.i > dz.map.nodes.findIndex(n => n.key === 'g-b0'), 'nach dem Sieg geht es durch das Tor');
+  // Geheimdiamant braucht Gleiten
+  dz.map.go('secret'); dz.map.enter(); assert.ok(!dz.L.crystals[0].known, 'ohne Gleiten nichts');
+  dz.save.ab.glide = true; dz.map.enter(); assert.ok(dz.save.crystals[dz.L.crystals[0].id], 'mit Gleiten gefunden');
+  delete dz.save.crystals[dz.L.crystals[0].id];
 });
 
 test('Archiv: alte Fassungen von 1-1 und 1-2 bleiben erhalten, zählen aber nicht mit', () => {

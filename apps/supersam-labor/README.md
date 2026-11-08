@@ -18,6 +18,19 @@ npm test
 npm run build    # dist/
 ```
 
+## Hubwelt als Landkarte
+
+Die Hubwelt ist eine Inselkarte von oben: Wald im Westen, Felsen im Norden, See mit Lagune im Süden,
+Gipfel im Osten. Sam läuft mit ◀ ▶ von Punkt zu Punkt, **Springen** betritt die Welt. Welten sind Punkte
+(gold = geschafft, rot = offen, grau mit Schloss = gesperrt), Endgegner Burgen (mit Krone, wenn besiegt),
+Kronentore Schranken auf dem Weg. Hinter dem ersten geschlossenen Tor liegt Nebel. Unten zeigt eine
+Infokarte Name, Diamanten, Sterne und Bestzeit – oder warum der Punkt gesperrt ist. Ganz links liegt die
+Übungswiese, am Gipfel ein Geheimnis, das nur mit Gleiten zu holen ist.
+
+Intern bleibt `hub` das bisherige Level mit Türen, Toren und Diamant (Sperren in `doorBlock`, Reihenfolge
+nach der Lage von links nach rechts); `MAP_POS` legt fest, wo die Punkte auf der Karte liegen. Zurück aus
+einer Welt steht Sam auf deren Punkt.
+
 ## Leben
 
 Jeder Spielstand hat 3 Leben (♥ oben unter der Punkteanzeige, auch in der Hubwelt). Fällt die Punktzahl in
