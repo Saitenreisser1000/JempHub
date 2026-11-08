@@ -1184,6 +1184,7 @@ function loadLevel(id,spawnDoor){
   let p=L.start;
   if(id==='hub'&&spawnDoor){ const d=L.doors.find(d=>d.world===spawnDoor); if(d) p={x:d.x+24,y:d.bottom-14}; }
   resetPlayer(p);
+  if(id==='hub'){ L.map=true; mapBuild(spawnDoor); }
   document.getElementById('home').hidden=true;   // Hubwelt erreicht man über das Menü (Haus-Knopf)
   playSong(id);
   updateHud();
@@ -1212,7 +1213,7 @@ function recompute(){
   wasBoth=both;
   zl.classList.toggle('on',L_); zr.classList.toggle('on',R_);
 }
-function triggerJump(){ if(state==='play') P.buffer=PH.buffer; }
+function triggerJump(){ if(state!=='play') return; if(L&&L.map){ mapEnter(); return; } P.buffer=PH.buffer; }
 function requestDash(side){
   if(state!=='play'||!save.ab.dash||P.dashCD>0||P.dashT>0) return;
   if(!P.ground&&P.airDash) return;
@@ -1565,6 +1566,7 @@ function hazard(){
 function update(dt){
   if(state!=='play') return;
   time+=dt;
+  if(L.map){ updateMap(dt); return; }
   if(P.inv>0) P.inv=Math.max(0,P.inv-dt);
   if(L.timeLimit){ const tl=Math.ceil(timeLeft()); if(tl<=10&&tl>0&&tl!==lastTick){ lastTick=tl; sfx('tick'); } }
   if(livesCheck()){ loseLife(); return; }
@@ -1698,13 +1700,17 @@ function update(dt){
     if(!over) d.armed=true; // eine Tür wirkt erst, nachdem man sie einmal verlassen hat
     const inside=d.armed&&over&&P.ground&&Math.abs(P.y+P.h-d.bottom)<4&&Math.abs(P.vx)<25;
     d.t=inside?d.t+dt:Math.max(0,d.t-dt*2);
-    if(d.t>=.7&&d.stars&&starsGot()<d.stars){ d.t=0; d.armed=false; sfx('locked'); showMsg(`★ ${starsGot()}/${d.stars}`); continue; }
-    if(d.t>=.7&&d.need&&crystalTotal()<d.need){ d.t=0; d.armed=false; sfx('locked'); showMsg(`Noch ${d.need-crystalTotal()} Diamanten nötig`); continue; }
-    if(d.t>=.7&&BOSS_NEEDS_WORLD[d.world]&&!save.done[BOSS_NEEDS_WORLD[d.world]]){ const w=BOSS_NEEDS_WORLD[d.world]; d.t=0; d.armed=false; sfx('locked'); showMsg(`Erst Welt ${WNO(w)} · ${NAMES[w]} schaffen`); continue; }
-    if(d.t>=.7&&NEED_FOR_DOOR[d.world]&&!save.ab[NEED_FOR_DOOR[d.world]]){ d.t=0; d.armed=false; sfx('locked'); showMsg(`Braucht ${AB_INFO[NEED_FOR_DOOR[d.world]].name}`); continue; }
+    if(d.t>=.7){ const why=doorBlock(d); if(why){ d.t=0; d.armed=false; sfx('locked'); showMsg(why); continue; } }
     if(d.t>=.7){ clearInput(); sfx('door'); const n=d.world; if(n===0){ const w=L.id; if(w==='uebung'){ tutEnd(); loadLevel('hub'); showMsg('Willkommen in der Hubwelt!'); } else { loadLevel('hub',w); showMsg('Hubwelt'); } } else { loadLevel(n); showMsg(typeof n==='number'?`Welt ${WNO(n)} · ${NAMES[n]}`:`Endgegner: ${NAMES[n]}`); } return; }
   }
 }
+// Warum eine Tür (noch) zu ist – null, wenn sie offen ist. Gilt für Türen im Level und Punkte auf der Karte.
+function doorBlock(d){
+  if(d.stars&&starsGot()<d.stars) return `★ ${starsGot()}/${d.stars}`;
+  if(d.need&&crystalTotal()<d.need) return `Noch ${d.need-crystalTotal()} Diamanten nötig`;
+  const w=BOSS_NEEDS_WORLD[d.world]; if(w&&!save.done[w]) return `Erst Welt ${WNO(w)} · ${NAMES[w]} schaffen`;
+  const ab=NEED_FOR_DOOR[d.world]; if(ab&&!save.ab[ab]) return `Braucht ${AB_INFO[ab].name}`;
+  return null; }
 let ribbon=[], floaters=[];
 // ---------- Endgegner ----------
 // Vier Arenen, je eine pro Abschnitt der Hubwelt. Jeder Boss hat 3 Leben und ist nur mit der Fähigkeit seines Abschnitts zu besiegen.
@@ -2604,6 +2610,130 @@ function drawDoors(){ for(const d of L.doors){
   ctx.font='6px Silkscreen, monospace'; ctx.fillStyle=C.sky; ctx.fillText(`◆ ${total}/${totals().per[d.world]||0}`,d.x+8,y-5); }
   if(d.t>0){ ctx.strokeStyle=C.ember; ctx.lineWidth=2; ctx.beginPath(); ctx.arc(d.x+8,y+19,9,-Math.PI/2,-Math.PI/2+Math.PI*2*Math.min(1,d.t/.7)); ctx.stroke(); }
 } }
+// ---------- Hubwelt als Landkarte ----------
+// Die Hubwelt bleibt intern das Level 'hub' (Türen, Kronentore, Geheimdiamant – Spielstand und Sperren wie bisher),
+// wird aber als Inselkarte von oben gezeigt: Sam läuft mit ◀ ▶ von Punkt zu Punkt, Springen betritt die Welt.
+const MAPW=440, MAPH=200;
+const MAP_POS={home:[42,156],1:[68,133],5:[58,96],b0:[96,70],'g-b0':[124,61],2:[148,53],6:[186,37],b2:[216,61],'g-b2':[212,85],
+  3:[204,108],7:[246,135],b1:[280,109],'g-b1':[306,96],4:[332,82],8:[366,50],secret:[398,30],b3:[404,90]};
+const MAPS={i:0,to:-1,t:0,face:1,walk:0,nodes:[]};
+let MAPIMG=null, MAPWAVES=[], MAPFOG={};
+const mapHash=(x,y=0)=>{ const s=Math.sin(x*127.1+y*311.7)*43758.5453; return s-Math.floor(s); };
+const mapVn=(x,y)=>{ const xi=Math.floor(x),yi=Math.floor(y),xf=x-xi,yf=y-yi,u=xf*xf*(3-2*xf),v=yf*yf*(3-2*yf);
+  const a=mapHash(xi,yi),b=mapHash(xi+1,yi),c=mapHash(xi,yi+1),d=mapHash(xi+1,yi+1); return a+(b-a)*u+(c-a)*v+(a-b-c+d)*u*v; };
+const mapFbm=(x,y)=>mapVn(x,y)*.5+mapVn(x*2,y*2)*.25+mapVn(x*4,y*4)*.125+mapVn(x*8,y*8)*.0625;
+const mapIsl=(x,y)=>{ const nx=(x-MAPW/2)/(MAPW*.47), ny=(y-MAPH/2-4)/(MAPH*.44); return 1-(nx*nx+ny*ny)+(mapFbm(x*.03,y*.03)-.5)*.9; };
+const mapReg=(x0,y0)=>{ const x=x0+(mapFbm(x0*.025+7,y0*.025)-.5)*70, y=y0+(mapFbm(x0*.03,y0*.03+9)-.5)*50;
+  if(x<MAPW*.36) return 'forest'; if(x>MAPW*.7) return 'snow'; return y<MAPH*.5?'stone':'lake'; };
+function mapImage(){ if(MAPIMG) return MAPIMG;
+  const c=mk(MAPW,MAPH), g=c.getContext('2d'), id=g.createImageData(MAPW,MAPH), D=id.data;
+  const COL={forest:['#3e8a40','#2e6a34','#4f9a4a'],stone:['#c88a4a','#a86a34','#dca262'],lake:['#d8c890','#c4b078','#e8d8a0'],snow:['#e8eef6','#c8d4e4','#ffffff']};
+  const hx=h=>[parseInt(h.slice(1,3),16),parseInt(h.slice(3,5),16),parseInt(h.slice(5,7),16)];
+  const set=(x,y,h)=>{ const k=(y*MAPW+x)*4, v=hx(h); D[k]=v[0]; D[k+1]=v[1]; D[k+2]=v[2]; D[k+3]=255; };
+  const isl=[]; for(let y=0;y<MAPH;y++) for(let x=0;x<MAPW;x++) isl[y*MAPW+x]=mapIsl(x,y);
+  const I=(x,y)=>x<0||y<0||x>=MAPW||y>=MAPH?-1:isl[y*MAPW+x];
+  for(let y=0;y<MAPH;y++) for(let x=0;x<MAPW;x++){ const v=I(x,y);
+    if(v<0){ const coast=I(x+1,y)>=0||I(x-1,y)>=0||I(x,y+1)>=0||I(x,y-1)>=0; set(x,y,coast?'#2a6aa8':v>-.12?'#4492cc':'#3a86c8'); continue; }
+    if(v<.06){ set(x,y,'#f0dc9c'); continue; }
+    const cc=COL[mapReg(x,y)], n=mapFbm(x*.15,y*.15); set(x,y,n>.62?cc[2]:n<.38?cc[1]:cc[0]); }
+  // Lagune
+  for(let y=0;y<MAPH;y++) for(let x=0;x<MAPW;x++){ const dx=(x-MAPW*.53)/34, dy=(y-MAPH*.77)/16, d=dx*dx+dy*dy+(mapFbm(x*.08,y*.08)-.5)*.6; if(d<1) set(x,y,d>.8?'#7ac8e8':'#4aa0d8'); }
+  g.putImageData(id,0,0);
+  const F=(x,y,col,w=1,h=1)=>{ g.fillStyle=col; g.fillRect(Math.round(x),Math.round(y),w,h); };
+  // Fluss vom Gipfel zur Lagune
+  for(let t=0;t<1;t+=.002){ const x=MAPW*.74-t*MAPW*.17+Math.sin(t*9)*8, y=MAPH*.32+t*MAPH*.42; F(x,y,'#4aa0d8',3,2); }
+  // Bäume, Felsen, Berge, Schilf
+  for(let i=0;i<260;i++){ const x=mapHash(i,1)*MAPW, y=mapHash(i,2)*MAPH; if(mapIsl(x,y)<.12) continue; const r=mapReg(x,y);
+    if(Object.values(MAP_POS).some(([px,py])=>Math.abs(px-x)<9&&Math.abs(py-y)<9)) continue;   // Punkte frei halten
+    if(r==='forest'){ F(x-2,y-3,'#24502a',5,4); F(x-1,y-4,'#2e6a34',3,1); F(x-1,y-3,'#4f9a4a',2,2); F(x,y+1,'#5a3a2a',1,2); }
+    else if(r==='stone'&&i%3===0){ for(let k=0;k<5;k++) F(x-k,y+k-4,'#8a4a22',1+k*2,1); F(x-1,y-4,'#f0c08a',2,2); }
+    else if(r==='snow'&&i%2===0){ for(let k=0;k<7;k++) F(x-k,y+k-6,k<3?'#ffffff':'#8a98b8',1+k*2,1); }
+    else if(r==='lake'&&i%4===0){ F(x,y,'#3e8a40',1,3); F(x-2,y-1,'#4f9a4a',5,1); } }
+  // Wellen fürs Meer (bewegen sich beim Zeichnen)
+  MAPWAVES=[]; for(let i=0;i<90;i++){ const x=mapHash(i,11)*MAPW, y=mapHash(i,12)*MAPH; if(mapIsl(x,y)<-.08) MAPWAVES.push([x,y,mapHash(i,13)*6]); }
+  return MAPIMG=c; }
+function mapFog(fx){ if(MAPFOG[fx]) return MAPFOG[fx]; const c=mk(MAPW,MAPH), g=c.getContext('2d'), id=g.createImageData(MAPW,MAPH), D=id.data;
+  for(let y=0;y<MAPH;y++) for(let x=Math.max(0,fx-24);x<MAPW;x++){ const n=mapFbm(x*.04+3,y*.05), ramp=Math.min(1,(x-fx+24)/40), a=Math.max(.35,Math.min(.92,.35+(n-.3)*1.6))*ramp, k=(y*MAPW+x)*4;
+    D[k]=240; D[k+1]=244; D[k+2]=250; D[k+3]=Math.round(a*255); }
+  g.putImageData(id,0,0); return MAPFOG[fx]=c; }
+// Knoten: Übungswiese, dann Türen, Kronentore und Geheimdiamant der Hubwelt in Reihenfolge von links nach rechts
+function mapBuild(spawn){ const N=[{key:'home',kind:'home',x:0}];
+  for(const d of L.doors) N.push({key:d.world,kind:'door',ref:d,x:d.x});
+  for(const g of L.gates||[]) N.push({key:'g-'+g.boss,kind:'gate',ref:g,x:g.x});
+  for(const k of L.crystals) N.push({key:'secret',kind:'secret',ref:k,x:k.x});
+  N.sort((a,b)=>a.x-b.x); for(const n of N){ const p=MAP_POS[n.key]||[MAPW/2,MAPH/2]; n.mx=p[0]; n.my=p[1]; }
+  MAPS.nodes=N; MAPS.to=-1; MAPS.t=0; MAPS.walk=0;
+  const i=spawn==null?-1:N.findIndex(n=>String(n.key)===String(spawn)); MAPS.i=i>=0?i:0; }
+const mapClosedGate=()=>MAPS.nodes.findIndex(n=>n.kind==='gate'&&!n.ref.open);
+function mapDone(n){ if(n.kind==='door') return typeof n.key==='number'?!!save.done[n.key]:!!save.bosses[n.key]; if(n.kind==='secret') return !!n.ref.known; if(n.kind==='gate') return n.ref.open; return false; }
+function mapBlock(n){ if(n.kind==='door') return doorBlock(n.ref); if(n.kind==='secret') return save.ab.glide?null:`Braucht ${AB_INFO.glide.name}`; if(n.kind==='gate') return n.ref.open?null:`Krone: ${NAMES[n.ref.boss]} besiegen`; return null; }
+function updateMap(dt){ const N=MAPS.nodes; if(!N.length) return;
+  if(MAPS.to>=0){ const a=N[MAPS.i], b=N[MAPS.to], len=Math.hypot(b.mx-a.mx,b.my-a.my)||1; MAPS.t+=dt*70/len; MAPS.walk+=dt;
+    if(MAPS.t>=1){ MAPS.i=MAPS.to; MAPS.to=-1; MAPS.t=0; sfx('land'); } return; }
+  const cg=mapClosedGate();
+  if(keyR&&!keyL&&MAPS.i<N.length-1){ if(cg>=0&&MAPS.i>=cg){ if(!MAPS.blocked){ MAPS.blocked=true; sfx('locked'); showMsg(mapBlock(N[cg])); } return; } MAPS.to=MAPS.i+1; MAPS.face=1; }
+  else if(keyL&&!keyR&&MAPS.i>0){ MAPS.to=MAPS.i-1; MAPS.face=-1; }
+  if(!keyR) MAPS.blocked=false; }
+function mapEnter(){ const n=MAPS.nodes[MAPS.i]; if(!n||MAPS.to>=0) return;
+  if(n.kind==='home'){ clearInput(); sfx('door'); startPractice(); showMsg('Übungswiese'); return; }
+  const why=mapBlock(n); if(why){ sfx('locked'); showMsg(why); return; }
+  if(n.kind==='gate'){ showMsg('Weg frei'); return; }
+  if(n.kind==='secret'){ const k=n.ref; if(k.known){ showMsg('Diamant schon gefunden'); return; }
+    k.got=k.known=true; save.crystals[k.id]=true; persist(); sfx('crystal'); showMsg('Diamant gefunden! Im Aufwind über den Gipfel geglitten'); updateHud(); return; }
+  clearInput(); sfx('door'); const w=n.key; loadLevel(w); showMsg(typeof w==='number'?`Welt ${WNO(w)} · ${NAMES[w]}`:`Endgegner: ${NAMES[w]}`); }
+const MAPSTAT={};
+function mapStats(w){ if(MAPSTAT[w]) return MAPSTAT[w]; const lv=makeLevel(w); return MAPSTAT[w]={cr:lv.crystals.map(k=>k.id),st:lv.stars.map(k=>k.id)}; }
+function drawMap(){
+  const W=cv.width, H=cv.height, s=Math.min(W/MAPW,H/MAPH), ox=(W-MAPW*s)/2, oy=(H-MAPH*s)/2, N=MAPS.nodes, img=mapImage();
+  ctx.setTransform(1,0,0,1,0,0); ctx.imageSmoothingEnabled=false; ctx.fillStyle='#3a86c8'; ctx.fillRect(0,0,W,H);
+  ctx.setTransform(s,0,0,s,ox,oy);
+  // Meer bis an den Rand, dann die Insel
+  ctx.fillStyle='#4a98d4'; for(let i=0;i<60;i++){ const x=mapHash(i,21)*(MAPW+2*ox/s)-ox/s, y=mapHash(i,22)*(MAPH+2*oy/s)-oy/s; if(x>0&&x<MAPW&&y>0&&y<MAPH) continue; ctx.fillRect(Math.round(x+Math.sin(clock*.8+i)*2),Math.round(y),4,1); }
+  ctx.drawImage(img,0,0);
+  ctx.fillStyle='#7ac0ec'; for(const [x,y,p] of MAPWAVES){ const k=Math.sin(clock*1.2+p); if(k>.2) ctx.fillRect(Math.round(x+Math.sin(clock*.6+p)*2),Math.round(y),k>.7?4:3,1); }
+  const cg=mapClosedGate(), vis=i=>cg<0||i<=cg;
+  // Pfade
+  for(let i=0;i<N.length-1;i++){ if(!vis(i+1)) break; const a=N[i], b=N[i+1], len=Math.hypot(b.mx-a.mx,b.my-a.my), col=mapBlock(b)&&b.kind!=='gate'?'#b8a890':'#fff0c0';
+    for(let k=3;k<len-3;k+=3.2){ const x=a.mx+(b.mx-a.mx)*k/len, y=a.my+(b.my-a.my)*k/len; ctx.fillStyle='rgba(26,16,32,.35)'; ctx.fillRect(Math.round(x),Math.round(y)+1,2,2); ctx.fillStyle=col; ctx.fillRect(Math.round(x),Math.round(y),2,2); } }
+  // Nebel über allem hinter dem ersten geschlossenen Tor
+  if(cg>=0){ ctx.globalAlpha=1; const fx=Math.round(N[cg].mx+14); ctx.drawImage(mapFog(fx),Math.round(Math.sin(clock*.25)*2),0); }
+  // Punkte
+  const F=(x,y,c,w=1,h=1)=>{ ctx.fillStyle=c; ctx.fillRect(Math.round(x),Math.round(y),w,h); };
+  ctx.textAlign='center'; ctx.textBaseline='middle';
+  N.forEach((n,i)=>{ if(!vis(i)) return; const x=n.mx, y=n.my, done=mapDone(n), lock=mapBlock(n), sel=i===MAPS.i&&MAPS.to<0;
+    if(n.kind==='gate'){ F(x-6,y-6,'#3a2420',2,9); F(x+5,y-6,'#3a2420',2,9);
+      if(n.ref.open){ F(x-6,y-14,'#c9a24a',2,8); } else { F(x-6,y-3,'#c9a24a',13,2); F(x-6,y-1,'#8a6a28',13,1); ctx.drawImage(CROWN,x-6,y-13+Math.round(Math.sin(clock*2)),12,8); } return; }
+    if(n.kind==='door'&&typeof n.key==='string'){ const c=done?'#ffd166':lock?'#7a7a8a':'#d84a4a';
+      F(x-7,y-9,'#1a1020',15,12); F(x-6,y-8,c,13,10); for(const dx of [-7,-3,1,5]) F(x+dx,y-12,'#1a1020',3,4), F(x+dx+.5,y-11.5,c,2,3); F(x-1,y-4,'#1a1020',3,6);
+      if(done) ctx.drawImage(CROWN,x-5,y-20+Math.round(Math.sin(clock*2)),10,7); if(lock) mapLock(x,y-1); }
+    else if(n.kind==='secret'){ if(done){ ctx.drawImage(CRYSTAL,x-4,y-5,8,9); } else { ctx.globalAlpha=.6+.4*Math.sin(clock*3); ctx.fillStyle='#bff4ff'; for(let k=0;k<3;k++) F(x-4+k*4,y-6+((clock*8+k*3)%6),'#bff4ff',1,3); ctx.globalAlpha=1; ctx.font='bold 7px Silkscreen, monospace'; ctx.fillStyle='#ffffff'; ctx.fillText('?',x,y-1); } }
+    else { const c=n.kind==='home'?'#9be06a':done?'#ffd166':lock?'#7a7a8a':'#d84a4a';
+      F(x-5,y-3,'#1a1020',11,7); F(x-4,y-4,'#1a1020',9,9); F(x-4,y-3,c,9,6); F(x-3,y-4,c,7,8); F(x-2,y-3,'rgba(255,255,255,.55)',3,2);
+      if(lock) mapLock(x,y+1); else { ctx.font=`bold ${n.kind==='home'?6:4.5}px Silkscreen, monospace`; ctx.fillStyle='#1a1020'; ctx.fillText(n.kind==='home'?'Ü':WNO(n.key),x,y+.5); } }
+    if(sel){ ctx.strokeStyle='rgba(255,255,255,'+(.5+.5*Math.sin(clock*5))+')'; ctx.lineWidth=1; ctx.strokeRect(Math.round(x)-8.5,Math.round(y)-7.5,17,15); } });
+  // Gebietsnamen
+  ctx.font='6px Silkscreen, monospace'; for(const [t,x,y,col] of [['Wald',30,108,'#f6ead2'],['Felsen',262,40,'#f6ead2'],['See',222,160,'#f6ead2'],['Gipfel',372,148,'#5a6a88']]){ ctx.fillStyle='rgba(26,16,32,.45)'; ctx.fillText(t,x+.6,y+.6); ctx.fillStyle=col; ctx.fillText(t,x,y); }
+  // Sam
+  let sx=N[MAPS.i].mx, sy=N[MAPS.i].my; if(MAPS.to>=0){ const b=N[MAPS.to]; sx+=(b.mx-sx)*MAPS.t; sy+=(b.my-sy)*MAPS.t; }
+  const FR=HF(null), walking=MAPS.to>=0, fr=walking?[FR.runA,FR.idle,FR.runB,FR.idle][Math.floor(MAPS.walk*10)%4]:((clock%3.2)<.12?FR.blink:FR.idle);
+  const bob=walking?0:Math.round(Math.sin(clock*2.5)*.6);
+  F(sx-4,sy-6,'rgba(0,0,0,.3)',8,2); ctx.drawImage(MAPS.face>0?fr.r:fr.l,Math.round(sx-8),Math.round(sy-21+bob));
+  // Infokarte
+  ctx.setTransform(1,0,0,1,0,0); const n=N[MAPS.i]; if(!n||walking) return;
+  const k=Math.max(1,H/200), cw=Math.min(W-20*k,210*k), ch=27*k, cx=(W-cw)/2, cy=H-ch-6*k;
+  ctx.fillStyle='rgba(13,21,36,.84)'; ctx.fillRect(cx,cy,cw,ch); ctx.fillStyle='#ffd166'; ctx.fillRect(cx,cy,cw,Math.max(1,k*.8));
+  ctx.textAlign='left'; ctx.textBaseline='middle'; const why=mapBlock(n);
+  let title='', line='';
+  if(n.kind==='home'){ title='Übungswiese'; line='Alle Griffe in Ruhe üben'; }
+  else if(n.kind==='gate'){ title=`Kronentor · ${NAMES[n.ref.boss]}`; line=n.ref.open?'Weg frei':'Besiege den Endgegner, dann öffnet sich das Tor'; }
+  else if(n.kind==='secret'){ title='Geheimnis im Aufwind'; line=n.ref.known?'Diamant gefunden':'Hier liegt etwas Verstecktes …'; }
+  else if(typeof n.key==='string'){ const b=save.best[n.key]; title=`Endgegner · ${NAMES[n.key]}`; line=save.bosses[n.key]?`Besiegt · Bestzeit ${b?.time?b.time.toFixed(1)+' s':'–'}`:BOSS_INFO[n.key].tip; }
+  else { const st=mapStats(n.key), cr=st.cr.filter(id=>save.crystals[id]).length, sr=st.st.filter(id=>save.stars[id]).length, b=save.best[n.key];
+    title=`${WNO(n.key)}  ${NAMES[n.key]}`; line=`◆ ${cr}/${st.cr.length}   ★ ${sr}/${st.st.length}   Bestzeit ${b?.time?Math.floor(b.time/60)+':'+String(Math.floor(b.time%60)).padStart(2,'0'):'–'}`; }
+  ctx.font=`${Math.round(7.5*k)}px Silkscreen, monospace`; ctx.fillStyle=n.kind==='door'&&mapDone(n)?'#9be06a':'#ffd166'; ctx.fillText(title,cx+6*k,cy+9*k);
+  ctx.font=`${Math.round(5.5*k)}px Silkscreen, monospace`; ctx.fillStyle=why?'#ff9a8a':'#f6ead2'; ctx.fillText(why||line,cx+6*k,cy+19.5*k);
+  ctx.textAlign='right'; ctx.fillStyle='#9ad0ff'; ctx.fillText(why?'◀ ▶':'Springen: los',cx+cw-6*k,cy+19.5*k); ctx.textAlign='left'; }
+function mapLock(x,y){ const F=(a,b,c,w,h)=>{ ctx.fillStyle=c; ctx.fillRect(Math.round(a),Math.round(b),w,h); }; F(x-2,y-4,'#e8e8f0',5,1); F(x-2,y-4,'#e8e8f0',1,3); F(x+2,y-4,'#e8e8f0',1,3); F(x-3,y-1,'#e8e8f0',7,5); F(x,y+1,'#1a1020',1,2); }
 function drawHubHints(){
   if(L.id!=='hub') return;
   ctx.textAlign='center'; ctx.font='6px Silkscreen, monospace'; ctx.fillStyle='rgba(246,234,210,.8)';
@@ -3178,6 +3308,7 @@ function drawTitle(){
 let titleHop=0;
 function draw(){
   if(state==='start'){ drawTitle(); return; }
+  if(L&&L.map){ drawMap(); return; }
   const bl=themeBlend(), ss=cv.height/SKY_H;
   ctx.setTransform(ss,0,0,ss,0,0); skScene(bl.a);
   if(bl.t>.01){ const main=ctx; ctx=bgCtx; ctx.setTransform(ss,0,0,ss,0,0); skScene(bl.b); ctx=main;
@@ -3551,7 +3682,7 @@ void main(){
 })();
 const rgb1=h=>hex(h).map(v=>v/255);
 function collectLights(){
-  if(!L||state==='start') return [];
+  if(!L||state==='start'||L.map) return [];
   const out=[], W=cv.width, H=cv.height;
   const add=(x,y,r,col,i,glow,prio)=>{ const sx=(x-camX)*scale, sy=(y-camY)*scale, rp=r*scale;
     if(sx<-rp||sx>W+rp||sy<-rp||sy>H+rp) return;
@@ -3572,6 +3703,7 @@ function collectLights(){
 }
 function fxRender(){
   if(!FX.ok||!dbg.fx) return;
+  if(L&&L.map){ const A=FXT.meadow; FX.render({amb:1,grade:A.grade,ga:A.ga*.5,fog:A.fog,fa:0,vig:A.vig*.6,bloom:0,lights:[]}); return; }   // Karte: neutral, ohne Lichter
   const bl=themeBlend(), A=FXT[bl.a], B=FXT[bl.b], t=bl.t, m=(x,y)=>x+(y-x)*t, ma=(x,y)=>x.map((v,i)=>m(v,y[i]));
   FX.render({amb:Math.max(0,1-(1-m(A.amb,B.amb))*PH.fxDark),grade:ma(A.grade,B.grade),ga:m(A.ga,B.ga),fog:ma(A.fog,B.fog),fa:m(A.fa,B.fa),
     vig:m(A.vig,B.vig),bloom:m(A.bloom,B.bloom)*PH.fxBloom,lights:collectLights()});
@@ -3670,7 +3802,7 @@ if(EDIT_DRAFT&&!EDIT_ENGINE){ const id=isNaN(+EDIT_ID)?EDIT_ID:+EDIT_ID, ab=(EDI
   addEventListener('keydown',e=>{ try{ audioInit(); }catch(_){} if(e.key==='Escape'){ e.preventDefault(); parent.postMessage({supersam:'back'},'*'); } });
   addEventListener('pointerdown',()=>{ try{ audioInit(); }catch(_){} }); }
 if(!EDIT_ENGINE) requestAnimationFrame(frame);
-window.__dz={editor:{levelData,EDITABLE,defFromData,PH,TS,ETYPE,NAMES,WNO,deco:{list:DECO_LIST,icon:decoIcon,preview:decoPreview},spr:{T,SPIKE,slopeTile,ES,BEETLE:BEETLE_A,STAR,COIN:COIN[0],CRYSTAL,SPRING,CROWN},
+window.__dz={map:{get nodes(){return MAPS.nodes;},get i(){return MAPS.i;},get to(){return MAPS.to;},go(k){ const i=MAPS.nodes.findIndex(n=>String(n.key)===String(k)); if(i>=0){ MAPS.i=i; MAPS.to=-1; } return i; },enter:()=>mapEnter()},editor:{levelData,EDITABLE,defFromData,PH,TS,ETYPE,NAMES,WNO,deco:{list:DECO_LIST,icon:decoIcon,preview:decoPreview},spr:{T,SPIKE,slopeTile,ES,BEETLE:BEETLE_A,STAR,COIN:COIN[0],CRYSTAL,SPRING,CROWN},
   load(D,ab){ EDIT_ID=String(D.id); EDIT_DRAFT=D; EDIT_MODE=true; Object.assign(save.ab,{double:ab.includes('double'),wall:ab.includes('wall'),dash:ab.includes('dash'),glide:ab.includes('glide')}); loadLevel(D.id); state='play'; L.timeLimit=0; return L; },   // nur für Editor/Engine: EDIT_MODE verhindert das Speichern
   tick(dt){ clock+=dt; update(dt); }, keys(l,r,j){ keyL=l; keyR=r; if(j&&!keyJump){ keyJump=true; triggerJump(); } else if(!j) keyJump=false; recompute(); }, dash(){ requestDash(P.face); },
   get P(){return P;}, get L(){return L;}, get state(){return state;}, set state(v){state=v;}},
