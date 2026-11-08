@@ -22,7 +22,7 @@ npm run build    # dist/
 
 Zusätzlich zu Bäumen, Tannen, Blumen und Grasbüscheln verteilt `addMoreDecor` beim Laden
 jedes Levels weitere Deko aus der Kachelkarte (nur Darstellung, funktioniert auch mit
-Editor-Levels; nicht neben Start, Federn, Fahnen, Türen, Ziel und Fahrplattformen):
+Editor-Levels, im Editor als Vorschau sichtbar; nicht neben Start, Federn, Fahnen, Türen, Ziel und Fahrplattformen):
 
 - Größere Stücke im Hintergrund: Wiese Apfelbaum, Birke, Heuhaufen, Findling, Zaun ·
   Wald Eiche, Riesenpilz, kahler Baum, Farn · Felsen Felsbrocken, Gerippe, Wagenrad,
@@ -71,6 +71,13 @@ der anderen Welten nutzen noch die klassische Grafik.
 - Welt wählen, Kacheln malen (Stift, Rechteck, Radierer, Rechtsklick löscht), Ebenen (Rückwand, Aufwind),
   Objekte und Gegner setzen; mit **Auswahl** Bereiche verschieben, kopieren (⌘C/⌘X/⌘V), Objekte anklicken
   und ihre Eigenschaften ändern (Gegner-Reichweite, Fahrplattform-Weg/Dauer). Spalten und Zeilen einfügen/löschen.
+- **Deko** (Abschnitt in der linken Leiste, nach Welten sortiert): Apfelbaum, Palme, Iglu, Sonnenblume,
+  Kakteen, Ranken, Seerosen, Schmetterlinge … von Hand setzen wie Objekte (Feld über dem Boden; hängende
+  Stücke unter die Decke, Seerosen und Boote ins Wasser). Bei Ranken, Wurzeln und Eiszapfen ist die Länge
+  einstellbar. **🌿** (Taste D) blendet die automatisch verteilte Deko ein oder aus (halb durchsichtig,
+  damit die von Hand gesetzte heraussticht). In den Level-Einstellungen schaltet **Automatische Deko**
+  sie für das Level ganz ab; dann erscheint nur die von Hand gesetzte. Im Level steht Deko als
+  `{"k":"deco","n":"apple","c":…,"r":…}` (optional `"len"`), das Abschalten als `"noDeco": true`.
 - **Probespielen** (P ab Mauszeiger, ⇧P ab Start) öffnet den Entwurf im echten Spiel, Esc führt zurück.
   Probespiele speichern keinen Spielstand.
 - **Prüfen** testet mit der echten Spielphysik und den gewählten Fähigkeiten, ob Ziel, Diamanten und Sterne

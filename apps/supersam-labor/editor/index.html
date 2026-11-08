@@ -63,6 +63,8 @@ details.sec>summary:hover{color:var(--text)} details.sec>summary .cnt{margin-lef
 .tools{display:grid;grid-template-columns:repeat(3,1fr);gap:4px}
 .tools button{padding:6px 2px;font-size:12px}
 .grid{display:grid;grid-template-columns:repeat(3,1fr);gap:4px}
+#pdeco h5{margin:8px 0 4px;font-size:11px;color:var(--dim);font-weight:600}
+.sec .hint{font-size:11px;color:var(--dim);margin:0 0 6px;line-height:1.35}
 .sw{position:relative;height:50px;border:1px solid var(--line);border-radius:6px;background:var(--panel2);cursor:pointer;display:flex;align-items:flex-end;justify-content:center;padding:0 2px 3px;font-size:10px;line-height:1.1;color:var(--dim);overflow:hidden;white-space:nowrap;text-overflow:ellipsis}
 .sw canvas{position:absolute;top:4px;left:50%;transform:translateX(-50%);image-rendering:pixelated}
 .sw.on{border-color:var(--accent);color:var(--text);background:#2c3b60}
@@ -126,6 +128,7 @@ button.pub{background:#2a4a6a;border-color:#4f86b8}
     <span class="sep"></span>
     <button id="undo" title="Rückgängig ⌘Z">↶</button><button id="redo" title="Wiederholen ⇧⌘Z">↷</button>
     <button id="arcs" title="Sprungbögen am Mauszeiger: J">⌒</button>
+    <button id="decobtn" class="on" title="Automatische Deko anzeigen: D">🌿</button>
     
     <span class="sep"></span>
     <button class="pub" id="handover" title="Level-Entwurf und Notizen an Claude schicken – online geht dadurch noch nichts">⇪ An Claude übergeben</button>
@@ -154,6 +157,7 @@ button.pub{background:#2a4a6a;border-color:#4f86b8}
     <details class="sec" data-sec="layers"><summary>Ebenen</summary><div class="grid" id="players"></div></details>
     <details class="sec" data-sec="objs"><summary>Objekte</summary><div class="grid" id="pobjs"></div></details>
     <details class="sec" data-sec="enem"><summary>Gegner</summary><div class="grid" id="penem"></div></details>
+    <details class="sec" data-sec="deco"><summary>Deko</summary><div class="hint">Nur Darstellung. Auf das Feld über dem Boden setzen; hängende Stücke unter die Decke, Seerosen und Boote ins Wasser.</div><div id="pdeco"></div></details>
     <details class="sec" data-sec="notes" open><summary>Notizen für Claude <span class="cnt" id="notecnt"></span></summary><div id="notes"></div></details>
   </aside>
 
@@ -167,6 +171,7 @@ button.pub{background:#2a4a6a;border-color:#4f86b8}
       <div class="row"><span>Punkteziel</span><input type="number" id="pneed" step="50" min="0"></div>
       <div class="row"><span>Zeit (s)</span><input type="number" id="ptime" step="10" min="0"></div>
       <div class="row"><span>Bodenreihe</span><input type="number" id="ptop" min="1"></div>
+      <div class="row"><span>Automatische Deko</span><input type="checkbox" id="pdecoauto"></div>
       <h4>Spalten &amp; Zeilen</h4>
       <div class="row"><span>Anzahl</span><input type="number" id="ncols" value="5" min="1" max="200"></div>
       <div class="row"><button id="inscol" title="An der Mausspalte einfügen">Spalten einfügen</button><button id="delcol">löschen</button></div>
@@ -225,7 +230,7 @@ let hist=[], fut=[];
 let view={x:0,y:0,z:28};                         // Bildschirm-Versatz (px) und Kachelgröße (px)
 let tool='pen', brush={kind:'tile',ch:'#',label:'Boden'};
 let hover=null, drag=null, sel=null, clip=null, selObj=null, spaceDown=false;
-let showArcs=false, showGrid=true, arcs=null, check=null;
+let showArcs=false, showGrid=true, arcs=null, check=null, showDeco=true, decoPrev=null, decoT=0;
 const prefs=(()=>{ try{ return JSON.parse(localStorage.getItem(PREFS)||'{}'); }catch(_){ return {}; } })();
 const savePrefs=()=>{ try{ localStorage.setItem(PREFS,JSON.stringify(prefs)); }catch(_){} };
 const toast=t=>{ const el=$('toast'); el.textContent=t; el.classList.add('show'); clearTimeout(toast.t); toast.t=setTimeout(()=>el.classList.remove('show'),1800); };
@@ -251,7 +256,7 @@ function pushHist(){ hist.push(snapM()); if(hist.length>150) hist.shift(); fut=[
 function undo(){ if(!hist.length) return; fut.push(snapM()); M=fromSnap(hist.pop()); sel=null; selObj=null; changed(true); toast('Rückgängig'); }
 function redo(){ if(!fut.length) return; hist.push(snapM()); M=fromSnap(fut.pop()); changed(true); toast('Wiederholt'); }
 let saveT=0;
-function changed(props){ check=null; renderCheck(); draw(); if(props) syncProps(); $('dirty').textContent='●'; $('dirty').title='wird gespeichert …'; clearTimeout(saveT); saveT=setTimeout(saveDraft,350); }
+function changed(props){ check=null; renderCheck(); queueDeco(); draw(); if(props) syncProps(); $('dirty').textContent='●'; $('dirty').title='wird gespeichert …'; clearTimeout(saveT); saveT=setTimeout(saveDraft,350); }
 function saveDraft(){ try{ const D=toData(M), id=curId;
     if(sigOf(D)===liveSig(id)){ clearDraft(id); $('dirty').textContent=''; }        // wieder gleich wie im Labor: kein Entwurf
     else { if(!hasDraft(id)) setMeta(id,{base:liveSig(id)}); localStorage.setItem(DRAFT+id,JSON.stringify(D)); $('dirty').textContent='✓'; $('dirty').title='Entwurf im Browser gespeichert'; }
@@ -262,7 +267,7 @@ const getMeta=id=>{ try{ return JSON.parse(localStorage.getItem(META+id)||'{}')|
 const setMeta=(id,m)=>{ try{ localStorage.setItem(META+id,JSON.stringify(m)); }catch(_){} };
 const getDraft=id=>{ try{ return JSON.parse(localStorage.getItem(DRAFT+id)||'null'); }catch(_){ return null; } };
 function clearDraft(id){ try{ localStorage.removeItem(DRAFT+id); localStorage.removeItem(META+id); }catch(_){} }
-const canon=D=>JSON.stringify([D.w,D.h,D.top,D.need||0,D.timeLimit||0,D.style||null,D.scene||null,D.sky||null,!!D.noReturn,D.grid,D.back,D.up,D.objs.map(o=>JSON.stringify(Object.keys(o).sort().map(k=>[k,o[k]]))).sort()]);
+const canon=D=>JSON.stringify([D.w,D.h,D.top,D.need||0,D.timeLimit||0,D.style||null,D.scene||null,D.sky||null,!!D.noReturn,!!D.noDeco,D.grid,D.back,D.up,D.objs.map(o=>JSON.stringify(Object.keys(o).sort().map(k=>[k,o[k]]))).sort()]);
 const hash=t=>{ let h=2166136261; for(let i=0;i<t.length;i++){ h^=t.charCodeAt(i); h=Math.imul(h,16777619); } return (h>>>0).toString(36)+t.length.toString(36); };
 const sigOf=D=>hash(canon(D));
 const LIVE_SIG={}; const liveSig=id=>LIVE_SIG[id]??=sigOf(E.levelData(id));      // Labor-Stand, wie er gerade online ist
@@ -303,7 +308,7 @@ function openLevel(id){
   M=fromData(D); hist=[]; fut=[]; sel=null; selObj=null; check=null;
   prefs.level=id; savePrefs(); $('dirty').textContent='';
   const st=M.objs.find(o=>o.k==='start'); view.x=Math.max(0,((st?st.c:0)-6)*view.z); view.y=Math.max(0,(M.top-12)*view.z);
-  syncProps(); renderCheck(); loadNotes(); refreshStatus(); draw(); pullNotes(id);
+  decoPrev=null; queueDeco(0); syncProps(); renderCheck(); loadNotes(); refreshStatus(); draw(); pullNotes(id);
 }
 
 // ---------- Palette ----------
@@ -319,9 +324,16 @@ function buildPalette(){
   for(const [layer,label,kbd] of LAYERS) swatch($('players'),'l'+layer,label,()=>setBrush({kind:'layer',layer,label}),x=>drawLayerIcon(x,layer),kbd);
   for(const [k,label] of OBJS) swatch($('pobjs'),'o'+k,label,()=>setBrush({kind:'obj',k,label}),x=>drawObjIcon(x,{k,c:0,r:0,w:1},0,0,16));
   for(const [t,label] of ENEMIES) swatch($('penem'),'e'+t,label,()=>setBrush({kind:'obj',k:'enemy',t,label}),x=>{ const T=E.ETYPE[t], sc=Math.min(1,16/Math.max(T.w,T.h)); x.save(); x.translate(8,8); x.scale(sc,sc); x.translate(-8,-8); drawObjIcon(x,{k:'enemy',t,c:0,r:0,icon:true},0,0,16); x.restore(); });
+  const WN={meadow:'Wiese',forest:'Wald',stone:'Felsen',lake:'See',snow:'Gipfel'}; let grid=null, last=null;
+  for(const [n,label,w] of E.deco.list){ if(w!==last){ last=w; const h=document.createElement('h5'); h.textContent=WN[w]||w; grid=document.createElement('div'); grid.className='grid'; $('pdeco').append(h,grid); }
+    swatch(grid,'d'+n,label,()=>setBrush({kind:'obj',k:'deco',n,label}),x=>drawObjIcon(x,{k:'deco',n,c:0,r:0,icon:true},0,0,16)); }
   markPalette();
 }
-function brushKey(b){ return b.kind==='tile'?'t'+b.ch:b.kind==='layer'?'l'+b.layer:b.k==='enemy'?'e'+b.t:'o'+b.k; }
+function brushKey(b){ return b.kind==='tile'?'t'+b.ch:b.kind==='layer'?'l'+b.layer:b.k==='enemy'?'e'+b.t:b.k==='deco'?'d'+b.n:'o'+b.k; }
+const objLabel=o=>o.k==='enemy'?ENEMIES.find(e=>e[0]===o.t)[1]:o.k==='deco'?(E.deco.list.find(e=>e[0]===o.n)?.[1]||o.n):OBJS.find(e=>e[0]===o.k)[1];
+function toggleDeco(){ showDeco=!showDeco; $('decobtn').classList.toggle('on',showDeco); if(showDeco) queueDeco(0); draw(); }
+function queueDeco(ms=400){ clearTimeout(decoT); if(!showDeco||!M) return; decoT=setTimeout(()=>{ try{ decoPrev=E.deco.preview(toData(M)); }catch(err){ decoPrev=null; console.warn('Deko-Vorschau',err); } draw(); },ms); }
+function drawDecoLayer(img,c0,c1,r0,r1,z){ const T=16, sx=c0*T, sy=r0*T, sw=(c1-c0+1)*T, sh=(r1-r0+1)*T; ctx.globalAlpha=.8; ctx.drawImage(img,sx,sy,Math.min(sw,img.width-sx),Math.min(sh,img.height-sy),c0*z,r0*z,Math.min(sw,img.width-sx)*z/T,Math.min(sh,img.height-sy)*z/T); ctx.globalAlpha=1; }
 function setBrush(b){ brush=b; if(tool!=='rect'&&tool!=='pen') setTool('pen'); markPalette(); }
 function markPalette(){ const k=brushKey(brush); document.querySelectorAll('.sw').forEach(s=>s.classList.toggle('on',s.dataset.key===k)); $('sbrush').textContent=brush.label; }
 function setTool(t){ tool=t; document.querySelectorAll('[data-tool]').forEach(b=>b.classList.toggle('on',b.dataset.tool===t));
@@ -357,6 +369,8 @@ function drawObjIcon(x,o,px,py,s){
   else if(k==='goal'){ x.strokeStyle='#ffd166'; x.lineWidth=Math.max(1,s/12); x.strokeRect(px+s*.12,py+s*.1,s*.76,s*.85); for(let i=1;i<4;i++){ x.beginPath(); x.moveTo(px+s*.12+i*s*.19,py+s*.1); x.lineTo(px+s*.12+i*s*.19,py+s*.95); x.stroke(); } x.lineWidth=1; if(SPR) x.drawImage(SPR.STAR,px+s*.25,py+s*.3,s*.5,s*.5); }
   else if(k==='door'){ x.fillStyle='#3a2a1e'; x.fillRect(px+s*.15,py-s*.6,s*.7,s*1.6); x.fillStyle='#ffd166'; x.fillRect(px+s*.62,py+s*.25,s*.1,s*.1); }
   else if(k==='mover'){ const w=(o.w||3)*s; if(SPR) for(let i=0;i<(o.w||3);i++) x.drawImage(SPR.T.wood,px+i*s,py,s,s); else { x.fillStyle='#b07a45'; x.fillRect(px,py,w,s); } x.strokeStyle='#ffd166'; x.strokeRect(px+.5,py+.5,w-1,s-1); }
+  else if(k==='deco'){ const d=E?.deco?.icon(o.n); if(!d) return; if(o.icon){ const sc=Math.min(s/d.w,s/d.h,s/16*1.6); x.drawImage(d.c,px+(s-d.w*sc)/2,py+(s-d.h*sc)/2,d.w*sc,d.h*sc); return; }
+    const sc=s/16, w=d.w*sc, h=d.h*sc, dx=px+(s-w)/2, dy=d.at==='hang'?py:d.at==='water'?py+(7-d.h+(o.n==='boat'?4:3))*sc:d.at==='air'?py+(s-h)/2:py+s-h; x.drawImage(d.c,dx,dy,w,h); }
   else if(k==='enemy'){ const img=o.t==='beetle'?SPR?.BEETLE?.l:SPR?.ES?.[o.t]?.[0]?.l; const T=E?.ETYPE?.[o.t];
     if(img&&T){ const sc=s/16, w=T.w*sc, h=T.h*sc, ex=px+(s-w)/2, ey=o.icon?py+(s-h)/2:o.t==='fisch'?py+14*sc:T.fly?py+(s-h)/2:py+s-h; x.drawImage(img,ex,ey,w,h); }
     else { x.fillStyle='#e04848'; x.beginPath(); x.arc(cx,cy,s*.35,0,7); x.fill(); } }
@@ -371,11 +385,13 @@ function draw(){
   const sk=SKY[M.scene||M.style]||SKY.meadow, g=ctx.createLinearGradient(0,0,0,M.h*z); g.addColorStop(0,sk[0]); g.addColorStop(1,sk[1]);
   ctx.fillStyle=g; ctx.fillRect(0,0,M.w*z,M.h*z);
   for(let r=r0;r<=r1;r++) for(let c=c0;c<=c1;c++){ if(M.b[r][c]){ ctx.fillStyle='rgba(36,28,52,.78)'; ctx.fillRect(c*z,r*z,z,z); } }
-  const style=M.style;
+  const style=M.style, dp=showDeco&&decoPrev&&decoPrev.w===M.w*16&&decoPrev.h===M.h*16?decoPrev:null;
+  if(dp) drawDecoLayer(dp.back,c0,c1,r0,r1,z);
   for(let r=r0;r<=r1;r++) for(let c=c0;c<=c1;c++){ const ch=M.g[r][c]; if(ch===' ') continue;
     if((ch==='#'||ch==='H')&&SPR){ const top=r===0||!isGround(M.g[r-1][c]); const img=(top?SPR.T.top:SPR.T.body)[SPR.T.top[style]?style:'forest'][(c*7+r*3)%3]; ctx.drawImage(img,c*z,r*z,z,z);
       if(ch==='H'){ ctx.fillStyle='rgba(255,209,102,.35)'; ctx.fillRect(c*z,r*z,z,z); ctx.strokeStyle='#ffd166'; ctx.setLineDash([3,2]); ctx.strokeRect(c*z+.5,r*z+.5,z-1,z-1); ctx.setLineDash([]); } }
     else drawTile(ctx,ch,c*z,r*z,z,style,false); }
+  if(dp) drawDecoLayer(dp.front,c0,c1,r0,r1,z);
   for(let r=r0;r<=r1;r++) for(let c=c0;c<=c1;c++){ if(M.u[r][c]){ ctx.fillStyle='rgba(127,224,255,.22)'; ctx.fillRect(c*z,r*z,z,z); ctx.fillStyle='rgba(220,250,255,.55)'; ctx.fillRect(c*z+z*.45,r*z+((r*7)%4)*z/4,Math.max(1,z*.08),z*.4); } }
   // Raster
   if(showGrid){ ctx.strokeStyle='rgba(255,255,255,.07)'; ctx.lineWidth=1; ctx.beginPath();
@@ -425,12 +441,12 @@ function paintCell(c,r,b,erase){
   else if(b.kind==='layer'){ M[b.layer==='back'?'b':'u'][r][c]=true; }
   else if(b.kind==='obj'){
     if(b.k==='start'||b.k==='goal'){ M.objs=M.objs.filter(o=>o.k!==b.k); }
-    const i=objAt(c,r); if(i>=0){ const o=M.objs[i]; if(o.k===b.k&&o.t===b.t) return; M.objs.splice(i,1); }
-    const o={k:b.k,c,r}; if(b.k==='enemy') o.t=b.t; if(b.k==='mover') Object.assign(o,{dc:6,dr:0,w:3,p:3.5}); if(b.k==='door') Object.assign(o,{world:0,need:0});
+    const i=objAt(c,r); if(i>=0){ const o=M.objs[i]; if(o.k===b.k&&o.t===b.t&&o.n===b.n) return; M.objs.splice(i,1); }
+    const o={k:b.k,c,r}; if(b.k==='enemy') o.t=b.t; if(b.k==='deco') o.n=b.n; if(b.k==='mover') Object.assign(o,{dc:6,dr:0,w:3,p:3.5}); if(b.k==='door') Object.assign(o,{world:0,need:0});
     M.objs.push(o); return o; }
 }
 function fillRect(s,b,erase){ const n=normSel(s); for(let r=n.r0;r<=n.r1;r++) for(let c=n.c0;c<=n.c1;c++){ if(b.kind==='obj'&&(b.k==='start'||b.k==='goal'||b.k==='mover'||b.k==='door')&&!(r===n.r0&&c===n.c0)) continue; paintCell(c,r,b,erase); } }
-function pick(c,r){ const i=objAt(c,r); if(i>=0){ const o=M.objs[i]; const lab=o.k==='enemy'?ENEMIES.find(e=>e[0]===o.t)[1]:OBJS.find(e=>e[0]===o.k)[1]; setBrush({kind:'obj',k:o.k,t:o.t,label:lab}); return; }
+function pick(c,r){ const i=objAt(c,r); if(i>=0){ const o=M.objs[i]; setBrush({kind:'obj',k:o.k,t:o.t,n:o.n,label:objLabel(o)}); return; }
   const ch=M.g[r][c]; if(ch!==' '){ setBrush({kind:'tile',ch,label:TILES.find(t=>t[0]===ch)?.[1]||ch}); return; }
   if(M.u[r][c]) return setBrush({kind:'layer',layer:'up',label:'Aufwind'}); if(M.b[r][c]) return setBrush({kind:'layer',layer:'back',label:'Rückwand'}); }
 function copySel(){ if(!sel) return null; const s=normSel(sel), w=s.c1-s.c0+1, h=s.r1-s.r0+1;
@@ -454,7 +470,7 @@ function insertRowsTop(n){ pushHist(); for(let i=0;i<n;i++){ M.g.unshift(Array(M
 function deleteRowsTop(n){ n=Math.min(n,M.top-1); if(n<=0) return; pushHist(); M.g.splice(0,n); M.b.splice(0,n); M.u.splice(0,n); M.objs=M.objs.filter(o=>o.r>=n||o.k==='start'||o.k==='goal'); for(const o of M.objs) o.r=Math.max(0,o.r-n); shiftNotes(null,y=>Math.max(0,y-n)); M.h-=n; M.top-=n; changed(true); }
 
 // ---------- Eigenschaften ----------
-function syncProps(){ if(!M) return; $('pname').value=M.name||''; $('psize').textContent=`${M.w} × ${M.h} Kacheln`; $('pneed').value=M.need||0; $('ptime').value=M.timeLimit||0; $('ptop').value=M.top; renderObjProps(); }
+function syncProps(){ if(!M) return; $('pname').value=M.name||''; $('psize').textContent=`${M.w} × ${M.h} Kacheln`; $('pneed').value=M.need||0; $('ptime').value=M.timeLimit||0; $('ptop').value=M.top; $('pdecoauto').checked=!M.noDeco; renderObjProps(); }
 function propRow(host,label,val,on,attrs={}){ const r=document.createElement('div'); r.className='row'; const s=document.createElement('span'); s.textContent=label; const i=document.createElement(attrs.options?'select':'input');
   if(attrs.options) for(const [v,l] of attrs.options){ const o=document.createElement('option'); o.value=v; o.textContent=l; if(String(v)===String(val)) o.selected=true; i.append(o); } else { i.type='number'; i.value=val; if(attrs.step) i.step=attrs.step; }
   i.addEventListener('change',()=>{ pushHist(); on(attrs.options?i.value:+i.value); changed(); draw(); }); r.append(s,i); host.append(r); }
@@ -500,11 +516,12 @@ function renderObjProps(){ const host=$('objprops'); host.innerHTML=''; updateIn
     $('sdelc').onclick=()=>{ sel=null; deleteCols(s.c0,w); };
     return; }
   const o=selObj!=null?M.objs[selObj]:null; if(!o) return;
-  const nm=o.k==='enemy'?ENEMIES.find(e=>e[0]===o.t)[1]:OBJS.find(e=>e[0]===o.k)[1];
-  $('institle').textContent=nm; insIcon(x=>{ if(o.k==='enemy'){ const T=E.ETYPE[o.t], sc=Math.min(1,16/Math.max(T.w,T.h)); x.save(); x.translate(8,8); x.scale(sc,sc); x.translate(-8,-8); drawObjIcon(x,{...o,c:0,r:0,icon:true},0,0,16); x.restore(); } else drawObjIcon(x,{...o,c:0,r:0,w:1},0,0,16); });
+  const nm=objLabel(o);
+  $('institle').textContent=nm; insIcon(x=>{ if(o.k==='enemy'){ const T=E.ETYPE[o.t], sc=Math.min(1,16/Math.max(T.w,T.h)); x.save(); x.translate(8,8); x.scale(sc,sc); x.translate(-8,-8); drawObjIcon(x,{...o,c:0,r:0,icon:true},0,0,16); x.restore(); } else drawObjIcon(x,{...o,c:0,r:0,w:1,icon:o.k==='deco'},0,0,16); });
   const t=document.createElement('div'); t.className='where'; t.textContent=`Spalte ${o.c} · Reihe ${o.r}`; host.append(t);
   if(o.k==='enemy'){ propRow(host,'Art',o.t,v=>o.t=v,{options:ENEMIES}); propRow(host,'Reichweite',o.range??3,v=>{ o.range=v===3?undefined:v; if(o.range==null) delete o.range; }); }
   if(o.k==='mover'){ propRow(host,'Breite',o.w,v=>o.w=Math.max(1,v)); propRow(host,'Weg waagrecht',o.dc,v=>o.dc=v); propRow(host,'Weg senkrecht',o.dr,v=>o.dr=v); propRow(host,'Dauer (s)',o.p,v=>o.p=Math.max(.5,v),{step:.1}); }
+  if(o.k==='deco'){ propRow(host,'Stück',o.n,v=>o.n=v,{options:E.deco.list.map(([n,l])=>[n,l])}); if(['vine','ice','root'].includes(o.n)) propRow(host,'Länge (px)',o.len||({vine:10,ice:6,root:10})[o.n],v=>{ o.len=Math.max(2,Math.min(48,Math.round(v))); }); }
   if(o.k==='door'){ propRow(host,'Ziel',o.world,v=>o.world=isNaN(+v)?v:+v,{options:[[0,'Hubwelt']]}); propRow(host,'Sterne nötig',o.stars||0,v=>{ if(v>0) o.stars=Math.round(v); else delete o.stars; }); }
   const b=document.createElement('div'); b.className='btns'; const del=document.createElement('button'); del.textContent='Objekt löschen'; del.title='⌫'; del.onclick=()=>{ pushHist(); M.objs.splice(selObj,1); selObj=null; changed(true); }; b.append(del); host.append(b);
 }
@@ -555,7 +572,7 @@ function zoomAt(f,mx=cv.clientWidth/2,my=cv.clientHeight/2){ const z0=view.z, z=
 function updateStatus(){ const hn=hover&&M?noteAt(hover.c,hover.r):null; $('shint').textContent=hn?`💬 ${noteNo(hn)}: ${hn.text}`:'';
   if(!hover||!M||!inside(hover.c,hover.r)){ $('sc').textContent='–'; $('sr').textContent='–'; $('st').textContent='–'; return; }
   $('sc').textContent=hover.c; $('sr').textContent=hover.r; const i=objAt(hover.c,hover.r); const ch=M.g[hover.r][hover.c];
-  $('st').textContent=(NAMES[ch]||ch)+(M.b[hover.r][hover.c]?' · Rückwand':'')+(M.u[hover.r][hover.c]?' · Aufwind':'')+(i>=0?' · '+(M.objs[i].k==='enemy'?ENEMIES.find(e=>e[0]===M.objs[i].t)[1]:OBJS.find(e=>e[0]===M.objs[i].k)[1]):''); }
+  $('st').textContent=(NAMES[ch]||ch)+(M.b[hover.r][hover.c]?' · Rückwand':'')+(M.u[hover.r][hover.c]?' · Aufwind':'')+(i>=0?' · '+objLabel(M.objs[i]):''); }
 
 // ---------- Tastatur ----------
 addEventListener('keydown',e=>{
@@ -583,6 +600,7 @@ addEventListener('keydown',e=>{
   const tk={b:'pen',r:'rect',e:'erase',v:'select',h:'hand',i:'pick',n:'note'}[k]; if(tk){ setTool(tk); return; }
   if(k==='p'){ startPlay(!e.shiftKey); return; }
   if(k==='j'){ showArcs=!showArcs; $('arcs').classList.toggle('on',showArcs); draw(); return; }
+  if(k==='d'&&!e.metaKey&&!e.ctrlKey){ toggleDeco(); return; }
   if(k==='g'){ showGrid=!showGrid; draw(); return; }
   const t=TILES.find(t=>t[2]===e.key); if(t){ setBrush({kind:'tile',ch:t[0],label:t[1]}); return; }
   const l=LAYERS.find(t=>t[2]===e.key); if(l){ setBrush({kind:'layer',layer:l[0],label:l[1]}); return; }
@@ -921,6 +939,7 @@ ${msg}`:''));
 // ---------- Seitenleiste ----------
 $('pname').onchange=()=>{ pushHist(); M.name=$('pname').value; changed(); };
 $('pneed').onchange=()=>{ pushHist(); M.need=+$('pneed').value; changed(); };
+$('pdecoauto').onchange=()=>{ pushHist(); if($('pdecoauto').checked) delete M.noDeco; else M.noDeco=true; changed(); };
 $('ptime').onchange=()=>{ pushHist(); M.timeLimit=+$('ptime').value; changed(); };
 $('ptop').onchange=()=>{ pushHist(); M.top=Math.max(1,Math.min(M.h-1,+$('ptop').value)); changed(true); };
 const nCols=()=>Math.max(1,+$('ncols').value||1);
@@ -929,6 +948,7 @@ $('delcol').onclick=()=>deleteCols(hover?.c??Math.floor((view.x+cv.clientWidth/2
 $('insrow').onclick=()=>insertRowsTop(nCols()); $('delrow').onclick=()=>deleteRowsTop(nCols());
 $('addend').onclick=()=>insertCols(M.w,nCols());
 $('undo').onclick=undo; $('redo').onclick=redo;
+$('decobtn').onclick=()=>toggleDeco();
 $('arcs').onclick=()=>{ showArcs=!showArcs; $('arcs').classList.toggle('on',showArcs); draw(); };
 
 document.querySelectorAll('[data-tool]').forEach(b=>b.onclick=()=>setTool(b.dataset.tool));
