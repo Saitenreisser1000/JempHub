@@ -58,6 +58,9 @@ canvas{position:fixed;left:0;top:0;width:100%;height:100vh;height:var(--vh,100dv
 .checks{display:flex;flex-wrap:wrap;gap:8px 18px;justify-content:center;font-size:11px;max-width:680px}
 .checks label{display:flex;align-items:center;gap:6px;min-height:32px}
 .checks input{accent-color:var(--ember);width:18px;height:18px}
+#fps{position:fixed;left:calc(env(safe-area-inset-left) + 10px);top:calc(env(safe-area-inset-top) + 56px);z-index:30;pointer-events:none;font-family:var(--pixel);font-size:11px;line-height:1.35;color:#c8ffb0;background:rgba(10,14,24,.62);padding:4px 7px;border-radius:4px;white-space:nowrap}
+#fps small{display:block;font-size:9px;color:#cfd8e8}
+#fps.mid{color:#ffd166} #fps.low{color:#ff7a6a}
 #dbgout{width:100%;max-width:680px;min-height:80px;font-family:ui-monospace,monospace;font-size:11px;background:#0d1524;color:var(--cream);border:2px solid var(--dim)}
 #dbginfo{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(env(safe-area-inset-bottom,0px) + 10px);font-family:ui-monospace,monospace;font-size:11px;
   background:rgba(13,21,36,.7);padding:3px 8px;pointer-events:none;white-space:nowrap;font-variant-numeric:tabular-nums}
@@ -201,8 +204,9 @@ body.title .hud,body.title .zone,body.title #msg,body.title #tut{display:none!im
     <label for="v-music">Musik</label><input type="range" id="v-music" min="0" max="1" step="0.05"><output id="o-music" for="v-music"></output>
     <label for="v-sfx">Effekte</label><input type="range" id="v-sfx" min="0" max="1" step="0.05"><output id="o-sfx" for="v-sfx"></output>
   </div>
-  <div class="checks"><label><input type="checkbox" id="v-vib"> Vibration</label></div>
+  <div class="checks"><label><input type="checkbox" id="v-vib"> Vibration</label><label><input type="checkbox" id="v-fps"> Bildrate anzeigen</label></div>
 </div>
+<div id="fps" hidden></div>
 <div class="panel" id="debug" hidden>
   <button class="btn ghost" id="dbgx" type="button" style="align-self:flex-end">✕ Schließen</button>
   <h1>Debug</h1>
@@ -3395,7 +3399,8 @@ for(const k of ['music','sfx']){ const inp=document.getElementById('v-'+k), out=
   inp.addEventListener('input',()=>{ const v=parseFloat(inp.value); AU.vol[k]=v; if(AU[k]) AU[k].gain.value=v; out.textContent=Math.round(v*100)+'%'; saveAudio(); });
   inp.addEventListener('change',()=>{ if(k==='sfx') sfx('coin'); }); }
 document.getElementById('v-vib').addEventListener('change',e=>{ AU.vol.vib=e.target.checked; saveAudio(); if(AU.vol.vib) juice('stomp'); });
-function syncVol(){ document.getElementById('v-vib').checked=AU.vol.vib!==false; for(const k of ['music','sfx']){ document.getElementById('v-'+k).value=AU.vol[k]; document.getElementById('o-'+k).textContent=Math.round(AU.vol[k]*100)+'%'; } }
+document.getElementById('v-fps')?.addEventListener('change',e=>setFps(e.target.checked));
+function syncVol(){ document.getElementById('v-vib').checked=AU.vol.vib!==false; const fc=document.getElementById('v-fps'); if(fc) fc.checked=FPS.on; for(const k of ['music','sfx']){ document.getElementById('v-'+k).value=AU.vol[k]; document.getElementById('o-'+k).textContent=Math.round(AU.vol[k]*100)+'%'; } }
 function openPause(){ syncVol(); state='pause'; clearInput(); document.getElementById('phub').hidden=(L.id==='hub'); pauseEl.hidden=false; }
 function resume(){ pauseEl.hidden=true; state='play'; last=performance.now(); }
 document.getElementById('presume').addEventListener('click',resume);
@@ -3607,18 +3612,29 @@ function withInterp(a,fn){
     P.x=sv.px; P.y=sv.py; CAM.cx=sv.cx; CAM.cy=sv.cy; zoom=sv.z; punch=sv.pu; L.movers.forEach((m,i)=>{ m.x=sv.m[i][0]; m.y=sv.m[i][1]; });
     applyZoom(); camX=CAM.cx-viewW/2; camY=CAM.cy-viewH/2; }
 }
+// Bildrate (im Pausenmenü einschaltbar): Bilder je Sekunde, längstes Bild und Zeit fürs Zeichnen, halbsekündlich
+const FPS={on:false,el:document.getElementById('fps'),n:0,t0:0,max:0,draw:0};
+try{ FPS.on=localStorage.getItem('supersam-labor-fps')==='1'; }catch(_){}
+function setFps(on){ FPS.on=on; try{ localStorage.setItem('supersam-labor-fps',on?'1':'0'); }catch(_){} if(FPS.el){ FPS.el.hidden=!on; if(on) FPS.el.textContent='… FPS'; } FPS.n=0; FPS.max=0; FPS.draw=0; FPS.t0=0; }
+function fpsTick(now,raw,drawMs){ FPS.n++; FPS.max=Math.max(FPS.max,raw); FPS.draw+=drawMs; if(!FPS.t0){ FPS.t0=now; return; }
+  const span=now-FPS.t0; if(span<500) return; const f=FPS.n*1000/span, el=FPS.el, n1=v=>v.toFixed(1).replace('.',',');
+  if(el){ el.innerHTML=`${Math.round(f)} FPS<small>Bild ${n1(span/FPS.n)} ms · max ${Math.round(FPS.max)} · Zeichnen ${n1(FPS.draw/FPS.n)} ms</small>`; el.className=f>=55?'':f>=40?'mid':'low'; }
+  FPS.n=0; FPS.max=0; FPS.draw=0; FPS.t0=now; }
 function frame(now){
-  let dt=Math.min(.1,(now-last)/1000); last=now;
+  const raw=now-last; let dt=Math.min(.1,raw/1000); last=now;
   if(matchMedia('(orientation: portrait)').matches&&innerWidth<900) dt=0;
   acc+=dt;
   while(acc>=STEP){ clock+=STEP;
     if(L){ snapshot(); if(hitstop>0) hitstop-=STEP; else { update(STEP); tickCelebrate(STEP); tickParticles(STEP); tickTutorial(STEP); } camera(STEP); }
     if(shake>0) shake-=STEP; acc-=STEP; }
+  const td=FPS.on?performance.now():0;
   if(L){ const a=CAM.snap?1:acc/STEP; CAM.snap=false; withInterp(a,()=>{ draw(); fxRender(); }); }
+  if(FPS.on) fpsTick(now,raw,performance.now()-td);
   hudT-=dt; if(hudT<=0){ updateHud(); hudT=.05; }
   requestAnimationFrame(frame);
 }
 document.body?.classList.add('title');
+if(FPS.on&&FPS.el) FPS.el.hidden=false;
 resize(); loadLevel('hub');
 // Probespiel aus dem Editor: ?edit=<Welt>&c=<Spalte>&r=<Reihe>&ab=double,wall
 if(EDIT_DRAFT&&!EDIT_ENGINE){ const id=isNaN(+EDIT_ID)?EDIT_ID:+EDIT_ID, ab=(EDIT_Q.get('ab')||'').split(',').filter(Boolean);

@@ -18,6 +18,12 @@ npm test
 npm run build    # dist/
 ```
 
+## Bildrate
+
+Im Pausenmenü **Bildrate anzeigen** einschalten (bleibt im Browser gespeichert, `supersam-labor-fps`).
+Oben links erscheinen die Bilder pro Sekunde (grün ab 55, gelb ab 40, sonst rot), darunter die mittlere
+Bildzeit, das längste Bild der letzten halben Sekunde und die Zeit fürs Zeichnen.
+
 ## Abschlusskacheln (klassisch)
 
 Wo der Boden an Luft grenzt, bekommt jede Kachel einen Abschluss (`drawEdges`, je Welt und in drei
