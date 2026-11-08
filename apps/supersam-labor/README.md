@@ -18,11 +18,30 @@ npm test
 npm run build    # dist/
 ```
 
+## Deko (klassisch)
+
+Zusätzlich zu Bäumen, Tannen, Blumen und Grasbüscheln verteilt `addMoreDecor` beim Laden
+jedes Levels weitere Deko aus der Kachelkarte (nur Darstellung, funktioniert auch mit
+Editor-Levels; nicht neben Start, Federn, Fahnen, Türen, Ziel und Fahrplattformen):
+
+- Größere Stücke im Hintergrund: Wiese Apfelbaum, Birke, Heuhaufen, Findling, Zaun ·
+  Wald Eiche, Riesenpilz, kahler Baum, Farn · Felsen Felsbrocken, Gerippe, Wagenrad,
+  Tonkrüge · See Palme, Sandburg, Sonnenschirm, Boot auf dem Wasser · Gipfel Iglu,
+  Schneemann, Eisblöcke, Schlitten.
+- Kleine Pixelbilder am Boden (`DK_ART`, je Welt in `DK_SET` gewichtet): Baumstümpfe,
+  bemooste Steine, Beerensträucher, Sonnenblumen, Pusteblumen, Pilze, Baumstämme, Farne,
+  Kakteen, Schädel, Steinmännchen, Rohrkolben, Seesterne, Krebse, Treibholz, Eiskristalle …
+- Unter Überhängen Ranken (mit Blüten), Wurzeln (Felsen) oder Eiszapfen (Gipfel);
+  Seerosen auf dem Wasser.
+- Einschlüsse im Boden (Kiesel, Wurzeln, Knochen, Fossilien, Muscheln, Risse, Moos, Eis).
+- Schmetterlinge auf der Wiese, Glühwürmchen im Wald.
+
 ## Grafikstil „Pixel 3D“
 
-Standard im Labor. Auf dem Startbildschirm und im Pausenmenü lässt sich unter
-**Grafik** auf **Klassisch** zurückschalten (am Rechner auch Taste `G`, als Link
-`?stil=klassik`). Die Wahl bleibt im Browser gespeichert (`supersam-labor-stil`).
+Wahlweise statt Klassisch (Standard). Auf dem Startbildschirm und im Pausenmenü unter
+**Grafik** umschaltbar (am Rechner auch Taste `G`, als Link `?stil=pixel3d`). Die Wahl
+bleibt im Browser gespeichert (`supersam-labor-stil`). Die zusätzliche klassische Deko
+erscheint dort nicht.
 
 - Figuren, Gelände und Hintergrund entstehen aus kleinen 3D-Körpern (Kugeln, Kapseln,
   Kästen, Höhenfelder). Je Pixel wird die Oberflächennormale beleuchtet (Licht von links
