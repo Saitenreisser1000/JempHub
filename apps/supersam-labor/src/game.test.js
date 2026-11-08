@@ -406,6 +406,11 @@ test('Hubwelt als Landkarte: Punkte in Reihenfolge, Laufen, Kronentor, Rückkehr
   dz.save.bosses.b0 = true; dz.loadLevel('hub', 'b0'); run(5);
   key('ArrowRight', 1); for (let i = 0; i < 60; i++) run(1); key('ArrowRight', 0); for (let i = 0; i < 120; i++) run(1);
   assert.ok(dz.map.i > dz.map.nodes.findIndex(n => n.key === 'g-b0'), 'nach dem Sieg geht es durch das Tor');
+  // Antippen: Sam läuft selbst über den Weg zum Punkt, aber nicht durch ein geschlossenes Tor
+  dz.map.go(1); dz.map.walkTo(6); for (let i = 0; i < 600 && dz.map.nodes[dz.map.i].key !== 6; i++) run(1);
+  assert.equal(dz.map.nodes[dz.map.i].key, 6, 'Sam läuft zum angetippten Punkt');
+  dz.map.walkTo('b3'); for (let i = 0; i < 900; i++) run(1);
+  assert.equal(dz.map.nodes[dz.map.i].key, 'g-b2', 'vor dem geschlossenen Kronentor ist Schluss');
   // Geheimdiamant braucht Gleiten
   dz.map.go('secret'); dz.map.enter(); assert.ok(!dz.L.crystals[0].known, 'ohne Gleiten nichts');
   dz.save.ab.glide = true; dz.map.enter(); assert.ok(dz.save.crystals[dz.L.crystals[0].id], 'mit Gleiten gefunden');
