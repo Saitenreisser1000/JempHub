@@ -1222,6 +1222,7 @@ function requestDash(side){
 }
 addEventListener('pointerdown',e=>{
   if(state!=='play') return;
+  if(L&&L.map){ mapTap(e.clientX,e.clientY); return; }   // Karte: Punkt antippen statt Laufzonen
   const side=e.clientX<innerWidth/2?-1:1, now=performance.now();
   const otherHeld=[...ptrs.values()].some(x=>(x<innerWidth/2?-1:1)!==side);
   if(!otherHeld && lastTap.side===side && now-lastTap.t<260){ requestDash(side); lastTap={side:0,t:0}; }
@@ -2616,7 +2617,7 @@ function drawDoors(){ for(const d of L.doors){
 const MAPW=440, MAPH=200;
 const MAP_POS={home:[42,156],1:[68,133],5:[58,96],b0:[96,70],'g-b0':[124,61],2:[148,53],6:[186,37],b2:[216,61],'g-b2':[212,85],
   3:[204,108],7:[246,135],b1:[280,109],'g-b1':[306,96],4:[332,82],8:[366,50],secret:[398,30],b3:[404,90]};
-const MAPS={i:0,to:-1,t:0,face:1,walk:0,nodes:[]};
+const MAPS={i:0,to:-1,t:0,face:1,walk:0,nodes:[],goal:-1,card:null};
 let MAPIMG=null, MAPWAVES=[], MAPFOG={};
 const mapHash=(x,y=0)=>{ const s=Math.sin(x*127.1+y*311.7)*43758.5453; return s-Math.floor(s); };
 const mapVn=(x,y)=>{ const xi=Math.floor(x),yi=Math.floor(y),xf=x-xi,yf=y-yi,u=xf*xf*(3-2*xf),v=yf*yf*(3-2*yf);
@@ -2662,15 +2663,20 @@ function mapBuild(spawn){ const N=[{key:'home',kind:'home',x:0}];
   for(const g of L.gates||[]) N.push({key:'g-'+g.boss,kind:'gate',ref:g,x:g.x});
   for(const k of L.crystals) N.push({key:'secret',kind:'secret',ref:k,x:k.x});
   N.sort((a,b)=>a.x-b.x); for(const n of N){ const p=MAP_POS[n.key]||[MAPW/2,MAPH/2]; n.mx=p[0]; n.my=p[1]; }
-  MAPS.nodes=N; MAPS.to=-1; MAPS.t=0; MAPS.walk=0;
+  MAPS.nodes=N; MAPS.to=-1; MAPS.t=0; MAPS.walk=0; MAPS.goal=-1;
   const i=spawn==null?-1:N.findIndex(n=>String(n.key)===String(spawn)); MAPS.i=i>=0?i:0; }
 const mapClosedGate=()=>MAPS.nodes.findIndex(n=>n.kind==='gate'&&!n.ref.open);
 function mapDone(n){ if(n.kind==='door') return typeof n.key==='number'?!!save.done[n.key]:!!save.bosses[n.key]; if(n.kind==='secret') return !!n.ref.known; if(n.kind==='gate') return n.ref.open; return false; }
 function mapBlock(n){ if(n.kind==='door') return doorBlock(n.ref); if(n.kind==='secret') return save.ab.glide?null:`Braucht ${AB_INFO.glide.name}`; if(n.kind==='gate') return n.ref.open?null:`Krone: ${NAMES[n.ref.boss]} besiegen`; return null; }
 function updateMap(dt){ const N=MAPS.nodes; if(!N.length) return;
-  if(MAPS.to>=0){ const a=N[MAPS.i], b=N[MAPS.to], len=Math.hypot(b.mx-a.mx,b.my-a.my)||1; MAPS.t+=dt*70/len; MAPS.walk+=dt;
-    if(MAPS.t>=1){ MAPS.i=MAPS.to; MAPS.to=-1; MAPS.t=0; sfx('land'); } return; }
+  if(MAPS.to>=0){ const a=N[MAPS.i], b=N[MAPS.to], len=Math.hypot(b.mx-a.mx,b.my-a.my)||1; MAPS.t+=dt*(MAPS.goal>=0?95:70)/len; MAPS.walk+=dt;
+    if(MAPS.t>=1){ MAPS.i=MAPS.to; MAPS.to=-1; MAPS.t=0; if(MAPS.goal===MAPS.i){ MAPS.goal=-1; sfx('land'); } } return; }
   const cg=mapClosedGate();
+  if(keyL||keyR) MAPS.goal=-1;
+  if(MAPS.goal>=0&&MAPS.goal!==MAPS.i){ const d=Math.sign(MAPS.goal-MAPS.i);   // angetippter Punkt: Schritt für Schritt über den Weg
+    if(d>0&&cg>=0&&MAPS.i>=cg){ MAPS.goal=-1; sfx('locked'); showMsg(mapBlock(N[cg])); return; }
+    MAPS.to=MAPS.i+d; MAPS.face=d; return; }
+  if(MAPS.goal===MAPS.i) MAPS.goal=-1;
   if(keyR&&!keyL&&MAPS.i<N.length-1){ if(cg>=0&&MAPS.i>=cg){ if(!MAPS.blocked){ MAPS.blocked=true; sfx('locked'); showMsg(mapBlock(N[cg])); } return; } MAPS.to=MAPS.i+1; MAPS.face=1; }
   else if(keyL&&!keyR&&MAPS.i>0){ MAPS.to=MAPS.i-1; MAPS.face=-1; }
   if(!keyR) MAPS.blocked=false; }
@@ -2681,6 +2687,14 @@ function mapEnter(){ const n=MAPS.nodes[MAPS.i]; if(!n||MAPS.to>=0) return;
   if(n.kind==='secret'){ const k=n.ref; if(k.known){ showMsg('Diamant schon gefunden'); return; }
     k.got=k.known=true; save.crystals[k.id]=true; persist(); sfx('crystal'); showMsg('Diamant gefunden! Im Aufwind über den Gipfel geglitten'); updateHud(); return; }
   clearInput(); sfx('door'); const w=n.key; loadLevel(w); showMsg(typeof w==='number'?`Welt ${WNO(w)} · ${NAMES[w]}`:`Endgegner: ${NAMES[w]}`); }
+// Antippen: Punkt → Sam läuft hin; Punkt unter Sam oder Infokarte → betreten
+function mapTap(cx,cy){ const N=MAPS.nodes; if(!N.length) return; const k=cv.width/innerWidth, x=cx*k, y=cy*k;
+  const c=MAPS.card; if(c&&MAPS.to<0&&x>=c.x&&x<=c.x+c.w&&y>=c.y&&y<=c.y+c.h){ mapEnter(); return; }
+  const W=cv.width, H=cv.height, s=Math.min(W/MAPW,H/MAPH), ox=(W-MAPW*s)/2, oy=(H-MAPH*s)/2, mx=(x-ox)/s, my=(y-oy)/s, cg=mapClosedGate();
+  let best=-1, bd=18; N.forEach((n,i)=>{ if(cg>=0&&i>cg) return; const d=Math.hypot(n.mx-mx,n.my-4-my); if(d<bd){ bd=d; best=i; } });
+  if(best<0) return;
+  if(best===MAPS.i&&MAPS.to<0){ mapEnter(); return; }
+  MAPS.goal=best; }
 const MAPSTAT={};
 function mapStats(w){ if(MAPSTAT[w]) return MAPSTAT[w]; const lv=makeLevel(w); return MAPSTAT[w]={cr:lv.crystals.map(k=>k.id),st:lv.stars.map(k=>k.id)}; }
 function drawMap(){
@@ -2719,8 +2733,9 @@ function drawMap(){
   const bob=walking?0:Math.round(Math.sin(clock*2.5)*.6);
   F(sx-4,sy-6,'rgba(0,0,0,.3)',8,2); ctx.drawImage(MAPS.face>0?fr.r:fr.l,Math.round(sx-8),Math.round(sy-21+bob));
   // Infokarte
-  ctx.setTransform(1,0,0,1,0,0); const n=N[MAPS.i]; if(!n||walking) return;
+  ctx.setTransform(1,0,0,1,0,0); const n=N[MAPS.i]; MAPS.card=null; if(!n||walking) return;
   const k=Math.max(1,H/200), cw=Math.min(W-20*k,210*k), ch=27*k, cx=(W-cw)/2, cy=H-ch-6*k;
+  MAPS.card={x:cx,y:cy,w:cw,h:ch};
   ctx.fillStyle='rgba(13,21,36,.84)'; ctx.fillRect(cx,cy,cw,ch); ctx.fillStyle='#ffd166'; ctx.fillRect(cx,cy,cw,Math.max(1,k*.8));
   ctx.textAlign='left'; ctx.textBaseline='middle'; const why=mapBlock(n);
   let title='', line='';
@@ -2732,7 +2747,10 @@ function drawMap(){
     title=`${WNO(n.key)}  ${NAMES[n.key]}`; line=`◆ ${cr}/${st.cr.length}   ★ ${sr}/${st.st.length}   Bestzeit ${b?.time?Math.floor(b.time/60)+':'+String(Math.floor(b.time%60)).padStart(2,'0'):'–'}`; }
   ctx.font=`${Math.round(7.5*k)}px Silkscreen, monospace`; ctx.fillStyle=n.kind==='door'&&mapDone(n)?'#9be06a':'#ffd166'; ctx.fillText(title,cx+6*k,cy+9*k);
   ctx.font=`${Math.round(5.5*k)}px Silkscreen, monospace`; ctx.fillStyle=why?'#ff9a8a':'#f6ead2'; ctx.fillText(why||line,cx+6*k,cy+19.5*k);
-  ctx.textAlign='right'; ctx.fillStyle='#9ad0ff'; ctx.fillText(why?'◀ ▶':'Springen: los',cx+cw-6*k,cy+19.5*k); ctx.textAlign='left'; }
+  if(why){ ctx.textAlign='right'; ctx.fillStyle='#9ad0ff'; ctx.fillText('Punkt antippen',cx+cw-6*k,cy+9*k); }
+  if(!why&&n.kind!=='gate'){ const bw=34*k, bh=15*k, bx=cx+cw-bw-5*k, by=cy+(ch-bh)/2, pulse=.75+.25*Math.sin(clock*4);   // Los-Knopf
+    ctx.fillStyle=`rgba(242,166,90,${pulse})`; ctx.fillRect(bx,by,bw,bh); ctx.fillStyle='#1a1020'; ctx.textAlign='center'; ctx.font=`bold ${Math.round(7*k)}px Silkscreen, monospace`; ctx.fillText('Los ▶',bx+bw/2,by+bh/2+.5*k); }
+  ctx.textAlign='left'; }
 function mapLock(x,y){ const F=(a,b,c,w,h)=>{ ctx.fillStyle=c; ctx.fillRect(Math.round(a),Math.round(b),w,h); }; F(x-2,y-4,'#e8e8f0',5,1); F(x-2,y-4,'#e8e8f0',1,3); F(x+2,y-4,'#e8e8f0',1,3); F(x-3,y-1,'#e8e8f0',7,5); F(x,y+1,'#1a1020',1,2); }
 function drawHubHints(){
   if(L.id!=='hub') return;
@@ -3719,6 +3737,7 @@ let lastEvScore=null, scT=0, sdT=0;
 const bossBar=document.getElementById('bossbar'), bossName=document.getElementById('bossname'), bFill=document.getElementById('bfill');
 function updateHud(){
   if(!L) return;
+  for(const z of ['zl','zr']){ const el=document.getElementById(z); if(el) el.style.visibility=L.map?'hidden':''; }   // Laufzonen-Pfeile auf der Karte ausblenden
   const lv=document.getElementById('lives'), showLv=!EDIT_MODE&&(L.id==='hub'||!!L.boss||!!(L.need&&L.timeLimit));
   if(lv){ lv.hidden=!showLv; if(showLv){ const h=heartsHtml(save.lives??LIVES); if(lv.innerHTML!==h) lv.innerHTML=h; } }
   if(dbg.info) dbgInfo.textContent=`vx ${P.vx.toFixed(0)} · vy ${P.vy.toFixed(0)} · max ${(PH.max+tier()*PH.tierBonus).toFixed(0)} · Schwung ${flow.toFixed(0)}`;
@@ -3802,7 +3821,7 @@ if(EDIT_DRAFT&&!EDIT_ENGINE){ const id=isNaN(+EDIT_ID)?EDIT_ID:+EDIT_ID, ab=(EDI
   addEventListener('keydown',e=>{ try{ audioInit(); }catch(_){} if(e.key==='Escape'){ e.preventDefault(); parent.postMessage({supersam:'back'},'*'); } });
   addEventListener('pointerdown',()=>{ try{ audioInit(); }catch(_){} }); }
 if(!EDIT_ENGINE) requestAnimationFrame(frame);
-window.__dz={map:{get nodes(){return MAPS.nodes;},get i(){return MAPS.i;},get to(){return MAPS.to;},go(k){ const i=MAPS.nodes.findIndex(n=>String(n.key)===String(k)); if(i>=0){ MAPS.i=i; MAPS.to=-1; } return i; },enter:()=>mapEnter()},editor:{levelData,EDITABLE,defFromData,PH,TS,ETYPE,NAMES,WNO,deco:{list:DECO_LIST,icon:decoIcon,preview:decoPreview},spr:{T,SPIKE,slopeTile,ES,BEETLE:BEETLE_A,STAR,COIN:COIN[0],CRYSTAL,SPRING,CROWN},
+window.__dz={map:{get nodes(){return MAPS.nodes;},get i(){return MAPS.i;},get to(){return MAPS.to;},go(k){ const i=MAPS.nodes.findIndex(n=>String(n.key)===String(k)); if(i>=0){ MAPS.i=i; MAPS.to=-1; } return i; },walkTo(k){ const i=MAPS.nodes.findIndex(n=>String(n.key)===String(k)); if(i>=0) MAPS.goal=i; return i; },enter:()=>mapEnter()},editor:{levelData,EDITABLE,defFromData,PH,TS,ETYPE,NAMES,WNO,deco:{list:DECO_LIST,icon:decoIcon,preview:decoPreview},spr:{T,SPIKE,slopeTile,ES,BEETLE:BEETLE_A,STAR,COIN:COIN[0],CRYSTAL,SPRING,CROWN},
   load(D,ab){ EDIT_ID=String(D.id); EDIT_DRAFT=D; EDIT_MODE=true; Object.assign(save.ab,{double:ab.includes('double'),wall:ab.includes('wall'),dash:ab.includes('dash'),glide:ab.includes('glide')}); loadLevel(D.id); state='play'; L.timeLimit=0; return L; },   // nur für Editor/Engine: EDIT_MODE verhindert das Speichern
   tick(dt){ clock+=dt; update(dt); }, keys(l,r,j){ keyL=l; keyR=r; if(j&&!keyJump){ keyJump=true; triggerJump(); } else if(!j) keyJump=false; recompute(); }, dash(){ requestDash(P.face); },
   get P(){return P;}, get L(){return L;}, get state(){return state;}, set state(v){state=v;}},
