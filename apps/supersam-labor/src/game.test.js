@@ -580,3 +580,12 @@ test('Leben: bei 0 Punkten ist ein Leben weg, nach dem dritten Game Over mit zur
   const E = dz.editor, D = JSON.parse(JSON.stringify(E.levelData(1))); const L = E.load(D, []); L.timeLimit = 240;
   run(80); for (let i = 0; i < 12; i++) dz.die(); run(3); assert.equal(E.state, 'play', 'Probespiel ohne Leben');
 });
+
+test('Endgegner: 300 Punkte, jeder Treffer kostet 100, bei 0 ist ein Leben weg', () => {
+  const { dz, run } = boot();
+  dz.setState('play'); dz.loadLevel('b0'); run(80);
+  assert.equal(dz.save.lives, 3);
+  dz.die(); run(3); dz.die(); run(3); assert.equal(dz.editor.state, 'play', 'nach zwei Treffern noch im Kampf (100 Punkte)');
+  dz.die(); run(3); assert.equal(dz.editor.state, 'lost', 'dritter Treffer: 0 Punkte'); assert.equal(dz.save.lives, 2);
+  dz.setState('play'); dz.loadLevel('b0'); run(80); dz.die(); run(3); assert.equal(dz.editor.state, 'play', 'neuer Versuch beginnt wieder mit 300');
+});

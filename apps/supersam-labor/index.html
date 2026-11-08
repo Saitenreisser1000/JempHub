@@ -2032,7 +2032,12 @@ function drawSpeedlines(){
 // (nur „Einführung gesehen“ bleibt). Probespiele aus dem Editor sind ausgenommen.
 const LIVES=3, lifeEl=document.getElementById('lifelost');
 const heartsHtml=n=>Array.from({length:LIVES},(_,i)=>`<i class="${i<n?'':'off'}">♥</i>`).join('');
-function livesCheck(){ return L&&L.need&&L.timeLimit&&!L.boss&&!EDIT_MODE&&time>1&&score()<=0; }
+// Endgegner: 300 Punkte fix, jeder Treffer kostet 100 – bei 0 ist ebenfalls ein Leben weg
+const BOSS_PTS=300, BOSS_HIT=100;
+const bossScore=()=>Math.max(0,BOSS_PTS-bossDeaths*BOSS_HIT);
+function livesCheck(){ if(!L||EDIT_MODE) return false;
+  if(L.boss) return L.boss.state!=='gone'&&bossScore()<=0;
+  return !!(L.need&&L.timeLimit&&time>1&&score()<=0); }
 function loseLife(){ state='lost'; clearInput(); sfx('hurt'); shake=.3;
   save.lives=Math.max(0,(save.lives??LIVES)-1); const n=save.lives, over=n<=0, id=L.id;
   if(over){ const keep={tutorialDone:save.tutorialDone}; for(const k of Object.keys(save)) delete save[k]; Object.assign(save,blankSave(),keep); }
@@ -2045,7 +2050,8 @@ function loseLife(){ state='lost'; clearInput(); sfx('hurt'); shake=.3;
   const hub=document.getElementById('llhub'); hub.hidden=over; hub.onclick=()=>{ lifeEl.hidden=true; loadLevel('hub',id); state='play'; };
   lifeEl.hidden=false; updateHud(); }
 function die(){ shake=.25; sfx('hurt'); respawn(); P.inv=2; if(L.boss){ bossDeaths++; bossFx=[]; }
-  if(L.need){ deaths++; floaters.push({x:P.x+P.w/2,y:P.y-6,txt:String(PTS.death),t:1.4,col:'#ff6a6a'}); showMsg(`${PTS.death} Punkte`); } }
+  if(L.boss){ floaters.push({x:P.x+P.w/2,y:P.y-6,txt:'-'+BOSS_HIT,t:1.4,col:'#ff6a6a'}); showMsg(`-${BOSS_HIT} Punkte`); }
+  else if(L.need){ deaths++; floaters.push({x:P.x+P.w/2,y:P.y-6,txt:String(PTS.death),t:1.4,col:'#ff6a6a'}); showMsg(`${PTS.death} Punkte`); } }
 
 // ---------- Darstellung ----------
 // Auflösung (Pausenmenü): Hoch = bis 2 Bildpunkte je CSS-Pixel, Mittel 1,5, Niedrig 1 – weniger Pixel entlasten
@@ -3581,13 +3587,14 @@ let lastEvScore=null, scT=0, sdT=0;
 const bossBar=document.getElementById('bossbar'), bossName=document.getElementById('bossname'), bFill=document.getElementById('bfill');
 function updateHud(){
   if(!L) return;
-  const lv=document.getElementById('lives'), showLv=!EDIT_MODE&&!L.boss&&(L.id==='hub'||!!(L.need&&L.timeLimit));
+  const lv=document.getElementById('lives'), showLv=!EDIT_MODE&&(L.id==='hub'||!!L.boss||!!(L.need&&L.timeLimit));
   if(lv){ lv.hidden=!showLv; if(showLv){ const h=heartsHtml(save.lives??LIVES); if(lv.innerHTML!==h) lv.innerHTML=h; } }
   if(dbg.info) dbgInfo.textContent=`vx ${P.vx.toFixed(0)} · vy ${P.vy.toFixed(0)} · max ${(PH.max+tier()*PH.tierBonus).toFixed(0)} · Schwung ${flow.toFixed(0)}`;
   bossBar.hidden=!L.boss;
   if(L.boss){ scoreBox.hidden=true; const B=L.boss; bossName.textContent=B.state==='gone'?'Sieg! Hol dir die Krone':BOSS_INFO[B.id].name;
     bFill.style.width=(Math.max(0,B.hp)/B.max*100)+'%'; bFill.style.background=BOSS_INFO[B.id].col;
-    hcol.textContent=B.state==='intro'?BOSS_INFO[B.id].tip:''; hr.textContent=time.toFixed(1)+'s'; }
+    hcol.textContent=B.state==='intro'?BOSS_INFO[B.id].tip:''; const bp=bossScore();
+    hr.innerHTML=`<span style="font-size:16px;color:${bp<=BOSS_HIT?'#ff6a6a':'var(--cream)'}">${bp} Punkte</span>`; }
   else if(L.id==='uebung'){ scoreBox.hidden=true; hcol.style.fontSize='14px'; hcol.textContent='Übungswiese'; hr.textContent=''; }
   else if(L.id==='hub'){
     const total=Object.keys(save.crystals).length;
