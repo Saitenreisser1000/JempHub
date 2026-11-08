@@ -280,12 +280,16 @@ function buildBg(){
   b.fillStyle = '#3c4a4a'; b.beginPath(); b.moveTo(XL,gb-170);
   for (let x=Math.floor(XL/20)*20;x<=XR+20;x+=20) b.lineTo(x, gb-170 - Math.sin(x/60)*14 - Math.sin(x/23)*5);
   b.lineTo(XR,gb); b.lineTo(XL,gb); b.fill();
-  // Brauerei
-  const top = gb-150;
-  b.fillStyle = C.wall; b.fillRect(20, top, W-40, 150);
-  b.fillStyle = C.brick;
-  for (let y=top+6; y<gb; y+=12) for (let x=24 + ((y/12)%2)*14; x<W-24; x+=28) b.fillRect(x, y, 24, 8);
-  b.fillStyle = C.roof; b.beginPath(); b.moveTo(10, top); b.lineTo(W/2, top-60); b.lineTo(W-10, top); b.fill();
+  // Brauerei: barockes Brauhaus mit Ziegeldach, Ziergiebel und Uhr
+  const top = gb-150, L = 20, R = W-20;
+  // Ziegeldach
+  b.fillStyle = '#7b3326'; b.beginPath(); b.moveTo(L-10, top+2); b.lineTo(L+34, top-46); b.lineTo(R-34, top-46); b.lineTo(R+10, top+2); b.closePath(); b.fill();
+  b.strokeStyle = 'rgba(0,0,0,.2)'; b.lineWidth = 1;
+  for (let y = top-40; y < top; y += 6){ const t = (y - (top-46))/48, x1 = L+34 - 44*t, x2 = R-34 + 44*t; b.beginPath(); b.moveTo(x1, y); b.lineTo(x2, y); b.stroke(); }
+  b.fillStyle = '#5e241a'; b.fillRect(L+34, top-48, R-L-68, 3);
+  // Dachgaube links
+  b.fillStyle = '#e8cc98'; b.fillRect(56, top-34, 22, 22); b.fillStyle = '#7b3326'; b.beginPath(); b.moveTo(52, top-34); b.lineTo(67, top-46); b.lineTo(82, top-34); b.fill();
+  b.fillStyle = '#f2c46b'; b.fillRect(61, top-30, 12, 14); b.fillStyle = '#fff6dc'; b.fillRect(66.5, top-30, 1.2, 14);
   // hoher Brauerei-Schornstein mit Storchennest
   { const cx = chimneyX(), ct = chimneyTop(), cb = top - 4;
     b.fillStyle = '#7a4532'; b.beginPath(); b.moveTo(cx-17, cb); b.lineTo(cx-10, ct); b.lineTo(cx+10, ct); b.lineTo(cx+17, cb); b.closePath(); b.fill();
@@ -299,10 +303,56 @@ function buildBg(){
     b.strokeStyle = '#8a6334'; b.lineWidth = 1.5;
     for (let k=0;k<14;k++){ const a = k/14*Math.PI*2, r1 = 14 + (k%3)*3; b.beginPath(); b.moveTo(cx + Math.cos(a)*8, ct - 8 + Math.sin(a)*3); b.lineTo(cx + Math.cos(a)*r1*1.4, ct - 9 + Math.sin(a)*r1*.45); b.stroke(); }
   }
-  // Fenster
-  b.fillStyle = '#f2c46b';
-  for (const fx of [60, 150, 230, 310]) { b.fillRect(fx, top+62, 30, 40); }
-  b.fillStyle = C.wallDark; for (const fx of [60,150,230,310]) { b.fillRect(fx+14, top+62, 2, 40); b.fillRect(fx, top+80, 30, 2); }
+  // Fassade in warmem Ocker
+  b.fillStyle = '#e2c38c'; b.fillRect(L, top, R-L, 150);
+  const fg = b.createLinearGradient(0, top, 0, gb); fg.addColorStop(0, 'rgba(255,240,210,.18)'); fg.addColorStop(1, 'rgba(90,50,20,.18)');
+  b.fillStyle = fg; b.fillRect(L, top, R-L, 150);
+  // Ziergiebel mit Voluten
+  { const gx = W/2, gw = 82;
+    b.beginPath(); b.moveTo(gx-gw, top+1);
+    b.bezierCurveTo(gx-gw-6, top-22, gx-gw+26, top-18, gx-gw+28, top-42);
+    b.lineTo(gx-30, top-50); b.quadraticCurveTo(gx-30, top-76, gx, top-80); b.quadraticCurveTo(gx+30, top-76, gx+30, top-50);
+    b.lineTo(gx+gw-28, top-42); b.bezierCurveTo(gx+gw-26, top-18, gx+gw+6, top-22, gx+gw, top+1); b.closePath();
+    b.fillStyle = '#e8cc98'; b.fill(); b.strokeStyle = '#fbf2dc'; b.lineWidth = 3; b.stroke();
+    b.fillStyle = '#fbf2dc'; b.beginPath(); b.arc(gx, top-83, 4, 0, Math.PI*2); b.fill();
+    for (const sx of [-1, 1]){ b.beginPath(); b.arc(gx + sx*(gw-6), top-12, 5, 0, Math.PI*2); b.fill(); }
+    // Uhr im Ochsenauge
+    const cy = top-44; b.fillStyle = '#5a4630'; b.beginPath(); b.arc(gx, cy, 15, 0, Math.PI*2); b.fill();
+    b.fillStyle = '#fbf6ea'; b.beginPath(); b.arc(gx, cy, 12.5, 0, Math.PI*2); b.fill();
+    b.strokeStyle = '#2a2420'; b.lineWidth = 1.2;
+    for (let i=0;i<12;i++){ const a = i/12*Math.PI*2, r1 = i%3 ? 10.5 : 9; b.beginPath(); b.moveTo(gx + Math.cos(a)*r1, cy + Math.sin(a)*r1); b.lineTo(gx + Math.cos(a)*12, cy + Math.sin(a)*12); b.stroke(); }
+    b.lineWidth = 1.8; b.beginPath(); b.moveTo(gx, cy); b.lineTo(gx - 5, cy - 4); b.moveTo(gx, cy); b.lineTo(gx + 2.5, cy - 9); b.stroke();
+    b.fillStyle = '#2a2420'; b.beginPath(); b.arc(gx, cy, 1.4, 0, Math.PI*2); b.fill();
+  }
+  // Gesims oben und Steinsockel unten
+  b.fillStyle = '#fbf2dc'; b.fillRect(L-4, top, R-L+8, 5); b.fillStyle = 'rgba(0,0,0,.15)'; b.fillRect(L, top+5, R-L, 2);
+  b.fillStyle = '#8d8a83'; b.fillRect(L, gb-20, R-L, 20); b.fillStyle = '#7a776f';
+  for (let x = L; x < R; x += 22) b.fillRect(x, gb-20, 1.2, 20); b.fillRect(L, gb-11, R-L, 1.2);
+  // Eckquader
+  for (let y = top+7, k = 0; y < gb-20; y += 12, k++){ const qw = k%2 ? 10 : 15;
+    b.fillStyle = '#d2b47e'; b.fillRect(L, y, qw, 11); b.fillRect(R-qw, y, qw, 11);
+    b.fillStyle = 'rgba(0,0,0,.12)'; b.fillRect(L, y+10, qw, 1); b.fillRect(R-qw, y+10, qw, 1); }
+  // Bogenfenster mit grünen Fensterläden
+  for (const fx of [52, 100, 276, 324]){
+    const fy = top + 62, fw = 24, fh = 34;
+    b.fillStyle = '#2f5d3a'; b.fillRect(fx-9, fy+4, 8, fh-4); b.fillRect(fx+fw+1, fy+4, 8, fh-4);
+    b.fillStyle = 'rgba(0,0,0,.25)'; for (let y = fy+7; y < fy+fh; y += 4){ b.fillRect(fx-8, y, 6, 1); b.fillRect(fx+fw+2, y, 6, 1); }
+    b.fillStyle = '#fbf2dc'; b.beginPath(); b.moveTo(fx-2, fy+fh); b.lineTo(fx-2, fy+10); b.arc(fx+fw/2, fy+10, fw/2+2, Math.PI, 0); b.lineTo(fx+fw+2, fy+fh); b.closePath(); b.fill();
+    const wg = b.createLinearGradient(0, fy, 0, fy+fh); wg.addColorStop(0, '#ffe2a0'); wg.addColorStop(1, '#e9a94e');
+    b.fillStyle = wg; b.beginPath(); b.moveTo(fx, fy+fh); b.lineTo(fx, fy+10); b.arc(fx+fw/2, fy+10, fw/2, Math.PI, 0); b.lineTo(fx+fw, fy+fh); b.closePath(); b.fill();
+    b.fillStyle = '#fbf2dc'; b.fillRect(fx+fw/2-.8, fy, 1.6, fh); b.fillRect(fx, fy+16, fw, 1.6);
+  }
+  // Rundbogentor in der Mitte
+  { const tx = W/2, tw = 66, ty = top + 64;
+    b.fillStyle = '#c8a46c'; b.beginPath(); b.moveTo(tx-tw/2-5, gb-20); b.lineTo(tx-tw/2-5, ty+tw/2); b.arc(tx, ty+tw/2, tw/2+5, Math.PI, 0); b.lineTo(tx+tw/2+5, gb-20); b.closePath(); b.fill();
+    b.fillStyle = '#5a3620'; b.beginPath(); b.moveTo(tx-tw/2, gb-20); b.lineTo(tx-tw/2, ty+tw/2); b.arc(tx, ty+tw/2, tw/2, Math.PI, 0); b.lineTo(tx+tw/2, gb-20); b.closePath(); b.fill();
+    b.fillStyle = '#4a2c18'; for (let x = tx-tw/2+6; x < tx+tw/2; x += 8) b.fillRect(x, ty+8, 1.5, gb-28-ty);
+    b.fillStyle = '#fbf2dc'; b.beginPath(); b.moveTo(tx-5, ty-6); b.lineTo(tx+5, ty-6); b.lineTo(tx+3, ty+3); b.lineTo(tx-3, ty+3); b.closePath(); b.fill();
+  }
+  // Hopfengirlande unter dem Gesims
+  b.strokeStyle = '#3f6b2a'; b.lineWidth = 2;
+  for (let x = L+18; x < R-30; x += 46){ b.beginPath(); b.moveTo(x, top+9); b.quadraticCurveTo(x+23, top+24, x+46, top+9); b.stroke();
+    b.fillStyle = '#8cbf4a'; for (const t of [.3, .5, .7]){ const px = x + 46*t, py = top + 9 + 30*t*(1-t); b.beginPath(); b.ellipse(px, py+3, 2.6, 3.6, 0, 0, Math.PI*2); b.fill(); } }
   // Schild
   // Schild: zweizeilig, Schrift wird auf die Schildbreite eingepasst
   const sw = 284, sh = 50, sx0 = W/2 - sw/2, sy0 = top + 6;
@@ -317,6 +367,13 @@ function buildBg(){
   const sub = 'B R E W E R Y'; b.fillText(sub, W/2, sy0 + 39);
   b.fillRect(sx0 + 24, sy0 + 38, sw/2 - 24 - b.measureText(sub).width/2 - 8, 1.5);
   b.fillRect(W/2 + b.measureText(sub).width/2 + 8, sy0 + 38, sw/2 - 24 - b.measureText(sub).width/2 - 8, 1.5);
+  // Laternen neben dem Schild
+  for (const lx of [sx0 - 12, sx0 + sw + 12]){
+    b.fillStyle = 'rgba(255,200,110,.25)'; b.beginPath(); b.arc(lx, sy0 + 30, 16, 0, Math.PI*2); b.fill();
+    b.strokeStyle = '#2a2420'; b.lineWidth = 2; b.beginPath(); b.moveTo(lx, sy0 + 14); b.lineTo(lx, sy0 + 22); b.stroke();
+    b.fillStyle = '#2a2420'; b.fillRect(lx - 5, sy0 + 22, 10, 3); b.fillRect(lx - 4, sy0 + 37, 8, 3);
+    b.fillStyle = '#ffd88a'; b.fillRect(lx - 3.5, sy0 + 25, 7, 12);
+  }
   // Bar vor der Brauerei
   const bt = gb - 58, bl = 52, br = W - 52;
   b.fillStyle = '#3a2416'; b.fillRect(bl, bt + 6, br - bl, gb - bt - 6);
