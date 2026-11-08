@@ -541,3 +541,23 @@ test('Grafikstil Pixel 3D: zeichnet jede Welt ohne Fehler, Gelände und Figuren 
   listeners.keydown({ key: 'g', preventDefault() {} }); assert.equal(dz.skin, 'pixel3d');
   assert.equal(boot().dz.skin, 'klassik', 'Standard ist klassisch');
 });
+
+test('Deko aus dem Editor: von Hand gesetzt, exportiert, automatische Deko abschaltbar', () => {
+  const { dz } = boot(); const E = dz.editor, D = JSON.parse(JSON.stringify(E.levelData(1)));
+  const st = D.objs.find(o => o.k === 'start');
+  D.objs.push({ k: 'deco', n: 'apple', c: st.c + 3, r: st.r }, { k: 'deco', n: 'vine', c: st.c + 5, r: 2, len: 14 }, { k: 'deco', n: 'fly', c: st.c + 6, r: st.r - 1 });
+  let L = E.load(D, []);
+  const man = L.decor.filter(d => d.man);
+  assert.equal(man.length, 2, 'Apfelbaum und Ranke');
+  assert.ok(man.some(d => d.k === 'dkp' && d.n === 'apple' && d.y === (st.r + 1) * E.TS), 'Apfelbaum steht auf dem Boden');
+  assert.ok(man.some(d => d.k === 'dkh' && d.len === 14), 'Ranke mit eigener Länge');
+  assert.ok(L.critters.some(k => k.man), 'Schmetterling');
+  const auto = L.decor.filter(d => d.cl && !d.man).length; assert.ok(auto > 20, 'automatische Deko vorhanden');
+  // Abschalten
+  L = E.load({ ...D, noDeco: true }, []);
+  assert.equal(L.decor.filter(d => d.cl && !d.man).length, 0, 'keine automatische Deko');
+  assert.equal(L.decor.filter(d => d.man).length, 2, 'von Hand gesetzte bleibt');
+  // Bilder für die Editor-Palette
+  for (const [n] of E.deco.list) assert.ok(E.deco.icon(n).w > 0, n);
+  assert.equal(new Set(E.deco.list.map(d => d[0])).size, E.deco.list.length, 'Namen eindeutig');
+});

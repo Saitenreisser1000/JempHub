@@ -998,7 +998,7 @@ const EDIT_ENGINE=EDIT_Q.has('engine'); if(EDIT_ENGINE) EDIT_MODE=true;   // vom
 const EDITABLE=['uebung',1,5,2,6,3,7,4,8,'archiv1','archiv5'];
 function levelDef(id){ if(EDIT_DRAFT&&String(id)===String(EDIT_ID)) return defFromData(EDIT_DRAFT); if(LEVEL_FILES[id]) return defFromData(LEVEL_FILES[id]); return DEFS[id]; }
 function defFromData(D){
-  return {name:D.name,style:D.style,scene:D.scene,w:D.w,h:D.h,top:D.top,need:D.need||0,timeLimit:D.timeLimit||0,sky:D.sky,noReturn:D.noReturn,build(b){
+  return {name:D.name,style:D.style,scene:D.scene,w:D.w,h:D.h,top:D.top,need:D.need||0,timeLimit:D.timeLimit||0,sky:D.sky,noReturn:D.noReturn,noDeco:!!D.noDeco,build(b){
     D.grid.forEach((row,r)=>{ for(let c=0;c<row.length;c++){ const ch=row[c]; if(ch!==' ') b.rect(c,r,c,r,ch); } });
     (D.back||[]).forEach((row,r)=>{ for(let c=0;c<row.length;c++) if(row[c]==='1') b.back(c,r,c,r); });
     (D.up||[]).forEach((row,r)=>{ for(let c=0;c<row.length;c++) if(row[c]==='1') b.updraft(c,c,r,r); });
@@ -1007,7 +1007,7 @@ function defFromData(D){
       case 'coin': b.coin(o.c,o.r); break; case 'crystal': b.crystal(o.c,o.r); break; case 'star': b.star(o.c,o.r); break;
       case 'enemy': b.enemy(o.c,o.r,o.t,o.range!=null?{range:o.range}:{}); break;
       case 'spring': b.spring(o.c,o.r); break; case 'cp': b.cp(o.c,o.r); break;
-      case 'mover': b.mover(o.c,o.r,o.dc,o.dr,o.w,o.p); break; case 'door': b.door(o.c,o.r,o.world,o.need||0,{stars:o.stars||0}); break; } }
+      case 'mover': b.mover(o.c,o.r,o.dc,o.dr,o.w,o.p); break; case 'door': b.door(o.c,o.r,o.world,o.need||0,{stars:o.stars||0}); break; case 'deco': b.deco(o.c,o.r,o.n,o.len); break; } }
   }};
 }
 // Level → Daten: Raster, Ebenen und Objekte in Bau-Koordinaten (Spalte/Reihe)
@@ -1026,7 +1026,8 @@ function levelData(id){
   for(const cp of Lx.checkpoints) objs.push({k:'cp',c:q(cp.x/TS),r:q(cp.bottom/TS-1)});
   for(const m of Lx.movers) objs.push({k:'mover',c:q(m.x0/TS),r:q(m.y0/TS),dc:q((m.x1-m.x0)/TS),dr:q((m.y1-m.y0)/TS),w:q(m.w/TS),p:m.period});
   for(const dd of Lx.doors) if(!(dd.world===0&&dd.x===TS&&!d.noReturn)) objs.push({k:'door',c:q(dd.x/TS),r:q(dd.bottom/TS-1),world:dd.world,need:dd.need||0,...(dd.stars?{stars:dd.stars}:{})});
-  return {v:1,id,name:d.name,style:d.style,scene:d.scene,w:d.w,h:d.h,top:d.top,need:d.need||0,timeLimit:d.timeLimit||0,sky:d.sky,noReturn:!!d.noReturn,
+  for(const m of Lx.manualDeco) objs.push({k:'deco',...m});
+  return {v:1,id,name:d.name,style:d.style,scene:d.scene,w:d.w,h:d.h,top:d.top,need:d.need||0,timeLimit:d.timeLimit||0,sky:d.sky,noReturn:!!d.noReturn,...(d.noDeco?{noDeco:true}:{}),
     grid:Lx.grid.map(r=>r.join('')),back:Lx.back.map(r=>r.map(v=>v?'1':'0').join('')),up:Lx.up.map(r=>r.map(v=>v?'1':'0').join('')),objs};
 }
 function origDef(id){ return LEVEL_FILES[id]?defFromData(LEVEL_FILES[id]):DEFS[id]; }
@@ -1034,7 +1035,7 @@ function makeLevel(id,orig){
   const d=orig?origDef(id):levelDef(id), w=d.w, h=d.h;
   const L={id,name:d.name,style:d.style,zones:d.zones||null,w,h,top:d.top,
     grid:Array.from({length:h},()=>Array(w).fill(' ')),up:Array.from({length:h},()=>Array(w).fill(false)),back:Array.from({length:h},()=>Array(w).fill(false)),
-    coins:[],crystals:[],stars:[],reveal:new Set(),movers:[],enemies:[],springs:[],checkpoints:[],doors:[],goal:null,start:{x:48,y:0},decor:[],crumbles:new Map()};
+    coins:[],crystals:[],stars:[],reveal:new Set(),movers:[],enemies:[],springs:[],checkpoints:[],doors:[],goal:null,start:{x:48,y:0},decor:[],manualDeco:[],noDeco:!!d.noDeco,crumbles:new Map()};
   const set=(c,r,ch)=>{ if(c>=0&&c<w&&r>=0&&r<h) L.grid[r][c]=ch; };
   const rect=(c0,r0,c1,r1,ch='#')=>{ for(let r=r0;r<=r1;r++) for(let c=c0;c<=c1;c++) set(c,r,ch); };
   let ci=0, si=0;
@@ -1059,6 +1060,7 @@ function makeLevel(id,orig){
     cp:(c,r)=>L.checkpoints.push({x:c*TS,bottom:(r+1)*TS,on:false}),
     mover:(c,r,dc,dr,mw=3,period=3.5)=>L.movers.push({x0:c*TS,y0:r*TS,x1:(c+dc)*TS,y1:(r+dr)*TS,w:mw*TS,period,x:c*TS,y:r*TS,dx:0,dy:0}),
     start:(c,r)=>{ L.start={x:c*TS+3,y:(r+1)*TS-14}; },
+    deco:(c,r,n,len)=>{ if(n) L.manualDeco.push({c,r,n,...(len?{len}:{})}); },   // von Hand gesetzte Deko (Editor)
     goal:(c,r)=>{ L.goal={x:c*TS,bottom:(r+1)*TS}; },
     door:(c,r,world,need=0,o={})=>L.doors.push({x:c*TS,bottom:(r+1)*TS,world,need,stars:o.stars||0,t:0}),   // stars: so viele Sterne dieser Welt müssen gesammelt sein
     // Kronentor: Gitter über die ganze Höhe, verschwindet mit der Krone des Abschnitts-Bosses
@@ -2255,7 +2257,7 @@ const DK_ART={
   lilyf:['.....P......','....PhP.....','..GGGPGGGG..','.GlGGGGGGGG.','..gggggggg..'],
   starfish:['...o...','...o...','ooooooo','.ooOoo.','.oo.oo.','oo...oo'],
   drift:['.tTt.......n..','tTttTTtTttt...','.ttBttttBttTt.','...BB...B.....'],
-  palm:['.gG.....Gg.','gGlg...gGlG','...gGlGg...','.gGGgGgGGg.','gG..gBg..Gg','G...gBg...G','.....B.....','.....B.....','.....b.....','.....B.....','.....b.....','....bBb....'],
+  palmling:['.gG.....Gg.','gGlg...gGlG','...gGlGg...','.gGGgGgGGg.','gG..gBg..Gg','G...gBg...G','.....B.....','.....B.....','.....b.....','.....B.....','.....b.....','....bBb....'],
   crab:['R.......R','RR.h.h.RR','.RRRRRRR.','..RrRrR..','.R.R.R.R.'],
   snowman:['...xxx...','...xxx...','..xxxxx..','...hhh...','..hxhxh..','..hhohh..','...hhh...','..rrrrr..','.hhhrhhW.','BhhhhhhhB','.hhhxhhW.','.hhhhhhW.','.hhhxhhW.','..hhhWW..'],
   snowrock:['...hhhi..','.hhhhhhh.','hhsSSSShh','sSSSwSSSs','sSSSSSSSs','.sssssss.'],
@@ -2268,7 +2270,7 @@ const DK_SET={
   meadow:[['stump',.053,1,0],['mrock',.060,1,0],['berry',.053,1,1],['sunflower',.045,2,0],['dandelion',.075,1,0],['patch',.090,1,0],['log',.030,1,1],['tallgrass',.090,1,0],['mushes',.045,1,0],['pebbles',.060,1,0]],
   forest:[['fern',.120,1,1],['mstump',.060,1,0],['mlog',.045,1,1],['toads',.075,1,0],['mrock',.060,1,0],['tallgrass',.060,1,0],['glow',.030,1,0],['mushes',.045,1,0]],
   stone:[['barrel',.075,1,0],['prickly',.053,2,0],['skull',.038,1,0],['bones',.045,1,0],['cairn',.045,1,0],['drybush',.075,1,0],['dflower',.060,1,0],['pebbles',.060,1,0]],
-  lake:[['cattail',.075,1,0],['mrock',.053,1,0],['starfish',.053,1,0],['drift',.045,1,1],['palm',.053,2,0],['crab',.038,1,0],['patch',.060,1,0],['pebbles',.075,1,0]],
+  lake:[['cattail',.075,1,0],['mrock',.053,1,0],['starfish',.053,1,0],['drift',.045,1,1],['palmling',.053,2,0],['crab',.038,1,0],['patch',.060,1,0],['pebbles',.075,1,0]],
   snow:[['snowman',.030,1,0],['snowrock',.075,1,0],['frozen',.060,1,1],['crystals',.060,1,0],['sapling',.075,1,0],['pebbles',.045,1,0]],
 };
 const DKC={};
@@ -2326,10 +2328,40 @@ function propImg(n,v){ const key=n+'|'+v; if(PROPC[key]) return PROPC[key]; cons
   return PROPC[key]={c,w,h}; }
 const PROP_SET={meadow:['apple','birch','hay','boulder','fence','apple'],forest:['oak','bigmush','deadtree','bigfern','oak','boulder'],stone:['mesa','ribs','wheel','pots','mesa'],
   lake:['palm','castle','umbrella','boulder','palm'],snow:['igloo','bigsnow','iceblocks','sled','bigsnow']};
+// Für den Editor: Bild je Deko-Name und eine Vorschau der ganzen Deko eines Entwurfs (hinten/vorne)
+function decoIcon(n){ if(DECO_HANG[n]) return {...dkHang(n,DECO_HANG[n],3),at:'hang'}; if(n==='lily'||n==='lilyf') return {...dkImg(n),at:'water'}; if(n==='boat') return {...propImg('boat',0),at:'water'};
+  if(DECO_AIR[n]){ const c=mk(7,4), g=c.getContext('2d'); g.fillStyle=n==='fly'?'#f28fad':'#faffc8'; if(n==='fly'){ g.fillRect(0,0,3,3); g.fillRect(4,0,3,3); g.fillStyle='#1a1020'; g.fillRect(3,0,1,4); } else g.fillRect(2,1,3,3); return {c,w:7,h:4,at:'air'}; }
+  return {...(PROP_SIZE[n]?propImg(n,1):dkImg(n)),at:'ground'}; }
+function decoPreview(D){ const pid=EDIT_ID, pd=EDIT_DRAFT, pctx=ctx, pL=L, pclock=clock;
+  try{ EDIT_ID=String(D.id); EDIT_DRAFT=D; const Lx=makeLevel(isNaN(+D.id)?D.id:+D.id), W=Lx.w*TS, H=Lx.h*TS, back=mk(W,H), front=mk(W,H);
+    L=Lx; clock=0; Lx.critters=(Lx.critters||[]).filter(k=>!k.man); ctx=back.getContext('2d'); for(const d of Lx.decor) if(d.back&&!d.man) drawDecorBack(d);
+    ctx=front.getContext('2d'); drawWallDecals(0,Lx.w-1,0,Lx.h-1); for(const d of Lx.decor) if(!d.back&&!d.man) drawDecorFront(d); drawCritters(-1e9,1e9);
+    return {back,front,w:W,h:H}; }
+  finally{ EDIT_ID=pid; EDIT_DRAFT=pd; ctx=pctx; L=pL; clock=pclock; } }
 function dkBusy(L){ return [...L.springs,...L.checkpoints,...L.doors,...(L.goal?[L.goal]:[]),...L.movers].map(o=>(o.x||0)+8).concat([L.start.x+8]); }
+// Von Hand gesetzte Deko: Feld (c,r) wie bei Gegnern – Bodenstücke stehen auf dem Boden unter dem Feld,
+// Ranken/Eiszapfen/Wurzeln hängen von der Decke über dem Feld, Seerosen und Boote schwimmen im Wasserfeld.
+const DECO_HANG={vine:10,ice:6,root:10}, DECO_WATER={lily:1,lilyf:1,boat:1}, DECO_AIR={fly:1,glim:1};
+const DECO_LIST=[
+  ['apple','Apfelbaum','meadow'],['birch','Birke','meadow'],['hay','Heuhaufen','meadow'],['boulder','Findling','meadow'],['fence','Zaun','meadow'],['stump','Baumstumpf','meadow'],['mrock','Bemooster Stein','meadow'],
+  ['berry','Beerenstrauch','meadow'],['sunflower','Sonnenblume','meadow'],['dandelion','Pusteblume','meadow'],['patch','Blumen','meadow'],['log','Baumstamm','meadow'],['tallgrass','Hohes Gras','meadow'],['mushes','Pilze','meadow'],['pebbles','Kiesel','meadow'],['fly','Schmetterling','meadow'],
+  ['oak','Eiche','forest'],['bigmush','Riesenpilz','forest'],['deadtree','Kahler Baum','forest'],['bigfern','Großer Farn','forest'],['fern','Farn','forest'],['mstump','Bemooster Stumpf','forest'],['mlog','Stamm mit Pilzen','forest'],['toads','Braune Pilze','forest'],['glow','Leuchtpilz','forest'],['glim','Glühwürmchen','forest'],['vine','Ranke (hängt)','forest'],
+  ['mesa','Felsbrocken','stone'],['ribs','Gerippe','stone'],['wheel','Wagenrad','stone'],['pots','Tonkrüge','stone'],['barrel','Kugelkaktus','stone'],['prickly','Feigenkaktus','stone'],['skull','Schädel','stone'],['bones','Knochen','stone'],['cairn','Steinmännchen','stone'],['drybush','Dürrer Busch','stone'],['dflower','Wüstenblume','stone'],['root','Wurzeln (hängen)','stone'],
+  ['palm','Palme','lake'],['palmling','Kleine Palme','lake'],['castle','Sandburg','lake'],['umbrella','Sonnenschirm','lake'],['boat','Boot (Wasser)','lake'],['lily','Seerose (Wasser)','lake'],['lilyf','Seerose mit Blüte (Wasser)','lake'],['cattail','Rohrkolben','lake'],['starfish','Seestern','lake'],['drift','Treibholz','lake'],['crab','Krebs','lake'],
+  ['igloo','Iglu','snow'],['bigsnow','Schneemann','snow'],['snowman','Kleiner Schneemann','snow'],['iceblocks','Eisblöcke','snow'],['sled','Schlitten','snow'],['snowrock','Schneestein','snow'],['frozen','Eisstrauch','snow'],['crystals','Eiskristalle','snow'],['sapling','Tännchen','snow'],['ice','Eiszapfen (hängen)','snow']];
+function manualDecor(L,m){ const x=m.c*TS+8, n=m.n, v=(m.c*3+m.r)%5;
+  if(DECO_HANG[n]) return L.decor.push({k:'dkh',kind:n,len:m.len||DECO_HANG[n],v:(m.c*7+m.r)%13,x:m.c*TS+4,y:m.r*TS,cl:1,man:1});
+  if(n==='boat') return L.decor.push({k:'dkb',x,y:m.r*TS+7,cl:1,man:1});
+  if(n==='lily'||n==='lilyf') return L.decor.push({k:'dkl',x,y:m.r*TS+7,f:n==='lilyf',cl:1,man:1});
+  if(n==='fly') return L.critters.push({k:'fly',man:1,x,y:m.r*TS+8,ph:hash(m.c)*9,col:['#ffd166','#f28fad','#9ad0ff','#ffffff'][m.c%4]});
+  if(n==='glim') return L.critters.push({k:'glim',man:1,x,y:m.r*TS+8,ph:hash(m.c*7)*9});
+  if(PROP_SIZE[n]) return L.decor.push({k:'dkp',n,v,x,y:(m.r+1)*TS,back:1,cl:1,man:1});
+  if(DK_ART[n]) L.decor.push({k:'dk',n,x,y:(m.r+1)*TS,f:false,back:DK_ART[n][0].length>9,cl:1,man:1}); }
 function addMoreDecor(L){ const G=L.grid, W=L.w, H=L.h, busy=dkBusy(L), top=(r,c)=>c>=0&&c<W&&G[r]?.[c]==='#'&&G[r-1]?.[c]===' ';
   const free=(c,r,n)=>{ for(let k=1;k<=n;k++) if(r-k<0||G[r-k][c]!==' ') return false; return true; };
   L.critters=[]; let lastBig=-9, lastProp=-9, lastBoat=-9;
+  for(const m of L.manualDeco||[]){ manualDecor(L,m); busy.push(m.c*TS+8); }
+  if(L.noDeco) return;   // Level-Einstellung: nur von Hand gesetzte Deko
   for(let r=1;r<H;r++) for(let c=1;c<W-1;c++){ const s=styleAt(c,L), set=DK_SET[s]; if(!set) continue; const x=c*TS+8, y=r*TS;
     // größere Stücke im Hintergrund
     if(top(r,c)&&c-lastProp>=6&&free(c,r,3)&&top(r,c-1)&&top(r,c+1)&&hash(c*9.1+r*4.4)<.11&&!busy.some(b=>Math.abs(b-x)<30)){ const ps=PROP_SET[s]; if(ps){ lastProp=c; lastBig=c;
@@ -2376,7 +2408,7 @@ Object.assign(DK_ART,{
   w_star:['..o..','ooOoo','.oOo.','.o.o.'],
 });
 const WDEC={dirt:['w_stones','w_stone','w_stones','w_root','w_root','w_bone','w_fossil'],stone:['w_crack','w_crack','w_moss','w_stone'],snow:['w_icecrack','w_ice','w_icecrack','w_ice'],lake:['w_shell','w_pebbles','w_pebbles','w_star','w_shell']};
-function drawWallDecals(c0,c1,r0,r1){ const G=L.grid, solid=(r,c)=>{ const t=G[r]?.[c]; return t==='#'||t===undefined; };
+function drawWallDecals(c0,c1,r0,r1){ if(L.noDeco) return; const G=L.grid, solid=(r,c)=>{ const t=G[r]?.[c]; return t==='#'||t===undefined; };
   for(let r=r0;r<=r1;r++) for(let c=c0;c<=c1;c++){ if(G[r][c]!=='#'||G[r-1]?.[c]===undefined||!solid(r-1,c)||!solid(r+1,c)||!solid(r,c-1)||!solid(r,c+1)) continue;
     const q=hash(c*17.3+r*5.1); if(q>.11) continue; const s=styleAt(c), set=WDEC[s==='snow'?'snow':s==='stone'?'stone':s==='lake'?'lake':'dirt'], n=set[Math.floor(hash(c*2.1+r*8.7)*set.length)];
     const im=dkImg(n,hash(c+r*.7)<.5); ctx.drawImage(im.c,c*TS+2+Math.floor(hash(c*3.7+r)*(14-im.w)),r*TS+2+Math.floor(hash(c+r*4.3)*(13-im.h))); } }
@@ -3573,7 +3605,7 @@ if(EDIT_DRAFT&&!EDIT_ENGINE){ const id=isNaN(+EDIT_ID)?EDIT_ID:+EDIT_ID, ab=(EDI
   addEventListener('keydown',e=>{ try{ audioInit(); }catch(_){} if(e.key==='Escape'){ e.preventDefault(); parent.postMessage({supersam:'back'},'*'); } });
   addEventListener('pointerdown',()=>{ try{ audioInit(); }catch(_){} }); }
 if(!EDIT_ENGINE) requestAnimationFrame(frame);
-window.__dz={editor:{levelData,EDITABLE,defFromData,PH,TS,ETYPE,NAMES,WNO,spr:{T,SPIKE,slopeTile,ES,BEETLE:BEETLE_A,STAR,COIN:COIN[0],CRYSTAL,SPRING,CROWN},
+window.__dz={editor:{levelData,EDITABLE,defFromData,PH,TS,ETYPE,NAMES,WNO,deco:{list:DECO_LIST,icon:decoIcon,preview:decoPreview},spr:{T,SPIKE,slopeTile,ES,BEETLE:BEETLE_A,STAR,COIN:COIN[0],CRYSTAL,SPRING,CROWN},
   load(D,ab){ EDIT_ID=String(D.id); EDIT_DRAFT=D; EDIT_MODE=true; Object.assign(save.ab,{double:ab.includes('double'),wall:ab.includes('wall'),dash:ab.includes('dash'),glide:ab.includes('glide')}); loadLevel(D.id); state='play'; L.timeLimit=0; return L; },   // nur für Editor/Engine: EDIT_MODE verhindert das Speichern
   tick(dt){ clock+=dt; update(dt); }, keys(l,r,j){ keyL=l; keyR=r; if(j&&!keyJump){ keyJump=true; triggerJump(); } else if(!j) keyJump=false; recompute(); }, dash(){ requestDash(P.face); },
   get P(){return P;}, get L(){return L;}, get state(){return state;}, set state(v){state=v;}},
