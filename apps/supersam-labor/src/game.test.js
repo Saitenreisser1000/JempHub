@@ -519,7 +519,7 @@ test('Kamera bleibt oben, wenn der Weg über einen Schacht auf gleicher Höhe we
 });
 
 test('Grafikstil Pixel 3D: zeichnet jede Welt ohne Fehler, Gelände und Figuren sind nicht leer, G wechselt den Stil', () => {
-  const { dz, listeners, warnings, run } = boot(script.replace("pixOk()?'pixel3d':'klassik'", "'pixel3d'"));
+  const { dz, listeners, warnings, run } = boot(script.replace("let SKIN='klassik';", "let SKIN='pixel3d';"));
   assert.equal(dz.skin, 'pixel3d');
   dz.setState('play');
   Object.assign(dz.save.ab, { double: true, wall: true, dash: true, glide: true });
@@ -539,5 +539,5 @@ test('Grafikstil Pixel 3D: zeichnet jede Welt ohne Fehler, Gelände und Figuren 
   assert.ok(opaque(h) > 200, 'Sam ist sichtbar');
   listeners.keydown({ key: 'g', preventDefault() {} }); assert.equal(dz.skin, 'klassik');
   listeners.keydown({ key: 'g', preventDefault() {} }); assert.equal(dz.skin, 'pixel3d');
-  assert.equal(boot().dz.skin, 'klassik', 'ohne echtes Canvas klassisch');
+  assert.equal(boot().dz.skin, 'klassik', 'Standard ist klassisch');
 });
