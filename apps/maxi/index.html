@@ -129,7 +129,7 @@ const CAP = 20, MAXMISS = 5;
 const C = {
   skyTop:'#24314a', skyBot:'#c98a52', wall:'#6e3f2c', wallDark:'#56301f', brick:'#7c4733', roof:'#2a2a33',
   stone:'#5d5f66', stoneLight:'#73757d', jacket:'#3f7f3c', jacketDark:'#2e5f2c', pants:'#262b36', beard:'#c8944c',
-  beardDark:'#a5733a', skin:'#f0c39b', cap:'#7f837d', capDark:'#4b4e51', crate:'#16674f', crateDark:'#0e4a38',
+  beardDark:'#a5733a', skin:'#f0c39b', cap:'#7f837d', capDark:'#4b4e51', crate:'#1f7a3a', crateDark:'#165c2b', crateLight:'#3a9a52',
   glass:'#4b2a10', glassHi:'#80501f', paper:'#f4f2ea', capG:'#4fb05a', labelG:'#2f8a3e', capR:'#e0473a', labelR:'#c22a22', gold:'#e6b84a', label:'#f3e6c4', hop:'#2f5d3a', cream:'#f3e6c4', ink:'#141a24'
 };
 
@@ -388,10 +388,23 @@ function drawCrate(cx, topY, count, w=70, h=35){
     ctx.fillStyle = C.paper; ctx.fillRect(bx-2.6, by-4, 5.2, 3);
     ctx.fillStyle = C.labelG; ctx.fillRect(bx-2.6, by-3, 5.2, 1);
   }
-  ctx.fillStyle = C.crate; rr(cx-w/2, topY, w, h, 4); ctx.fill();
-  ctx.fillStyle = C.crateDark; ctx.fillRect(cx-w/2+4, topY+5, w-8, 3); ctx.fillRect(cx-w/2+4, topY+h-7, w-8, 3);
-  ctx.fillStyle = C.cream; ctx.font = '10px "Alfa Slab One", Georgia, serif'; ctx.textAlign='center'; ctx.textBaseline='middle';
-  ctx.fillText('FREETOWN', cx, topY+h/2+1);
+  // Kiste nach Art einer Freistädter-Mehrwegkiste: grüner Kunststoff, Eckpfeiler, Griffmulden, Rippen, helles Logofeld
+  const x0 = cx - w/2, k = w/70;
+  ctx.fillStyle = C.crate; rr(x0, topY, w, h, 4*k); ctx.fill();
+  ctx.fillStyle = C.crateLight; ctx.fillRect(x0 + 2*k, topY, w - 4*k, 2.5*k);
+  ctx.fillStyle = C.crateDark;
+  ctx.fillRect(x0, topY + 3*k, 6*k, h - 3*k); ctx.fillRect(x0 + w - 6*k, topY + 3*k, 6*k, h - 3*k);
+  ctx.fillRect(x0 + 2*k, topY + h - 4*k, w - 4*k, 4*k);
+  for (let rx = x0 + 9*k; rx < x0 + w - 9*k; rx += 6*k) ctx.fillRect(rx, topY + 5*k, 1.2*k, h - 10*k);
+  // Griffmulden in den Eckpfeilern
+  ctx.fillStyle = '#0a2f18'; rr(x0 + 1.5*k, topY + 5*k, 3*k, 8*k, 1.5*k); ctx.fill(); rr(x0 + w - 4.5*k, topY + 5*k, 3*k, 8*k, 1.5*k); ctx.fill();
+  // Logofeld mit Schriftzug in Schreibschrift
+  const pw = w - 24*k, ph = h - 14*k, px = cx - pw/2, py = topY + 5.5*k;
+  ctx.fillStyle = C.crate; rr(px, py, pw, ph, 3*k); ctx.fill();
+  ctx.strokeStyle = C.crateLight; ctx.lineWidth = 1.2*k; ctx.stroke();
+  ctx.fillStyle = '#ffffff'; ctx.font = `italic 700 ${10*k}px Georgia, "Times New Roman", serif`; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+  ctx.fillText('Freetown', cx, py + ph/2 + .5*k);
+  ctx.fillStyle = C.labelR; ctx.fillRect(cx - 4*k, py + ph - 3*k, 8*k, 1.6*k);
 }
 function drawBanana(x, y, rot, onGround){
   // Bananenschale: in der Luft hängen die Lappen nach unten, am Boden liegen sie flach
