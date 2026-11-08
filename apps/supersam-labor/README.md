@@ -18,6 +18,13 @@ npm test
 npm run build    # dist/
 ```
 
+## Abschlusskacheln (klassisch)
+
+Wo der Boden an Luft grenzt, bekommt jede Kachel einen Abschluss (`drawEdges`, je Welt und in drei
+Varianten einmal gezeichnet): Seitenkanten mit Licht links und Schatten rechts, Grasnarbe (Sand, Schnee)
+läuft um die obere Ecke und hängt etwas über, Unterkanten bei schwebenden Blöcken mit kleinen Erdzapfen.
+Gilt für Boden und Geheimgänge, nicht für Schrägen, Holz und Stege.
+
 ## Deko (klassisch)
 
 Zusätzlich zu Bäumen, Tannen, Blumen und Grasbüscheln verteilt `addMoreDecor` beim Laden
