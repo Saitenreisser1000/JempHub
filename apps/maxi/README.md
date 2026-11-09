@@ -11,6 +11,7 @@ Handyspiel im Hochformat für die Freetown Brewery: Maximilian Weichl steht vor 
 ## Technik
 
 - Eine einzige Datei `index.html`: Canvas-Spiel in reinem JavaScript, alle Figuren werden im Code gezeichnet, Töne entstehen live mit der Web Audio API.
+- Impressum und Datenschutzhinweis sind im Spiel selbst (Titelbild und Spielende); bei geänderten Diensten (z. B. Highscore über Supabase) den Datenschutztext anpassen.
 - Der Rekord liegt im `localStorage` des Browsers. Eine gemeinsame Highscore-Liste folgt, sobald Supabase aktiv ist.
 - Vorschaubild zum Teilen (`og.jpg`, 1200 × 630) und App-Symbole mit Maxis Kopf (`apple-touch-icon.png`, `icon-192.png`, `icon-512.png`, `favicon-32.png`); sie werden aus den Spielfiguren gerendert.
 - `src/game.test.js`: Rauchtest (Dokument vollständig, Skript übersetzbar, Elemente vorhanden).
