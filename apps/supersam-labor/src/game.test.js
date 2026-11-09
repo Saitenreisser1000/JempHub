@@ -398,7 +398,7 @@ test('Hubwelt als Landkarte: Punkte in Reihenfolge, Laufen, Kronentor, Rückkehr
   const key = (k, d) => d ? listeners.keydown({ key: k, preventDefault() {} }) : listeners.keyup({ key: k });
   dz.save.tutorialDone = true;
   dz.setState('play'); dz.loadLevel('hub'); run(5);
-  assert.equal(dz.map.nodes.map(n => n.key).join(' '), 'home 1 5 b0 g-b0 2 6 b2 g-b2 3 7 b1 g-b1 4 8 secret b3', 'Reihenfolge auf der Karte');
+  assert.equal(dz.map.nodes.map(n => n.key).join(' '), 'home 1 5 b0 bonus1 g-b0 2 6 b2 bonus2 g-b2 3 7 b1 bonus3 g-b1 4 8 secret b3', 'Reihenfolge auf der Karte');
   assert.equal(dz.map.i, 0, 'Start bei der Übungswiese');
   key('ArrowRight', 1); for (let i = 0; i < 400; i++) run(1); key('ArrowRight', 0); for (let i = 0; i < 120; i++) run(1);
   assert.equal(dz.map.nodes[dz.map.i].key, 'g-b0', 'Kronentor der Wespenkönigin hält Sam auf');
@@ -629,4 +629,19 @@ test('Übungswiese: erste Welt, gedrosseltes Tempo bis zu den schnellen Schuhen 
   dz.save.tutorialDone = false; delete dz.save.done.uebung; dz.loadLevel('hub'); run(3);
   dz.map.go(1); dz.map.enter(); run(2); assert.equal(dz.L.id, 'hub', '1-1 noch zu');
   dz.save.done.uebung = true; dz.map.enter(); run(2); assert.equal(dz.L.id, 1, 'nach der Übungswiese offen');
+});
+
+test('Bonuswelten: Diamanten-Schranke auf der Karte, Extraleben beim ersten Schaffen, Hinweise nach Fähigkeit', () => {
+  const { dz, run } = boot();
+  const s = dz.save; s.tutorialDone = true; s.done.uebung = true;
+  dz.setState('play'); dz.loadLevel('hub'); run(3);
+  for (const w of ['bonus1', 'bonus2', 'bonus3']) assert.ok(dz.map.nodes.some(n => n.key === w), `${w} auf der Karte`);
+  dz.map.go('bonus1'); dz.map.enter(); run(2); assert.equal(dz.L.id, 'hub', 'ohne Diamanten zu');
+  for (let i = 0; i < 6; i++) s.crystals['t' + i] = true;
+  dz.map.enter(); run(2); assert.equal(dz.L.id, 'bonus1', 'mit 6 Diamanten offen');
+  assert.equal(dz.L.need || 0, 0, 'kein Punkteziel'); assert.ok(dz.L.goal, 'hat ein Ziel');
+  const before = s.lives; dz.map.finish(); assert.equal(s.lives, before + 1, 'Extraleben');
+  dz.setState('play'); dz.loadLevel('bonus1'); dz.map.finish(); assert.equal(s.lives, before + 1, 'nur beim ersten Mal');
+  // Hinweise: zählen fehlende Sammelstücke und sortieren sie nach Fähigkeit
+  const h = dz.map.hints(1); assert.ok(h.missing > 0 && h.now + Object.values(h.later).reduce((a, b) => a + b, 0) <= h.missing);
 });

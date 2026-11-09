@@ -34,6 +34,33 @@ Intern bleibt `hub` das bisherige Level mit Türen, Toren und Diamant (Sperren i
 nach der Lage von links nach rechts); `MAP_POS` legt fest, wo die Punkte auf der Karte liegen. Zurück aus
 einer Welt steht Sam auf deren Punkt.
 
+## Bonuswelten und Hinweise zum Wiederspielen
+
+**Bonuswelten** (`bonus1` Moosklippen, `bonus2` Glutschlot, `bonus3` Eisspalte): kurze, knifflige Welten ohne
+Punkteziel und Zeitlimit. Auf der Karte als Portale neben der Wespenkönigin, dem Felsgolem und dem Igelkönig,
+freigeschaltet durch Diamanten (◆ 6 / 14 / 22). Wer eine zum ersten Mal schafft, bekommt ein **Extraleben**.
+Jede braucht die jüngste Fähigkeit an dieser Stelle (Doppelsprung, Wandsprung, Dash) – mit `erreichbar.mjs`
+geprüft: mit der Fähigkeit schaffbar, ohne nicht. Auch im Editor bearbeitbar.
+
+**Hinweise auf der Karte:** Über der Infokarte steht pro Welt, was noch fehlt und ab welcher Fähigkeit es
+erreichbar ist („3 jetzt erreichbar · 1 mit Dash · 1 mit Gleiten“). Gespielte Welten mit jetzt erreichbaren
+Sachen funkeln. Nach einer neuen Fähigkeit meldet die Karte einmal, in welchen Welten dadurch etwas neu
+erreichbar ist.
+
+Grundlage ist die Tabelle `REACH` in `index.html`. Sie wird nicht von Hand gepflegt, sondern von
+`erreichbar.mjs` berechnet: dieselbe Suche wie **Prüfen** im Editor, mit der echten Spielphysik, je Welt
+ohne Fähigkeit, dann mit Doppelsprung, + Wandsprung, + Dash, + Gleiten. Nach Level-Änderungen neu rechnen:
+
+```bash
+npm run erreichbar            # alle Welten (dauert pro Welt einige Minuten)
+node erreichbar.mjs 1 5       # nur einzelne Welten
+node erreichbar.mjs --pruefen bonus1   # nur prüfen, ob das Ziel erreichbar ist
+```
+
+Sammelstücke, die die Suche mit keiner Fähigkeit erreicht, gelten als „versteckt“. Wird ein Diamant im
+Editor verschoben, fehlt er in der Tabelle, bis neu gerechnet wird; die Karte zählt ihn dann als
+„jetzt erreichbar“.
+
 ## Übungswiese: erste Welt, schnelle Schuhe
 
 Die Übungswiese ist die erste Welt: erster Punkt auf der Karte, 1-1 öffnet erst, wenn sie geschafft ist
