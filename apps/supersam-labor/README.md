@@ -117,12 +117,10 @@ Editor-Levels, im Editor als Vorschau sichtbar; nicht neben Start, Federn, Fahne
 - Einschlüsse im Boden (Kiesel, Wurzeln, Knochen, Fossilien, Muscheln, Risse, Moos, Eis).
 - Schmetterlinge auf der Wiese, Glühwürmchen im Wald.
 
-## Grafikstil „Pixel 3D“
+## Grafikstil „Pixel 3D“ (ruht)
 
-Wahlweise statt Klassisch (Standard). Auf dem Startbildschirm und im Pausenmenü unter
-**Grafik** umschaltbar (am Rechner auch Taste `G`, als Link `?stil=pixel3d`). Die Wahl
-bleibt im Browser gespeichert (`supersam-labor-stil`). Die zusätzliche klassische Deko
-erscheint dort nicht.
+Die Grafik ist fest **Klassisch**; im Menü gibt es keine Auswahl mehr, Taste `G` und `?stil=` sind entfernt.
+Der Pixel-3D-Code bleibt erhalten (ein Test zeichnet damit weiterhin jede Welt), ist aber nicht erreichbar.
 
 - Figuren, Gelände und Hintergrund entstehen aus kleinen 3D-Körpern (Kugeln, Kapseln,
   Kästen, Höhenfelder). Je Pixel wird die Oberflächennormale beleuchtet (Licht von links

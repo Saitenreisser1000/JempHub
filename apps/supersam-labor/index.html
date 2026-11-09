@@ -175,7 +175,6 @@ body.title .hud,body.title .zone,body.title #msg,body.title #tut{display:none!im
     <button class="btn ghost" id="wipe" type="button">Fortschritt löschen</button>
   </div>
   <p id="wipeinfo" hidden>Fortschritt gelöscht.</p>
-  <div class="stilwahl"><span>Grafik</span><button type="button" data-stil="klassik">Klassisch</button><button type="button" data-stil="pixel3d">Pixel 3D</button></div>
 </div>
 
 <div class="panel" id="ending" hidden>
@@ -212,7 +211,6 @@ body.title .hud,body.title .zone,body.title #msg,body.title #tut{display:none!im
     <button class="btn ghost" id="ppractice" type="button">Übungswiese</button>
     <button class="btn ghost" id="pmain" type="button">Hauptmenü</button>
   </div>
-  <div class="stilwahl"><span>Grafik</span><button type="button" data-stil="klassik">Klassisch</button><button type="button" data-stil="pixel3d">Pixel 3D</button></div>
   <div class="stilwahl"><span>Auflösung</span><button type="button" data-res="2">Hoch</button><button type="button" data-res="1.5">Mittel</button><button type="button" data-res="1">Niedrig</button><span style="margin-left:10px">Licht</span><button type="button" data-fx="1">An</button><button type="button" data-fx="0">Aus</button></div>
   <div class="tunes" style="max-width:380px">
     <label for="v-music">Musik</label><input type="range" id="v-music" min="0" max="1" step="0.05"><output id="o-music" for="v-music"></output>
@@ -1300,7 +1298,6 @@ addEventListener('keydown',e=>{
   else if(['ArrowRight','d','D'].includes(e.key)) keyR=true;
   else if([' ','ArrowUp','w','W'].includes(e.key)){ keyJump=true; triggerJump(); e.preventDefault(); }
   else if(e.key==='Shift') requestDash(P.face);
-  else if(e.key==='g'||e.key==='G') cycleSkin();   // Grafikstil wechseln (Stilprobe)
   recompute();
 });
 addEventListener('keyup',e=>{
@@ -2969,7 +2966,7 @@ function drawPlayer(){
 const SKINS=['klassik','pixel3d'], SKIN_NAME={klassik:'Klassisch',pixel3d:'Pixel 3D'}, SKIN_KEY='supersam-labor-stil';
 // Standard ist Klassisch; Pixel 3D ist wählbar
 let SKIN='klassik';
-try{ const q=new URLSearchParams(location.search).get('stil'), v=localStorage.getItem(SKIN_KEY); if(SKINS.includes(q)) SKIN=q; else if(SKINS.includes(v)) SKIN=v; }catch(_){}
+// Grafik ist fest Klassisch – keine Auswahl im Menü, keine Taste, kein ?stil= (Pixel-3D-Code bleibt für später erhalten)
 const skinButtons=()=>{ try{ return [...(document.querySelectorAll?.('.stilwahl button[data-stil]')||[])]; }catch(_){ return []; } };
 function syncSkinUi(){ for(const b of skinButtons()) b.classList.toggle('on',b.dataset.stil===SKIN); }
 function setSkin(s){ if(!SKINS.includes(s)) return; SKIN=s; try{ localStorage.setItem(SKIN_KEY,s); }catch(_){} syncSkinUi(); showMsg('Grafik: '+SKIN_NAME[s]); }
