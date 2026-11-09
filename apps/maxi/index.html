@@ -97,6 +97,28 @@ html,body{height:100%;margin:0;background:var(--night);color:var(--cream);overfl
 .legal button{font:600 14px var(--f-ui);letter-spacing:.04em;color:var(--cream);opacity:.85;text-decoration:underline;text-underline-offset:3px;padding:4px 2px;background:none;border:0;cursor:pointer}
 .legal.dark button{color:var(--hop);opacity:1}
 .legal button:focus-visible{outline:2px solid var(--copper);outline-offset:2px;border-radius:3px}
+#over,#board{grid-template-columns:minmax(0,1fr);justify-items:center}
+.boardcard{max-height:calc(100% - 16px);overflow-y:auto}
+.hslist{list-style:none;margin:0;padding:0;display:grid;gap:4px;text-align:left;counter-reset:r;font-variant-numeric:tabular-nums}
+.hslist li{counter-increment:r;display:grid;grid-template-columns:30px 1fr auto;align-items:baseline;gap:8px;padding:6px 8px;border-radius:7px;font:500 17px var(--f-ui)}
+.hslist li:nth-child(odd){background:rgba(47,93,58,.1)}
+.hslist li::before{content:counter(r) ".";font-weight:700;color:var(--hop)}
+.hslist li:nth-child(-n+3)::before{color:var(--crate)}
+.hslist li.me{background:var(--gold)}
+.hslist .n{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.hslist .s{font:400 17px var(--f-display)}
+.hsmsg{font-size:15px!important;opacity:.8}
+.hsmsg:empty{display:none}
+.hsentry{display:grid;gap:6px;text-align:left}
+.hsentry label{font:700 13px var(--f-ui);letter-spacing:.08em;text-transform:uppercase;color:var(--hop)}
+.hsrow{display:flex;gap:8px}
+.hsrow input{flex:1;min-width:0;width:0;font:500 18px var(--f-ui);padding:10px 12px;border:2px solid var(--hop);border-radius:10px;background:#fffaf0;color:var(--ink);-webkit-user-select:text;user-select:text}
+.hsrow input:focus-visible{outline:3px solid var(--copper);outline-offset:1px}
+.btn.hsbtn{font-size:17px;padding:10px 14px}
+.btn:disabled{opacity:.55}
+.hsnote{font-size:14px!important;margin:0}
+.hsnote:empty{display:none}
+.btn.ghost{background:transparent;border:2px solid var(--cream);color:var(--cream);font-size:18px;padding:10px 14px}
 .hint{margin:0;font:500 15px var(--f-ui);color:var(--cream);text-shadow:0 1px 2px rgba(0,0,0,.6)}
 .label h1{font-family:var(--f-display);font-weight:400;font-size:38px;line-height:1;margin:0;color:var(--crate);text-wrap:balance}
 .label h2{font-family:var(--f-display);font-weight:400;font-size:30px;line-height:1.05;margin:0;color:var(--crate)}
@@ -132,6 +154,7 @@ html,body{height:100%;margin:0;background:var(--night);color:var(--cream);overfl
   </div>
   <div class="startbox">
     <button class="btn" id="playBtn" type="button">Prost, los geht's</button>
+    <button class="btn ghost" id="boardBtn" type="button" data-board hidden>Bestenliste</button>
     <p class="hint" id="bestStart"></p>
     <nav class="legal" aria-label="Rechtliches"><button type="button" data-legal="imp">Impressum</button><button type="button" data-legal="priv">Datenschutz</button></nav>
   </div>
@@ -148,8 +171,19 @@ html,body{height:100%;margin:0;background:var(--night);color:var(--cream);overfl
     </dl>
     <h3 id="privTitle">Datenschutz</h3>
     <p>Das Spiel läuft vollständig in deinem Browser. Es gibt kein Konto, keine Cookies und keine Statistik- oder Werbedienste. Dein Rekord wird nur lokal auf deinem Gerät gespeichert.</p>
+    <p>Trägst du dich in die Bestenliste ein, werden der gewählte Name, Punkte, Kisten und der Zeitpunkt auf unserem eigenen Server gespeichert und öffentlich in der Bestenliste gezeigt. Nimm deshalb lieber einen Spitznamen. Einträge löschen wir auf Anfrage an office@jemphub.com.</p>
     <p>Beim Aufruf verarbeitet der Webserver technisch notwendige Daten wie die IP-Adresse. Die Schriften werden von Google Fonts geladen; dabei wird deine IP-Adresse an Google übertragen.</p>
     <button class="btn" id="legalClose" type="button">Zurück</button>
+  </div>
+</div>
+
+<div class="overlay" id="board" hidden>
+  <div class="label boardcard" role="dialog" aria-modal="true" aria-labelledby="boardTitle">
+    <div class="brand">Freetown Brewery</div>
+    <h2 id="boardTitle">Bestenliste</h2>
+    <ol class="hslist" id="hsList"></ol>
+    <p class="hsmsg" id="hsMsg"></p>
+    <button class="btn" id="boardClose" type="button">Zurück</button>
   </div>
 </div>
 
@@ -166,7 +200,14 @@ html,body{height:100%;margin:0;background:var(--night);color:var(--cream);overfl
     <h2>Zu viel Bruch!</h2>
     <div class="big" id="finalScore">0</div>
     <p id="finalInfo"></p>
+    <div class="hsentry" id="hsEntry" hidden>
+      <label for="hsName">Dein Name für die Bestenliste</label>
+      <div class="hsrow"><input id="hsName" type="text" maxlength="12" autocomplete="nickname" enterkeyhint="send" placeholder="3 bis 12 Zeichen"><button class="btn hsbtn" id="hsSend" type="button">Eintragen</button></div>
+      <p class="hsnote" id="hsNote"></p>
+    </div>
+    <p class="hsnote" id="hsInfo" hidden></p>
     <button class="btn" id="againBtn" type="button">Nochmal</button>
+    <button class="btn sec" id="boardBtn2" type="button" data-board hidden>Bestenliste</button>
     <nav class="legal dark" aria-label="Rechtliches"><button type="button" data-legal="imp">Impressum</button><button type="button" data-legal="priv">Datenschutz</button></nav>
   </div>
 </div>
@@ -1240,6 +1281,7 @@ function gameOver(){
   $('finalScore').textContent = score;
   $('finalInfo').textContent = `${crates} ${crates === 1 ? 'volle Kiste' : 'volle Kisten'} abgegeben · Rekord ${best}`;
   $('over').hidden = false; try { wake?.release(); } catch(e) {}
+  hsAfterGame();
 }
 function togglePause(){
   if (state === 'play'){ state = 'pause'; $('paused').hidden = false; }
@@ -1253,6 +1295,78 @@ function openLegal(which, from){ legalFrom = from; $(from).hidden = true; $('leg
 function closeLegal(){ $('legalBox').hidden = true; if (legalFrom) $(legalFrom).hidden = false; legalFrom = null; }
 for (const el of document.querySelectorAll('[data-legal]')) el.addEventListener('click', () => openLegal(el.dataset.legal, el.closest('.overlay').id));
 $('legalClose').onclick = closeLegal;
+/* Bestenliste über Supabase. Zugang steht in config.json neben index.html (nicht im Repo);
+   ohne config.json bleibt die Bestenliste einfach ausgeblendet. */
+let HS = null, hsTop = [], boardFrom = null, myRank = 0, sentScore = false;
+const NAME_RE = /^[A-Za-z0-9ÄÖÜäöüß _.-]{3,12}$/;
+function hsHeaders(){ const h = { apikey: HS.key, 'Content-Type': 'application/json' }; if (HS.key.startsWith('eyJ')) h.Authorization = 'Bearer ' + HS.key; return h; }
+async function hsInit(){
+  try {
+    const r = await fetch('config.json', { cache: 'no-store' }); if (!r.ok) return;
+    const c = await r.json(); if (!c || !c.supabaseUrl || !c.supabaseKey) return;
+    HS = { url: String(c.supabaseUrl).replace(/\/+$/, ''), key: String(c.supabaseKey) };
+    for (const b of document.querySelectorAll('[data-board]')) b.hidden = false;
+  } catch(e) { HS = null; }
+}
+async function hsLoad(){
+  const r = await fetch(`${HS.url}/rest/v1/maxi_scores?select=name,score,crates,created_at&order=score.desc,created_at.asc&limit=10`, { headers: hsHeaders() });
+  if (!r.ok) throw new Error('load ' + r.status);
+  hsTop = await r.json(); return hsTop;
+}
+async function hsSubmit(name, pts, cr){
+  const r = await fetch(`${HS.url}/rest/v1/rpc/maxi_submit_score`, { method: 'POST', headers: hsHeaders(), body: JSON.stringify({ p_name: name, p_score: pts, p_crates: cr }) });
+  if (!r.ok){ let m = ''; try { m = (await r.json()).message || ''; } catch(e) {} throw new Error(m || ('send ' + r.status)); }
+  return +(await r.json());
+}
+function renderBoard(highlightName, highlightScore){
+  const ol = $('hsList'); ol.textContent = '';
+  let marked = false;
+  for (const e of hsTop){
+    const li = document.createElement('li'), n = document.createElement('span'), s = document.createElement('span');
+    n.className = 'n'; n.textContent = e.name; s.className = 's'; s.textContent = e.score;
+    if (!marked && highlightName && e.name === highlightName && e.score === highlightScore){ li.className = 'me'; marked = true; }
+    li.append(n, s); ol.append(li);
+  }
+  $('hsMsg').textContent = hsTop.length ? (highlightScore && !marked && myRank ? `Du bist auf Platz ${myRank}.` : '') : 'Noch keine Einträge. Sei die oder der Erste!';
+}
+async function openBoard(from, hlName, hlScore){
+  boardFrom = from; $(from).hidden = true; $('board').hidden = false;
+  $('hsList').textContent = ''; $('hsMsg').textContent = 'Bestenliste wird geladen …';
+  try { await hsLoad(); renderBoard(hlName, hlScore); }
+  catch(e) { $('hsMsg').textContent = 'Die Bestenliste ist gerade nicht erreichbar. Versuch es später noch einmal.'; }
+  $('boardClose').focus();
+}
+function closeBoard(){ $('board').hidden = true; if (boardFrom) $(boardFrom).hidden = false; boardFrom = null; }
+async function hsAfterGame(){
+  $('hsEntry').hidden = true; $('hsInfo').hidden = true; $('hsNote').textContent = ''; sentScore = false; myRank = 0;
+  if (!HS || score <= 0) return;
+  try {
+    await hsLoad();
+    if (state !== 'over') return;
+    if (hsTop.length < 10 || score > hsTop[hsTop.length - 1].score){
+      let last = ''; try { last = localStorage.getItem('ftb-name') || ''; } catch(e) {}
+      $('hsName').value = last; $('hsSend').disabled = false; $('hsEntry').hidden = false;
+    } else { $('hsInfo').textContent = `Für die Bestenliste brauchst du mehr als ${hsTop[hsTop.length - 1].score} Punkte.`; $('hsInfo').hidden = false; }
+  } catch(e) { /* Bestenliste nicht erreichbar: Spielende bleibt wie gewohnt */ }
+}
+async function sendScore(){
+  if (sentScore) return;
+  const name = $('hsName').value.trim().replace(/\s+/g, ' ');
+  if (!NAME_RE.test(name)){ $('hsNote').textContent = 'Bitte 3 bis 12 Zeichen: Buchstaben, Ziffern, Leerzeichen, Punkt, Strich.'; return; }
+  $('hsSend').disabled = true; $('hsNote').textContent = 'Wird eingetragen …';
+  try {
+    myRank = await hsSubmit(name, score, crates); sentScore = true;
+    try { localStorage.setItem('ftb-name', name); } catch(e) {}
+    $('hsEntry').hidden = true; $('hsInfo').textContent = `Eingetragen: Platz ${myRank}!`; $('hsInfo').hidden = false;
+    openBoard('over', name, score);
+  } catch(e) { $('hsSend').disabled = false; $('hsNote').textContent = 'Eintragen hat nicht geklappt. Versuch es gleich noch einmal.'; }
+}
+for (const b of document.querySelectorAll('[data-board]')) b.addEventListener('click', () => openBoard(b.closest('.overlay').id));
+$('boardClose').onclick = closeBoard;
+$('hsSend').onclick = sendScore;
+$('hsName').addEventListener('keydown', e => { e.stopPropagation(); if (e.key === 'Enter') sendScore(); });
+$('hsName').addEventListener('keyup', e => e.stopPropagation());
+hsInit();
 $('pauseBtn').onclick = togglePause; $('resumeBtn').onclick = togglePause;
 document.addEventListener('visibilitychange', () => { if (document.hidden && state === 'play') togglePause(); });
 $('bestStart').textContent = best ? `Dein Rekord: ${best} Punkte` : 'Steuerung: Finger auflegen und nach links oder rechts ziehen.';

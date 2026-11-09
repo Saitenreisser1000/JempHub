@@ -142,6 +142,8 @@ jobs:
           OPTS="-rlptz --delete"
           [ "$APP" = "hub" ] && OPTS="-rlptz"
           [ "$APP" = "guitar" ] && OPTS="$OPTS --exclude=config.js"
+          # Maxis Bierkiste: config.json auf dem Server (Bestenliste/Supabase) bleibt erhalten.
+          [ "$APP" = "maxi" ] && OPTS="$OPTS --exclude=config.json"
           # Supersam-Demo: den Labor-Unterordner nicht mitlöschen
           [ "$APP" = "supersam" ] && OPTS="$OPTS --exclude=/labor/"
           $SSH "$U@$HOST" "mkdir -p '$DEST'"
