@@ -1226,15 +1226,17 @@ function requestDash(side){
 }
 addEventListener('pointerdown',e=>{
   if(state!=='play') return;
-  if(L&&L.map){ mapTap(e.clientX,e.clientY); return; }   // Karte: Punkt antippen statt Laufzonen
+  if(L&&L.map){ MAPS.drag={id:e.pointerId,x:e.clientX,y:e.clientY,cx:MAPS.cx,cy:MAPS.cy,moved:false}; return; }   // Karte: tippen wählt, ziehen verschiebt
   const side=e.clientX<innerWidth/2?-1:1, now=performance.now();
   const otherHeld=[...ptrs.values()].some(x=>(x<innerWidth/2?-1:1)!==side);
   if(!otherHeld && lastTap.side===side && now-lastTap.t<260){ requestDash(side); lastTap={side:0,t:0}; }
   else lastTap={side,t:now};
   ptrs.set(e.pointerId,e.clientX); recompute();
 });
-addEventListener('pointermove',e=>{ if(ptrs.has(e.pointerId)){ ptrs.set(e.pointerId,e.clientX); recompute(); } });
-const up=e=>{ if(ptrs.delete(e.pointerId)) recompute(); };
+addEventListener('pointermove',e=>{ const d=MAPS.drag; if(d&&d.id===e.pointerId&&L&&L.map){ const dx=e.clientX-d.x, dy=e.clientY-d.y; if(Math.hypot(dx,dy)>8) d.moved=true;
+    if(d.moved){ const k=cv.width/innerWidth, s=mapView().s; MAPS.cx=d.cx-dx*k/s; MAPS.cy=d.cy-dy*k/s; MAPS.free=true; mapClamp(); } return; }
+  if(ptrs.has(e.pointerId)){ ptrs.set(e.pointerId,e.clientX); recompute(); } });
+const up=e=>{ const d=MAPS.drag; if(d&&d.id===e.pointerId){ MAPS.drag=null; if(!d.moved&&e.type==='pointerup'&&L&&L.map&&state==='play') mapTap(e.clientX,e.clientY); return; } if(ptrs.delete(e.pointerId)) recompute(); };
 addEventListener('pointerup',up); addEventListener('pointercancel',up);
 addEventListener('contextmenu',e=>e.preventDefault());
 addEventListener('touchmove',e=>{ if(state==='play') e.preventDefault(); },{passive:false});
@@ -2625,7 +2627,12 @@ function drawDoors(){ for(const d of L.doors){
 const MAPW=440, MAPH=200;
 const MAP_POS={home:[42,156],1:[68,133],5:[58,96],b0:[96,70],'g-b0':[124,61],2:[148,53],6:[186,37],b2:[216,61],'g-b2':[212,85],
   3:[204,108],7:[246,135],b1:[280,109],'g-b1':[306,96],4:[332,82],8:[366,50],secret:[398,30],b3:[404,90]};
-const MAPS={i:0,to:-1,t:0,face:1,walk:0,nodes:[],goal:-1,card:null};
+const MAPS={i:0,to:-1,t:0,face:1,walk:0,nodes:[],goal:-1,card:null,cx:0,cy:0,free:false,drag:null};
+const MAP_ZOOM=1.8;   // wie nah die Karte gezeigt wird (1 = ganze Insel)
+function mapView(){ const W=cv.width, H=cv.height, s=Math.min(W/MAPW,H/MAPH)*MAP_ZOOM; return {W,H,s,ox:Math.round(W/2-MAPS.cx*s),oy:Math.round(H/2-MAPS.cy*s)}; }
+function mapClamp(){ const {W,H,s}=mapView(), hw=W/2/s, hh=H/2/s;
+  MAPS.cx=hw*2>=MAPW?MAPW/2:Math.max(hw,Math.min(MAPW-hw,MAPS.cx)); MAPS.cy=hh*2>=MAPH?MAPH/2:Math.max(hh,Math.min(MAPH-hh,MAPS.cy)); }
+function mapSam(){ const N=MAPS.nodes, a=N[MAPS.i]; if(!a) return [MAPW/2,MAPH/2]; if(MAPS.to<0) return [a.mx,a.my-8]; const b=N[MAPS.to]; return [a.mx+(b.mx-a.mx)*MAPS.t,a.my-8+(b.my-a.my)*MAPS.t]; }
 let MAPIMG=null, MAPWAVES=[], MAPFOG={};
 const mapHash=(x,y=0)=>{ const s=Math.sin(x*127.1+y*311.7)*43758.5453; return s-Math.floor(s); };
 const mapVn=(x,y)=>{ const xi=Math.floor(x),yi=Math.floor(y),xf=x-xi,yf=y-yi,u=xf*xf*(3-2*xf),v=yf*yf*(3-2*yf);
@@ -2672,11 +2679,14 @@ function mapBuild(spawn){ const N=[{key:'home',kind:'home',x:0}];
   for(const k of L.crystals) N.push({key:'secret',kind:'secret',ref:k,x:k.x});
   N.sort((a,b)=>a.x-b.x); for(const n of N){ const p=MAP_POS[n.key]||[MAPW/2,MAPH/2]; n.mx=p[0]; n.my=p[1]; }
   MAPS.nodes=N; MAPS.to=-1; MAPS.t=0; MAPS.walk=0; MAPS.goal=-1;
-  const i=spawn==null?-1:N.findIndex(n=>String(n.key)===String(spawn)); MAPS.i=i>=0?i:0; }
+  const i=spawn==null?-1:N.findIndex(n=>String(n.key)===String(spawn)); MAPS.i=i>=0?i:0;
+  [MAPS.cx,MAPS.cy]=mapSam(); MAPS.free=false; MAPS.drag=null; mapClamp(); }
 const mapClosedGate=()=>MAPS.nodes.findIndex(n=>n.kind==='gate'&&!n.ref.open);
 function mapDone(n){ if(n.kind==='home') return !!(save.done.uebung||save.tutorialDone); if(n.kind==='door') return typeof n.key==='number'?!!save.done[n.key]:!!save.bosses[n.key]; if(n.kind==='secret') return !!n.ref.known; if(n.kind==='gate') return n.ref.open; return false; }
 function mapBlock(n){ if(n.kind==='door') return doorBlock(n.ref); if(n.kind==='secret') return save.ab.glide?null:`Braucht ${AB_INFO.glide.name}`; if(n.kind==='gate') return n.ref.open?null:`Krone: ${NAMES[n.ref.boss]} besiegen`; return null; }
 function updateMap(dt){ const N=MAPS.nodes; if(!N.length) return;
+  if(MAPS.to>=0||MAPS.goal>=0) MAPS.free=false;   // läuft Sam, folgt die Ansicht wieder
+  if(!MAPS.free&&!MAPS.drag){ const [tx,ty]=mapSam(), k=Math.min(1,dt*5); MAPS.cx+=(tx-MAPS.cx)*k; MAPS.cy+=(ty-MAPS.cy)*k; mapClamp(); }
   if(MAPS.to>=0){ const a=N[MAPS.i], b=N[MAPS.to], len=Math.hypot(b.mx-a.mx,b.my-a.my)||1; MAPS.t+=dt*(MAPS.goal>=0?95:70)/len; MAPS.walk+=dt;
     if(MAPS.t>=1){ MAPS.i=MAPS.to; MAPS.to=-1; MAPS.t=0; if(MAPS.goal===MAPS.i){ MAPS.goal=-1; sfx('land'); } } return; }
   const cg=mapClosedGate();
@@ -2698,15 +2708,15 @@ function mapEnter(){ const n=MAPS.nodes[MAPS.i]; if(!n||MAPS.to>=0) return;
 // Antippen: Punkt → Sam läuft hin; Punkt unter Sam oder Infokarte → betreten
 function mapTap(cx,cy){ const N=MAPS.nodes; if(!N.length) return; const k=cv.width/innerWidth, x=cx*k, y=cy*k;
   const c=MAPS.card; if(c&&MAPS.to<0&&x>=c.x&&x<=c.x+c.w&&y>=c.y&&y<=c.y+c.h){ mapEnter(); return; }
-  const W=cv.width, H=cv.height, s=Math.min(W/MAPW,H/MAPH), ox=(W-MAPW*s)/2, oy=(H-MAPH*s)/2, mx=(x-ox)/s, my=(y-oy)/s, cg=mapClosedGate();
-  let best=-1, bd=18; N.forEach((n,i)=>{ if(cg>=0&&i>cg) return; const d=Math.hypot(n.mx-mx,n.my-4-my); if(d<bd){ bd=d; best=i; } });
+  const {s,ox,oy}=mapView(), mx=(x-ox)/s, my=(y-oy)/s, cg=mapClosedGate();
+  let best=-1, bd=14; N.forEach((n,i)=>{ if(cg>=0&&i>cg) return; const d=Math.hypot(n.mx-mx,n.my-4-my); if(d<bd){ bd=d; best=i; } });
   if(best<0) return;
   if(best===MAPS.i&&MAPS.to<0){ mapEnter(); return; }
   MAPS.goal=best; }
 const MAPSTAT={};
 function mapStats(w){ if(MAPSTAT[w]) return MAPSTAT[w]; const lv=makeLevel(w); return MAPSTAT[w]={cr:lv.crystals.map(k=>k.id),st:lv.stars.map(k=>k.id)}; }
 function drawMap(){
-  const W=cv.width, H=cv.height, s=Math.min(W/MAPW,H/MAPH), ox=(W-MAPW*s)/2, oy=(H-MAPH*s)/2, N=MAPS.nodes, img=mapImage();
+  const N=MAPS.nodes, img=mapImage(); mapClamp(); const {W,H,s,ox,oy}=mapView();
   ctx.setTransform(1,0,0,1,0,0); ctx.imageSmoothingEnabled=false; ctx.fillStyle='#3a86c8'; ctx.fillRect(0,0,W,H);
   ctx.setTransform(s,0,0,s,ox,oy);
   // Meer bis an den Rand, dann die Insel
@@ -3837,7 +3847,7 @@ if(EDIT_DRAFT&&!EDIT_ENGINE){ const id=isNaN(+EDIT_ID)?EDIT_ID:+EDIT_ID, ab=(EDI
   addEventListener('keydown',e=>{ try{ audioInit(); }catch(_){} if(e.key==='Escape'){ e.preventDefault(); parent.postMessage({supersam:'back'},'*'); } });
   addEventListener('pointerdown',()=>{ try{ audioInit(); }catch(_){} }); }
 if(!EDIT_ENGINE) requestAnimationFrame(frame);
-window.__dz={map:{get nodes(){return MAPS.nodes;},get i(){return MAPS.i;},get to(){return MAPS.to;},go(k){ const i=MAPS.nodes.findIndex(n=>String(n.key)===String(k)); if(i>=0){ MAPS.i=i; MAPS.to=-1; } return i; },walkTo(k){ const i=MAPS.nodes.findIndex(n=>String(n.key)===String(k)); if(i>=0) MAPS.goal=i; return i; },enter:()=>mapEnter()},editor:{levelData,EDITABLE,defFromData,PH,TS,ETYPE,NAMES,WNO,deco:{list:DECO_LIST,icon:decoIcon,preview:decoPreview},spr:{T,SPIKE,slopeTile,ES,BEETLE:BEETLE_A,STAR,COIN:COIN[0],CRYSTAL,SPRING,CROWN,get SHOES(){ return shoesImg(); }},
+window.__dz={map:{get nodes(){return MAPS.nodes;},get i(){return MAPS.i;},get to(){return MAPS.to;},go(k){ const i=MAPS.nodes.findIndex(n=>String(n.key)===String(k)); if(i>=0){ MAPS.i=i; MAPS.to=-1; } return i; },screen(k){ const n=MAPS.nodes.find(n=>String(n.key)===String(k)), v=mapView(), r=cv.width/innerWidth; return n?[(v.ox+n.mx*v.s)/r,(v.oy+(n.my-3)*v.s)/r]:null; },walkTo(k){ const i=MAPS.nodes.findIndex(n=>String(n.key)===String(k)); if(i>=0) MAPS.goal=i; return i; },enter:()=>mapEnter()},editor:{levelData,EDITABLE,defFromData,PH,TS,ETYPE,NAMES,WNO,deco:{list:DECO_LIST,icon:decoIcon,preview:decoPreview},spr:{T,SPIKE,slopeTile,ES,BEETLE:BEETLE_A,STAR,COIN:COIN[0],CRYSTAL,SPRING,CROWN,get SHOES(){ return shoesImg(); }},
   load(D,ab){ EDIT_ID=String(D.id); EDIT_DRAFT=D; EDIT_MODE=true; Object.assign(save.ab,{double:ab.includes('double'),wall:ab.includes('wall'),dash:ab.includes('dash'),glide:ab.includes('glide')}); loadLevel(D.id); state='play'; L.timeLimit=0; return L; },   // nur für Editor/Engine: EDIT_MODE verhindert das Speichern
   tick(dt){ clock+=dt; update(dt); }, keys(l,r,j){ keyL=l; keyR=r; if(j&&!keyJump){ keyJump=true; triggerJump(); } else if(!j) keyJump=false; recompute(); }, dash(){ requestDash(P.face); },
   get P(){return P;}, get L(){return L;}, get state(){return state;}, set state(v){state=v;}},
