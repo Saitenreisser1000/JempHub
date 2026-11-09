@@ -643,3 +643,16 @@ test('Bonuswelten: Diamanten-Schranke auf der Karte, Extraleben beim ersten Scha
   // Hinweise: zählen fehlende Sammelstücke und sortieren sie nach Fähigkeit
   const h = dz.map.hints(1); assert.ok(h.missing > 0 && h.now + Object.values(h.later).reduce((a, b) => a + b, 0) <= h.missing);
 });
+
+test('Medaillen: Bronze fürs Schaffen, Silber für alles Gesammelte, Gold für die Zielzeit', () => {
+  const { dz } = boot();
+  const s = dz.save, gold = dz.map.gold(1);
+  assert.ok(gold >= 30 && gold <= 200, `Goldzeit 1-1 sinnvoll (${gold} s)`);
+  let m = dz.map.medals(1); assert.ok(!m.b && !m.s && !m.g, 'anfangs keine');
+  s.done[1] = true; s.best[1] = { time: gold + 20 }; m = dz.map.medals(1); assert.ok(m.b && !m.g, 'Bronze, noch kein Gold');
+  s.best[1].time = gold - 1; assert.ok(dz.map.medals(1).g, 'Gold unter der Zielzeit');
+  dz.setState('play'); dz.loadLevel(1); for (const k of dz.L.crystals) s.crystals[k.id] = true; for (const k of dz.L.stars) s.stars[k.id] = true;
+  assert.ok(dz.map.medals(1).s, 'Silber mit allen Diamanten und Sternen');
+  const D = JSON.parse(JSON.stringify(dz.editor.levelData(1))); D.gold = 42; dz.editor.load(D, []);
+  assert.equal(dz.editor.levelData(1).gold, undefined, 'Original ohne eigene Goldzeit');
+});

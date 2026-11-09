@@ -172,6 +172,7 @@ button.pub{background:#2a4a6a;border-color:#4f86b8}
       <div class="row"><span>Zeit (s)</span><input type="number" id="ptime" step="10" min="0"></div>
       <div class="row"><span>Bodenreihe</span><input type="number" id="ptop" min="1"></div>
       <div class="row"><span>Automatische Deko</span><input type="checkbox" id="pdecoauto"></div>
+      <div class="row"><span>Goldzeit (s)</span><input type="number" id="pgold" min="5" step="5" placeholder="auto"></div>
       <h4>Spalten &amp; Zeilen</h4>
       <div class="row"><span>Anzahl</span><input type="number" id="ncols" value="5" min="1" max="200"></div>
       <div class="row"><button id="inscol" title="An der Mausspalte einfügen">Spalten einfügen</button><button id="delcol">löschen</button></div>
@@ -267,7 +268,7 @@ const getMeta=id=>{ try{ return JSON.parse(localStorage.getItem(META+id)||'{}')|
 const setMeta=(id,m)=>{ try{ localStorage.setItem(META+id,JSON.stringify(m)); }catch(_){} };
 const getDraft=id=>{ try{ return JSON.parse(localStorage.getItem(DRAFT+id)||'null'); }catch(_){ return null; } };
 function clearDraft(id){ try{ localStorage.removeItem(DRAFT+id); localStorage.removeItem(META+id); }catch(_){} }
-const canon=D=>JSON.stringify([D.w,D.h,D.top,D.need||0,D.timeLimit||0,D.style||null,D.scene||null,D.sky||null,!!D.noReturn,!!D.noDeco,D.grid,D.back,D.up,D.objs.map(o=>JSON.stringify(Object.keys(o).sort().map(k=>[k,o[k]]))).sort()]);
+const canon=D=>JSON.stringify([D.w,D.h,D.top,D.need||0,D.timeLimit||0,D.style||null,D.scene||null,D.sky||null,!!D.noReturn,!!D.noDeco,D.gold||0,D.grid,D.back,D.up,D.objs.map(o=>JSON.stringify(Object.keys(o).sort().map(k=>[k,o[k]]))).sort()]);
 const hash=t=>{ let h=2166136261; for(let i=0;i<t.length;i++){ h^=t.charCodeAt(i); h=Math.imul(h,16777619); } return (h>>>0).toString(36)+t.length.toString(36); };
 const sigOf=D=>hash(canon(D));
 const LIVE_SIG={}; const liveSig=id=>LIVE_SIG[id]??=sigOf(E.levelData(id));      // Labor-Stand, wie er gerade online ist
@@ -471,7 +472,7 @@ function insertRowsTop(n){ pushHist(); for(let i=0;i<n;i++){ M.g.unshift(Array(M
 function deleteRowsTop(n){ n=Math.min(n,M.top-1); if(n<=0) return; pushHist(); M.g.splice(0,n); M.b.splice(0,n); M.u.splice(0,n); M.objs=M.objs.filter(o=>o.r>=n||o.k==='start'||o.k==='goal'); for(const o of M.objs) o.r=Math.max(0,o.r-n); shiftNotes(null,y=>Math.max(0,y-n)); M.h-=n; M.top-=n; changed(true); }
 
 // ---------- Eigenschaften ----------
-function syncProps(){ if(!M) return; $('pname').value=M.name||''; $('psize').textContent=`${M.w} × ${M.h} Kacheln`; $('pneed').value=M.need||0; $('ptime').value=M.timeLimit||0; $('ptop').value=M.top; $('pdecoauto').checked=!M.noDeco; renderObjProps(); }
+function syncProps(){ if(!M) return; $('pname').value=M.name||''; $('psize').textContent=`${M.w} × ${M.h} Kacheln`; $('pneed').value=M.need||0; $('ptime').value=M.timeLimit||0; $('ptop').value=M.top; $('pdecoauto').checked=!M.noDeco; $('pgold').value=M.gold||''; try{ $('pgold').placeholder='auto ('+E.goldTime(isNaN(+curId)?curId:+curId)+')'; }catch(_){} renderObjProps(); }
 function propRow(host,label,val,on,attrs={}){ const r=document.createElement('div'); r.className='row'; const s=document.createElement('span'); s.textContent=label; const i=document.createElement(attrs.options?'select':'input');
   if(attrs.options) for(const [v,l] of attrs.options){ const o=document.createElement('option'); o.value=v; o.textContent=l; if(String(v)===String(val)) o.selected=true; i.append(o); } else { i.type='number'; i.value=val; if(attrs.step) i.step=attrs.step; }
   i.addEventListener('change',()=>{ pushHist(); on(attrs.options?i.value:+i.value); changed(); draw(); }); r.append(s,i); host.append(r); }
@@ -940,6 +941,7 @@ ${msg}`:''));
 // ---------- Seitenleiste ----------
 $('pname').onchange=()=>{ pushHist(); M.name=$('pname').value; changed(); };
 $('pneed').onchange=()=>{ pushHist(); M.need=+$('pneed').value; changed(); };
+$('pgold').onchange=()=>{ pushHist(); const v=Math.round(+$('pgold').value); if(v>0) M.gold=v; else delete M.gold; changed(); };
 $('pdecoauto').onchange=()=>{ pushHist(); if($('pdecoauto').checked) delete M.noDeco; else M.noDeco=true; changed(); };
 $('ptime').onchange=()=>{ pushHist(); M.timeLimit=+$('ptime').value; changed(); };
 $('ptop').onchange=()=>{ pushHist(); M.top=Math.max(1,Math.min(M.h-1,+$('ptop').value)); changed(true); };

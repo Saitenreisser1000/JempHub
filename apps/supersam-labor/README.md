@@ -61,6 +61,16 @@ Sammelstücke, die die Suche mit keiner Fähigkeit erreicht, gelten als „verst
 Editor verschoben, fehlt er in der Tabelle, bis neu gerechnet wird; die Karte zählt ihn dann als
 „jetzt erreichbar“.
 
+## Medaillen
+
+Pro Welt (Übungswiese und 1-1 bis 4-2) drei Medaillen: **Bronze** fürs Schaffen, **Silber** für alle Diamanten
+und Sterne der Welt, **Gold**, wenn die Bestzeit höchstens die Goldzeit ist. Sie stehen auf der Karte unter
+jedem Punkt und neben dem Namen auf der Infokarte; der Abschlussbildschirm meldet neue Medaillen. Im Level
+zeigt die Uhr darunter, wie viel Zeit bis Gold bleibt.
+
+Goldzeit: im Editor unter den Level-Einstellungen („Goldzeit (s)“), sonst geschätzt aus Länge (≈ 100 px/s),
+Höhe (Klettern) und bei der Übungswiese der Barfuß-Strecke – derzeit 60 bis 75 s.
+
 ## Übungswiese: erste Welt, schnelle Schuhe
 
 Die Übungswiese ist die erste Welt: erster Punkt auf der Karte, 1-1 öffnet erst, wenn sie geschafft ist
