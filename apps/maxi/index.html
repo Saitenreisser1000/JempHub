@@ -40,6 +40,13 @@ html,body{height:100%;margin:0;background:var(--night);color:var(--cream);overfl
 @keyframes blink{50%{opacity:.35}}
 @media (prefers-reduced-motion:reduce){.bar.full i{animation:none}}
 #fillTxt{font-weight:700;font-size:15px;letter-spacing:.06em;min-width:52px}
+.mult{font:400 17px/1 var(--f-display);min-width:38px;text-align:center;padding:5px 7px 4px;border-radius:7px;background:rgba(20,26,36,.6);color:rgba(243,230,196,.55);transition:background .2s,color .2s}
+.mult.on{background:var(--gold);color:var(--ink);text-shadow:none}
+.mult.pop{animation:pop .45s ease-out}
+.mult.lost{animation:lost .5s ease-out}
+@keyframes pop{0%{transform:scale(1)}40%{transform:scale(1.45)}100%{transform:scale(1)}}
+@keyframes lost{0%,100%{transform:translateX(0)}20%{transform:translateX(-5px)}40%{transform:translateX(5px)}60%{transform:translateX(-3px)}80%{transform:translateX(3px)}}
+@media (prefers-reduced-motion:reduce){.mult.pop,.mult.lost{animation:none}}
 .intro{position:fixed;left:50%;transform:translateX(-50%);top:calc(env(safe-area-inset-top,0px) + 112px);width:min(340px,calc(100% - 32px));box-sizing:border-box;
   background:var(--cream);color:var(--ink);border-radius:12px;padding:14px 16px 12px;text-align:center;display:grid;gap:6px;z-index:4;pointer-events:none;
   box-shadow:0 0 0 3px var(--hop),0 12px 30px rgba(0,0,0,.45)}
@@ -82,7 +89,7 @@ html,body{height:100%;margin:0;background:var(--night);color:var(--cream);overfl
   <div><div class="lbl">Punkte</div><div class="val" id="score">0</div></div>
   <div class="mid"><div class="lbl">Kisten</div><div class="val" id="crates">0</div></div>
   <div class="right"><div class="lbl">Bruch</div><div id="lives"></div><button id="pauseBtn" type="button">Pause</button></div>
-  <div class="fillrow"><div class="bar" id="bar"></div><span id="fillTxt">0 / 20</span></div>
+  <div class="fillrow"><div class="bar" id="bar"></div><span id="fillTxt">0 / 20</span><span class="mult" id="mult" title="Punktemultiplikator">×1</span></div>
 </div>
 
 <div class="toast" id="toast" role="status" hidden></div>
@@ -202,7 +209,7 @@ function tryFlick(clientX, clientY){
     const pts = 25 * level(); score += pts;
     floatText(best.x, best.y - 20, `Weg! +${pts}`, '#ff9a8a'); beep(520, .18, 'triangle', .14, 2.2);
   } else { // gute Freetown-Flasche weggekickt: zählt als Bruch
-    missed++; shake = .2; sBreak();
+    missed++; breakStreak(); shake = .2; sBreak();
     floatText(best.x, best.y - 20, 'Bruch! Die war gut!', '#ff8a6a');
     updateHud(); if (missed >= MAXMISS) { gameOver(); return true; }
   }
@@ -705,9 +712,11 @@ function updateForklift(dt){
     if (FL.t > .55){ FL.phase = 2; FL.t = 0; }
   } else if (FL.phase === 2){
     if (moveTo(zoneX() - FL.face*FORK, sp, dt)){
-      crates++; stack++; const pts = 100 * level(); score += pts; FL.carry = null;
+      crates++; stack++; const used = mult, pts = 100 * level() * used; score += pts; FL.carry = null;
+      streak = 0; mult = 1; setMultUI(null);
       if (missed > 0){ missed = 0; floatText(W/2, groundY - 260, 'Bruch zurückgesetzt', '#9fe0a8'); }
-      floatText(zoneX(), groundY - 130, `+${pts}`, C.gold); sCash();
+      floatText(zoneX(), groundY - 130, used > 1 ? `+${pts} (×${used})` : `+${pts}`, C.gold); sCash();
+      if (used > 1) floatText(W/2, groundY - 285, `Multiplikator ×${used} eingelöst!`, C.gold);
       if (crates % 2 === 0) floatText(W/2, groundY - 220, `Stufe ${level()}`, C.cream);
       updateHud(); FL.phase = 3; FL.t = 0;
     }
@@ -857,6 +866,7 @@ function drawSplats(){
 function reset(){
   P.x = W/2; P.vx = 0; P.count = 0; P.extra = 0; P.emptyT = 0; P.trip = 0; nanas = []; nanaT = 5 + Math.random()*3;
   storkOn = false; storkT = 99; poops = []; splats = []; blindT = 0; ST.mode = 'nest'; ST.x = chimneyX(); ST.y = chimneyTop() - 14;
+  streak = 0; mult = 1; setMultUI(null);
   hearts = []; heartT = 14; caught = 0; forceRed = false; unlocked.red = unlocked.nana = false; nanaT = 99;
   bottles = []; parts = []; seedGuests(2); texts = []; score = 0; crates = 0; missed = 0; spawnT = .6; stack = 0; zone = 'right'; FL = null;
   updateHud();
@@ -971,6 +981,24 @@ function burst(x, y, foam){
   if (foam) for (let i=0;i<10;i++) parts.push({ x, y, vx:(Math.random()-.5)*140, vy:-Math.random()*160, life:.6, c:'#fff6dc', s:3+Math.random()*3, round:true });
 }
 function floatText(x, y, t, c){ texts.push({ x, y, t, c, life: 1 }); }
+/* Punktemultiplikator: alle 5 Flaschen ohne Bruch +1 (bis ×5), eingelöst bei der Abgabe */
+const MULT_STEP = 5, MULT_MAX = 5;
+let streak = 0, mult = 1;
+function setMultUI(cls){
+  const el = $('mult'); el.textContent = '×' + mult; el.classList.toggle('on', mult > 1);
+  if (cls){ el.classList.remove('pop', 'lost'); void el.offsetWidth; el.classList.add(cls); }
+}
+function cleanCatch(){
+  streak++;
+  if (mult < MULT_MAX && streak % MULT_STEP === 0){
+    mult++; setMultUI('pop');
+    floatText(P.x, groundY - 165, `×${mult}`, C.gold); beep(880 + mult*90, .12, 'triangle', .12);
+  }
+}
+function breakStreak(){
+  const had = mult > 1; streak = 0; mult = 1; setMultUI(had ? 'lost' : null);
+  if (had) floatText(W/2, groundY - 240, 'Multiplikator weg', '#ff8a6a');
+}
 function updateHud(){
   $('score').textContent = score; $('crates').textContent = crates;
   $('lives').textContent = '🍺'.repeat(Math.max(0, MAXMISS-missed)) + '💥'.repeat(Math.min(MAXMISS, missed));
@@ -1012,7 +1040,7 @@ function update(dt){
     }
     if (!b.bounced && P.trip <= 0 && b.vy > 0 && bottom >= crateTop && bottom <= crateTop + 22 && Math.abs(b.x - P.x) < 38){
       if (P.count < CAP){
-        P.count++; caught++; bottles.splice(i,1); sClink();
+        P.count++; caught++; bottles.splice(i,1); sClink(); cleanCatch();
         if (!unlocked.red && caught >= UNLOCK_AT.red) { unlock('red'); return; }
         if (!unlocked.nana && caught >= UNLOCK_AT.nana) { unlock('nana'); return; }
         if (!storkOn && caught >= UNLOCK_AT.stork) { storkOn = true; storkT = 3; }
@@ -1024,7 +1052,7 @@ function update(dt){
       } else { b.bounced = true; b.vy = -Math.abs(b.vy)*.45; b.vx = (b.x < P.x ? -1 : 1) * (90 + Math.random()*60); b.spin = 8; sClink(); }
     }
     if (bottom >= base){
-      bottles.splice(i,1); burst(b.x, base - 6, true); sBreak(); missed++; shake = .25;
+      bottles.splice(i,1); burst(b.x, base - 6, true); sBreak(); missed++; breakStreak(); shake = .25;
       floatText(b.x, base - 30, 'Bruch!', '#ff8a6a'); updateHud();
       if (missed >= MAXMISS) return gameOver();
     }
