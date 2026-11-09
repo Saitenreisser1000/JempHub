@@ -560,9 +560,7 @@ test('Grafikstil Pixel 3D: zeichnet jede Welt ohne Fehler, Gelände und Figuren 
   assert.ok(opaque(g) > g.w * g.h * 0.5, 'Bodenkachel ist gefüllt');
   const h = dz.p3d.hero();
   assert.ok(opaque(h) > 200, 'Sam ist sichtbar');
-  listeners.keydown({ key: 'g', preventDefault() {} }); assert.equal(dz.skin, 'klassik');
-  listeners.keydown({ key: 'g', preventDefault() {} }); assert.equal(dz.skin, 'pixel3d');
-  assert.equal(boot().dz.skin, 'klassik', 'Standard ist klassisch');
+  assert.equal(boot().dz.skin, 'klassik', 'Grafik ist fest klassisch');
 });
 
 test('Deko aus dem Editor: von Hand gesetzt, exportiert, automatische Deko abschaltbar', () => {
