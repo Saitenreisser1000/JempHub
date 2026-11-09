@@ -23,7 +23,8 @@ npm run build    # dist/
 Die Hubwelt ist eine Inselkarte von oben: Wald im Westen, Felsen im Norden, See mit Lagune im Süden,
 Gipfel im Osten. **Punkt antippen:** Sam läuft selbst über den Weg dorthin (nicht durch geschlossene
 Kronentore). Nochmal antippen oder **Los ▶** auf der Infokarte betritt die Welt. Am Rechner gehen auch
-◀ ▶ und Springen. Welten sind Punkte
+◀ ▶ und Springen. Die Karte ist näher herangezoomt (`MAP_ZOOM`) und folgt Sam; mit dem Finger
+lässt sie sich verschieben, bis Sam wieder losläuft. Welten sind Punkte
 (gold = geschafft, rot = offen, grau mit Schloss = gesperrt), Endgegner Burgen (mit Krone, wenn besiegt),
 Kronentore Schranken auf dem Weg. Hinter dem ersten geschlossenen Tor liegt Nebel. Unten zeigt eine
 Infokarte Name, Diamanten, Sterne und Bestzeit – oder warum der Punkt gesperrt ist. Ganz links liegt die
