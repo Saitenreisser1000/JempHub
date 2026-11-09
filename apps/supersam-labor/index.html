@@ -269,11 +269,11 @@ let save=blankSave();
 try{ const s=JSON.parse(localStorage.getItem(SAVE_KEY)||'null'); if(s){ save=Object.assign(blankSave(),s); save.ab=Object.assign(blankSave().ab,s.ab||{}); } }catch(_){}
 function persist(){ if(EDIT_MODE) return; try{ localStorage.setItem(SAVE_KEY,JSON.stringify(save)); }catch(_){} }   // Probespiel aus dem Editor speichert nichts
 
-const NAMES={0:'Hubwelt',1:'Wald',2:'Felsen',3:'See',4:'Gipfel',5:'Wipfelwald',6:'Schlucht',7:'Lagune',8:'Sturmgrat',b0:'Wespenkönigin',b1:'Igelkönig',b2:'Felsgolem',b3:'Sturmgeist'};
+const NAMES={bonus1:'Moosklippen',bonus2:'Glutschlot',bonus3:'Eisspalte',0:'Hubwelt',1:'Wald',2:'Felsen',3:'See',4:'Gipfel',5:'Wipfelwald',6:'Schlucht',7:'Lagune',8:'Sturmgrat',b0:'Wespenkönigin',b1:'Igelkönig',b2:'Felsgolem',b3:'Sturmgeist'};
 const WORLD_COL={b0:'#ffd166',b1:'#9be06a',b2:'#e0884a',b3:'#b07aff',0:'#f6ead2',1:'#6aa84f',2:'#c69a6a',3:'#4fa3d9',4:'#b9a7ff',5:'#9be06a',6:'#e0a050',7:'#5fd0e0',8:'#d0c0ff'};
 const AB_OF={1:'double',2:'wall',3:'dash',4:'glide'};
 // Anzeige-Nummer: jede Fähigkeitswelt hat zwei Teile (Wald 1-1, Wipfelwald 1-2 …)
-const WNO=n=>n>4?`${n-4}-2`:`${n}-1`;
+const WNO=n=>typeof n==='string'?(n.startsWith('bonus')?'B'+n.slice(5):n):n>4?`${n-4}-2`:`${n}-1`;
 const AB_TIP={double:'In der Luft nochmal springen',wall:'An Wänden abstoßen und klettern',dash:'Laufdaumen zweimal tippen',glide:'Daumen halten und segeln'};
 const AB_INFO={
   double:{name:'Doppelsprung',short:'2×',how:'In der Luft den Sprungdaumen kurz heben und wieder aufsetzen. Damit erreichst du Kanten, die etwa doppelt so hoch liegen.'},
@@ -1010,6 +1010,8 @@ function totals(){ if(TOTALS) return TOTALS; const t={cr:0,st:0,per:{}};
 // ---- Level als Daten (Leveleditor) ----
 // Übernommene Editor-Levels: id → Daten (ersetzen den Bau-Code dieser Welt)
 const LEVEL_FILES={};
+// Ab welcher Fähigkeit ein Diamant/Stern erreichbar ist ('' = sofort, x = gar nicht gefunden) – berechnet von erreichbar.mjs, nicht von Hand ändern
+const REACH=/*erreichbar*/{"uebung:59,8":"","uebung:132,10":"","uebung:181,10":"","uebung:280,11":"","1:56,10":"","1:90,11":"double","1:121,3":"glide","1:184,20":"","1:228,10":"double","1:287,20":"double","1:346,9":"","1:355,4":"double","2:38,15":"double","2:72,5":"wall","2:118,22":"dash","2:186,22":"double","2:202,22":"dash","2:259,27":"double","2:306,7":"wall","2:324,16":"dash","3:40,9":"wall","3:88,22":"dash","3:123,3":"dash","3:176,4":"wall","3:229,22":"wall","3:283,5":"wall","3:299,11":"wall","3:354,30":"dash","4:57,19":"dash","4:77,3":"glide","4:102,7":"dash","4:200,14":"x","4:243,3":"glide","4:294,33":"dash","4:307,2":"glide","4:328,9":"dash","5:66,35":"dash","5:120,21":"double","5:166,3":"glide","5:195,10":"double","5:312,13":"wall","6:51,39":"","6:106,5":"wall","6:125,39":"dash","6:190,15":"wall","6:220,38":"wall","6:251,2":"glide","7:70,29":"wall","7:153,22":"dash","7:157,8":"wall","7:205,23":"wall","7:282,7":"dash","7:306,2":"glide","8:123,11":"glide","8:150,8":"x","8:159,4":"glide","8:204,15":"glide","8:268,37":"glide","8:312,5":"glide"}/*erreichbar*/;
 const EDIT_Q=(typeof URLSearchParams!=='undefined'&&typeof location!=='undefined')?new URLSearchParams(location.search):new Map(), EDIT_KEY='supersam-labor-level-';
 let EDIT_ID=EDIT_Q.get('edit'), EDIT_DRAFT=null, EDIT_MODE=false;
 try{ if(EDIT_ID){ EDIT_DRAFT=JSON.parse(localStorage.getItem(EDIT_KEY+EDIT_ID)||'null'); EDIT_MODE=!!EDIT_DRAFT; } }catch(_){}
@@ -1050,6 +1052,58 @@ function levelData(id){
   return {v:1,id,name:d.name,style:d.style,scene:d.scene,w:d.w,h:d.h,top:d.top,need:d.need||0,timeLimit:d.timeLimit||0,sky:d.sky,noReturn:!!d.noReturn,...(d.noDeco?{noDeco:true}:{}),
     grid:Lx.grid.map(r=>r.join('')),back:Lx.back.map(r=>r.map(v=>v?'1':'0').join('')),up:Lx.up.map(r=>r.map(v=>v?'1':'0').join('')),objs};
 }
+// ---------- Bonuswelten ----------
+// Kurz und knifflig, ohne Punkteziel und Zeitlimit. Freigeschaltet durch Diamanten (Karte), beim ersten Schaffen gibt es ein Extraleben.
+const BONUS=['bonus1','bonus2','bonus3'];
+const BONUS_NEED={bonus1:6,bonus2:14,bonus3:22};
+const BONUS_AB={bonus1:['double'],bonus2:['double','wall'],bonus3:['double','wall','dash']};   // was man an der Stelle der Karte schon kann
+Object.assign(DEFS,{
+  bonus1:{name:'Moosklippen',w:132,h:26,top:20,style:'forest',sky:.2,build(b){
+    b.ground(0,13); b.start(3,19); b.coins(18,5,11);
+    // Klippensprünge über die Schlucht – Doppelsprung
+    b.ground(23,31); b.coins(15,15,21); b.enemy(28,19); b.spikes(19,24,25);
+    b.plat(17,36,39); b.plat(14,44,46); b.plat(11,51,53); b.coins(16,36,39); b.coins(13,44,46); b.coins(10,51,53);
+    b.ground(58,70); b.enemy(64,19,'igel'); b.cp(60,19); b.coins(18,58,70);
+    // Bröckelbrücke über der Grube, Wespen darüber
+    b.crumb(17,74,92); b.coins(15,74,92); b.enemy(79,13,'wespe',{range:3}); b.enemy(88,14,'wespe',{range:2});
+    b.ground(96,106); b.enemy(101,19); b.spikes(19,104,105);
+    // Absatz hinauf zum Ziel
+    b.plat(16,107,108); b.rect(112,13,131,25); b.coins(11,112,118); b.goal(126,12);
+  }},
+  bonus2:{name:'Glutschlot',w:120,h:34,top:28,style:'stone',sky:.45,build(b){
+    b.ground(0,12); b.start(3,27); b.coins(26,5,11);
+    // Schlot 1: zwischen zwei Wänden hinauf – Wandsprung
+    b.rect(13,10,15,33); b.rect(20,16,22,27); b.ground(16,19); b.spikes(27,16,19); b.coins(20,17,18); b.coins(14,17,18);
+    b.rect(16,15,19,15,'='); b.coins(9,13,15);
+    b.plat(10,23,28); b.coins(9,23,28); b.enemy(26,9);
+    // Stachelfeld mit Holzinseln
+    b.ground(30,62); b.spikes(28,31,61); b.plat(25,34,35); b.plat(23,40,41); b.plat(25,46,47); b.plat(22,52,53); b.plat(24,58,59);
+    for(const c of [34,40,46,52,58]) b.coin(c,21);
+    b.ground(63,74); b.cp(65,27); b.enemy(70,27,'skorpion');
+    // Schlot 2: höher, Bröckelsteg oben
+    b.rect(75,6,77,33); b.rect(82,12,84,27); b.ground(78,81); b.spikes(27,78,81); b.coins(18,79,80); b.coins(12,79,80);
+    b.crumb(11,78,81); b.plat(6,85,92); b.coins(5,85,92);
+    b.enemy(96,9,'wespe',{range:3}); b.plat(9,97,100); b.plat(12,104,107);
+    b.ground(108,119,16); b.goal(114,15); b.coins(15,109,113);
+  }},
+  bonus3:{name:'Eisspalte',w:136,h:30,top:22,style:'snow',sky:1,build(b){
+    b.ground(0,12); b.start(3,21); b.coins(20,5,11);
+    // Rissfels-Gang: nur mit Dash
+    b.rect(13,0,30,29); b.clear(13,18,30,21); b.back(13,18,30,21); b.crack(18,18,18,21); b.crack(25,18,25,21); b.coins(21,14,17); b.coins(21,26,30);
+    b.spikes(21,20,22);
+    b.ground(31,40); b.enemy(36,21,'igel');
+    // Lücken, Dash in der Luft
+    b.plat(19,46,48); b.plat(16,56,58); b.plat(19,67,69); b.coins(18,46,48); b.coins(15,56,58); b.coins(18,67,69);
+    b.coins(17,50,54); b.coins(15,60,65);
+    b.ground(75,86); b.cp(77,21); b.enemy(83,21);
+    // Wand und Bröckelsteg über der Spalte
+    b.rect(87,12,89,29); b.rect(94,16,96,29); b.ground(90,93); b.spikes(21,90,93); b.coins(15,90,93);
+    b.crumb(11,97,103); b.coins(10,97,103); b.enemy(101,7,'wespe',{range:3}); b.plat(19,104,108); b.coins(18,104,108);   // hinunter vor den Rissfels
+    b.rect(109,0,113,29); b.crack(109,14,109,18); b.clear(110,14,113,18); b.back(110,14,113,18);
+    b.ground(114,135,19); b.mover(117,15,0,-3,2,3); b.goal(130,18); b.coins(18,115,128);
+  }},
+});
+EDITABLE.push(...BONUS);   // auch im Editor bearbeitbar
 function origDef(id){ return LEVEL_FILES[id]?defFromData(LEVEL_FILES[id]):DEFS[id]; }
 function makeLevel(id,orig){
   const d=orig?origDef(id):levelDef(id), w=d.w, h=d.h;
@@ -1479,6 +1533,7 @@ function drawCelebrate(){
 }
 function finishLevel(celebrated){
   const n=L.id; state='done'; clearInput(); doneWorld=n; AU.song=null; if(!celebrated) sfx('fanfare');
+  const bonusNew=BONUS.includes(n)&&!save.done[n]; if(bonusNew) save.lives=Math.min(9,(save.lives??LIVES)+1);   // Bonuswelt: beim ersten Mal ein Extraleben
   save.done[n]=true;
   const prev=save.best[n]||{};
   const got=L.crystals.filter(k=>k.known).length;
@@ -1487,7 +1542,7 @@ function finishLevel(celebrated){
   const ab=AB_OF[n], isNew=!!ab&&!save.ab[ab];
   if(isNew) save.ab[ab]=true;
   persist();
-  document.getElementById('donetitle').textContent=`Welt ${WNO(n)} · ${NAMES[n]} geschafft`;
+  document.getElementById('donetitle').textContent=BONUS.includes(n)?`Bonuswelt · ${NAMES[n]} geschafft`:`Welt ${WNO(n)} · ${NAMES[n]} geschafft`;
   document.getElementById('donestats').innerHTML=
     `<b style="font-size:20px;color:var(--ember)">${total} Punkte</b>${prev.score&&total>prev.score?' · neuer Rekord':''}<br>`+
     `Münzen ${levelCoins}/${L.coins.length} = ${sp.coins} · Diamanten ${sp.nc}/${L.crystals.length} = ${sp.crystals} · Sterne ${sp.ns}/${L.stars.length} = ${sp.stars}<br>`+
@@ -1495,10 +1550,12 @@ function finishLevel(celebrated){
   const nw=document.getElementById('donenew'); nw.hidden=!isNew;
   if(isNew){ document.getElementById('newname').textContent='Neu: '+AB_INFO[ab].name; document.getElementById('newhow').textContent=AB_INFO[ab].how+' Neues Outfit: '+OUTFIT_NAME[ab]+'.'; }
   document.getElementById('donehint').textContent= got<L.crystals.length ? 'Einige Diamanten und Sterne erreichst du erst mit Fähigkeiten aus anderen Welten.' : 'Alle Diamanten dieser Welt gefunden.';
+  if(BONUS.includes(n)){ document.getElementById('donestats').innerHTML=`Zeit ${time.toFixed(1)} s${prev.time&&time<prev.time?' · neue Bestzeit':''} · Münzen ${levelCoins}/${L.coins.length}`;
+    document.getElementById('donehint').textContent=bonusNew?`Extraleben! Du hast jetzt ${save.lives} ♥`:'Das Extraleben dieser Bonuswelt hast du schon bekommen.'; }
   doneEl.hidden=false;
 }
 const msgEl=document.getElementById('msg'); let msgTimer=0;
-function showMsg(t){ msgEl.textContent=t; msgEl.classList.add('show'); clearTimeout(msgTimer); msgTimer=setTimeout(()=>msgEl.classList.remove('show'),1100); }
+function showMsg(t,ms=1100){ msgEl.textContent=t; msgEl.classList.add('show'); clearTimeout(msgTimer); msgTimer=setTimeout(()=>msgEl.classList.remove('show'),ms); }
 
 // ---------- Physik ----------
 function wallContact(){
@@ -2048,7 +2105,7 @@ function drawSpeedlines(){
 // ist ein Leben weg und das Level beginnt neu. Beim letzten gibt es Game Over: der Spielstand beginnt von vorn
 // (nur „Einführung gesehen“ bleibt). Probespiele aus dem Editor sind ausgenommen.
 const LIVES=3, lifeEl=document.getElementById('lifelost');
-const heartsHtml=n=>Array.from({length:LIVES},(_,i)=>`<i class="${i<n?'':'off'}">♥</i>`).join('');
+const heartsHtml=n=>Array.from({length:Math.max(LIVES,n)},(_,i)=>`<i class="${i<n?'':'off'}">♥</i>`).join('');
 // Endgegner: 300 Punkte fix, jeder Treffer kostet 100 – bei 0 ist ebenfalls ein Leben weg
 const BOSS_PTS=300, BOSS_HIT=100;
 const bossScore=()=>Math.max(0,BOSS_PTS-bossDeaths*BOSS_HIT);
@@ -2626,7 +2683,7 @@ function drawDoors(){ for(const d of L.doors){
 // wird aber als Inselkarte von oben gezeigt: Sam läuft mit ◀ ▶ von Punkt zu Punkt, Springen betritt die Welt.
 const MAPW=440, MAPH=200;
 const MAP_POS={home:[42,156],1:[68,133],5:[58,96],b0:[96,70],'g-b0':[124,61],2:[148,53],6:[186,37],b2:[216,61],'g-b2':[212,85],
-  3:[204,108],7:[246,135],b1:[280,109],'g-b1':[306,96],4:[332,82],8:[366,50],secret:[398,30],b3:[404,90]};
+  3:[204,108],7:[246,135],b1:[280,109],'g-b1':[306,96],bonus1:[112,94],bonus2:[184,76],bonus3:[292,142],4:[332,82],8:[366,50],secret:[398,30],b3:[404,90]};
 const MAPS={i:0,to:-1,t:0,face:1,walk:0,nodes:[],goal:-1,card:null,cx:0,cy:0,free:false,drag:null};
 const MAP_ZOOM=1.8;   // wie nah die Karte gezeigt wird (1 = ganze Insel)
 function mapView(){ const W=cv.width, H=cv.height, s=Math.min(W/MAPW,H/MAPH)*MAP_ZOOM; return {W,H,s,ox:Math.round(W/2-MAPS.cx*s),oy:Math.round(H/2-MAPS.cy*s)}; }
@@ -2677,12 +2734,18 @@ function mapBuild(spawn){ const N=[{key:'home',kind:'home',x:0}];
   for(const d of L.doors) N.push({key:d.world,kind:'door',ref:d,x:d.x});
   for(const g of L.gates||[]) N.push({key:'g-'+g.boss,kind:'gate',ref:g,x:g.x});
   for(const k of L.crystals) N.push({key:'secret',kind:'secret',ref:k,x:k.x});
-  N.sort((a,b)=>a.x-b.x); for(const n of N){ const p=MAP_POS[n.key]||[MAPW/2,MAPH/2]; n.mx=p[0]; n.my=p[1]; }
+  N.sort((a,b)=>a.x-b.x);
+  for(const [w,after] of [['bonus1','b0'],['bonus2','b2'],['bonus3','b1']]){ const i=N.findIndex(n=>n.key===after); if(i>=0) N.splice(i+1,0,{key:w,kind:'door',bonus:true,ref:{world:w,need:BONUS_NEED[w]},x:0}); }
+  for(const n of N){ const p=MAP_POS[n.key]||[MAPW/2,MAPH/2]; n.mx=p[0]; n.my=p[1]; }
   MAPS.nodes=N; MAPS.to=-1; MAPS.t=0; MAPS.walk=0; MAPS.goal=-1;
   const i=spawn==null?-1:N.findIndex(n=>String(n.key)===String(spawn)); MAPS.i=i>=0?i:0;
-  [MAPS.cx,MAPS.cy]=mapSam(); MAPS.free=false; MAPS.drag=null; mapClamp(); }
+  [MAPS.cx,MAPS.cy]=mapSam(); MAPS.free=false; MAPS.drag=null; mapClamp(); mapNewAbility(); }
+function mapNewAbility(){ if(EDIT_MODE) return; save.hintAb=save.hintAb||{};
+  for(const ab of ['double','wall','dash','glide']){ if(!save.ab[ab]||save.hintAb[ab]) continue; save.hintAb[ab]=true; persist();
+    const ws=['uebung',1,5,2,6,3,7,4,8].filter(w=>(w==='uebung'?save.done.uebung||save.tutorialDone:save.done[w])&&mapStats(w).items.some(it=>!(it.star?save.stars[it.id]:save.crystals[it.id])&&REACH[`${w}:${it.cell}`]===ab));
+    if(ws.length) showMsg(`Mit ${AB_INFO[ab].name} neu erreichbar: ${ws.map(w=>w==='uebung'?'Übungswiese':WNO(w)).join(', ')} ✦`,4000); return; } }
 const mapClosedGate=()=>MAPS.nodes.findIndex(n=>n.kind==='gate'&&!n.ref.open);
-function mapDone(n){ if(n.kind==='home') return !!(save.done.uebung||save.tutorialDone); if(n.kind==='door') return typeof n.key==='number'?!!save.done[n.key]:!!save.bosses[n.key]; if(n.kind==='secret') return !!n.ref.known; if(n.kind==='gate') return n.ref.open; return false; }
+function mapDone(n){ if(n.kind==='home') return !!(save.done.uebung||save.tutorialDone); if(n.bonus) return !!save.done[n.key]; if(n.kind==='door') return typeof n.key==='number'?!!save.done[n.key]:!!save.bosses[n.key]; if(n.kind==='secret') return !!n.ref.known; if(n.kind==='gate') return n.ref.open; return false; }
 function mapBlock(n){ if(n.kind==='door') return doorBlock(n.ref); if(n.kind==='secret') return save.ab.glide?null:`Braucht ${AB_INFO.glide.name}`; if(n.kind==='gate') return n.ref.open?null:`Krone: ${NAMES[n.ref.boss]} besiegen`; return null; }
 function updateMap(dt){ const N=MAPS.nodes; if(!N.length) return;
   if(MAPS.to>=0||MAPS.goal>=0) MAPS.free=false;   // läuft Sam, folgt die Ansicht wieder
@@ -2704,7 +2767,7 @@ function mapEnter(){ const n=MAPS.nodes[MAPS.i]; if(!n||MAPS.to>=0) return;
   if(n.kind==='gate'){ showMsg('Weg frei'); return; }
   if(n.kind==='secret'){ const k=n.ref; if(k.known){ showMsg('Diamant schon gefunden'); return; }
     k.got=k.known=true; save.crystals[k.id]=true; persist(); sfx('crystal'); showMsg('Diamant gefunden! Im Aufwind über den Gipfel geglitten'); updateHud(); return; }
-  clearInput(); sfx('door'); const w=n.key; loadLevel(w); showMsg(typeof w==='number'?`Welt ${WNO(w)} · ${NAMES[w]}`:`Endgegner: ${NAMES[w]}`); }
+  clearInput(); sfx('door'); const w=n.key; loadLevel(w); showMsg(typeof w==='number'?`Welt ${WNO(w)} · ${NAMES[w]}`:n.bonus?`Bonuswelt · ${NAMES[w]}`:`Endgegner: ${NAMES[w]}`); }
 // Antippen: Punkt → Sam läuft hin; Punkt unter Sam oder Infokarte → betreten
 function mapTap(cx,cy){ const N=MAPS.nodes; if(!N.length) return; const k=cv.width/innerWidth, x=cx*k, y=cy*k;
   const c=MAPS.card; if(c&&MAPS.to<0&&x>=c.x&&x<=c.x+c.w&&y>=c.y&&y<=c.y+c.h){ mapEnter(); return; }
@@ -2713,8 +2776,16 @@ function mapTap(cx,cy){ const N=MAPS.nodes; if(!N.length) return; const k=cv.wid
   if(best<0) return;
   if(best===MAPS.i&&MAPS.to<0){ mapEnter(); return; }
   MAPS.goal=best; }
+// Was in einer Welt noch fehlt und ab welcher Fähigkeit es erreichbar ist (Tabelle REACH aus erreichbar.mjs)
+function worldHints(w){ const st=mapStats(w), out={now:0,later:{},missing:0};
+  for(const it of st.items){ if(it.star?save.stars[it.id]:save.crystals[it.id]) continue; out.missing++;
+    const req=REACH[`${w}:${it.cell}`]; if(req==='x') continue; if(!req||save.ab[req]) out.now++; else out.later[req]=(out.later[req]||0)+1; }
+  return out; }
+function hintText(h){ if(!h.missing) return 'Alles gefunden'; const parts=[]; if(h.now) parts.push(`${h.now} jetzt erreichbar`);
+  for(const [ab,c] of Object.entries(h.later)) parts.push(`${c} mit ${AB_INFO[ab].name}`); return (parts.join(' · ')||`${h.missing} versteckt`)+(h.now?' ✦':''); }
 const MAPSTAT={};
-function mapStats(w){ if(MAPSTAT[w]) return MAPSTAT[w]; const lv=makeLevel(w); return MAPSTAT[w]={cr:lv.crystals.map(k=>k.id),st:lv.stars.map(k=>k.id)}; }
+function mapStats(w){ if(MAPSTAT[w]) return MAPSTAT[w]; const lv=makeLevel(w); const cell=k=>`${Math.floor(k.x/TS)},${Math.floor(k.y/TS)}`;
+  return MAPSTAT[w]={cr:lv.crystals.map(k=>k.id),st:lv.stars.map(k=>k.id),items:[...lv.crystals.map(k=>({id:k.id,cell:cell(k)})),...lv.stars.map(k=>({id:k.id,cell:cell(k),star:true}))]}; }
 function drawMap(){
   const N=MAPS.nodes, img=mapImage(); mapClamp(); const {W,H,s,ox,oy}=mapView();
   ctx.setTransform(1,0,0,1,0,0); ctx.imageSmoothingEnabled=false; ctx.fillStyle='#3a86c8'; ctx.fillRect(0,0,W,H);
@@ -2735,13 +2806,23 @@ function drawMap(){
   N.forEach((n,i)=>{ if(!vis(i)) return; const x=n.mx, y=n.my, done=mapDone(n), lock=mapBlock(n), sel=i===MAPS.i&&MAPS.to<0;
     if(n.kind==='gate'){ F(x-6,y-6,'#3a2420',2,9); F(x+5,y-6,'#3a2420',2,9);
       if(n.ref.open){ F(x-6,y-14,'#c9a24a',2,8); } else { F(x-6,y-3,'#c9a24a',13,2); F(x-6,y-1,'#8a6a28',13,1); ctx.drawImage(CROWN,x-6,y-13+Math.round(Math.sin(clock*2)),12,8); } return; }
-    if(n.kind==='door'&&typeof n.key==='string'){ const c=done?'#ffd166':lock?'#7a7a8a':'#d84a4a';
+    if(n.bonus){ const pulse=.5+.5*Math.sin(clock*3+x), ring=done?'#ffd166':lock?'#8a8aa8':'#7ae0d8';
+      ctx.fillStyle='rgba(26,16,32,.55)'; ctx.beginPath(); ctx.ellipse(x,y,8,6,0,0,7); ctx.fill();
+      ctx.strokeStyle=ring; ctx.lineWidth=2; ctx.beginPath(); ctx.ellipse(x,y-1,6.5,5,0,0,7); ctx.stroke();
+      if(!lock&&!done){ ctx.globalAlpha=.35+.35*pulse; ctx.fillStyle='#bff4ff'; ctx.beginPath(); ctx.ellipse(x,y-1,4.5,3.5,0,0,7); ctx.fill(); ctx.globalAlpha=1; }
+      if(done){ ctx.font='bold 7px Silkscreen, monospace'; ctx.fillStyle='#ff5a6a'; ctx.fillText('♥',x,y-.5); }
+      else if(lock) mapLock(x,y);
+      ctx.font='bold 4.5px Silkscreen, monospace'; ctx.fillStyle='rgba(26,16,32,.6)'; ctx.fillText(`◆${n.ref.need}`,x+.5,y+9.5); ctx.fillStyle=crystalTotal()>=n.ref.need?'#bff4ff':'#ffb0a0'; ctx.fillText(`◆${n.ref.need}`,x,y+9); }
+    else if(n.kind==='door'&&typeof n.key==='string'){ const c=done?'#ffd166':lock?'#7a7a8a':'#d84a4a';
       F(x-7,y-9,'#1a1020',15,12); F(x-6,y-8,c,13,10); for(const dx of [-7,-3,1,5]) F(x+dx,y-12,'#1a1020',3,4), F(x+dx+.5,y-11.5,c,2,3); F(x-1,y-4,'#1a1020',3,6);
       if(done) ctx.drawImage(CROWN,x-5,y-20+Math.round(Math.sin(clock*2)),10,7); if(lock) mapLock(x,y-1); }
     else if(n.kind==='secret'){ if(done){ ctx.drawImage(CRYSTAL,x-4,y-5,8,9); } else { ctx.globalAlpha=.6+.4*Math.sin(clock*3); ctx.fillStyle='#bff4ff'; for(let k=0;k<3;k++) F(x-4+k*4,y-6+((clock*8+k*3)%6),'#bff4ff',1,3); ctx.globalAlpha=1; ctx.font='bold 7px Silkscreen, monospace'; ctx.fillStyle='#ffffff'; ctx.fillText('?',x,y-1); } }
     else { const c=done?'#ffd166':n.kind==='home'?'#d84a4a':lock?'#7a7a8a':'#d84a4a';
       F(x-5,y-3,'#1a1020',11,7); F(x-4,y-4,'#1a1020',9,9); F(x-4,y-3,c,9,6); F(x-3,y-4,c,7,8); F(x-2,y-3,'rgba(255,255,255,.55)',3,2);
       if(lock) mapLock(x,y+1); else { ctx.font=`bold ${n.kind==='home'?6:4.5}px Silkscreen, monospace`; ctx.fillStyle='#1a1020'; ctx.fillText(n.kind==='home'?'Ü':WNO(n.key),x,y+.5); } }
+    const hw=n.kind==='home'?'uebung':n.kind==='door'&&typeof n.key==='number'?n.key:null;
+    if(hw!=null&&(hw==='uebung'?(save.done.uebung||save.tutorialDone):save.done[hw])&&worldHints(hw).now){ const t=clock*4+i, yy=y-13+Math.sin(t)*1.2;
+      ctx.fillStyle='#bff4ff'; ctx.fillRect(Math.round(x+5),Math.round(yy),1,5); ctx.fillRect(Math.round(x+3),Math.round(yy+2),5,1); ctx.globalAlpha=.5+.5*Math.sin(t*1.7); ctx.fillStyle='#ffffff'; ctx.fillRect(Math.round(x+5),Math.round(yy+2),1,1); ctx.globalAlpha=1; }
     if(sel){ ctx.strokeStyle='rgba(255,255,255,'+(.5+.5*Math.sin(clock*5))+')'; ctx.lineWidth=1; ctx.strokeRect(Math.round(x)-8.5,Math.round(y)-7.5,17,15); } });
   // Gebietsnamen
   ctx.font='6px Silkscreen, monospace'; for(const [t,x,y,col] of [['Wald',30,108,'#f6ead2'],['Felsen',262,40,'#f6ead2'],['See',222,160,'#f6ead2'],['Gipfel',372,148,'#5a6a88']]){ ctx.fillStyle='rgba(26,16,32,.45)'; ctx.fillText(t,x+.6,y+.6); ctx.fillStyle=col; ctx.fillText(t,x,y); }
@@ -2760,9 +2841,12 @@ function drawMap(){
   if(n.kind==='home'){ const st=mapStats('uebung'), sr=st.st.filter(id=>save.stars[id]).length; title='Erste Welt · Übungswiese'; line=`★ ${sr}/${st.st.length}   Schnelle Schuhe warten im letzten Drittel`; }
   else if(n.kind==='gate'){ title=`Kronentor · ${NAMES[n.ref.boss]}`; line=n.ref.open?'Weg frei':'Besiege den Endgegner, dann öffnet sich das Tor'; }
   else if(n.kind==='secret'){ title='Geheimnis im Aufwind'; line=n.ref.known?'Diamant gefunden':'Hier liegt etwas Verstecktes …'; }
+  else if(n.bonus){ title=`Bonuswelt · ${NAMES[n.key]}`; line=save.done[n.key]?'Geschafft – Extraleben erhalten':`Belohnung: ein Extraleben ♥   (◆ ${Math.min(crystalTotal(),n.ref.need)}/${n.ref.need})`; }
   else if(typeof n.key==='string'){ const b=save.best[n.key]; title=`Endgegner · ${NAMES[n.key]}`; line=save.bosses[n.key]?`Besiegt · Bestzeit ${b?.time?b.time.toFixed(1)+' s':'–'}`:BOSS_INFO[n.key].tip; }
   else { const st=mapStats(n.key), cr=st.cr.filter(id=>save.crystals[id]).length, sr=st.st.filter(id=>save.stars[id]).length, b=save.best[n.key];
     title=`${WNO(n.key)}  ${NAMES[n.key]}`; line=`◆ ${cr}/${st.cr.length}   ★ ${sr}/${st.st.length}   Bestzeit ${b?.time?Math.floor(b.time/60)+':'+String(Math.floor(b.time%60)).padStart(2,'0'):'–'}`; }
+  const hw=n.kind==='home'?'uebung':n.kind==='door'&&typeof n.key==='number'?n.key:null, hi=hw!=null?worldHints(hw):null, hint=hi&&!why?hintText(hi):'';
+  if(hint){ ctx.fillStyle='rgba(13,21,36,.84)'; ctx.fillRect(cx,cy-11*k,cw,11*k); ctx.font=`${Math.round(5.2*k)}px Silkscreen, monospace`; ctx.fillStyle=hi.now?'#bff4ff':'#c8c0d8'; ctx.fillText(hint,cx+6*k,cy-5*k); }
   ctx.font=`${Math.round(7.5*k)}px Silkscreen, monospace`; ctx.fillStyle=n.kind==='door'&&mapDone(n)?'#9be06a':'#ffd166'; ctx.fillText(title,cx+6*k,cy+9*k);
   ctx.font=`${Math.round(5.5*k)}px Silkscreen, monospace`; ctx.fillStyle=why?'#ff9a8a':'#f6ead2'; ctx.fillText(why||line,cx+6*k,cy+19.5*k);
   if(why){ ctx.textAlign='right'; ctx.fillStyle='#9ad0ff'; ctx.fillText('Punkt antippen',cx+cw-6*k,cy+9*k); }
@@ -3773,6 +3857,7 @@ function updateHud(){
     hcol.textContent=B.state==='intro'?BOSS_INFO[B.id].tip:''; const bp=bossScore();
     hr.innerHTML=`<span style="font-size:16px;color:${bp<=BOSS_HIT?'#ff6a6a':'var(--cream)'}">${bp} Punkte</span>`; }
   else if(L.id==='uebung'){ scoreBox.hidden=true; hcol.style.fontSize='14px'; hcol.textContent='Übungswiese'; hr.textContent=''; }
+  else if(BONUS.includes(L.id)){ scoreBox.hidden=true; hcol.style.fontSize='14px'; hcol.textContent=`Bonus · ${NAMES[L.id]}`; hr.innerHTML=`<span style="font-size:16px;color:var(--cream)">${time.toFixed(1)} s</span>`; }
   else if(L.id==='hub'){
     const total=Object.keys(save.crystals).length;
     scoreBox.hidden=true; hcol.style.fontSize='14px';
@@ -3847,7 +3932,7 @@ if(EDIT_DRAFT&&!EDIT_ENGINE){ const id=isNaN(+EDIT_ID)?EDIT_ID:+EDIT_ID, ab=(EDI
   addEventListener('keydown',e=>{ try{ audioInit(); }catch(_){} if(e.key==='Escape'){ e.preventDefault(); parent.postMessage({supersam:'back'},'*'); } });
   addEventListener('pointerdown',()=>{ try{ audioInit(); }catch(_){} }); }
 if(!EDIT_ENGINE) requestAnimationFrame(frame);
-window.__dz={map:{get nodes(){return MAPS.nodes;},get i(){return MAPS.i;},get to(){return MAPS.to;},go(k){ const i=MAPS.nodes.findIndex(n=>String(n.key)===String(k)); if(i>=0){ MAPS.i=i; MAPS.to=-1; } return i; },screen(k){ const n=MAPS.nodes.find(n=>String(n.key)===String(k)), v=mapView(), r=cv.width/innerWidth; return n?[(v.ox+n.mx*v.s)/r,(v.oy+(n.my-3)*v.s)/r]:null; },walkTo(k){ const i=MAPS.nodes.findIndex(n=>String(n.key)===String(k)); if(i>=0) MAPS.goal=i; return i; },enter:()=>mapEnter()},editor:{levelData,EDITABLE,defFromData,PH,TS,ETYPE,NAMES,WNO,deco:{list:DECO_LIST,icon:decoIcon,preview:decoPreview},spr:{T,SPIKE,slopeTile,ES,BEETLE:BEETLE_A,STAR,COIN:COIN[0],CRYSTAL,SPRING,CROWN,get SHOES(){ return shoesImg(); }},
+window.__dz={map:{get nodes(){return MAPS.nodes;},get i(){return MAPS.i;},get to(){return MAPS.to;},go(k){ const i=MAPS.nodes.findIndex(n=>String(n.key)===String(k)); if(i>=0){ MAPS.i=i; MAPS.to=-1; } return i; },hints:w=>worldHints(w),finish:()=>finishLevel(true),screen(k){ const n=MAPS.nodes.find(n=>String(n.key)===String(k)), v=mapView(), r=cv.width/innerWidth; return n?[(v.ox+n.mx*v.s)/r,(v.oy+(n.my-3)*v.s)/r]:null; },walkTo(k){ const i=MAPS.nodes.findIndex(n=>String(n.key)===String(k)); if(i>=0) MAPS.goal=i; return i; },enter:()=>mapEnter()},editor:{levelData,EDITABLE,BONUS,BONUS_AB,defFromData,PH,TS,ETYPE,NAMES,WNO,deco:{list:DECO_LIST,icon:decoIcon,preview:decoPreview},spr:{T,SPIKE,slopeTile,ES,BEETLE:BEETLE_A,STAR,COIN:COIN[0],CRYSTAL,SPRING,CROWN,get SHOES(){ return shoesImg(); }},
   load(D,ab){ EDIT_ID=String(D.id); EDIT_DRAFT=D; EDIT_MODE=true; Object.assign(save.ab,{double:ab.includes('double'),wall:ab.includes('wall'),dash:ab.includes('dash'),glide:ab.includes('glide')}); loadLevel(D.id); state='play'; L.timeLimit=0; return L; },   // nur für Editor/Engine: EDIT_MODE verhindert das Speichern
   tick(dt){ clock+=dt; update(dt); }, keys(l,r,j){ keyL=l; keyR=r; if(j&&!keyJump){ keyJump=true; triggerJump(); } else if(!j) keyJump=false; recompute(); }, dash(){ requestDash(P.face); },
   get P(){return P;}, get L(){return L;}, get state(){return state;}, set state(v){state=v;}},

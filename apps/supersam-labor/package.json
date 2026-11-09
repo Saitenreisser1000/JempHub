@@ -9,6 +9,7 @@
   "scripts": {
     "dev": "node ../../scripts/serve-static.mjs . --port 5186",
     "build": "npm test && node build.mjs",
-    "test": "node --test \"src/**/*.test.js\""
+    "test": "node --test \"src/**/*.test.js\"",
+    "erreichbar": "node build.mjs >/dev/null && node erreichbar.mjs"
   }
 }
