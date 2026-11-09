@@ -113,7 +113,7 @@ test('Hügel und Senken lassen sich in beide Richtungen durchlaufen', () => {
 
 test('Kamera schlägt beim Landen auf einer höheren Plattform nicht nach unten aus', () => {
   const { dz, listeners, run } = boot();
-  dz.setState('play'); dz.loadLevel('uebung'); dz.L.enemies.length = 0;
+  dz.setState('play'); dz.loadLevel('uebung'); dz.L.enemies.length = 0; dz.L.shoesItem.got = true;   // volles Tempo für den Anlauf
   dz.P.x = 33 * 16; dz.P.y = 17 * 16 - 14; run(60);
   const before = dz.cam.camY; let maxY = before;
   listeners.keydown({ key: 'ArrowRight', preventDefault() {} }); run(4);
@@ -396,6 +396,7 @@ test('Boss-Tür öffnet erst nach Welt X-2', () => {
 test('Hubwelt als Landkarte: Punkte in Reihenfolge, Laufen, Kronentor, Rückkehr, Geheimdiamant', () => {
   const { dz, listeners, run } = boot();
   const key = (k, d) => d ? listeners.keydown({ key: k, preventDefault() {} }) : listeners.keyup({ key: k });
+  dz.save.tutorialDone = true;
   dz.setState('play'); dz.loadLevel('hub'); run(5);
   assert.equal(dz.map.nodes.map(n => n.key).join(' '), 'home 1 5 b0 g-b0 2 6 b2 g-b2 3 7 b1 g-b1 4 8 secret b3', 'Reihenfolge auf der Karte');
   assert.equal(dz.map.i, 0, 'Start bei der Übungswiese');
@@ -610,4 +611,22 @@ test('Endgegner: 300 Punkte, jeder Treffer kostet 100, bei 0 ist ein Leben weg',
   dz.die(); run(3); dz.die(); run(3); assert.equal(dz.editor.state, 'play', 'nach zwei Treffern noch im Kampf (100 Punkte)');
   dz.die(); run(3); assert.equal(dz.editor.state, 'lost', 'dritter Treffer: 0 Punkte'); assert.equal(dz.save.lives, 2);
   dz.setState('play'); dz.loadLevel('b0'); run(80); dz.die(); run(3); assert.equal(dz.editor.state, 'play', 'neuer Versuch beginnt wieder mit 300');
+});
+
+test('Übungswiese: erste Welt, gedrosseltes Tempo bis zu den schnellen Schuhen im letzten Drittel', () => {
+  const { dz, listeners, run } = boot();
+  const key = (k, d) => d ? listeners.keydown({ key: k, preventDefault() {} }) : listeners.keyup({ key: k });
+  dz.setState('play'); dz.loadLevel('uebung'); dz.L.enemies.length = 0; run(10);
+  const sh = dz.L.shoesItem; assert.ok(sh && !sh.got, 'Schuhe liegen bereit');
+  assert.ok(sh.x / 16 > dz.L.w * 0.6 && sh.x / 16 < dz.L.w * 0.75, 'am Anfang des letzten Drittels');
+  const P = dz.P, speed = () => { P.x = 6 * 16; P.y = 17 * 16 - P.h; P.vx = 0; P.vy = 0; key('ArrowRight', 1); run(60); const v = Math.abs(P.vx); key('ArrowRight', 0); run(30); return v; };
+  const slow = speed(); assert.ok(slow < dz.PH.max * 0.7 && slow > dz.PH.max * 0.6, `ohne Schuhe langsamer (${Math.round(slow)})`);
+  P.x = sh.x - P.w / 2; P.y = sh.y - P.h / 2; run(2); assert.ok(sh.got, 'aufgesammelt');
+  const fast = speed(); assert.ok(fast >= dz.PH.max * 0.95, `mit Schuhen volles Tempo (${Math.round(fast)})`);
+  // In anderen Welten ist das Tempo nie gedrosselt
+  dz.loadLevel(1); dz.L.enemies.length = 0; assert.equal(dz.L.shoesItem, undefined);
+  // erste Welt: 1-1 öffnet erst nach der Übungswiese
+  dz.save.tutorialDone = false; delete dz.save.done.uebung; dz.loadLevel('hub'); run(3);
+  dz.map.go(1); dz.map.enter(); run(2); assert.equal(dz.L.id, 'hub', '1-1 noch zu');
+  dz.save.done.uebung = true; dz.map.enter(); run(2); assert.equal(dz.L.id, 1, 'nach der Übungswiese offen');
 });

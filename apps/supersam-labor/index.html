@@ -614,6 +614,7 @@ const DEFS={
     b.coins(15,152,153); b.coins(13,158,159); b.coins(15,164,166); b.coins(13,170,172); b.coins(13,176,177); b.coins(16,180,184);
     b.cp(148,16); b.enemy(182,16);                                                                                            // zweite Hälfte: erste Gegner
     // Station 11: fahrende Plattform über einem tiefen Graben (Stufen am Rand führen wieder hinauf)
+    b.shoes(194,16);                                                          // schnelle Schuhe am Anfang des letzten Drittels
     b.cp(192,16); b.clear(197,17,214,23); b.plat(21,197,198); b.plat(19,197,197); b.mover(199,16,9,0,3,3.6); b.coins(14,201,209);
     b.enemy(220,16);
     // Station 12: Aufzug auf den hohen Block
@@ -1024,7 +1025,7 @@ function defFromData(D){
       case 'start': b.start(o.c,o.r); break; case 'goal': b.goal(o.c,o.r); break;
       case 'coin': b.coin(o.c,o.r); break; case 'crystal': b.crystal(o.c,o.r); break; case 'star': b.star(o.c,o.r); break;
       case 'enemy': b.enemy(o.c,o.r,o.t,o.range!=null?{range:o.range}:{}); break;
-      case 'spring': b.spring(o.c,o.r); break; case 'cp': b.cp(o.c,o.r); break;
+      case 'spring': b.spring(o.c,o.r); break; case 'shoes': b.shoes(o.c,o.r); break; case 'cp': b.cp(o.c,o.r); break;
       case 'mover': b.mover(o.c,o.r,o.dc,o.dr,o.w,o.p); break; case 'door': b.door(o.c,o.r,o.world,o.need||0,{stars:o.stars||0}); break; case 'deco': b.deco(o.c,o.r,o.n,o.len); break; } }
   }};
 }
@@ -1041,6 +1042,7 @@ function levelData(id){
     const r=s.type==='fisch'?(s.y-14)/TS:T.fly?(s.y-(TS-T.h)/2)/TS:(s.y+T.h)/TS-1;
     const o={k:'enemy',t:s.type,c:q((s.x-(TS-T.w)/2)/TS),r:q(r)}; if(s.range!==3) o.range=s.range; objs.push(o); }
   for(const sp of Lx.springs) objs.push({k:'spring',c:q(sp.x/TS),r:q(sp.bottom/TS-1)});
+  if(Lx.shoesItem) objs.push({k:'shoes',c:q((Lx.shoesItem.x-8)/TS),r:q((Lx.shoesItem.y+8)/TS-1)});
   for(const cp of Lx.checkpoints) objs.push({k:'cp',c:q(cp.x/TS),r:q(cp.bottom/TS-1)});
   for(const m of Lx.movers) objs.push({k:'mover',c:q(m.x0/TS),r:q(m.y0/TS),dc:q((m.x1-m.x0)/TS),dr:q((m.y1-m.y0)/TS),w:q(m.w/TS),p:m.period});
   for(const dd of Lx.doors) if(!(dd.world===0&&dd.x===TS&&!d.noReturn)) objs.push({k:'door',c:q(dd.x/TS),r:q(dd.bottom/TS-1),world:dd.world,need:dd.need||0,...(dd.stars?{stars:dd.stars}:{})});
@@ -1078,6 +1080,7 @@ function makeLevel(id,orig){
     cp:(c,r)=>L.checkpoints.push({x:c*TS,bottom:(r+1)*TS,on:false}),
     mover:(c,r,dc,dr,mw=3,period=3.5)=>L.movers.push({x0:c*TS,y0:r*TS,x1:(c+dc)*TS,y1:(r+dr)*TS,w:mw*TS,period,x:c*TS,y:r*TS,dx:0,dy:0}),
     start:(c,r)=>{ L.start={x:c*TS+3,y:(r+1)*TS-14}; },
+    shoes:(c,r)=>{ L.shoesItem={x:c*TS+8,y:(r+1)*TS-8,got:false}; },   // schnelle Schuhe (Übungswiese)
     deco:(c,r,n,len)=>{ if(n) L.manualDeco.push({c,r,n,...(len?{len}:{})}); },   // von Hand gesetzte Deko (Editor)
     goal:(c,r)=>{ L.goal={x:c*TS,bottom:(r+1)*TS}; },
     door:(c,r,world,need=0,o={})=>L.doors.push({x:c*TS,bottom:(r+1)*TS,world,need,stars:o.stars||0,t:0}),   // stars: so viele Sterne dieser Welt müssen gesammelt sein
@@ -1153,6 +1156,7 @@ function addFlow(v){ flow=Math.max(0,Math.min(100,flow+v)); }
 // ---------- Spieler ----------
 const P={w:10,h:14,x:0,y:0,vx:0,vy:0,ground:false,face:1,coyote:0,buffer:0,squash:0,run:0,hold:0,rising:false,cut:false,plat:null,
   usedDouble:false,airDash:false,dashT:0,dashDir:1,dashCD:0,wallDir:0,kickT:0,glide:false};
+const SLOW_SHOES=.65;   // Übungswiese: Tempo ohne schnelle Schuhe (Sprungweite dann ~72 px, Gräben sind 48 px)
 const PH={max:150,accG:700,accA:450,fricG:800,fricA:90,tierBonus:10,grav:1150,jump:300,airJump:270,fall:420,coyote:.1,buffer:.13,
   holdMax:.18,holdGrav:.3,cutGrav:2.0,spring:560,stomp:280,
   camLook:1.4,camSmooth:7,camSmoothY:12,camZoom:.28,camFrame:1,fxDark:1,fxBloom:1,kickX:95,kickY:330,kickT:.14,slide:70,dashSpeed:220,dashT:.2,glideFall:40,upLift:2000,upMax:220,upSpeed:45};
@@ -1585,6 +1589,7 @@ function update(dt){
   const updraft=save.ab.glide&&!P.ground&&inUpdraft();
   const held=jumpSide!==0||(neutral&&(L_||R_))||keyJump;
   let maxS=PH.max+tier()*PH.tierBonus;
+  if(L.shoesItem&&!L.shoesItem.got) maxS*=SLOW_SHOES;   // Übungswiese: ohne schnelle Schuhe gemächlich
   if(updraft&&held) maxS=Math.min(maxS,PH.upSpeed);
 
   if(P.dashT>0){
@@ -1665,6 +1670,8 @@ function update(dt){
   if(L.boss&&updateBoss(dt)) return;
   // Münzen, Kristalle
   for(const k of L.coins) if(!k.got&&Math.abs(P.x+P.w/2-k.x)<10&&Math.abs(P.y+P.h/2-k.y)<12){ k.got=true; levelCoins++; sfx('coin'); save.wallet+=1+tier(); if(tier()>0) floaters.push({x:k.x,y:k.y-6,txt:'+'+(1+tier()),t:.7,col:'#ffd166'}); addFlow(1.5); burst(k.x,k.y,C.gold); }
+  const sh=L.shoesItem; if(sh&&!sh.got&&Math.abs(P.x+P.w/2-sh.x)<12&&Math.abs(P.y+P.h/2-sh.y)<13){ sh.got=true; sfx('unlock'); burst(sh.x,sh.y,'#ffd166',18,110); burst(sh.x,sh.y,'#ffffff',10,70);
+    floaters.push({x:sh.x,y:sh.y-10,txt:'Schnelle Schuhe!',t:1.6,col:'#ffd166'}); showMsg('Schnelle Schuhe! Jetzt läufst du im vollen Tempo'); }
   for(const k of L.stars) if(!k.got&&Math.abs(P.x+P.w/2-k.x)<11&&Math.abs(P.y+P.h/2-k.y)<12){ k.got=true; sfx('secret'); addFlow(20); burst(k.x,k.y,'#ffe14d',14,90); floaters.push({x:k.x,y:k.y-8,txt:'+'+PTS.star,t:1.1,col:'#ffe14d'}); if(!k.known){ k.known=true; save.stars[k.id]=true; persist(); showMsg('Geheimnis gefunden!'); } }
   { const c0=Math.floor(P.x/TS), c1=Math.floor((P.x+P.w-.01)/TS), r0=Math.floor(P.y/TS), r1=Math.floor((P.y+P.h-.01)/TS);
     for(let r=r0;r<=r1;r++) for(let c=c0;c<=c1;c++) if(tileAt(c,r)==='H'&&!L.reveal.has(c+','+r)) revealHidden(c,r); }
@@ -1702,7 +1709,7 @@ function update(dt){
     const inside=d.armed&&over&&P.ground&&Math.abs(P.y+P.h-d.bottom)<4&&Math.abs(P.vx)<25;
     d.t=inside?d.t+dt:Math.max(0,d.t-dt*2);
     if(d.t>=.7){ const why=doorBlock(d); if(why){ d.t=0; d.armed=false; sfx('locked'); showMsg(why); continue; } }
-    if(d.t>=.7){ clearInput(); sfx('door'); const n=d.world; if(n===0){ const w=L.id; if(w==='uebung'){ tutEnd(); loadLevel('hub'); showMsg('Willkommen in der Hubwelt!'); } else { loadLevel('hub',w); showMsg('Hubwelt'); } } else { loadLevel(n); showMsg(typeof n==='number'?`Welt ${WNO(n)} · ${NAMES[n]}`:`Endgegner: ${NAMES[n]}`); } return; }
+    if(d.t>=.7){ clearInput(); sfx('door'); const n=d.world; if(n===0){ const w=L.id; if(w==='uebung'){ tutEnd(); save.done.uebung=true; persist(); loadLevel('hub','home'); showMsg('Übungswiese geschafft – weiter zu Welt 1-1!'); } else { loadLevel('hub',w); showMsg('Hubwelt'); } } else { loadLevel(n); showMsg(typeof n==='number'?`Welt ${WNO(n)} · ${NAMES[n]}`:`Endgegner: ${NAMES[n]}`); } return; }
   }
 }
 // Warum eine Tür (noch) zu ist – null, wenn sie offen ist. Gilt für Türen im Level und Punkte auf der Karte.
@@ -1711,6 +1718,7 @@ function doorBlock(d){
   if(d.need&&crystalTotal()<d.need) return `Noch ${d.need-crystalTotal()} Diamanten nötig`;
   const w=BOSS_NEEDS_WORLD[d.world]; if(w&&!save.done[w]) return `Erst Welt ${WNO(w)} · ${NAMES[w]} schaffen`;
   const ab=NEED_FOR_DOOR[d.world]; if(ab&&!save.ab[ab]) return `Braucht ${AB_INFO[ab].name}`;
+  if(d.world===1&&!save.tutorialDone&&!save.done.uebung) return 'Erst die Übungswiese schaffen';
   return null; }
 let ribbon=[], floaters=[];
 // ---------- Endgegner ----------
@@ -2666,7 +2674,7 @@ function mapBuild(spawn){ const N=[{key:'home',kind:'home',x:0}];
   MAPS.nodes=N; MAPS.to=-1; MAPS.t=0; MAPS.walk=0; MAPS.goal=-1;
   const i=spawn==null?-1:N.findIndex(n=>String(n.key)===String(spawn)); MAPS.i=i>=0?i:0; }
 const mapClosedGate=()=>MAPS.nodes.findIndex(n=>n.kind==='gate'&&!n.ref.open);
-function mapDone(n){ if(n.kind==='door') return typeof n.key==='number'?!!save.done[n.key]:!!save.bosses[n.key]; if(n.kind==='secret') return !!n.ref.known; if(n.kind==='gate') return n.ref.open; return false; }
+function mapDone(n){ if(n.kind==='home') return !!(save.done.uebung||save.tutorialDone); if(n.kind==='door') return typeof n.key==='number'?!!save.done[n.key]:!!save.bosses[n.key]; if(n.kind==='secret') return !!n.ref.known; if(n.kind==='gate') return n.ref.open; return false; }
 function mapBlock(n){ if(n.kind==='door') return doorBlock(n.ref); if(n.kind==='secret') return save.ab.glide?null:`Braucht ${AB_INFO.glide.name}`; if(n.kind==='gate') return n.ref.open?null:`Krone: ${NAMES[n.ref.boss]} besiegen`; return null; }
 function updateMap(dt){ const N=MAPS.nodes; if(!N.length) return;
   if(MAPS.to>=0){ const a=N[MAPS.i], b=N[MAPS.to], len=Math.hypot(b.mx-a.mx,b.my-a.my)||1; MAPS.t+=dt*(MAPS.goal>=0?95:70)/len; MAPS.walk+=dt;
@@ -2721,7 +2729,7 @@ function drawMap(){
       F(x-7,y-9,'#1a1020',15,12); F(x-6,y-8,c,13,10); for(const dx of [-7,-3,1,5]) F(x+dx,y-12,'#1a1020',3,4), F(x+dx+.5,y-11.5,c,2,3); F(x-1,y-4,'#1a1020',3,6);
       if(done) ctx.drawImage(CROWN,x-5,y-20+Math.round(Math.sin(clock*2)),10,7); if(lock) mapLock(x,y-1); }
     else if(n.kind==='secret'){ if(done){ ctx.drawImage(CRYSTAL,x-4,y-5,8,9); } else { ctx.globalAlpha=.6+.4*Math.sin(clock*3); ctx.fillStyle='#bff4ff'; for(let k=0;k<3;k++) F(x-4+k*4,y-6+((clock*8+k*3)%6),'#bff4ff',1,3); ctx.globalAlpha=1; ctx.font='bold 7px Silkscreen, monospace'; ctx.fillStyle='#ffffff'; ctx.fillText('?',x,y-1); } }
-    else { const c=n.kind==='home'?'#9be06a':done?'#ffd166':lock?'#7a7a8a':'#d84a4a';
+    else { const c=done?'#ffd166':n.kind==='home'?'#d84a4a':lock?'#7a7a8a':'#d84a4a';
       F(x-5,y-3,'#1a1020',11,7); F(x-4,y-4,'#1a1020',9,9); F(x-4,y-3,c,9,6); F(x-3,y-4,c,7,8); F(x-2,y-3,'rgba(255,255,255,.55)',3,2);
       if(lock) mapLock(x,y+1); else { ctx.font=`bold ${n.kind==='home'?6:4.5}px Silkscreen, monospace`; ctx.fillStyle='#1a1020'; ctx.fillText(n.kind==='home'?'Ü':WNO(n.key),x,y+.5); } }
     if(sel){ ctx.strokeStyle='rgba(255,255,255,'+(.5+.5*Math.sin(clock*5))+')'; ctx.lineWidth=1; ctx.strokeRect(Math.round(x)-8.5,Math.round(y)-7.5,17,15); } });
@@ -2739,7 +2747,7 @@ function drawMap(){
   ctx.fillStyle='rgba(13,21,36,.84)'; ctx.fillRect(cx,cy,cw,ch); ctx.fillStyle='#ffd166'; ctx.fillRect(cx,cy,cw,Math.max(1,k*.8));
   ctx.textAlign='left'; ctx.textBaseline='middle'; const why=mapBlock(n);
   let title='', line='';
-  if(n.kind==='home'){ title='Übungswiese'; line='Alle Griffe in Ruhe üben'; }
+  if(n.kind==='home'){ const st=mapStats('uebung'), sr=st.st.filter(id=>save.stars[id]).length; title='Erste Welt · Übungswiese'; line=`★ ${sr}/${st.st.length}   Schnelle Schuhe warten im letzten Drittel`; }
   else if(n.kind==='gate'){ title=`Kronentor · ${NAMES[n.ref.boss]}`; line=n.ref.open?'Weg frei':'Besiege den Endgegner, dann öffnet sich das Tor'; }
   else if(n.kind==='secret'){ title='Geheimnis im Aufwind'; line=n.ref.known?'Diamant gefunden':'Hier liegt etwas Verstecktes …'; }
   else if(typeof n.key==='string'){ const b=save.best[n.key]; title=`Endgegner · ${NAMES[n.key]}`; line=save.bosses[n.key]?`Besiegt · Bestzeit ${b?.time?b.time.toFixed(1)+' s':'–'}`:BOSS_INFO[n.key].tip; }
@@ -2810,6 +2818,14 @@ function drawCage(x,b){
 }
 function drawCoins(xl,xr){ for(const k of L.coins){ if(k.got||k.x<xl||k.x>xr) continue;
   ctx.drawImage(COIN_SEQ[Math.floor(clock*8+k.x*.05)%4],Math.round(k.x-4),Math.round(k.y-5+Math.sin(clock*2+k.x)*1.5)); } }
+// Schnelle Schuhe: rote Turnschuhe mit kleinen Flügeln, schweben und leuchten
+const SHOES_ART=['hh..............','hhhh............','.hhhhkkkk.......','..hhkRRRRk......','...kRRwRRRk.....','...kRRwRRRRkkk..','..kRRRRRRRRRRRk.','..kRRRRRRRRRRRRk','..kwwwwwwwwwwwwk','...kkkkkkkkkkkk.'];
+let SHOES_IMG=null;
+function shoesImg(){ if(!SHOES_IMG){ const pal={h:'#ffffff',R:'#e84a4a',w:'#f6ead2',k:'#1a1020'}, c=mk(16,10), g=c.getContext('2d'); SHOES_ART.forEach((row,y)=>{ for(let x=0;x<row.length;x++){ const col=pal[row[x]]; if(col){ g.fillStyle=col; g.fillRect(x,y,1,1); } } }); SHOES_IMG=c; } return SHOES_IMG; }
+function drawShoes(){ const sh=L.shoesItem; if(!sh||sh.got) return; shoesImg();
+  const y=Math.round(sh.y-4+Math.sin(clock*3)*2), a=.25+.15*Math.sin(clock*5);
+  ctx.globalAlpha=a; ctx.fillStyle='#ffd166'; ctx.beginPath(); ctx.arc(sh.x,y+4,11,0,7); ctx.fill(); ctx.globalAlpha=1;
+  ctx.drawImage(SHOES_IMG,Math.round(sh.x-8),y-2); if(Math.floor(clock*6)%5===0){ ctx.fillStyle='#ffffff'; ctx.fillRect(Math.round(sh.x+6),y-3,1,1); } }
 function drawStars(){ for(const k of L.stars){ const w=Math.max(2,Math.round(12*Math.abs(Math.cos(clock*2.5+k.x)))), y=Math.round(k.y-6+Math.sin(clock*2+k.x)*1.5);
   if(k.got) continue; ctx.globalAlpha=k.known?.6:1; ctx.drawImage(STAR,Math.round(k.x-w/2),y,w,12); ctx.globalAlpha=1;
   if(!k.got&&Math.random()<.06) particles.push({x:k.x+(Math.random()-.5)*12,y:k.y,vx:0,vy:-18,t:.5,col:'#ffe14d'}); } }
@@ -3347,7 +3363,7 @@ function draw(){
   for(const d of L.decor) if(!d.back&&d.x>xl&&d.x<xr) (K?skDecorFront:drawDecorFront)(d);
   if(K) skXDecor(false,xl,xr); else drawCritters(xl,xr);
   if(tint>0){ ctx.fillStyle=`rgba(10,16,40,${tint})`; ctx.fillRect(cx-4,cy-4,viewW+8,viewH+8); }
-  (K?skCheckpoints:drawCheckpoints)(); (K?skDoors:drawDoors)(); drawHubHints(); drawGoal(); (K?skCoins:drawCoins)(xl,xr); (K?skCrystals:drawCrystals)(); (K?skStars:drawStars)(); (K?skEnemies:drawEnemies)(); drawBoss();
+  (K?skCheckpoints:drawCheckpoints)(); (K?skDoors:drawDoors)(); drawHubHints(); drawGoal(); (K?skCoins:drawCoins)(xl,xr); (K?skCrystals:drawCrystals)(); (K?skStars:drawStars)(); drawShoes(); (K?skEnemies:drawEnemies)(); drawBoss();
   if(K) skParticles(); else for(const p of particles){ ctx.globalAlpha=Math.max(0,Math.min(1,p.t/.4)); ctx.fillStyle=p.col; ctx.fillRect(Math.round(p.x),Math.round(p.y),2,2); }
   ctx.globalAlpha=1;
   drawRibbon();
@@ -3821,7 +3837,7 @@ if(EDIT_DRAFT&&!EDIT_ENGINE){ const id=isNaN(+EDIT_ID)?EDIT_ID:+EDIT_ID, ab=(EDI
   addEventListener('keydown',e=>{ try{ audioInit(); }catch(_){} if(e.key==='Escape'){ e.preventDefault(); parent.postMessage({supersam:'back'},'*'); } });
   addEventListener('pointerdown',()=>{ try{ audioInit(); }catch(_){} }); }
 if(!EDIT_ENGINE) requestAnimationFrame(frame);
-window.__dz={map:{get nodes(){return MAPS.nodes;},get i(){return MAPS.i;},get to(){return MAPS.to;},go(k){ const i=MAPS.nodes.findIndex(n=>String(n.key)===String(k)); if(i>=0){ MAPS.i=i; MAPS.to=-1; } return i; },walkTo(k){ const i=MAPS.nodes.findIndex(n=>String(n.key)===String(k)); if(i>=0) MAPS.goal=i; return i; },enter:()=>mapEnter()},editor:{levelData,EDITABLE,defFromData,PH,TS,ETYPE,NAMES,WNO,deco:{list:DECO_LIST,icon:decoIcon,preview:decoPreview},spr:{T,SPIKE,slopeTile,ES,BEETLE:BEETLE_A,STAR,COIN:COIN[0],CRYSTAL,SPRING,CROWN},
+window.__dz={map:{get nodes(){return MAPS.nodes;},get i(){return MAPS.i;},get to(){return MAPS.to;},go(k){ const i=MAPS.nodes.findIndex(n=>String(n.key)===String(k)); if(i>=0){ MAPS.i=i; MAPS.to=-1; } return i; },walkTo(k){ const i=MAPS.nodes.findIndex(n=>String(n.key)===String(k)); if(i>=0) MAPS.goal=i; return i; },enter:()=>mapEnter()},editor:{levelData,EDITABLE,defFromData,PH,TS,ETYPE,NAMES,WNO,deco:{list:DECO_LIST,icon:decoIcon,preview:decoPreview},spr:{T,SPIKE,slopeTile,ES,BEETLE:BEETLE_A,STAR,COIN:COIN[0],CRYSTAL,SPRING,CROWN,get SHOES(){ return shoesImg(); }},
   load(D,ab){ EDIT_ID=String(D.id); EDIT_DRAFT=D; EDIT_MODE=true; Object.assign(save.ab,{double:ab.includes('double'),wall:ab.includes('wall'),dash:ab.includes('dash'),glide:ab.includes('glide')}); loadLevel(D.id); state='play'; L.timeLimit=0; return L; },   // nur für Editor/Engine: EDIT_MODE verhindert das Speichern
   tick(dt){ clock+=dt; update(dt); }, keys(l,r,j){ keyL=l; keyR=r; if(j&&!keyJump){ keyJump=true; triggerJump(); } else if(!j) keyJump=false; recompute(); }, dash(){ requestDash(P.face); },
   get P(){return P;}, get L(){return L;}, get state(){return state;}, set state(v){state=v;}},

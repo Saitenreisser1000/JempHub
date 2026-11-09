@@ -33,6 +33,15 @@ Intern bleibt `hub` das bisherige Level mit Türen, Toren und Diamant (Sperren i
 nach der Lage von links nach rechts); `MAP_POS` legt fest, wo die Punkte auf der Karte liegen. Zurück aus
 einer Welt steht Sam auf deren Punkt.
 
+## Übungswiese: erste Welt, schnelle Schuhe
+
+Die Übungswiese ist die erste Welt: erster Punkt auf der Karte, 1-1 öffnet erst, wenn sie geschafft ist
+(oder die Einführung übersprungen wurde). Am Anfang läuft Sam gedrosselt (`SLOW_SHOES`, zwei Drittel des
+Tempos – Sprungweite dann rund 72 px, die Gräben sind 48 px). Am Anfang des letzten Drittels liegen die
+**schnellen Schuhe**; danach läuft er im vollen Tempo. Im Editor gibt es dafür das Objekt
+„Schnelle Schuhe“ (`{"k":"shoes","c":…,"r":…}`) – solange ein Level Schuhe enthält, ist es bis zum
+Aufsammeln gedrosselt.
+
 ## Leben
 
 Jeder Spielstand hat 3 Leben (♥ oben unter der Punkteanzeige, auch in der Hubwelt). Fällt die Punktzahl in
