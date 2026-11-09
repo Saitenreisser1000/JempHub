@@ -3,7 +3,7 @@ import { cp, mkdir, rm, access } from 'node:fs/promises';
 import { resolve } from 'node:path';
 
 const root = import.meta.dirname;
-const files = ['index.html', 'icon.svg', 'manifest.webmanifest'];
+const files = ['index.html', 'icon.svg', 'manifest.webmanifest', 'og.jpg', 'apple-touch-icon.png', 'icon-192.png', 'icon-512.png', 'favicon-32.png'];
 
 await Promise.all(files.map(file => access(resolve(root, file))));
 await rm(resolve(root, 'dist'), { recursive: true, force: true });
