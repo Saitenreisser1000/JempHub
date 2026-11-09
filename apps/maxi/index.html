@@ -243,10 +243,10 @@ function updateHearts(dt, crateTop){
     if (h.y > groundY - 10){ h.fade -= dt*2; if (h.fade <= 0) hearts.splice(i,1); }
   }
 }
-cv.addEventListener('pointerdown', e => { if (state === 'play' && nearZone(toLogical(e.clientX), e.clientY / S)) { startForklift(); return; } if (state === 'intro'){ if (introT > (INTRO_TAP[introKind] ?? 1.2)) endIntro(); return; } if (tryFlick(e.clientX, e.clientY)) { flickIds.add(e.pointerId); return; } touchX = toLogical(e.clientX); });
-cv.addEventListener('pointermove', e => { if (flickIds.has(e.pointerId)) { tryFlick(e.clientX, e.clientY); return; } if (touchX !== null || e.pointerType === 'mouse') touchX = toLogical(e.clientX); });
-cv.addEventListener('pointerup', e => { if (flickIds.delete(e.pointerId)) return; touchX = null; });
-cv.addEventListener('pointercancel', e => { flickIds.delete(e.pointerId); touchX = null; });
+cv.addEventListener('pointerdown', e => { if (startRub(e)) return; if (state === 'play' && nearZone(toLogical(e.clientX), e.clientY / S)) { startForklift(); return; } if (state === 'intro'){ if (introT > (INTRO_TAP[introKind] ?? 1.2)) endIntro(); return; } if (tryFlick(e.clientX, e.clientY)) { flickIds.add(e.pointerId); return; } touchX = toLogical(e.clientX); });
+cv.addEventListener('pointermove', e => { if (RUB.has(e.pointerId)) { moveRub(e); return; } if (flickIds.has(e.pointerId)) { tryFlick(e.clientX, e.clientY); return; } if (touchX !== null || e.pointerType === 'mouse') touchX = toLogical(e.clientX); });
+cv.addEventListener('pointerup', e => { if (RUB.delete(e.pointerId)) return; if (flickIds.delete(e.pointerId)) return; touchX = null; });
+cv.addEventListener('pointercancel', e => { RUB.delete(e.pointerId); flickIds.delete(e.pointerId); touchX = null; });
 addEventListener('keydown', e => { keys[e.key] = true; if (e.key === 'Enter' || e.key === ' ') startForklift(); if (e.key === 'p' || e.key === 'Escape') togglePause(); });
 addEventListener('keyup', e => { keys[e.key] = false; });
 
@@ -627,7 +627,7 @@ function drawFill(){
 /* ---------- game logic ---------- */
 function level(){ return 1 + Math.floor(crates/2); }
 const INTRO = {
-  stork: { title: 'Achtung, Storch!', text: 'Den Storchen-Gruß nicht auffangen, sonst ist die Sicht kurz verschmiert.' },
+  stork: { title: 'Achtung, Storch!', text: 'Den Storchen-Gruß nicht auffangen, sonst ist die Sicht verschmiert. Rubbel mit dem Finger über den Storch, dann fliegt er weg.' },
   catch: { title: 'Fang die Flasche!', text: 'Lauf mit Maxi darunter, damit sie in die Kiste fällt.' },
   move: { title: 'So läuft Maxi', text: 'Leg den Finger auf den Bildschirm und zieh ihn nach links oder rechts. Maxi läuft mit und fängt die Flaschen.' },
   red: { title: 'Falsches Bier!', text: 'Flaschen mit rotem Etikett gehören nicht in die Kiste. Tipp sie mit dem Finger an, dann fliegen sie weg.' },
@@ -773,8 +773,52 @@ function startStorkFlight(){
   ST.dropX = 50 + Math.random()*(W - 150);
   beep(1300, .07, 'square', .05); setTimeout(() => beep(1100, .07, 'square', .05), 90);
 }
+/* Storch wegrubbeln: Finger auf den Storch legen und hin und her reiben */
+const RUB = new Map();
+function storkPos(){
+  if (ST.mode === 'fly') return { x: ST.x, y: ST.y };
+  if (ST.mode === 'nest' && storkOn && ST.x >= XL) return { x: chimneyX(), y: chimneyTop() - 22 };
+  return null;
+}
+function startRub(e){
+  if (state !== 'play') return false;
+  const sp = storkPos(); if (!sp) return false;
+  const fx = toLogical(e.clientX), fy = e.clientY / S;
+  if (Math.hypot(sp.x - fx, sp.y - fy) > 55) return false;
+  RUB.set(e.pointerId, { lx: fx, ly: fy, dir: 0, rev: 0 }); return true;
+}
+function moveRub(e){
+  const r = RUB.get(e.pointerId), sp = storkPos();
+  const fx = toLogical(e.clientX), fy = e.clientY / S;
+  if (!sp || state !== 'play') { RUB.delete(e.pointerId); return; }
+  if (Math.hypot(sp.x - fx, sp.y - fy) > 75) { r.lx = fx; r.ly = fy; return; }
+  const dx = fx - r.lx, dy = fy - r.ly, horiz = Math.abs(dx) >= Math.abs(dy), d0 = horiz ? dx : dy;
+  if (Math.abs(d0) < 4) return;
+  const d = Math.sign(d0) * (horiz ? 1 : 2);
+  if (r.dir && d !== r.dir){
+    r.rev++; feathers(sp.x, sp.y, 2); beep(1500 + r.rev*120, .05, 'square', .04);
+    if (r.rev >= 4){ RUB.delete(e.pointerId); scareStork(); return; }
+  }
+  r.dir = d; r.lx = fx; r.ly = fy;
+}
+function feathers(x, y, n){
+  for (let k=0;k<n;k++) parts.push({ x: x + (Math.random()-.5)*16, y: y + (Math.random()-.5)*10, vx:(Math.random()-.5)*120, vy:-40 - Math.random()*80, life:.9, c: k%4 ? '#f6f6f2' : '#16181c', s: 2 + Math.random()*2.5, rot: Math.random()*6 });
+}
+function scareStork(){
+  const sp = storkPos(); if (!sp) return;
+  ST.x = sp.x; ST.y = sp.y; ST.mode = 'flee'; ST.t = 0;
+  ST.face = sp.x < W/2 ? -1 : 1; ST.vx = ST.face * 200; ST.vy = -240;
+  feathers(sp.x, sp.y, 12);
+  const pts = 20 * level(); score += pts; updateHud();
+  floatText(sp.x, sp.y + 30, `Husch! +${pts}`, '#fff6dc');
+  beep(1250, .07, 'square', .07); setTimeout(() => beep(980, .07, 'square', .07), 80); setTimeout(() => beep(1250, .07, 'square', .07), 160);
+}
 function updateStork(dt){
-  if (ST.mode === 'nest'){ if (storkOn){ storkT -= dt; if (storkT <= 0) startStorkFlight(); } }
+  if (ST.mode === 'flee'){
+    ST.t += dt; ST.x += ST.vx*dt; ST.y += ST.vy*dt; ST.vy -= 60*dt;
+    if (ST.y < -60 || ST.x < XL - 60 || ST.x > XR + 60){ ST.home = false; ST.mode = 'nest'; ST.x = XL - 80; storkT = 12 + Math.random()*8; }
+  }
+  else if (ST.mode === 'nest'){ if (storkOn){ storkT -= dt; if (storkT <= 0) startStorkFlight(); } }
   else {
     ST.t += dt; const k = Math.min(1, ST.t / ST.dur), e = k*k*(3 - 2*k);
     const px = ST.x; ST.x = ST.ax + (ST.bx - ST.ax)*e; ST.y = ST.ay + (ST.by - ST.ay)*e + Math.sin(k*Math.PI)*-30;
@@ -818,13 +862,13 @@ function drawPoop(x, y, ground){
 }
 function drawStork(){
   if (!storkOn && ST.mode === 'nest') return;
-  const flying = ST.mode === 'fly';
+  const flying = ST.mode === 'fly' || ST.mode === 'flee';
   if (!flying && ST.x < XL) return;
   const x = flying ? ST.x : chimneyX(), y = flying ? ST.y : chimneyTop() - 14;
   ctx.save(); ctx.translate(x, y); ctx.scale(flying ? ST.face : -1, 1);
   ctx.lineCap = 'round';
   if (flying){
-    const f = Math.sin(tTotal*9);
+    const f = Math.sin(tTotal*(ST.mode === 'flee' ? 22 : 9));
     // Beine nach hinten
     ctx.strokeStyle = '#e0543a'; ctx.lineWidth = 2; ctx.beginPath(); ctx.moveTo(-8, 2); ctx.lineTo(-24, 4); ctx.stroke();
     // Flügel hinten
