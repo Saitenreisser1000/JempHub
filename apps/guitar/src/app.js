@@ -4,6 +4,7 @@ import {
   n, mo, setKey, onsets as coreOnsets, barTicks, durName, durFromSpec, decodeDur,
   posLabel as corePosLabel, momentAt as coreMomentAt, nextSounding as coreNext,
   prevSounding as corePrev, isValidExercise, moveMoment, dropIndex, snapDur, canMoveDot, moveDot,
+  colorGroups, groupOf,
 } from './core/model.js'
 import { useFlats, pcName as corePcName, noteName as coreNoteName, harmony as coreHarmony } from './core/music.js'
 import { examples } from './core/exercises.js'
@@ -54,6 +55,7 @@ const pcName = (pc) => corePcName(pc, flats())
 const midiOf = (d) => cur().tuning[d.s] + d.f
 const noteName = (d, oct) => coreNoteName(d, cur().tuning, flats(), oct)
 function colorOf(m){return m.color||cur().color||SKY}
+const cgroups=()=>colorGroups(cur().moments,colorOf);
 function stringName(s){const t=cur().tuning,nm=pcName(t[s]%12);if(s===0&&cur().inst==='guitar')return 'high '+nm;if(s===t.length-1)return 'low '+nm;return nm}
 const durTicks = () => durFromSpec(state.dur)
 const posLabel = (t) => corePosLabel(t, cur().ts)
@@ -227,7 +229,16 @@ function renderMoments(){
     }
     s+='</g>';
   });
-  $('#L-moments').innerHTML=cs+s;
+  // Farbgruppen: weiche Fläche um alle sichtbaren Töne einer Gruppe
+  let gs='';
+  if(!playing)cgroups().forEach(grp=>{
+    const idx=[];for(let i=grp.a;i<=grp.b;i++)if(ms[i].dots.length&&vis[i]!==undefined)idx.push(i);
+    if(idx.length<2)return;
+    const seenP=new Set(),pts=[];idx.forEach(i=>ms[i].dots.forEach(d=>{const k=d.s+':'+d.f;if(!seenP.has(k)){seenP.add(k);pts.push(g.pos(d.s,d.f))}}));
+    const op=(Math.min(...idx.map(opOf))*.13).toFixed(3),sw=2*(R+11);
+    gs+='<g class="cgrp" style="opacity:'+op+'">'+(pts.length>1?'<path d="'+hullPath(pts)+'" fill="'+grp.color+'" stroke="'+grp.color+'" stroke-width="'+sw+'" stroke-linejoin="round" stroke-linecap="round"/>':'<circle cx="'+pts[0][0]+'" cy="'+pts[0][1]+'" r="'+(R+11)+'" fill="'+grp.color+'"/>')+'</g>';
+  });
+  $('#L-moments').innerHTML=gs+cs+s;
   gEls=[];ms.forEach((m,i)=>{gEls[i]=document.getElementById('mg-'+i)});
   for(const k in conns){const el=document.getElementById(conns[k]);conns[k]={el:el,path:el?el.querySelector('.cp'):null,len:0,op:-1}}
   gEls.forEach(el=>{if(el){el._op=-1;el._cls=''}});
@@ -288,6 +299,11 @@ function renderStrip(){
     if(t<span)s+='<text class="strip-t" x="'+(X(t)+3)+'" y="11"'+(isBar?' style="fill:#919d95"':'')+'>'+(isBar?(t/bt+1):((t%bt)/TPQ+1))+'</text>'}
   for(let st=0;st<nS;st++)s+='<line x1="8" x2="'+X(span)+'" y1="'+(top+(st+.5)*lh)+'" y2="'+(top+(st+.5)*lh)+'" stroke="#e6ebe4" stroke-opacity=".035"/>';
   if(state.range){const a=Math.min(state.range[0],state.range[1]),b=Math.max(state.range[0],state.range[1]);if(ms[a]&&ms[b])s+='<rect x="'+X(on[a])+'" y="1" width="'+(X(on[b]+ms[b].dur)-X(on[a]))+'" height="'+(H-2)+'" rx="6" fill="#d8b46a" fill-opacity=".09" stroke="#d8b46a" stroke-opacity=".55" stroke-dasharray="4 3"/>'}
+  cgroups().forEach(grp=>{
+    const x0=X(on[grp.a])-1,x1=X(on[grp.b]+ms[grp.b].dur)+1,y0=top-3,h=H-top-bot+5;
+    s+='<rect class="cgrp" x="'+x0+'" y="'+y0+'" width="'+(x1-x0)+'" height="'+h+'" rx="7" fill="'+grp.color+'" fill-opacity=".06" stroke="'+grp.color+'" stroke-opacity=".5" stroke-width="1.2"/>'+
+      '<rect x="'+(x0+5)+'" y="'+(y0+h-2)+'" width="'+Math.max(4,x1-x0-10)+'" height="3" rx="1.5" fill="'+grp.color+'" fill-opacity=".9"/>';
+  });
   ms.forEach((m,i)=>{
     const x=X(on[i])+1,w=Math.max(3,m.dur*ppt-2),c=colorOf(m);
     if(!m.dots.length){s+='<rect x="'+x+'" y="'+(top+2)+'" width="'+w+'" height="'+(H-top-bot-4)+'" rx="4" fill="none" stroke="#919d95" stroke-opacity=".35" stroke-dasharray="3 3"/>';
@@ -737,6 +753,8 @@ function renderCtx(){
   h+='<div class="ctx-r"><span>Length</span><div class="seg mono">'+bases.map(([b,l])=>'<button data-cbase="'+b+'" aria-pressed="'+(dd.base===b)+'" title="'+DUR_NAMES[b]+'">'+l+'</button>').join('')+
     '<button data-cflag="dot" aria-pressed="'+!!dd.dot+'" title="Dotted">.</button><button data-cflag="trip" aria-pressed="'+!!dd.trip+'" title="Triplet">3</button></div></div>';
   h+='<div class="ctx-r"><span>Colour</span><div class="ctx-sw">'+COLORS.map(cc=>'<button class="sw" data-ccol="'+cc+'" style="background:'+cc+'" aria-pressed="'+(cc===col)+'" aria-label="Colour"></button>').join('')+'</div></div>';
+  const grp=groupOf(cgroups(),i);
+  if(grp)h+='<div class="ctx-r"><span>Group</span><span class="ctx-grp"><span class="ctx-d">'+(grp.a+1)+'–'+(grp.b+1)+' · '+grp.count+' notes</span><button class="gbtn" data-cact="loopgrp">Loop group</button></span></div>';
   if(m.dots.length>1)h+='<div class="ctx-r"><span>Strum</span><div class="seg">'+[['','together'],['d','↓'],['u','↑']].map(([v,l])=>'<button data-cstrum="'+v+'" aria-pressed="'+((m.strum||'')===v)+'">'+l+'</button>').join('')+'</div></div>';
   m.dots.slice().sort((a,b)=>b.s-a.s).forEach(dt=>{const k=m.dots.indexOf(dt);
     h+='<div class="ctx-r dot"><span><b>'+noteName(dt,true)+'</b> '+stringName(dt.s)+' '+(dt.f===0?'open':dt.f)+'</span><span class="ctx-sel">'+
@@ -756,6 +774,7 @@ $('#ctx').addEventListener('click',e=>{
   if(b.dataset.cstrum!=null)return ctxEdit(m=>{m.strum=b.dataset.cstrum||null});
   const a=b.dataset.cact;
   if(a==='close'){$('#ctx').hidden=true;return}
+  if(a==='loopgrp'){const grp=groupOf(cgroups(),i);if(!grp)return;const was=P.on;if(P.on||P.wait)stopPlay();state.range=[grp.a,grp.b];state.loop=true;state.sel=grp.a;$('#ctx').hidden=true;renderAll();if(was)play();return}
   if(a==='left'||a==='right'){pushUndo();state.sel=moveMoment(ms,i,i+(a==='left'?-1:1));state.caret='after';afterEdit();renderCtx();return}
   if(a==='play'){if(ms[i].dots.length){ensureAudio();playMoment(i,clock()+.01,spt())}return}
   if(a==='dup'){repeatMoment();renderCtx();return}
