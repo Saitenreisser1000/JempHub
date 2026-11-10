@@ -59,6 +59,8 @@ const cgroups=()=>colorGroups(cur().moments,colorOf);
 // Ausgewählte Gruppe als Block {a,b}; gilt nur, solange die Indizes gültig sind
 const blk=()=>{const b=state.block,n=cur().moments.length;return b&&b.a>=0&&b.b<n&&b.a<=b.b?b:null};
 const inBlk=i=>{const b=blk();return !!b&&i>=b.a&&i<=b.b};
+let TAB=null;
+function groupMenu(a,x,y){if(state.mode!=='edit')return;const b=blk();if(!(b&&b.a===a)&&!selectGroup(a))return;openCtx(a,x,y)}
 function selectGroup(i){
   const grp=groupOf(cgroups(),i);if(!grp){toast('This note is not part of a colour group');return false}
   if(P.on||P.wait)stopPlay();
@@ -670,9 +672,9 @@ const strip=$('#strip');
 strip.addEventListener('pointerdown',e=>{
   if(e.button===2)return;
   const tab=e.target.closest&&e.target.closest('[data-gtab]');
-  if(tab){e.preventDefault();e.stopPropagation();const a=+tab.dataset.gtab,b=blk();
-    if(b&&b.a===a){if(state.mode==='edit'&&!P.on&&!P.wait){renameGroup(a);return}state.block=null;selectMoment(a)}else selectGroup(a);
-    if(!$('#ctx').hidden)renderCtx();return}
+  if(tab){e.preventDefault();e.stopPropagation();const a=+tab.dataset.gtab,x=e.clientX,y=e.clientY;
+    TAB={id:e.pointerId,a,x,y,long:false,timer:e.pointerType==='mouse'?0:setTimeout(()=>{if(TAB&&TAB.a===a){TAB.long=true;groupMenu(a,x,y)}},500)};
+    return}
   const h=stripHit(e),editing=state.mode==='edit'&&!P.on&&!P.wait;
   DRAG={id:e.pointerId,x0:e.clientX,y0:e.clientY,i:h.i,mode:null,moved:false,to:null};
   if(editing&&e.pointerType==='mouse'){if(h.edge>=0&&!inBlk(h.edge)){DRAG.mode='resize';DRAG.i=h.edge}else if(h.i>=0)DRAG.mode=inBlk(h.i)?'moveblock':'move'}
@@ -694,6 +696,9 @@ window.addEventListener('pointermove',e=>{
   e.preventDefault();
 });
 window.addEventListener('pointerup',e=>{
+  if(TAB&&e.pointerId===TAB.id){const t=TAB;TAB=null;clearTimeout(t.timer);if(t.long||e.button===2)return;
+    const b=blk();if(b&&b.a===t.a){if(state.mode==='edit'&&!P.on&&!P.wait){renameGroup(t.a);return}state.block=null;selectMoment(t.a)}else selectGroup(t.a);
+    if(!$('#ctx').hidden)renderCtx();return}
   if(!DRAG||e.pointerId!==DRAG.id)return;
   const d=DRAG;DRAG=null;clearTimeout(d.lp);
   if(!d.moved){if(e.target.closest&&e.target.closest('#strip'))stripClick(e);return}
@@ -703,10 +708,11 @@ window.addEventListener('pointerup',e=>{
     if(to!==d.i){pushUndo();state.sel=moveMoment(ms,d.i,to);state.caret='after';afterEdit();return}}
   strip.style.cursor='';renderStrip();
 });
-window.addEventListener('pointercancel',()=>{if(DRAG){clearTimeout(DRAG.lp);DRAG=null;renderStrip()}});
+window.addEventListener('pointercancel',()=>{if(TAB){clearTimeout(TAB.timer);TAB=null}if(DRAG){clearTimeout(DRAG.lp);DRAG=null;renderStrip()}});
 strip.addEventListener('dragstart',e=>e.preventDefault());
 strip.addEventListener('contextmenu',e=>{
   if(state.mode!=='edit')return;e.preventDefault();
+  const tab=e.target.closest&&e.target.closest('[data-gtab]');if(tab){if(TAB){clearTimeout(TAB.timer);TAB=null}groupMenu(+tab.dataset.gtab,e.clientX,e.clientY);return}
   const i=momentAt(stripTickAt(e.clientX));if(i>=0)openCtx(i,e.clientX,e.clientY);
 });
 // Rechtsklick / langes Drücken auf einen Moment am Griffbrett
@@ -970,7 +976,7 @@ document.addEventListener('keydown',e=>{
   if(k==='ArrowRight'){e.preventDefault();if(P.wait)waitStep(1);else if(!P.on)selectMoment(state.sel+1);return}
   if(k==='ArrowLeft'){e.preventDefault();if(P.wait)waitStep(-1);else if(!P.on)selectMoment(state.sel-1);return}
   if(k==='?'){const hp=$('#help'),open=hp.hidden;closePops();hp.hidden=!open;return}
-  if(k==='Escape'){if(P.on||P.wait)stopPlay();closePops();if(blk()){state.block=null;renderStrip();renderMoments()}return}
+  if(k==='Escape'){const menu=!$('#ctx').hidden;if(P.on||P.wait)stopPlay();closePops();if(!menu&&blk()){state.block=null;renderStrip();renderMoments()}return}
   if(k==='h'||k==='H'){const o=['whole','near','now'];state.horizon[state.mode]=o[(o.indexOf(hor())+1)%3];segSet('#horizonSeg',hor());if(P.wait){renderMoments();waitShow()}else if(!P.on)renderMoments();return}
   if(k==='n'||k==='N'){const o=['order','finger','note'];state.labels=o[(o.indexOf(state.labels)+1)%3];segSet('#labelSeg',state.labels);renderMoments();if(P.wait)waitShow();return}
   if(k==='m'||k==='M'){state.metro=!state.metro;renderTransport();return}
