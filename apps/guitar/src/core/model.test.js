@@ -142,10 +142,11 @@ it('colorGroups: aufeinanderfolgende gleiche Farben, Pausen dazwischen erlaubt',
   assert.equal(groupOf(g, 5), null)
 })
 
-it('colorGroups: eine einzige Farbe ergibt keine Gruppen', async () => {
+it('colorGroups: eine einzige Farbe ergibt eine Gruppe über alles', async () => {
   const { colorGroups } = await import('./model.js')
   const ms = [1, 2, 3].map(() => ({ dur: 12, dots: [{ s: 0, f: 1 }], color: null }))
-  assert.deepEqual(colorGroups(ms, () => '#7cc4f2'), [])
+  assert.deepEqual(colorGroups(ms, () => '#7cc4f2'), [{ a: 0, b: 2, color: '#7cc4f2', count: 3 }])
+  assert.deepEqual(colorGroups(ms.slice(0, 1), () => '#7cc4f2'), [])
 })
 
 it('moveBlock: verschiebt einen Block nach vorne und hinten', async () => {

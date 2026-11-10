@@ -151,10 +151,9 @@ export function moveDot(moments, list, from, to) {
 
 // Farbgruppen: aufeinanderfolgende klingende Momente mit derselben Farbe.
 // Pausen dazwischen unterbrechen eine Gruppe nicht; eine Gruppe beginnt und endet mit einem Ton.
-// Nur sinnvoll, wenn die Übung mehr als eine Farbe verwendet. Ergebnis: [{ a, b, color, count }]
+// Auch bei nur einer Farbe: dann ist die ganze Übung eine Gruppe. Ergebnis: [{ a, b, color, count }]
 export function colorGroups(moments, colorOf) {
   const sounding = moments.map((m, i) => (m.dots.length ? i : -1)).filter((i) => i >= 0)
-  if (new Set(sounding.map((i) => colorOf(moments[i]))).size < 2) return []
   const groups = []
   let cur = null
   for (const i of sounding) {
