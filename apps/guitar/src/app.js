@@ -62,7 +62,7 @@ const inBlk=i=>{const b=blk();return !!b&&i>=b.a&&i<=b.b};
 function selectGroup(i){
   const grp=groupOf(cgroups(),i);if(!grp){toast('This note is not part of a colour group');return false}
   if(P.on||P.wait)stopPlay();
-  state.block={a:grp.a,b:grp.b};selectMoment(grp.a,true);state.caret='after';renderStrip();renderMoments();return true}
+  state.block={a:grp.a,b:grp.b};selectMoment(grp.a,true);state.caret='after';renderStrip();renderMoments();if(frameMode()==='fit')updateViewBox();return true}
 function stringName(s){const t=cur().tuning,nm=pcName(t[s]%12);if(s===0&&cur().inst==='guitar')return 'high '+nm;if(s===t.length-1)return 'low '+nm;return nm}
 const durTicks = () => durFromSpec(state.dur)
 const posLabel = (t) => corePosLabel(t, cur().ts)
@@ -136,7 +136,11 @@ const allOrder=()=>cur().moments.map((m,i)=>i);
 
 function visibleInfo(){
   const ms=cur().moments,N=ms.length,c=clamp(state.sel,0,N-1),h=hor(),op={};
+  const b=blk();
+  if(b){for(let i=b.a;i<=b.b;i++)op[i]=1;return op}
+  const grp=h==='near'?groupOf(cgroups(),c):null;
   if(h==='whole'){for(let i=0;i<N;i++)op[i]=1}
+  else if(grp){for(let i=grp.a;i<=grp.b;i++)op[i]=i===c?1:.82}
   else if(h==='near'){const past=[.42,.24],fut=[1,.86,.66,.48,.34];for(let d=-2;d<=4;d++){const i=c+d;if(i<0||i>=N)continue;op[i]=d<0?past[-d-1]:fut[d]}}
   else{op[c]=1;const nx=nextSounding(c,allOrder(),false);if(nx>=0)op[nx]=.5}
   return op;
@@ -297,19 +301,25 @@ const ST={ppt:3,H:66,top:15};
 function renderStrip(){
   const ex=cur(),ms=ex.moments,on=onsets(),bt=barT(),nS=ex.tuning.length;
   const wrap=$('#stripWrap'),W0=Math.max(240,wrap.clientWidth-2);
-  const H=state.mode==='practice'?58:68,top=16,bot=6,lh=(H-top-bot)/nS;
+  const groups=cgroups(),T=groups.length?15:0;
+  const H=(state.mode==='practice'?58:68)+T,top=16+T,bot=6,lh=(H-top-bot)/nS;
   const tot=Math.max(on.total,bt),span=Math.ceil((tot+(state.mode==='edit'?TPQ:0))/TPQ)*TPQ;
   const ppt=Math.max((W0-16)/span,1.9),W=Math.ceil(16+span*ppt);
   Object.assign(ST,{ppt,H,top,lh});
   const X=t=>8+t*ppt;let s='';
-  for(let t=0;t<=span;t+=TPQ){const isBar=t%bt===0;s+='<line x1="'+X(t)+'" x2="'+X(t)+'" y1="'+(isBar?2:top)+'" y2="'+(H-2)+'" stroke="#e6ebe4" stroke-opacity="'+(isBar?.18:.06)+'"/>';
-    if(t<span)s+='<text class="strip-t" x="'+(X(t)+3)+'" y="11"'+(isBar?' style="fill:#919d95"':'')+'>'+(isBar?(t/bt+1):((t%bt)/TPQ+1))+'</text>'}
+  for(let t=0;t<=span;t+=TPQ){const isBar=t%bt===0;s+='<line x1="'+X(t)+'" x2="'+X(t)+'" y1="'+(isBar?2+T:top)+'" y2="'+(H-2)+'" stroke="#e6ebe4" stroke-opacity="'+(isBar?.18:.06)+'"/>';
+    if(t<span)s+='<text class="strip-t" x="'+(X(t)+3)+'" y="'+(11+T)+'"'+(isBar?' style="fill:#919d95"':'')+'>'+(isBar?(t/bt+1):((t%bt)/TPQ+1))+'</text>'}
   for(let st=0;st<nS;st++)s+='<line x1="8" x2="'+X(span)+'" y1="'+(top+(st+.5)*lh)+'" y2="'+(top+(st+.5)*lh)+'" stroke="#e6ebe4" stroke-opacity=".035"/>';
   if(state.range){const a=Math.min(state.range[0],state.range[1]),b=Math.max(state.range[0],state.range[1]);if(ms[a]&&ms[b])s+='<rect x="'+X(on[a])+'" y="1" width="'+(X(on[b]+ms[b].dur)-X(on[a]))+'" height="'+(H-2)+'" rx="6" fill="#d8b46a" fill-opacity=".09" stroke="#d8b46a" stroke-opacity=".55" stroke-dasharray="4 3"/>'}
-  cgroups().forEach(grp=>{
-    const x0=X(on[grp.a])-1,x1=X(on[grp.b]+ms[grp.b].dur)+1,y0=top-3,h=H-top-bot+5;
-    s+='<rect class="cgrp" x="'+x0+'" y="'+y0+'" width="'+(x1-x0)+'" height="'+h+'" rx="7" fill="'+grp.color+'" fill-opacity=".06" stroke="'+grp.color+'" stroke-opacity=".5" stroke-width="1.2"/>'+
-      '<rect x="'+(x0+5)+'" y="'+(y0+h-2)+'" width="'+Math.max(4,x1-x0-10)+'" height="3" rx="1.5" fill="'+grp.color+'" fill-opacity=".9"/>';
+  const bk=blk();
+  groups.forEach(grp=>{
+    const x0=X(on[grp.a])-1,x1=X(on[grp.b]+ms[grp.b].dur)+1,y0=T,h=H-bot+2-T,w=x1-x0,c=grp.color;
+    const sel=bk&&bk.a===grp.a&&bk.b===grp.b;
+    s+='<rect class="cgrp" x="'+x0+'" y="'+y0+'" width="'+w+'" height="'+h+'" rx="7" fill="'+c+'" fill-opacity="'+(sel?.12:.06)+'" stroke="'+c+'" stroke-opacity="'+(sel?.95:.5)+'" stroke-width="'+(sel?2:1.2)+'"/>';
+    // Reiter: wählt die ganze Gruppe aus
+    const ty=2,r=6;
+    s+='<g class="gtab" data-gtab="'+grp.a+'"><title>Select group ('+grp.count+' notes)</title><path d="M'+x0+' '+(y0+1)+'V'+(ty+r)+'Q'+x0+' '+ty+' '+(x0+r)+' '+ty+'H'+(x1-r)+'Q'+x1+' '+ty+' '+x1+' '+(ty+r)+'V'+(y0+1)+'Z" fill="'+c+'" fill-opacity="'+(sel?.95:.3)+'"/>'+
+      (w>34?'<text class="gtab-t" x="'+(x0+8)+'" y="'+(ty+9.5)+'" fill="'+(sel?'#0d110f':c)+'">'+(w>90?'Group · ':'')+grp.count+'</text>':'')+'</g>';
   });
   ms.forEach((m,i)=>{
     const x=X(on[i])+1,w=Math.max(3,m.dur*ppt-2),c=colorOf(m);
@@ -321,7 +331,6 @@ function renderStrip(){
     if(DRAG&&DRAG.moved&&((DRAG.mode==='move'&&i===DRAG.i)||(DRAG.mode==='moveblock'&&inBlk(i))))s+='<rect x="'+(x-1)+'" y="'+(top-1)+'" width="'+(w+2)+'" height="'+(H-top-bot+2)+'" rx="5" fill="#0f1311" fill-opacity=".55"/>';
     if(i===state.sel&&!(P.on)&&!inBlk(i))s+='<rect x="'+(x-1.5)+'" y="'+(top-1)+'" width="'+(w+3)+'" height="'+(H-top-bot+2)+'" rx="5" fill="none" stroke="#fff" stroke-opacity=".75" stroke-width="1.3"'+(state.mode==='edit'&&state.caret==='inside'?'':' stroke-dasharray="none"')+'/>';
   });
-  {const b=blk();if(b&&ms[b.b]){const x0=X(on[b.a])-2.5,x1=X(on[b.b]+ms[b.b].dur)+2.5;s+='<rect class="blk" x="'+x0+'" y="'+(top-4.5)+'" width="'+(x1-x0)+'" height="'+(H-top-bot+8)+'" rx="8" fill="none" stroke="var(--fg)" stroke-opacity=".9" stroke-width="2"/>'}}
   if(state.mode==='edit'&&!P.on&&!blk()){
     const sel=state.sel,cx=ms.length?(state.caret==='after'?X(on[sel]+ms[sel].dur):null):X(0);
     if(cx!=null)s+='<line x1="'+(cx+1)+'" x2="'+(cx+1)+'" y1="'+(top-2)+'" y2="'+(H-3)+'" stroke="#d8b46a" stroke-width="2"/><path d="M'+(cx-3)+' '+(top-6)+'h8l-4 5z" fill="#d8b46a"/>';
@@ -622,13 +631,10 @@ svg.addEventListener('click',e=>{
 });
 
 /* ---------- strip pointer ---------- */
-let lastTap={i:-1,t:0};
 function stripClick(e){
   const ms=cur().moments;if(!ms.length)return;const t=stripTickAt(e.clientX);let i=momentAt(t);
   if(i<0)i=t<0?0:ms.length-1;
   if(e.shiftKey){state.range=[state.sel,i];if(!state.loop)state.loop=true;renderStrip();renderTransport();if(P.on){stopPlay();play()}return}
-  const now=performance.now(),dbl=lastTap.i===i&&now-lastTap.t<380;lastTap={i,t:dbl?0:now};
-  if(dbl&&!P.on){if(inBlk(i)){selectMoment(i);return}if(selectGroup(i))return}
   if(P.on){state.sel=i;stopPlay();play();return}
   if(inBlk(i)){selectMoment(i,true);renderStrip();return}
   selectMoment(i);
@@ -645,6 +651,10 @@ function stripHit(e){
 const strip=$('#strip');
 strip.addEventListener('pointerdown',e=>{
   if(e.button===2)return;
+  const tab=e.target.closest&&e.target.closest('[data-gtab]');
+  if(tab){e.preventDefault();e.stopPropagation();const a=+tab.dataset.gtab,b=blk();
+    if(b&&b.a===a){state.block=null;selectMoment(a)}else selectGroup(a);
+    if(!$('#ctx').hidden)renderCtx();return}
   const h=stripHit(e),editing=state.mode==='edit'&&!P.on&&!P.wait;
   DRAG={id:e.pointerId,x0:e.clientX,y0:e.clientY,i:h.i,mode:null,moved:false,to:null};
   if(editing&&e.pointerType==='mouse'){if(h.edge>=0&&!inBlk(h.edge)){DRAG.mode='resize';DRAG.i=h.edge}else if(h.i>=0)DRAG.mode=inBlk(h.i)?'moveblock':'move'}
