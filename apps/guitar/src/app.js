@@ -55,7 +55,9 @@ const pcName = (pc) => corePcName(pc, flats())
 const midiOf = (d) => cur().tuning[d.s] + d.f
 const noteName = (d, oct) => coreNoteName(d, cur().tuning, flats(), oct)
 function colorOf(m){return m.color||cur().color||SKY}
-const cgroups=()=>colorGroups(cur().moments,colorOf);
+// Automatisch gruppieren (Schalter in den Ansichtsoptionen, Standard an, im Browser gemerkt)
+let autoGroup=true;try{autoGroup=localStorage.getItem('guitarjemp.autogroup')!=='off'}catch(e){}
+const cgroups=()=>autoGroup?colorGroups(cur().moments,colorOf):[];
 // Ausgewählte Gruppe als Block {a,b}; gilt nur, solange die Indizes gültig sind
 const blk=()=>{const b=state.block,n=cur().moments.length;return b&&b.a>=0&&b.b<n&&b.a<=b.b?b:null};
 const inBlk=i=>{const b=blk();return !!b&&i>=b.a&&i<=b.b};
@@ -506,7 +508,7 @@ function renderHead(){
   const tl=TUNINGS.filter(t=>t.notes.length===ex.tuning.length);let ti=tl.findIndex(t=>t.notes.join()===ex.tuning.join());
   $('#tuneSel').innerHTML=(ti<0?'<option value="-1" selected>'+esc(ex.tuningName||'Custom')+'</option>':'')+tl.map((t,i)=>'<option value="'+TUNINGS.indexOf(t)+'"'+(i===ti?' selected':'')+'>'+t.name+'</option>').join('');
   segSet('#horizonSeg',hor());segSet('#labelSeg',state.labels);segSet('#frameSeg',frameMode());segSet('#modeSeg',state.mode);
-  $('#scaleBtn').setAttribute('aria-pressed',state.scale);$('#leftyBtn').setAttribute('aria-pressed',state.lefty);
+  $('#scaleBtn').setAttribute('aria-pressed',state.scale);$('#leftyBtn').setAttribute('aria-pressed',state.lefty);$('#groupBtn').setAttribute('aria-pressed',autoGroup);
   const eb=$('#modeSeg button[data-mode="edit"]'),ro=ex.origin==='shared';eb.disabled=ro;eb.title=ro?'Shared with you: read-only. Copy it to edit.':'';
   const signed=!!cloud.currentUser(),acts=[];
   const IC={share:'<circle cx="18" cy="5.5" r="2.5"/><circle cx="6" cy="12" r="2.5"/><circle cx="18" cy="18.5" r="2.5"/><path d="M8.2 10.8l7.6-4.1M8.2 13.2l7.6 4.1"/>',copy:'<rect x="8.5" y="8.5" width="11" height="11" rx="2"/><path d="M15.5 8.5V6.5a2 2 0 0 0-2-2h-7a2 2 0 0 0-2 2v7a2 2 0 0 0 2 2h2"/>',delete:'<path d="M5 7h14M10 7V5h4v2M7 7l1 12h8l1-12"/>'};
@@ -881,6 +883,8 @@ $('#horizonSeg').addEventListener('click',e=>{const b=e.target.closest('button')
 $('#labelSeg').addEventListener('click',e=>{const b=e.target.closest('button');if(!b)return;state.labels=b.dataset.v;segSet('#labelSeg',b.dataset.v);renderMoments();if(P.wait)waitShow()});
 $('#frameSeg').addEventListener('click',e=>{const b=e.target.closest('button');if(!b)return;state.frame[state.mode]=b.dataset.v;segSet('#frameSeg',b.dataset.v);updateViewBox()});
 $('#scaleBtn').addEventListener('click',()=>{state.scale=!state.scale;renderBoard();renderHead();save()});
+$('#groupBtn').addEventListener('click',()=>{autoGroup=!autoGroup;try{localStorage.setItem('guitarjemp.autogroup',autoGroup?'on':'off')}catch(e){}
+  state.block=null;if(!$('#ctx').hidden)$('#ctx').hidden=true;renderAll()});
 $('#leftyBtn').addEventListener('click',()=>{const was=P.on;if(P.on||P.wait)stopPlay();state.lefty=!state.lefty;renderAll();if(was)play()});
 $('#entrySeg').addEventListener('click',e=>{const b=e.target.closest('button');if(!b)return;state.entry=b.dataset.v;state.caret=caretFor();renderTools();renderStrip()});
 $('#nextBtn').addEventListener('click',nextMoment);
