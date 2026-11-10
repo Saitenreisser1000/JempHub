@@ -129,3 +129,21 @@ describe('moveDot', () => {
     assert.equal(canMoveDot(pat(), [0], { s: 4, f: 3 }, { s: 4, f: 3 }), false)
   })
 })
+
+it('colorGroups: aufeinanderfolgende gleiche Farben, Pausen dazwischen erlaubt', async () => {
+  const { colorGroups, groupOf } = await import('./model.js')
+  const R = '#f00', B = '#00f'
+  const note = (c) => ({ dur: 12, dots: [{ s: 0, f: 1 }], color: c })
+  const rest = { dur: 12, dots: [], color: null }
+  const ms = [note(R), note(R), rest, note(R), note(B), note(R), note(B), note(B)]
+  const g = colorGroups(ms, (m) => m.color)
+  assert.deepEqual(g, [{ a: 0, b: 3, color: R, count: 3 }, { a: 6, b: 7, color: B, count: 2 }])
+  assert.equal(groupOf(g, 2).a, 0)
+  assert.equal(groupOf(g, 5), null)
+})
+
+it('colorGroups: eine einzige Farbe ergibt keine Gruppen', async () => {
+  const { colorGroups } = await import('./model.js')
+  const ms = [1, 2, 3].map(() => ({ dur: 12, dots: [{ s: 0, f: 1 }], color: null }))
+  assert.deepEqual(colorGroups(ms, () => '#7cc4f2'), [])
+})
