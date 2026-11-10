@@ -21,7 +21,7 @@
 [hidden]{display:none!important}
 html,body{height:100%;margin:0;overflow:hidden;background:var(--night);color:var(--cream);
   touch-action:none;user-select:none;-webkit-user-select:none;-webkit-touch-callout:none;overscroll-behavior:none}
-canvas{position:fixed;left:0;top:0;width:100%;height:100vh;height:var(--vh,100dvh);display:block;image-rendering:pixelated}
+canvas{position:fixed;left:0;top:var(--gt,0px);width:100%;height:100vh;height:var(--gh,var(--vh,100dvh));display:block;image-rendering:pixelated}
 .hud{position:fixed;font-family:var(--pixel);font-size:14px;text-shadow:2px 2px 0 var(--ink);pointer-events:none;font-variant-numeric:tabular-nums;letter-spacing:.04em}
 #hl{top:calc(env(safe-area-inset-top,0px) + 8px);left:calc(env(safe-area-inset-left,0px) + 10px);display:flex;align-items:center;gap:10px}
 #hc{top:calc(env(safe-area-inset-top,0px) + 6px);left:50%;transform:translateX(-50%);white-space:nowrap;display:flex;flex-direction:column;align-items:center;gap:3px}
@@ -135,8 +135,10 @@ canvas{position:fixed;left:0;top:0;width:100%;height:100vh;height:var(--vh,100dv
 @media (max-width:560px){.endstats{grid-template-columns:repeat(2,minmax(0,1fr))}}
 @media (prefers-reduced-motion:reduce){#endtitle,.endsub,.endstats,#endbtn{animation:none}}
 body.title .hud,body.title .zone,body.title #msg,body.title #tut{display:none!important}
-#rotate{display:none;z-index:20;background:var(--night)}
-@media (orientation:portrait){#rotate{display:flex}}
+/* Hochformat: das Spiel bleibt als Querformat-Streifen sichtbar (angehalten), darunter der Hinweis zum Drehen */
+#rotate{display:none;z-index:20;inset:auto 0 0 0;top:calc(var(--gt,0px) + var(--gh,0px));background:transparent;pointer-events:none;justify-content:center;flex-direction:row;gap:16px}
+#rotate p{max-width:16em;font-size:13px;text-shadow:2px 2px 0 var(--ink)}
+@media (orientation:portrait) and (max-width:899px){#rotate{display:flex}.hud,.zone,#tut,#msg,#fps{display:none!important}}
 .phone{width:40px;height:66px;border:4px solid var(--cream);border-radius:8px;animation:turn 2s ease-in-out infinite}
 @keyframes turn{0%,30%{transform:rotate(0)}60%,100%{transform:rotate(-90deg)}}
 @media (prefers-reduced-motion:reduce){.phone{animation:none}}
@@ -249,7 +251,7 @@ body.title .hud,body.title .zone,body.title #msg,body.title #tut{display:none!im
 
 <div class="panel" id="rotate">
   <div class="phone"></div>
-  <p>Bitte dreh dein Handy ins Querformat.</p>
+  <p>Dreh dein Handy ins Querformat, um zu spielen.</p>
 </div>
 
 <script>
@@ -2138,7 +2140,10 @@ function resize(){
   const dpr=Math.min(devicePixelRatio||1,RES);
   // Bild exakt auf den sichtbaren Bereich legen (Handy-Browser: 100vh reicht unter die Adressleiste)
   document.documentElement.style?.setProperty('--vh',innerHeight+'px');
-  cv.width=Math.round(innerWidth*dpr); cv.height=Math.round(innerHeight*dpr);
+  // Hochformat (Handy): Spiel im Seitenverhältnis 2:1 als Streifen etwas über der Mitte, darunter der Hinweis zum Drehen
+  const port=innerHeight>innerWidth&&innerWidth<900, gh=port?Math.round(innerWidth/2):innerHeight, gt=port?Math.round((innerHeight-gh)*.4):0;
+  document.documentElement.style?.setProperty('--gh',gh+'px'); document.documentElement.style?.setProperty('--gt',gt+'px');
+  cv.width=Math.round(innerWidth*dpr); cv.height=Math.round(gh*dpr);
   applyZoom(); skyW=cv.width/(cv.height/SKY_H);
   bgCanvas.width=cv.width; bgCanvas.height=cv.height;
   if(typeof FX!=='undefined') FX.resize(cv.width,cv.height);
@@ -2966,15 +2971,18 @@ function heroFrame(){
   if(Math.abs(P.vx)>5) return [HERO_FR.runA,HERO_FR.idle,HERO_FR.runB,HERO_FR.idle][Math.floor(P.run*.6)%4];
   return (clock%3.2)<.12?HERO_FR.blink:HERO_FR.idle;
 }
+// Sam wird 20 % größer gezeichnet als sein 16-px-Sprite; die Trefferzone bleibt gleich (Levels und Sprünge passen weiter)
+const SAM_SCALE=1.2;
 function drawPlayer(){
   if(P.inv>0&&Math.floor(P.inv*12)%2&&state==="play"){ ctx.globalAlpha=.35; }
   const f=heroFrame();
-  for(const t of trail){ ctx.globalAlpha=t.t*1.6; ctx.drawImage(t.face>0?f.r:f.l,Math.round(t.x-3),Math.round(t.y-2)); }
+  const Z=SAM_SCALE, fw=16*Z;
+  for(const t of trail){ ctx.globalAlpha=t.t*1.6; ctx.drawImage(t.face>0?f.r:f.l,Math.round(t.x+4-fw/2),Math.round(t.y+14-fw),fw,fw); }
   ctx.globalAlpha=1;
   const face=(P.wallDir&&P.vy>0)?-P.wallDir:P.face;
-  const img=face>0?f.r:f.l, sq=P.squash, w=Math.round(16*(1+sq*.2)), h=Math.round(16*(1-sq*.2));
+  const img=face>0?f.r:f.l, sq=P.squash, w=fw*(1+sq*.2), h=fw*(1-sq*.2);
   const x=Math.round(P.x+P.w/2-w/2), y=Math.round(P.y+P.h-h);
-  if(P.glide) ctx.drawImage(LEAF,Math.round(P.x+P.w/2-8),y-9);
+  if(P.glide) ctx.drawImage(LEAF,Math.round(P.x+P.w/2-8*Z),Math.round(y-9*Z),16*Z,16*Z);
   ctx.drawImage(img,x,y,w,h);
   ctx.globalAlpha=1;
 }
@@ -3778,7 +3786,7 @@ const FX=(()=>{
   let c, gl;
   try{
     c=document.createElement('canvas');
-    c.style.cssText='position:fixed;left:0;top:0;width:100%;height:100vh;height:var(--vh,100dvh);display:block;pointer-events:none;image-rendering:pixelated';
+    c.style.cssText='position:fixed;left:0;top:var(--gt,0px);width:100%;height:100vh;height:var(--gh,var(--vh,100dvh));display:block;pointer-events:none;image-rendering:pixelated';
     gl=c.getContext('webgl',{alpha:false,antialias:false,premultipliedAlpha:false,preserveDrawingBuffer:false});
   }catch(_){ gl=null; }
   if(!gl) return off;
@@ -3957,7 +3965,7 @@ function fpsTick(now,raw,drawMs){ FPS.n++; FPS.max=Math.max(FPS.max,raw); FPS.dr
   FPS.n=0; FPS.max=0; FPS.draw=0; FPS.t0=now; }
 function frame(now){
   const raw=now-last; let dt=Math.min(.1,raw/1000); last=now;
-  if(matchMedia('(orientation: portrait)').matches&&innerWidth<900) dt=0;
+  if(matchMedia('(orientation: portrait)').matches&&innerWidth<900&&!document.body.classList.contains('title')) dt=0;   // Hochformat: Spiel angehalten (Titelbild läuft weiter)
   acc+=dt;
   while(acc>=STEP){ clock+=STEP;
     if(L){ snapshot(); if(hitstop>0) hitstop-=STEP; else { update(STEP); tickCelebrate(STEP); tickParticles(STEP); tickTutorial(STEP); } camera(STEP); }

@@ -116,6 +116,14 @@ die Einstellungen bleiben; danach wieder 3 Leben. Bei den Endgegnern gibt es 300
 kostet 100 (rechts oben angezeigt) – bei 0 ist ebenfalls ein Leben weg. Hubwelt, Übungswiese und Probespiele
 aus dem Editor kosten keine Leben. Extraleben sind für später geplant.
 
+## Sam und Hochformat
+
+- Sam wird 20 % größer gezeichnet (`SAM_SCALE` in `drawPlayer`). Die Trefferzone bleibt gleich, damit alle
+  Levels, Sprünge und die Erreichbarkeitstabelle weiter stimmen.
+- Im Hochformat (Handy, unter 900 px Breite) bleibt das Spiel als Querformat-Streifen (2:1) sichtbar und ist
+  angehalten; darunter steht der Hinweis, das Handy zu drehen. Das Titelbild läuft weiter, HUD und
+  Steuerflächen sind ausgeblendet.
+
 ## Bildrate
 
 Im Pausenmenü **Bildrate anzeigen** einschalten (bleibt im Browser gespeichert, `supersam-labor-fps`).
