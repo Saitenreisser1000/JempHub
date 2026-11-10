@@ -15,7 +15,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        app: [guitar, note, ear, conduct, hub, supersam, supersam-labor, maxi]
+        app: [guitar, note, ear, conduct, hub, supersam, supersam-labor, maxi, alumni]
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -25,5 +25,12 @@ jobs:
         if: matrix.app == 'guitar'
         run: echo "ALPHATAB_JS=$(bash scripts/fetch-alphatab.sh "$RUNNER_TEMP/alphatab")" >> "$GITHUB_ENV"
       - name: Bauen und testen
+        if: matrix.app != 'alumni'
         working-directory: apps/${{ matrix.app }}
         run: npm run build
+      - name: Alumni Editor bauen (eigene Abhängigkeiten)
+        if: matrix.app == 'alumni'
+        run: |
+          mkdir -p "$RUNNER_TEMP/alumni"
+          cp -R apps/alumni/. "$RUNNER_TEMP/alumni/"
+          cd "$RUNNER_TEMP/alumni" && npm ci --no-audit --no-fund && npm run build

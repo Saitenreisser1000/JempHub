@@ -2,7 +2,7 @@
 
 Jeder Merge nach `main` veröffentlicht die geänderten Apps von selbst auf dem
 VPS (Workflow `.github/workflows/deploy.yml`). Betroffen sind Hub, GuitarJemp,
-NoteJemp, EarJemp, ConductJemp, Supersam (Demo), Supersam Labor (unter supersam.jemphub.com/labor/) und Maxis Bierkiste (maxi.jemphub.com). Der StemPlayer bleibt vorerst manuell.
+NoteJemp, EarJemp, ConductJemp, Supersam (Demo), Supersam Labor (unter supersam.jemphub.com/labor/), Maxis Bierkiste (maxi.jemphub.com) und der Alumni Editor (alumni.jemphub.com). Der StemPlayer bleibt vorerst manuell.
 
 Von Hand: auf GitHub unter **Actions → Deploy → Run workflow** eine App oder
 `all` wählen.

@@ -25,7 +25,7 @@ on:
         description: Welche App veröffentlichen?
         type: choice
         default: all
-        options: [all, hub, guitar, note, ear, conduct, supersam, supersam-labor, maxi]
+        options: [all, hub, guitar, note, ear, conduct, supersam, supersam-labor, maxi, alumni]
 
 concurrency:
   group: deploy
@@ -50,7 +50,7 @@ jobs:
           BEFORE: ${{ github.event.before }}
           AFTER: ${{ github.sha }}
         run: |
-          ALL='["hub","guitar","note","ear","conduct","supersam","supersam-labor","maxi"]'
+          ALL='["hub","guitar","note","ear","conduct","supersam","supersam-labor","maxi","alumni"]'
           if [ "$EVENT" = "workflow_dispatch" ]; then
             if [ "$INPUT_APP" = "all" ]; then echo "apps=$ALL" >> "$GITHUB_OUTPUT"
             else echo "apps=[\"$INPUT_APP\"]" >> "$GITHUB_OUTPUT"; fi
@@ -65,7 +65,7 @@ jobs:
             echo "apps=$ALL" >> "$GITHUB_OUTPUT"; exit 0
           fi
           LIST=""
-          for a in hub guitar note ear conduct supersam supersam-labor maxi; do
+          for a in hub guitar note ear conduct supersam supersam-labor maxi alumni; do
             if echo "$CHANGED" | grep -q "^apps/$a/"; then LIST="$LIST\"$a\","; fi
           done
           echo "apps=[${LIST%,}]" >> "$GITHUB_OUTPUT"
@@ -91,8 +91,20 @@ jobs:
         run: echo "ALPHATAB_JS=$(bash scripts/fetch-alphatab.sh "$RUNNER_TEMP/alphatab")" >> "$GITHUB_ENV"
 
       - name: Bauen und testen
+        if: matrix.app != 'alumni'
         working-directory: apps/${{ matrix.app }}
         run: npm run build
+
+      # Alumni Editor hat eigene npm-Abhängigkeiten (eigene package-lock.json):
+      # außerhalb des Monorepos installieren und bauen, dist/ zurückkopieren.
+      - name: Alumni Editor bauen
+        if: matrix.app == 'alumni'
+        run: |
+          mkdir -p "$RUNNER_TEMP/alumni"
+          cp -R apps/alumni/. "$RUNNER_TEMP/alumni/"
+          (cd "$RUNNER_TEMP/alumni" && npm ci --no-audit --no-fund && npm run build)
+          rm -rf apps/alumni/dist
+          cp -R "$RUNNER_TEMP/alumni/dist" apps/alumni/dist
 
       - name: alphaTab mitliefern
         if: matrix.app == 'guitar'
@@ -112,6 +124,7 @@ jobs:
             supersam) echo "path=/var/www/supersam" >> "$GITHUB_OUTPUT"; echo "url=https://supersam.jemphub.com" >> "$GITHUB_OUTPUT";;
             supersam-labor) echo "path=/var/www/supersam/labor" >> "$GITHUB_OUTPUT"; echo "url=https://supersam.jemphub.com/labor" >> "$GITHUB_OUTPUT";;
             maxi) echo "path=/var/www/maxi" >> "$GITHUB_OUTPUT"; echo "url=https://maxi.jemphub.com" >> "$GITHUB_OUTPUT";;
+            alumni) echo "path=/var/www/alumni" >> "$GITHUB_OUTPUT"; echo "url=https://alumni.jemphub.com" >> "$GITHUB_OUTPUT";;
           esac
 
       - name: SSH vorbereiten
