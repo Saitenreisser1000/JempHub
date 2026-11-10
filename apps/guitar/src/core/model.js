@@ -172,3 +172,22 @@ export function colorGroups(moments, colorOf) {
 }
 
 export const groupOf = (groups, i) => groups.find((g) => i >= g.a && i <= g.b) || null
+
+// Block a..b verschieben; to = Einfügestelle im ursprünglichen Array (0..length).
+// Gibt den neuen Anfang des Blocks zurück.
+export function moveBlock(moments, a, b, to) {
+  if (a < 0 || b >= moments.length || a > b || (to >= a && to <= b + 1)) return a
+  const block = moments.splice(a, b - a + 1)
+  const at = to > b ? to - block.length : to
+  moments.splice(at, 0, ...block)
+  return at
+}
+
+// Alle Töne im Block a..b um delta Bünde verschieben (gleiche Saite).
+// Gibt false zurück und ändert nichts, wenn ein Ton aus dem Griffbrett fiele.
+export function shiftFrets(moments, a, b, delta, maxFret) {
+  const dots = moments.slice(a, b + 1).flatMap((m) => m.dots)
+  if (!dots.length || dots.some((d) => d.f + delta < 0 || d.f + delta > maxFret)) return false
+  for (const d of dots) d.f += delta
+  return true
+}
