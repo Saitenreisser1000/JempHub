@@ -42,8 +42,14 @@ export const cloudReady = () => !!client
 export const currentUser = () => user
 export const onAuthChange = (fn) => listeners.add(fn)
 
+// Fehler der Datenbank in verständliche Meldungen übersetzen
 function check({ data, error }) {
-  if (error) throw error
+  if (error) {
+    const m = /gj_limit:(\d+)/.exec(error.message || '')
+    if (m) throw new Error('Students can keep up to ' + m[1] + ' exercises. Ask an admin for teacher access.')
+    if (/gj_not_admin/.test(error.message || '')) throw new Error('Admins only.')
+    throw error
+  }
   return data
 }
 
@@ -68,12 +74,39 @@ export async function signOut() {
   check(await client.auth.signOut())
 }
 
+// Profil mit Rolle und Grenzen: { display_name, role, teacher_requested, max_exercises, can_share, exercise_count, pending_requests }
 export async function loadProfile() {
-  return check(await client.from('gj_profiles').select('id,display_name,role').eq('id', user.id).maybeSingle())
+  const p = check(await client.from('gj_profiles').select('display_name').eq('id', user.id).maybeSingle())
+  const a = check(await client.rpc('gj_my_account'))
+  return { display_name: p?.display_name || '', ...(a && a[0] ? a[0] : { role: 'student' }) }
 }
 
-export async function saveProfile(fields) {
-  check(await client.from('gj_profiles').upsert({ id: user.id, ...fields }))
+// Nur der Anzeigename ist selbst änderbar; die Rolle vergibt ein Admin.
+export async function saveDisplayName(name) {
+  check(await client.from('gj_profiles').update({ display_name: name }).eq('id', user.id))
+}
+
+export async function requestTeacher(on) {
+  check(await client.rpc('gj_request_teacher', { p_on: !!on }))
+}
+
+// Vernetzung
+export async function searchMembers(q) {
+  return check(await client.rpc('gj_search_members', { p_q: q })) || []
+}
+export async function myNetwork() {
+  return check(await client.rpc('gj_my_network')) || []
+}
+// Ergebnis: pending_out | connected | self | no_account
+export async function connect(id) {
+  return check(await client.rpc('gj_connect', { p_other: id }))
+}
+export async function disconnect(id) {
+  check(await client.rpc('gj_disconnect', { p_other: id }))
+}
+// Ergebnis: ok | not_owner | not_allowed | not_contact | self
+export async function shareWithUser(id, userId) {
+  return check(await client.rpc('gj_share_with_user', { p_exercise: id, p_user: userId }))
 }
 
 export async function fetchExercises() {
@@ -95,7 +128,7 @@ export async function deleteExercise(id) {
   check(await client.from('gj_exercises').delete().eq('id', id))
 }
 
-// Returns ok | not_owner | no_account | self
+// Returns ok | not_owner | no_account | self | not_allowed
 export async function shareExercise(id, email) {
   return check(await client.rpc('gj_share_exercise', { p_exercise: id, p_email: email }))
 }

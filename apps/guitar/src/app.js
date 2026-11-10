@@ -458,7 +458,8 @@ function renderHead(){
   const signed=!!cloud.currentUser(),acts=[];
   const IC={share:'<circle cx="18" cy="5.5" r="2.5"/><circle cx="6" cy="12" r="2.5"/><circle cx="18" cy="18.5" r="2.5"/><path d="M8.2 10.8l7.6-4.1M8.2 13.2l7.6 4.1"/>',copy:'<rect x="8.5" y="8.5" width="11" height="11" rx="2"/><path d="M15.5 8.5V6.5a2 2 0 0 0-2-2h-7a2 2 0 0 0-2 2v7a2 2 0 0 0 2 2h2"/>',delete:'<path d="M5 7h14M10 7V5h4v2M7 7l1 12h8l1-12"/>'};
   const ab=(act,label,cls)=>'<button class="gbtn icon-only'+(cls?' '+cls:'')+'" data-act="'+act+'" title="'+label+'" aria-label="'+label+'"><svg width="17" height="17" viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">'+IC[act]+'</svg></button>';
-  if(ex.origin==='mine'){if(signed)acts.push(ab('share','Share with a student'));acts.push(ab('copy','Duplicate'),ab('delete','Delete','danger'))}
+  const mayShare=signed&&(!state.profile||state.profile.can_share!==false);
+  if(ex.origin==='mine'){if(mayShare)acts.push(ab('share','Share'));acts.push(ab('copy','Duplicate'),ab('delete','Delete','danger'))}
   else{acts.push(ab('copy','Copy to my exercises'));if(ex.origin==='shared')acts.push(ab('delete','Remove from my library','danger'))}
   $('#exActions').innerHTML=acts.join('');
   renderSyncState();
@@ -795,7 +796,10 @@ $('#exTitle').addEventListener('change',e=>{cur().title=e.target.value.trim().sl
 $('#libList').addEventListener('click',e=>{const b=e.target.closest('.lib-item');if(!b)return;loadEx(+b.dataset.i);document.body.classList.remove('lib-open')});
 function loadEx(i){if(P.on||P.wait)stopPlay();state.cur=clamp(i,0,state.exs.length-1);if(cur().origin==='shared'){if(!state.modeBeforeShared)state.modeBeforeShared=state.mode;state.mode='practice'}else if(state.modeBeforeShared){state.mode=state.modeBeforeShared;state.modeBeforeShared=null}state.sel=0;state.range=null;state.undo=[];state.caret=caretFor();state.speed=1;renderAll();save()}
 // Neue eigene Übung (auch Import und Kopie) in die Bibliothek aufnehmen und öffnen
-function addMine(ex){const rec=makeRecord(ex,{id:uuid(),origin:'mine',dirty:true});if(!rec)return false;state.exs.push(rec);state.mode='edit';state.modeBeforeShared=null;loadEx(state.exs.length-1);scheduleSync();return true}
+function atLimit(){const p=state.profile;if(!cloud.currentUser()||!p||p.max_exercises==null)return false;
+  const n=state.exs.filter(r=>r.origin==='mine').length;if(n<p.max_exercises)return false;
+  toast('Students can keep up to '+p.max_exercises+' exercises. Ask an admin for teacher access.');return true}
+function addMine(ex){if(atLimit())return false;const rec=makeRecord(ex,{id:uuid(),origin:'mine',dirty:true});if(!rec)return false;state.exs.push(rec);state.mode='edit';state.modeBeforeShared=null;loadEx(state.exs.length-1);scheduleSync();return true}
 function newExercise(){addMine({title:'Untitled exercise',type:'Custom',tag:'',desc:'',inst:'guitar',tuning:STD,tuningName:'Standard',key:{r:0,m:'major'},bpm:80,ts:[4,4],color:SKY,moments:[]});document.body.classList.remove('lib-open')}
 $('#newTopBtn').addEventListener('click',newExercise);
 /* ---------- Tabs importieren ---------- */
@@ -844,6 +848,7 @@ $('#impGo').addEventListener('click',()=>{
     }
   }catch(err){impMsg(err.message||'Import failed.',true);return}
   $('#importPop').hidden=true;$('#impTa').value='';
+  if(atLimit())return;
   if(!addMine(ex))impMsg('Import failed.',true);
 });
 let resetArmed=false;
@@ -906,7 +911,7 @@ function toast(msg){const t=$('#toast');t.textContent=msg;t.hidden=false;clearTi
 let deleteArmed=false;
 $('#exActions').addEventListener('click',async e=>{
   const b=e.target.closest('[data-act]');if(!b)return;e.stopPropagation();const r=cur(),act=b.dataset.act;
-  if(act==='copy'){const c=content(r);if(r.origin==='mine')c.title=(r.title+' (copy)').slice(0,200);closePops();addMine(c);toast('Added to My exercises');return}
+  if(act==='copy'){const c=content(r);if(r.origin==='mine')c.title=(r.title+' (copy)').slice(0,200);closePops();if(addMine(c))toast('Added to My exercises');return}
   if(act==='share'){if(openPop('sharePop',b,true))renderShare();return}
   if(act==='delete'){
     if(!deleteArmed){deleteArmed=true;b.classList.add('armed');b.title='Tap again to confirm';toast(r.origin==='shared'?'Tap again to remove':'Tap again to delete');setTimeout(()=>{deleteArmed=false;renderHead()},3000);return}
@@ -924,17 +929,22 @@ async function renderShare(msg){
   el.innerHTML='<div class="ctx-h"><b>Share “'+esc(r.title)+'”</b></div><form id="shareForm" class="form"><label class="field"><span>Email of a GuitarJemp account</span><input id="shareEmail" type="email" required autocomplete="off" placeholder="student@example.com"></label><button class="fbtn" type="submit">Share</button></form>'+
     (msg?'<p class="fmsg'+(msg.err?' err':'')+'">'+esc(msg.text)+'</p>':'')+'<div class="shares" id="shareList"><p class="fmsg">Loading…</p></div>';
   if(!r.synced){$('#shareList').innerHTML='<p class="fmsg">Saving to your account first…</p>';await syncNow()}
-  try{const list=await cloud.listShares(r.id);$('#shareList').innerHTML=list.length?'<div class="lbl">Shared with</div>'+list.map(u=>'<div class="share-row"><span>'+esc(u.display_name||u.email)+'<small>'+esc(u.email)+'</small></span><button class="gbtn" data-unshare="'+esc(u.user_id)+'">Remove</button></div>').join(''):''}
+  try{const list=await cloud.listShares(r.id);if(!peopleNet)peopleNet=await cloud.myNetwork();
+    const has=new Set(list.map(u=>u.user_id)),contacts=peopleNet.filter(p=>p.status==='connected'&&!has.has(p.id));
+    $('#shareList').innerHTML=(contacts.length?'<div class="lbl">Your contacts</div>'+contacts.map(p=>'<div class="share-row"><span>'+esc(p.display_name||p.email)+'<small>'+ROLE[p.role||'student']+'</small></span><button class="gbtn" data-sharewith="'+esc(p.id)+'">Share</button></div>').join(''):'')+
+      (list.length?'<div class="lbl">Shared with</div>'+list.map(u=>'<div class="share-row"><span>'+esc(u.display_name||u.email)+'<small>'+esc(u.email)+'</small></span><button class="gbtn" data-unshare="'+esc(u.user_id)+'">Remove</button></div>').join(''):'')}
   catch(err){$('#shareList').innerHTML='<p class="fmsg err">'+esc(err.message)+'</p>'}
 }
 $('#sharePop').addEventListener('submit',async e=>{
   e.preventDefault();const r=cur(),email=$('#shareEmail').value.trim();if(!email)return;
   try{if(!r.synced)await syncNow();const res=await cloud.shareExercise(r.id,email);
-    const text={ok:'Shared with '+email+'.',no_account:'No GuitarJemp account uses this address yet. Ask them to sign up first.',self:'That is your own address.',not_owner:'Only the owner can share this exercise.'}[res]||res;
+    const text={ok:'Shared with '+email+'.',no_account:'No GuitarJemp account uses this address yet. Ask them to sign up first.',self:'That is your own address.',not_owner:'Only the owner can share this exercise.',not_allowed:'Sharing is for teachers.'}[res]||res;
     renderShare({text,err:res!=='ok'})}
   catch(err){renderShare({text:err.message,err:true})}
 });
-$('#sharePop').addEventListener('click',async e=>{const b=e.target.closest('[data-unshare]');if(!b)return;e.stopPropagation();
+$('#sharePop').addEventListener('click',async e=>{const w=e.target.closest('[data-sharewith]');
+  if(w){e.stopPropagation();w.disabled=true;try{const r=await cloud.shareWithUser(cur().id,w.dataset.sharewith);renderShare({text:r==='ok'?'Shared.':{not_allowed:'Sharing is for teachers.',not_contact:'Only with contacts.'}[r]||r,err:r!=='ok'})}catch(err){renderShare({text:err.message,err:true})}return}
+  const b=e.target.closest('[data-unshare]');if(!b)return;e.stopPropagation();
   try{await cloud.unshare(cur().id,b.dataset.unshare);renderShare({text:'Access removed.'})}catch(err){renderShare({text:err.message,err:true})}});
 
 /* ---------- Abgleich mit dem Konto ---------- */
@@ -959,7 +969,7 @@ async function refreshLibrary(){
     state.exs=library.length?library:exampleRecords();state.cur=Math.max(0,state.exs.findIndex(r=>r.id===curId));
     state.exs.forEach(r=>{if(r.origin==='mine'&&!r.dirty)snaps.set(r.id,snap(r))});
     if(cur().origin==='shared')state.mode='practice';
-    renderAll();save();syncNow()}
+    renderAll();save();syncNow();reloadProfile()}
   catch(err){syncState={kind:'error',msg:err.message||'connection problem'};renderSyncState()}
 }
 window.addEventListener('focus',()=>{if(cloud.currentUser()&&!P.on&&!P.wait&&Date.now()-lastRefresh>30000)refreshLibrary()});
@@ -968,15 +978,25 @@ window.addEventListener('beforeunload',e=>{if(cloud.currentUser()&&state.exs.som
 /* ---------- Konto ---------- */
 function renderAcctBtn(){const b=$('#acctBtn'),u=cloud.currentUser();b.hidden=!cloud.cloudReady();
   const name=state.profile&&state.profile.display_name||(u&&u.email)||'';
-  b.innerHTML=u?'<span class="avatar">'+esc((name[0]||'?').toUpperCase())+'</span>':'<svg width="17" height="17" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="8.5" r="3.6" fill="none" stroke="currentColor" stroke-width="1.7"/><path d="M5 20c.8-3.6 3.6-5.6 7-5.6s6.2 2 7 5.6" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/></svg>';
-  b.title=u?'Account: '+name:'Sign in';b.setAttribute('aria-label',b.title)}
+  const pend=u&&state.profile&&state.profile.pending_requests>0;
+  b.innerHTML=u?'<span class="avatar">'+esc((name[0]||'?').toUpperCase())+'</span>'+(pend?'<span class="dot-badge" aria-hidden="true"></span>':''):'<svg width="17" height="17" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="8.5" r="3.6" fill="none" stroke="currentColor" stroke-width="1.7"/><path d="M5 20c.8-3.6 3.6-5.6 7-5.6s6.2 2 7 5.6" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/></svg>';
+  b.title=u?'Account: '+name+(pend?' · new contact requests':''):'Sign in';b.setAttribute('aria-label',b.title)}
+const ROLE={admin:'Admin',teacher:'Teacher',student:'Student'};
 function renderAccount(view,msg){
   const el=$('#account'),u=cloud.currentUser(),m=msg?'<p class="fmsg'+(msg.err?' err':'')+'">'+esc(msg.text)+'</p>':'';
   const f=(id,label,type,extra)=>'<label class="field"><span>'+label+'</span><input id="'+id+'" type="'+type+'" '+(extra||'')+'></label>';
   const head=t=>'<div class="ctx-h"><b>'+t+'</b><button class="gbtn icon-only" data-acct="close" aria-label="Close">×</button></div>';
-  if(u&&view!=='newpw'){const p=state.profile||{};
-    el.innerHTML=head('Your account')+'<p class="fmsg">'+esc(u.email)+'</p><form class="form" data-form="profile">'+f('acName','Display name','text','maxlength="80" value="'+esc(p.display_name||'')+'"')+
-      '<label class="vrow"><span>I teach guitar</span><input type="checkbox" id="acTeacher"'+(p.role==='teacher'?' checked':'')+'></label><button class="fbtn" type="submit">Save</button></form>'+m+'<div class="frow"><button class="linkbtn" data-acct="signout">Sign out</button></div>';return}
+  if(u&&view==='people'){renderPeople(msg);return}
+  if(u&&view!=='newpw'){const p=state.profile||{},role=p.role||'student';
+    let roleLine='<span class="role-badge" data-r="'+role+'">'+ROLE[role]+'</span>';
+    if(role==='student')roleLine+=p.teacher_requested?'<span class="fmsg-i">Teacher access requested</span><button class="linkbtn" data-acct="teacherreq" data-on="0">Withdraw</button>':'<button class="linkbtn" data-acct="teacherreq" data-on="1">I teach guitar</button>';
+    if(role==='admin')roleLine+='<a class="linkbtn" href="https://jemphub.com/admin/" target="_blank" rel="noopener">Open admin</a>';
+    const lim=role==='student'&&p.max_exercises!=null?'<p class="fmsg">'+(p.exercise_count||0)+' of '+p.max_exercises+' exercises used'+(p.can_share?'':' · sharing is for teachers')+'</p>':'';
+    const pend=p.pending_requests>0?' <span class="count">'+p.pending_requests+'</span>':'';
+    el.innerHTML=head('Your account')+'<p class="fmsg">'+esc(u.email)+'</p><div class="role-line">'+roleLine+'</div>'+lim+
+      '<button class="gbtn wide" data-acct="people"><svg width="16" height="16" viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"><circle cx="9" cy="8" r="3.2"/><path d="M3 19c.6-3 3-4.8 6-4.8s5.4 1.8 6 4.8"/><circle cx="17" cy="9" r="2.4"/><path d="M16.5 14.3c2.4.2 4 1.7 4.5 4.2"/></svg>People'+pend+'</button>'+
+      '<form class="form" data-form="profile">'+f('acName','Display name','text','maxlength="80" value="'+esc(p.display_name||'')+'"')+'<button class="fbtn" type="submit">Save name</button></form>'+m+
+      '<div class="frow"><button class="linkbtn" data-acct="signout">Sign out</button></div>';return}
   if(view==='newpw'){el.innerHTML=head('New password')+'<form class="form" data-form="newpw">'+f('acPw','New password','password','required minlength="8" autocomplete="new-password"')+'<button class="fbtn" type="submit">Save password</button></form>'+m;return}
   if(view==='signup'){el.innerHTML=head('Create account')+'<form class="form" data-form="signup">'+f('acName','Name','text','maxlength="80" autocomplete="name"')+f('acEmail','Email','email','required autocomplete="email"')+f('acPw','Password (8+ characters)','password','required minlength="8" autocomplete="new-password"')+'<button class="fbtn" type="submit">Create account</button></form>'+m+'<div class="frow"><button class="linkbtn" data-acct="signin">I have an account</button></div>';return}
   if(view==='reset'){el.innerHTML=head('Reset password')+'<form class="form" data-form="reset">'+f('acEmail','Email','email','required autocomplete="email"')+'<button class="fbtn" type="submit">Send link</button></form>'+m+'<div class="frow"><button class="linkbtn" data-acct="signin">Back</button></div>';return}
@@ -987,6 +1007,9 @@ $('#acctBtn').addEventListener('click',e=>{e.stopPropagation();if(openPop('accou
 $('#account').addEventListener('click',async e=>{const b=e.target.closest('[data-acct]');if(!b)return;e.stopPropagation();const v=b.dataset.acct;
   if(v==='close'){closePops();return}
   if(v==='signout'){b.disabled=true;await syncNow();try{await cloud.signOut()}catch(err){renderAccount('profile',{text:err.message,err:true})}return}
+  if(v==='teacherreq'){b.disabled=true;try{await cloud.requestTeacher(b.dataset.on==='1');await reloadProfile();renderAccount('profile',b.dataset.on==='1'?{text:'Request sent. An admin will confirm it.'}:null)}catch(err){renderAccount('profile',{text:err.message,err:true})}return}
+  if(v==='connect'||v==='disconnect'){b.disabled=true;try{if(v==='connect'){const r=await cloud.connect(b.dataset.id);if(r==='connected')toast('Connected');else if(r==='pending_out')toast('Request sent')}else await cloud.disconnect(b.dataset.id);
+      await reloadProfile();peopleNet=null;renderPeople()}catch(err){renderPeople({text:err.message,err:true})}return}
   renderAccount(v)});
 $('#account').addEventListener('submit',async e=>{
   e.preventDefault();const form=e.target.dataset.form,val=id=>{const x=$('#'+id);return x?x.value.trim():''},btn=e.target.querySelector('button[type=submit]');btn.disabled=true;
@@ -995,17 +1018,43 @@ $('#account').addEventListener('submit',async e=>{
     else if(form==='signup'){const r=await cloud.signUp(val('acEmail'),$('#acPw').value,val('acName'));if(r.needsConfirmation)renderAccount('signin',{text:'Check your inbox and confirm your address, then sign in.'});else{closePops();toast('Account created')}}
     else if(form==='reset'){await cloud.sendPasswordReset(val('acEmail'));renderAccount('signin',{text:'If an account exists for this address, a link is on its way.'})}
     else if(form==='newpw'){await cloud.setNewPassword($('#acPw').value);closePops();toast('Password changed')}
-    else if(form==='profile'){const fields={display_name:val('acName').slice(0,80)||null,role:$('#acTeacher').checked?'teacher':'student'};await cloud.saveProfile(fields);state.profile=Object.assign({},state.profile,fields);renderAcctBtn();renderAccount('profile',{text:'Saved.'})}
-  }catch(err){const em=val('acEmail'),nm=val('acName');renderAccount(form==='profile'?'profile':form,{text:err.message||'Something went wrong. Please try again.',err:true});if(em&&$('#acEmail'))$('#acEmail').value=em;if(nm&&$('#acName'))$('#acName').value=nm;const pw=$('#acPw');if(pw)pw.focus()}
+    else if(form==='profile'){const name=val('acName').slice(0,80)||null;await cloud.saveDisplayName(name);state.profile=Object.assign({},state.profile,{display_name:name});renderAcctBtn();renderAccount('profile',{text:'Saved.'})}
+    else if(form==='search'){peopleQuery=val('pplQ');await renderPeople()}
+  }catch(err){if(form==='search'){renderPeople({text:err.message,err:true});return}
+    const em=val('acEmail'),nm=val('acName');renderAccount(form==='profile'?'profile':form,{text:err.message||'Something went wrong. Please try again.',err:true});if(em&&$('#acEmail'))$('#acEmail').value=em;if(nm&&$('#acName'))$('#acName').value=nm;const pw=$('#acPw');if(pw)pw.focus()}
   finally{if(btn.isConnected)btn.disabled=false}
 });
+async function reloadProfile(){try{state.profile=await cloud.loadProfile()}catch{state.profile=state.profile||null}renderAcctBtn();renderHead()}
+
+/* ---------- Personen: suchen, vernetzen ---------- */
+let peopleQuery='',peopleNet=null;
+async function renderPeople(msg){
+  const el=$('#account'),m=msg?'<p class="fmsg'+(msg.err?' err':'')+'">'+esc(msg.text)+'</p>':'';
+  const row=(p,btns)=>'<div class="person"><span class="pname">'+esc(p.display_name||'Member')+'<small>'+ROLE[p.role||'student']+(p.email?' · '+esc(p.email):'')+'</small></span><span class="pbtns">'+btns+'</span></div>';
+  const bt=(act,id,label,cls)=>'<button class="gbtn'+(cls?' '+cls:'')+'" data-acct="'+act+'" data-id="'+esc(id)+'">'+label+'</button>';
+  el.innerHTML='<div class="ctx-h"><button class="gbtn icon-only" data-acct="profile" aria-label="Back">‹</button><b>People</b><button class="gbtn icon-only" data-acct="close" aria-label="Close">×</button></div>'+
+    '<form class="form search" data-form="search"><input id="pplQ" type="search" placeholder="Name or email" autocomplete="off" value="'+esc(peopleQuery)+'"><button class="fbtn" type="submit">Search</button></form>'+m+'<div id="pplBody"><p class="fmsg">Loading…</p></div>';
+  try{
+    if(!peopleNet)peopleNet=await cloud.myNetwork();
+    let html='';
+    if(peopleQuery.length>=2){const res=await cloud.searchMembers(peopleQuery);
+      html+='<div class="lbl">Results</div>'+(res.length?res.map(p=>row(p,p.status==='connected'?'<span class="tag">Contact</span>':p.status==='pending_out'?'<span class="tag">Requested</span>':p.status==='pending_in'?bt('connect',p.id,'Accept','primary'):bt('connect',p.id,'Connect'))).join(''):'<p class="fmsg">Nobody found. Try the full email address.</p>')}
+    const inc=peopleNet.filter(p=>p.status==='pending_in'),out=peopleNet.filter(p=>p.status==='pending_out'),con=peopleNet.filter(p=>p.status==='connected');
+    if(inc.length)html+='<div class="lbl">Requests</div>'+inc.map(p=>row(p,bt('connect',p.id,'Accept','primary')+bt('disconnect',p.id,'Decline'))).join('');
+    html+='<div class="lbl">Contacts</div>'+(con.length?con.map(p=>row(p,bt('disconnect',p.id,'Remove'))).join(''):'<p class="fmsg">No contacts yet. Search for your teacher or students.</p>');
+    if(out.length)html+='<div class="lbl">Waiting</div>'+out.map(p=>row(p,bt('disconnect',p.id,'Cancel'))).join('');
+    $('#pplBody').innerHTML=html;
+  }catch(err){$('#pplBody').innerHTML='<p class="fmsg err">'+esc(err.message)+'</p>'}
+  const q=$('#pplQ');if(q&&!msg)q.focus();
+}
+
 async function afterSignIn(){
   const u=cloud.currentUser();if(!u||lastUid===u.id)return;lastUid=u.id;renderAcctBtn();
-  try{state.profile=await cloud.loadProfile()}catch{state.profile=null}
+  await reloadProfile()
   renderAcctBtn();await refreshLibrary();
 }
 function afterSignOut(){
-  lastUid=null;state.profile=null;syncState={kind:'idle',msg:''};const curId=cur().id;
+  lastUid=null;state.profile=null;peopleNet=null;peopleQuery='';syncState={kind:'idle',msg:''};const curId=cur().id;
   if(P.on||P.wait)stopPlay();
   state.exs=libraryAfterSignOut(state.exs);if(!state.exs.length)state.exs=exampleRecords();
   state.cur=Math.max(0,state.exs.findIndex(r=>r.id===curId));if(cur().origin!=='shared'&&state.modeBeforeShared){state.mode=state.modeBeforeShared;state.modeBeforeShared=null}
