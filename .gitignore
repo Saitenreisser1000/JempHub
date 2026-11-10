@@ -14,3 +14,6 @@ apps/stemplayer/backend/uploads/
 
 # Gemeinsame Pakete, beim Bauen in die Apps kopiert (scripts/sync-shared.mjs)
 apps/*/vendor/
+
+# GuitarJemp: Supabase-Zugang (nur öffentlicher anon-Key), wird nicht eingecheckt
+apps/guitar/config.js

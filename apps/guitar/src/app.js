@@ -10,6 +10,8 @@ import { examples } from './core/exercises.js'
 import { parseTextTab } from './core/texttab.js'
 import { scoreInfo, scoreToExercise } from './core/scoreimport.js'
 import { ensureAudio, clock, pluck, click, silence } from './audio/synth.js'
+import { makeRecord, fromStorage, mergeLibrary, libraryAfterSignOut, toCloudRow, content, uuid } from './core/library.js'
+import * as cloud from './cloud.js'
 
 const $ = (s) => document.querySelector(s)
 const R = 12
@@ -20,17 +22,25 @@ let ZOOM = 2.2
 
 
 /* ---------- state ---------- */
-const state={exs:examples(),cur:0,mode:'edit',sel:0,caret:'after',entry:'melody',dur:{base:E8,dot:false,trip:false},
+const exampleRecords=()=>examples().map(e=>makeRecord(e,{id:e.id,origin:'example'}));
+const state={exs:exampleRecords(),cur:0,profile:null,mode:'edit',sel:0,caret:'after',entry:'melody',dur:{base:E8,dot:false,trip:false},
   horizon:{edit:'near',practice:'near'},labels:'finger',scale:false,frame:{edit:'full',practice:'fit'},lefty:false,speed:1,
   metro:false,countIn:true,loop:false,range:null,wait:false,trainer:false,undo:[]};
 // Ziehen in der Zeitleiste und Kontextmenü
 let DRAG=null,ctxOpenT=0;
 const SKEY='guitarjemp.v1';
-try{const raw=localStorage.getItem(SKEY); if(raw){const o=JSON.parse(raw); if(o&&Array.isArray(o.exs)&&o.exs.length&&o.exs.every(isValidExercise)){state.exs=o.exs; state.cur=Math.min(o.cur|0,o.exs.length-1);}}}catch(e){}
+try{const raw=localStorage.getItem(SKEY);if(raw){const o=JSON.parse(raw);const recs=fromStorage(o&&o.exs);if(recs.length){state.exs=recs;state.cur=Math.max(0,Math.min(o.cur|0,recs.length-1))}}}catch(e){}
 // Beschreibungen der Beispiele sind nicht editierbar: immer die aktuelle Fassung zeigen
 {const fresh=Object.fromEntries(examples().map(e=>[e.id,e.desc]));state.exs.forEach(e=>{if(e.id in fresh)e.desc=fresh[e.id]})}
 let saveT=0;
-function save(){clearTimeout(saveT);saveT=setTimeout(()=>{try{localStorage.setItem(SKEY,JSON.stringify({exs:state.exs,cur:state.cur}))}catch(e){}},300)}
+// Stand jeder eigenen Übung beim letzten Abgleich mit dem Konto; weicht der Inhalt ab, ist sie „dirty“.
+const snaps=new Map(),snap=r=>JSON.stringify(content(r));
+state.exs.forEach(r=>{if(r.origin==='mine'&&!r.dirty)snaps.set(r.id,snap(r))});
+function save(){
+  const r=cur();if(r&&r.origin==='mine'&&!r.dirty&&snaps.get(r.id)!==snap(r)){r.dirty=true;scheduleSync()}
+  if(r&&r.origin==='mine'&&r.dirty)scheduleSync();
+  if(typeof renderSyncState==='function')renderSyncState();
+  clearTimeout(saveT);saveT=setTimeout(()=>{try{localStorage.setItem(SKEY,JSON.stringify({exs:state.exs,cur:state.cur}))}catch(e){}},300)}
 
 const cur=()=>state.exs[state.cur];
 const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
@@ -444,6 +454,24 @@ function renderHead(){
   $('#tuneSel').innerHTML=(ti<0?'<option value="-1" selected>'+esc(ex.tuningName||'Custom')+'</option>':'')+tl.map((t,i)=>'<option value="'+TUNINGS.indexOf(t)+'"'+(i===ti?' selected':'')+'>'+t.name+'</option>').join('');
   segSet('#horizonSeg',hor());segSet('#labelSeg',state.labels);segSet('#frameSeg',frameMode());segSet('#modeSeg',state.mode);
   $('#scaleBtn').setAttribute('aria-pressed',state.scale);$('#leftyBtn').setAttribute('aria-pressed',state.lefty);
+  const eb=$('#modeSeg button[data-mode="edit"]'),ro=ex.origin==='shared';eb.disabled=ro;eb.title=ro?'Shared with you: read-only. Copy it to edit.':'';
+  const signed=!!cloud.currentUser(),acts=[];
+  const IC={share:'<circle cx="18" cy="5.5" r="2.5"/><circle cx="6" cy="12" r="2.5"/><circle cx="18" cy="18.5" r="2.5"/><path d="M8.2 10.8l7.6-4.1M8.2 13.2l7.6 4.1"/>',copy:'<rect x="8.5" y="8.5" width="11" height="11" rx="2"/><path d="M15.5 8.5V6.5a2 2 0 0 0-2-2h-7a2 2 0 0 0-2 2v7a2 2 0 0 0 2 2h2"/>',delete:'<path d="M5 7h14M10 7V5h4v2M7 7l1 12h8l1-12"/>'};
+  const ab=(act,label,cls)=>'<button class="gbtn icon-only'+(cls?' '+cls:'')+'" data-act="'+act+'" title="'+label+'" aria-label="'+label+'"><svg width="17" height="17" viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">'+IC[act]+'</svg></button>';
+  if(ex.origin==='mine'){if(signed)acts.push(ab('share','Share with a student'));acts.push(ab('copy','Duplicate'),ab('delete','Delete','danger'))}
+  else{acts.push(ab('copy','Copy to my exercises'));if(ex.origin==='shared')acts.push(ab('delete','Remove from my library','danger'))}
+  $('#exActions').innerHTML=acts.join('');
+  renderSyncState();
+}
+let syncState={kind:'idle',msg:''};
+// Kurze Statuszeile unter dem Titel: wo die Übung liegt
+function renderSyncState(){
+  const ex=cur(),el=$('#syncState');if(!el||!ex)return;const signed=!!cloud.currentUser();let t='',ic='';
+  if(ex.origin==='example')t='Example';
+  else if(ex.origin==='shared'){t='From '+(ex.ownerName||'another user')+' · read-only';ic='shared'}
+  else if(signed){if(syncState.kind==='error'){t='Not saved: '+syncState.msg;ic='err'}else if(ex.dirty||!ex.synced){t='Saving…';ic='busy'}else{t='Saved';ic='ok'}}
+  else t=cloud.cloudReady()?'On this device':'';
+  el.textContent=t;el.dataset.s=ic;el.hidden=!t;
 }
 function miniSVG(ex){
   const nS=ex.tuning.length,seen=new Set();let s='<svg width="46" height="28" viewBox="0 0 46 28">';
@@ -452,7 +480,11 @@ function miniSVG(ex){
   return s+'</svg>';
 }
 function renderLib(){
-  $('#libList').innerHTML=state.exs.map((ex,i)=>'<button class="lib-item" data-i="'+i+'" aria-current="'+(i===state.cur)+'">'+miniSVG(ex)+'<span style="min-width:0"><div class="t">'+esc(ex.title)+'</div><div class="k">'+esc(ex.type)+' · '+esc(ex.tag)+'</div></span></button>').join('');
+  const item=(ex,i)=>'<button class="lib-item" data-i="'+i+'" aria-current="'+(i===state.cur)+'">'+miniSVG(ex)+'<span style="min-width:0"><div class="t">'+esc(ex.title)+'</div><div class="k">'+(ex.origin==='shared'?'from '+esc(ex.ownerName||'another user'):esc(ex.type)+(ex.tag?' · '+esc(ex.tag):''))+'</div></span></button>';
+  const groups=[['mine','My exercises'],['shared','Shared with me'],['example','Examples']];
+  $('#libList').innerHTML=groups.map(([o,label])=>{const items=state.exs.map((ex,i)=>[ex,i]).filter(([ex])=>ex.origin===o);
+    if(!items.length)return '';
+    return '<div class="lib-sec">'+label+'</div>'+items.map(([ex,i])=>item(ex,i)).join('')}).join('');
 }
 function esc(s){return String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]))}
 function renderTools(){
@@ -759,11 +791,12 @@ $('#undoBtn').addEventListener('click',undo);
 $('#durs').addEventListener('click',e=>{const b=e.target.closest('button');if(!b)return;if(b.dataset.base)setDur({base:+b.dataset.base});else{const f=b.dataset.flag,a=cur().moments[state.sel],dd=a?(decodeDur(a.dur)||state.dur):state.dur;state.dur.base=dd.base||state.dur.base;setDur(f==='dot'?{dot:!dd.dot,trip:false}:{trip:!dd.trip,dot:false})}});
 $('#insp').addEventListener('click',e=>{e.stopPropagation();const r=e.currentTarget.getBoundingClientRect();openCtx(state.sel,r.left,r.bottom+6)});
 $('#durs').addEventListener('click',e=>{const b=e.target.closest('button');if(b&&b.dataset.base)setTimeout(closePops,0)});
-$('#exTitle').addEventListener('change',e=>{cur().title=e.target.value.trim()||'Untitled exercise';renderLib();save()});
+$('#exTitle').addEventListener('change',e=>{cur().title=e.target.value.trim().slice(0,200)||'Untitled exercise';renderLib();save()});
 $('#libList').addEventListener('click',e=>{const b=e.target.closest('.lib-item');if(!b)return;loadEx(+b.dataset.i);document.body.classList.remove('lib-open')});
-function loadEx(i){if(P.on||P.wait)stopPlay();state.cur=i;state.sel=0;state.range=null;state.undo=[];state.caret=caretFor();state.speed=1;renderAll();save()}
-function newExercise(){state.exs.push({id:'u'+Date.now(),title:'Untitled exercise',type:'Custom',tag:'Your own material',desc:'',inst:'guitar',tuning:STD,tuningName:'Standard',key:{r:0,m:'major'},bpm:80,ts:[4,4],color:SKY,moments:[]});
-  if(state.mode!=='edit')state.mode='edit';loadEx(state.exs.length-1);document.body.classList.remove('lib-open')}
+function loadEx(i){if(P.on||P.wait)stopPlay();state.cur=clamp(i,0,state.exs.length-1);if(cur().origin==='shared'){if(!state.modeBeforeShared)state.modeBeforeShared=state.mode;state.mode='practice'}else if(state.modeBeforeShared){state.mode=state.modeBeforeShared;state.modeBeforeShared=null}state.sel=0;state.range=null;state.undo=[];state.caret=caretFor();state.speed=1;renderAll();save()}
+// Neue eigene Übung (auch Import und Kopie) in die Bibliothek aufnehmen und öffnen
+function addMine(ex){const rec=makeRecord(ex,{id:uuid(),origin:'mine',dirty:true});if(!rec)return false;state.exs.push(rec);state.mode='edit';state.modeBeforeShared=null;loadEx(state.exs.length-1);scheduleSync();return true}
+function newExercise(){addMine({title:'Untitled exercise',type:'Custom',tag:'',desc:'',inst:'guitar',tuning:STD,tuningName:'Standard',key:{r:0,m:'major'},bpm:80,ts:[4,4],color:SKY,moments:[]});document.body.classList.remove('lib-open')}
 $('#newTopBtn').addEventListener('click',newExercise);
 /* ---------- Tabs importieren ---------- */
 const IMP={mode:'text',score:null,name:'',bars:0};
@@ -801,7 +834,7 @@ $('#impGo').addEventListener('click',()=>{
   try{
     if(IMP.mode==='text'){
       const r=parseTextTab($('#impTa').value);
-      ex={id:'u'+Date.now(),title:'Imported tab',type:'Imported',tag:'Text tab',desc:'',inst:r.tuning.length<=5&&r.tuning[0]<60?'bass':'guitar',
+      ex={title:'Imported tab',type:'Imported',tag:'Text tab',desc:'',inst:r.tuning.length<=5&&r.tuning[0]<60?'bass':'guitar',
         tuning:r.tuning,tuningName:r.tuningName,key:{r:0,m:'major'},bpm:80,ts:[4,4],color:SKY,moments:r.moments};
     }else{
       const a=Math.max(1,Math.round(+$('#impFrom').value||1)),b=Math.min(IMP.bars,Math.round(+$('#impTo').value||a));
@@ -811,16 +844,18 @@ $('#impGo').addEventListener('click',()=>{
     }
   }catch(err){impMsg(err.message||'Import failed.',true);return}
   $('#importPop').hidden=true;$('#impTa').value='';
-  state.exs.push(ex);state.mode='edit';loadEx(state.exs.length-1);
+  if(!addMine(ex))impMsg('Import failed.',true);
 });
 let resetArmed=false;
 $('#resetBtn').addEventListener('click',e=>{if(!resetArmed){resetArmed=true;e.target.textContent='Click again to reset';setTimeout(()=>{resetArmed=false;e.target.textContent='Reset examples'},3000);return}
-  resetArmed=false;e.target.textContent='Reset examples';const own=state.exs.filter(x=>String(x.id).startsWith('u'));state.exs=examples().concat(own);loadEx(0)});
+  resetArmed=false;e.target.textContent='Reset examples';const curId=cur().id;state.exs=exampleRecords().concat(state.exs.filter(x=>x.origin!=='example'));loadEx(Math.max(0,state.exs.findIndex(x=>x.id===curId)))});
 $('#libBtn').addEventListener('click',()=>document.body.classList.toggle('lib-open'));
 $('#scrim').addEventListener('click',()=>document.body.classList.remove('lib-open'));
 function closePops(except){document.querySelectorAll('.pop').forEach(p=>{if(p.id!==except)p.hidden=true});document.querySelectorAll('[data-pop]').forEach(b=>{if(b.dataset.pop!==except)b.setAttribute('aria-expanded','false')})}
-document.querySelectorAll('[data-pop]').forEach(b=>b.addEventListener('click',e=>{e.stopPropagation();const p=$('#'+b.dataset.pop),open=p.hidden;closePops(b.dataset.pop);p.hidden=!open;b.setAttribute('aria-expanded',String(open));
-  if(open&&!p.classList.contains('anchor-top')){const r=b.getBoundingClientRect();p.style.left=Math.max(16,Math.min(window.innerWidth-p.offsetWidth-16,r.left+r.width/2-p.offsetWidth/2))+'px';const below=r.bottom+8,above=r.top-p.offsetHeight-8;p.style.top=(above>8?above:below)+'px'}}));
+function openPop(id,b,force){const p=$('#'+id),open=force||p.hidden;closePops(id);p.hidden=!open;if(b)b.setAttribute('aria-expanded',String(open));
+  if(open&&b&&!p.classList.contains('anchor-top')){const r=b.getBoundingClientRect();p.style.left=Math.max(8,Math.min(window.innerWidth-p.offsetWidth-8,r.left+r.width/2-p.offsetWidth/2))+'px';const below=r.bottom+8,above=r.top-p.offsetHeight-8;p.style.top=(p.dataset.below||above<=8?below:above)+'px'}
+  return open}
+document.querySelectorAll('[data-pop]').forEach(b=>b.addEventListener('click',e=>{e.stopPropagation();openPop(b.dataset.pop,b)}));
 document.addEventListener('click',e=>{if(performance.now()-ctxOpenT<450)return;if(!e.target.closest('.pop')&&!e.target.closest('[data-pop]'))closePops()});
 $('#exDesc').addEventListener('click',e=>e.currentTarget.classList.toggle('open'));
 function setEx(fn){if(P.on||P.wait)stopPlay();fn(cur());save();renderAll()}
@@ -865,4 +900,122 @@ let rzT=0,wasPhone=phone();window.addEventListener('resize',()=>{clearTimeout(rz
 function setDockH(){document.documentElement.style.setProperty('--dockH',($('.dock').offsetHeight||0)+'px')}
 new ResizeObserver(setDockH).observe($('.dock'));
 
+/* ---------- Übungsaktionen: Kopieren, Löschen, Teilen ---------- */
+let toastT=0;
+function toast(msg){const t=$('#toast');t.textContent=msg;t.hidden=false;clearTimeout(toastT);toastT=setTimeout(()=>{t.hidden=true},3200)}
+let deleteArmed=false;
+$('#exActions').addEventListener('click',async e=>{
+  const b=e.target.closest('[data-act]');if(!b)return;e.stopPropagation();const r=cur(),act=b.dataset.act;
+  if(act==='copy'){const c=content(r);if(r.origin==='mine')c.title=(r.title+' (copy)').slice(0,200);closePops();addMine(c);toast('Added to My exercises');return}
+  if(act==='share'){if(openPop('sharePop',b,true))renderShare();return}
+  if(act==='delete'){
+    if(!deleteArmed){deleteArmed=true;b.classList.add('armed');b.title='Tap again to confirm';toast(r.origin==='shared'?'Tap again to remove':'Tap again to delete');setTimeout(()=>{deleteArmed=false;renderHead()},3000);return}
+    deleteArmed=false;
+    try{if(r.origin==='mine'&&r.synced&&cloud.currentUser())await cloud.deleteExercise(r.id);if(r.origin==='shared')await cloud.leaveShared(r.id)}
+    catch(err){toast('Could not delete: '+err.message);return}
+    const i=state.exs.indexOf(r);if(i>=0)state.exs.splice(i,1);snaps.delete(r.id);
+    if(!state.exs.length)state.exs=exampleRecords();
+    closePops();loadEx(0);toast(r.origin==='shared'?'Removed from your library':'Exercise deleted');
+  }
+});
+
+async function renderShare(msg){
+  const r=cur(),el=$('#sharePop');
+  el.innerHTML='<div class="ctx-h"><b>Share “'+esc(r.title)+'”</b></div><form id="shareForm" class="form"><label class="field"><span>Email of a GuitarJemp account</span><input id="shareEmail" type="email" required autocomplete="off" placeholder="student@example.com"></label><button class="fbtn" type="submit">Share</button></form>'+
+    (msg?'<p class="fmsg'+(msg.err?' err':'')+'">'+esc(msg.text)+'</p>':'')+'<div class="shares" id="shareList"><p class="fmsg">Loading…</p></div>';
+  if(!r.synced){$('#shareList').innerHTML='<p class="fmsg">Saving to your account first…</p>';await syncNow()}
+  try{const list=await cloud.listShares(r.id);$('#shareList').innerHTML=list.length?'<div class="lbl">Shared with</div>'+list.map(u=>'<div class="share-row"><span>'+esc(u.display_name||u.email)+'<small>'+esc(u.email)+'</small></span><button class="gbtn" data-unshare="'+esc(u.user_id)+'">Remove</button></div>').join(''):''}
+  catch(err){$('#shareList').innerHTML='<p class="fmsg err">'+esc(err.message)+'</p>'}
+}
+$('#sharePop').addEventListener('submit',async e=>{
+  e.preventDefault();const r=cur(),email=$('#shareEmail').value.trim();if(!email)return;
+  try{if(!r.synced)await syncNow();const res=await cloud.shareExercise(r.id,email);
+    const text={ok:'Shared with '+email+'.',no_account:'No GuitarJemp account uses this address yet. Ask them to sign up first.',self:'That is your own address.',not_owner:'Only the owner can share this exercise.'}[res]||res;
+    renderShare({text,err:res!=='ok'})}
+  catch(err){renderShare({text:err.message,err:true})}
+});
+$('#sharePop').addEventListener('click',async e=>{const b=e.target.closest('[data-unshare]');if(!b)return;e.stopPropagation();
+  try{await cloud.unshare(cur().id,b.dataset.unshare);renderShare({text:'Access removed.'})}catch(err){renderShare({text:err.message,err:true})}});
+
+/* ---------- Abgleich mit dem Konto ---------- */
+let syncT=0,syncing=false,lastUid=null,lastRefresh=0;
+function scheduleSync(){if(!cloud.currentUser())return;clearTimeout(syncT);syncT=setTimeout(syncNow,1500)}
+async function syncNow(){
+  clearTimeout(syncT);if(!cloud.currentUser())return;
+  if(syncing){scheduleSync();return}
+  const todo=state.exs.filter(r=>r.origin==='mine'&&(r.dirty||!r.synced));if(!todo.length){renderSyncState();return}
+  syncing=true;renderSyncState();
+  try{for(const r of todo){const before=snap(r);const res=await cloud.saveExercise(toCloudRow(r));
+      r.synced=true;r.updatedAt=res.updated_at;snaps.set(r.id,before);if(snap(r)===before)r.dirty=false}
+    syncState={kind:'ok',msg:''}}
+  catch(err){syncState={kind:'error',msg:err.message||'connection problem'};setTimeout(scheduleSync,15000)}
+  finally{syncing=false;clearTimeout(saveT);try{localStorage.setItem(SKEY,JSON.stringify({exs:state.exs,cur:state.cur}))}catch(e){};renderSyncState()}
+}
+async function refreshLibrary(){
+  const u=cloud.currentUser();if(!u)return;lastRefresh=Date.now();
+  try{const {rows,names}=await cloud.fetchExercises();if(!cloud.currentUser())return;
+    const curId=cur().id,{library}=mergeLibrary(state.exs,rows,u.id,names);
+    if(P.on||P.wait)stopPlay();
+    state.exs=library.length?library:exampleRecords();state.cur=Math.max(0,state.exs.findIndex(r=>r.id===curId));
+    state.exs.forEach(r=>{if(r.origin==='mine'&&!r.dirty)snaps.set(r.id,snap(r))});
+    if(cur().origin==='shared')state.mode='practice';
+    renderAll();save();syncNow()}
+  catch(err){syncState={kind:'error',msg:err.message||'connection problem'};renderSyncState()}
+}
+window.addEventListener('focus',()=>{if(cloud.currentUser()&&!P.on&&!P.wait&&Date.now()-lastRefresh>30000)refreshLibrary()});
+window.addEventListener('beforeunload',e=>{if(cloud.currentUser()&&state.exs.some(r=>r.origin==='mine'&&r.dirty)){syncNow();e.preventDefault()}});
+
+/* ---------- Konto ---------- */
+function renderAcctBtn(){const b=$('#acctBtn'),u=cloud.currentUser();b.hidden=!cloud.cloudReady();
+  const name=state.profile&&state.profile.display_name||(u&&u.email)||'';
+  b.innerHTML=u?'<span class="avatar">'+esc((name[0]||'?').toUpperCase())+'</span>':'<svg width="17" height="17" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="8.5" r="3.6" fill="none" stroke="currentColor" stroke-width="1.7"/><path d="M5 20c.8-3.6 3.6-5.6 7-5.6s6.2 2 7 5.6" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/></svg>';
+  b.title=u?'Account: '+name:'Sign in';b.setAttribute('aria-label',b.title)}
+function renderAccount(view,msg){
+  const el=$('#account'),u=cloud.currentUser(),m=msg?'<p class="fmsg'+(msg.err?' err':'')+'">'+esc(msg.text)+'</p>':'';
+  const f=(id,label,type,extra)=>'<label class="field"><span>'+label+'</span><input id="'+id+'" type="'+type+'" '+(extra||'')+'></label>';
+  const head=t=>'<div class="ctx-h"><b>'+t+'</b><button class="gbtn icon-only" data-acct="close" aria-label="Close">×</button></div>';
+  if(u&&view!=='newpw'){const p=state.profile||{};
+    el.innerHTML=head('Your account')+'<p class="fmsg">'+esc(u.email)+'</p><form class="form" data-form="profile">'+f('acName','Display name','text','maxlength="80" value="'+esc(p.display_name||'')+'"')+
+      '<label class="vrow"><span>I teach guitar</span><input type="checkbox" id="acTeacher"'+(p.role==='teacher'?' checked':'')+'></label><button class="fbtn" type="submit">Save</button></form>'+m+'<div class="frow"><button class="linkbtn" data-acct="signout">Sign out</button></div>';return}
+  if(view==='newpw'){el.innerHTML=head('New password')+'<form class="form" data-form="newpw">'+f('acPw','New password','password','required minlength="8" autocomplete="new-password"')+'<button class="fbtn" type="submit">Save password</button></form>'+m;return}
+  if(view==='signup'){el.innerHTML=head('Create account')+'<form class="form" data-form="signup">'+f('acName','Name','text','maxlength="80" autocomplete="name"')+f('acEmail','Email','email','required autocomplete="email"')+f('acPw','Password (8+ characters)','password','required minlength="8" autocomplete="new-password"')+'<button class="fbtn" type="submit">Create account</button></form>'+m+'<div class="frow"><button class="linkbtn" data-acct="signin">I have an account</button></div>';return}
+  if(view==='reset'){el.innerHTML=head('Reset password')+'<form class="form" data-form="reset">'+f('acEmail','Email','email','required autocomplete="email"')+'<button class="fbtn" type="submit">Send link</button></form>'+m+'<div class="frow"><button class="linkbtn" data-acct="signin">Back</button></div>';return}
+  el.innerHTML=head('Sign in')+'<form class="form" data-form="signin">'+f('acEmail','Email','email','required autocomplete="email"')+f('acPw','Password','password','required autocomplete="current-password"')+'<button class="fbtn" type="submit">Sign in</button></form>'+m+
+    '<div class="frow"><button class="linkbtn" data-acct="signup">Create account</button><button class="linkbtn" data-acct="reset">Forgot password?</button></div>';
+}
+$('#acctBtn').addEventListener('click',e=>{e.stopPropagation();if(openPop('account',$('#acctBtn')))renderAccount('signin')});
+$('#account').addEventListener('click',async e=>{const b=e.target.closest('[data-acct]');if(!b)return;e.stopPropagation();const v=b.dataset.acct;
+  if(v==='close'){closePops();return}
+  if(v==='signout'){b.disabled=true;await syncNow();try{await cloud.signOut()}catch(err){renderAccount('profile',{text:err.message,err:true})}return}
+  renderAccount(v)});
+$('#account').addEventListener('submit',async e=>{
+  e.preventDefault();const form=e.target.dataset.form,val=id=>{const x=$('#'+id);return x?x.value.trim():''},btn=e.target.querySelector('button[type=submit]');btn.disabled=true;
+  try{
+    if(form==='signin'){await cloud.signIn(val('acEmail'),$('#acPw').value);closePops();toast('Signed in')}
+    else if(form==='signup'){const r=await cloud.signUp(val('acEmail'),$('#acPw').value,val('acName'));if(r.needsConfirmation)renderAccount('signin',{text:'Check your inbox and confirm your address, then sign in.'});else{closePops();toast('Account created')}}
+    else if(form==='reset'){await cloud.sendPasswordReset(val('acEmail'));renderAccount('signin',{text:'If an account exists for this address, a link is on its way.'})}
+    else if(form==='newpw'){await cloud.setNewPassword($('#acPw').value);closePops();toast('Password changed')}
+    else if(form==='profile'){const fields={display_name:val('acName').slice(0,80)||null,role:$('#acTeacher').checked?'teacher':'student'};await cloud.saveProfile(fields);state.profile=Object.assign({},state.profile,fields);renderAcctBtn();renderAccount('profile',{text:'Saved.'})}
+  }catch(err){const em=val('acEmail'),nm=val('acName');renderAccount(form==='profile'?'profile':form,{text:err.message||'Something went wrong. Please try again.',err:true});if(em&&$('#acEmail'))$('#acEmail').value=em;if(nm&&$('#acName'))$('#acName').value=nm;const pw=$('#acPw');if(pw)pw.focus()}
+  finally{if(btn.isConnected)btn.disabled=false}
+});
+async function afterSignIn(){
+  const u=cloud.currentUser();if(!u||lastUid===u.id)return;lastUid=u.id;renderAcctBtn();
+  try{state.profile=await cloud.loadProfile()}catch{state.profile=null}
+  renderAcctBtn();await refreshLibrary();
+}
+function afterSignOut(){
+  lastUid=null;state.profile=null;syncState={kind:'idle',msg:''};const curId=cur().id;
+  if(P.on||P.wait)stopPlay();
+  state.exs=libraryAfterSignOut(state.exs);if(!state.exs.length)state.exs=exampleRecords();
+  state.cur=Math.max(0,state.exs.findIndex(r=>r.id===curId));if(cur().origin!=='shared'&&state.modeBeforeShared){state.mode=state.modeBeforeShared;state.modeBeforeShared=null}
+  save();closePops();renderAcctBtn();renderAll();toast('Signed out');
+}
+cloud.onAuthChange(ev=>{
+  if(ev==='PASSWORD_RECOVERY'){openPop('account',$('#acctBtn'),true);renderAccount('newpw');return}
+  if(ev==='SIGNED_OUT'){afterSignOut();return}
+  if(cloud.currentUser())afterSignIn();
+});
+
 renderAll();
+cloud.initCloud().then(ok=>{renderAcctBtn();if(ok){renderSyncState();renderHead();if(cloud.currentUser())afterSignIn()}});
