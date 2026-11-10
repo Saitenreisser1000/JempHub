@@ -18,6 +18,32 @@ npm test
 npm run build    # dist/
 ```
 
+## Kamera
+
+Die Kamera richtet das Bild auf die Standhöhe aus (Füße bei gut zwei Dritteln der Bildhöhe, darüber Platz
+für einen vollen Sprung) und bleibt bei normalen Sprüngen ruhig. Dazu kommt:
+
+- **Klettern:** Steigt Sam höher als ein Sprung und landet die vorausberechnete Flugbahn höher als der
+  Absprung (Doppelsprung, Feder, Aufwind, Wandsprung), verengt sich das Ruheband gleitend auf 2,5 Kacheln.
+  Die Kamera holt Sam dann Richtung Bildmitte, statt ihn am oberen Rand kleben zu lassen.
+- **Sprung über eine Grube:** Kommt Sam auf gleicher Höhe oder tiefer wieder auf, bleibt das Bild auf das
+  Gelände unten ausgerichtet (Landestelle und Stacheln bleiben im Bild).
+- **Landestelle:** In der Luft wird die Flugbahn vorausberechnet. Die Landestelle soll rechtzeitig unten
+  im Bild sein. Bei einem tiefen Sturz wartet die Kamera dort und zoomt bei Bedarf aus (höchstens doppelt so
+  weit), bis Sam und Landestelle gemeinsam ins Bild passen.
+- **Ruhe:** Das senkrechte Ziel wird vorgeglättet, damit Wechsel zwischen den Grenzen keine Rucke ergeben.
+
+**Messen statt schätzen:** `kamera.mjs` sucht pro Welt mit der echten Spielphysik einen Weg zum Ziel, spielt
+ihn mit laufender Kamera ab und misst den Bildausschnitt: Vorlauf in Laufrichtung, Sam am Bildrand,
+Landungen ohne Sicht, Gefahren, die zu spät ins Bild kommen, Richtungswechsel, Rucke und Zoomwechsel.
+
+```bash
+node kamera.mjs                 # alle Welten (der Weg wird zwischengespeichert)
+node kamera.mjs --stellen 3 7   # zusätzlich die schlechtesten Stellen (Spalte,Zeile)
+```
+
+Suche und Abspielen teilen sich `pruefung.mjs` mit `erreichbar.mjs`.
+
 ## Hubwelt als Landkarte
 
 Die Hubwelt ist eine Inselkarte von oben: Wald im Westen, Felsen im Norden, See mit Lagune im Süden,

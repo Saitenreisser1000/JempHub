@@ -3541,9 +3541,19 @@ function frameAhead(dir){
   return {up,down};
 }
 const standTile=(c,r)=>{ const t=tileAt(c,r), above=tileAt(c,r-1); return (solid(c,r)||t==='~'||t==='-')&&!solid(c,r-1)&&above!=='~'&&above!=='-'&&t!=='^'; };
+// Wo landet Sam? Flugbahn mit Schwerkraft und gleichbleibendem Seitentempo vorausrechnen (bis 1,6 s), erste Standfläche darunter.
+function landingAhead(){
+  let x=P.x+P.w/2, y=P.y+P.h, vy=P.vy; const dt=1/30, cap=P.glide?PH.glideFall:PH.fall;
+  for(let t=0;t<1.6;t+=dt){ const y0=y; vy=Math.min(cap,vy+PH.grav*dt); y+=vy*dt; x+=P.vx*dt;
+    const c=Math.floor(x/TS); if(c<0||c>=L.w) return null;
+    if(vy>0) for(let r=Math.floor(y0/TS);r<=Math.floor(y/TS);r++) if(r*TS>=y0-1&&r>=1&&r<L.h&&standTile(c,r)) return r*TS;
+    for(const m of L.movers) if(vy>0&&x>m.x&&x<m.x+m.w&&m.y>=y0-1&&m.y<=y) return m.y;
+    if(solid(c,Math.floor((y-2)/TS))||solid(c,Math.floor((y-TS)/TS))) return null;   // Bahn läuft in eine Wand: unbekannt
+    if(y>L.h*TS) return L.h*TS; }
+  return null; }
 function cameraSnap(){
   CAM.base=P.y+P.h; CAM.lookDir=P.face; CAM.dirT=0; CAM.look=P.face*viewW*.1; CAM.vlook=0; CAM.ahead=0; CAM.vahead=0; CAM.fall=0; CAM.vfall=0;
-  CAM.vx=0; CAM.vy=0; CAM.zv=0; CAM.zT=1; CAM.zHold=0; CAM.spd=0; CAM.fk=0; CAM.fkT=0; CAM.fzT=1; CAM.vfk=0; CAM.fcy=0; CAM.vfcy=0; CAM.h={}; CAM.dirD=0; CAM.stand=0; CAM.tyG=undefined;
+  CAM.vx=0; CAM.vy=0; CAM.zv=0; CAM.zT=1; CAM.zHold=0; CAM.spd=0; CAM.fk=0; CAM.fkT=0; CAM.fzT=1; CAM.vfk=0; CAM.fcy=0; CAM.vfcy=0; CAM.h={}; CAM.dirD=0; CAM.stand=0; CAM.climb=false; CAM.from=P.y+P.h; CAM.fa=1; CAM.vfa=0; CAM.landY=null; CAM.band=null; CAM.zDrop=1; CAM.gT=0; CAM.gyS=null;
   zoom=snapZoom(1); applyZoom();
   CAM.cx=P.x+P.w/2+CAM.look; CAM.tx=CAM.cx; CAM.cy=CAM.base-viewH*.17; clampCam(); CAM.snap=true;
 }
@@ -3570,20 +3580,26 @@ function camera(dt){
   const sf=Math.min(1,CAM.spd/Math.max(40,PH.max));
   const lookT=Math.max(-.26,Math.min(.26,CAM.lookDir*(.06+.14*sf)*PH.camLook))*viewW;
   CAM.look=damp(CAM.look,lookT,.8,'vlook',dt,CAM);
-  // Bodenhöhe im Plattform-Raster: neue Höhe erst ab knapp einer Kachel Unterschied, Hänge gleiten langsam nach
-  const onWall=P.wallDir&&!P.ground;
-  if(P.ground){ const d=feet-CAM.base;
-    if(d<-TS*.9){ CAM.base=feet; CAM.stand=0; CAM.downT=0; }                        // höher gelandet: gleich nachziehen
-    else if(d>TS*.9){ CAM.downT=(CAM.downT||0)+dt; if(CAM.downT>.35||d>TS*3){ CAM.base=feet; CAM.downT=0; } }   // tiefer: kurz abwarten (springt man gleich wieder hoch, bleibt die Kamera ruhig)
-    else { CAM.downT=0; CAM.stand+=dt; if(CAM.stand>.3) CAM.base+=d*Math.min(1,dt*3); } }
-  else if(onWall&&feet<CAM.base) CAM.base=Math.min(CAM.base,feet+TS*.5);
-  CAM.kickHold=onWall?.5:Math.max(0,(CAM.kickHold||0)-dt);   // kurz nach dem Abstoßen von der Wand weiter mitklettern
-  // Totzone senkrecht: ein normaler Sprung bewegt die Kamera nicht; erst höher (Doppelsprung, Feder, Aufwind) zieht sie mit
-  let anchor=CAM.base;
-  // Über Sam bleibt immer Platz für einen vollen Sprung (≈5,5 Kacheln bis zum oberen Rand); sonst Füße bei 67 % der Bildhöhe
-  const off=Math.max(viewH*.17,TS*5.5-viewH/2), up=Math.max(TS*2.4,viewH/2+off-15);   // voller Sprung (4,4 Kacheln) passt ins Fenster
-  if(feet<CAM.base-up) anchor=feet+up;
-  if(feet>CAM.base) anchor=(!P.ground&&P.vy>220&&feet>CAM.base+TS*2)?feet:Math.max(CAM.base,feet-TS*.5);   // echter Sturz: sofort folgen; kleine Abstiege erst, was über eine halbe Kachel hinausgeht
+  // Bezugshöhe (CAM.base): die Höhe, auf die das Bild ausgerichtet ist. Am Boden ist das die Standfläche (im Plattform-Raster:
+  // neue Höhe erst ab knapp einer Kachel Unterschied, Hänge gleiten langsam nach). In der Luft bleibt sie stehen, solange Sam im
+  // Ruheband bleibt: nach oben ein voller Sprung (4,6 Kacheln), nach unten eine halbe Kachel. Erst darüber hinaus wandert sie mit.
+  // Steigt Sam höher als ein Sprung (Doppelsprung, Feder, Aufwind, Wandklettern), gilt bis zur Landung ein enges Band (2,5 Kacheln):
+  // die Kamera holt ihn Richtung Bildmitte, damit man sieht, was über ihm liegt – statt ihn am oberen Rand kleben zu lassen.
+  const onWall=P.wallDir&&!P.ground, jumpH=TS*4.6, upF=TS*2.5;
+  // Das Band verengt sich beim Klettern gleitend (kein Sprung im Ziel, also kein Ruck)
+  if(P.ground){ const d=feet-CAM.base; CAM.climb=false; CAM.from=feet; CAM.band=jumpH; CAM.gT=(CAM.gT||0)+dt;
+    if(Math.abs(d)>TS*.9){ CAM.base=feet; CAM.stand=0; }
+    else { CAM.stand+=dt; if(CAM.stand>.3) CAM.base+=d*Math.min(1,dt*3); } }
+  else { CAM.gT=0; if(onWall) CAM.climb=true; if(CAM.band==null) CAM.band=jumpH;
+    if(CAM.climb) CAM.band+=(upF-CAM.band)*Math.min(1,dt*5);
+    // Klettermodus nur, wenn es wirklich hinauf geht: landet die vorausberechnete Flugbahn nicht höher als der Absprung
+    // (Doppelsprung über eine Grube), bleibt das Bild auf das Gelände unten ausgerichtet
+    if(feet<CAM.base-CAM.band){ const ld=onWall||CAM.climb?null:landingAhead();
+      if(onWall||CAM.climb||ld==null||ld<(CAM.from??feet)-TS){ CAM.climb=true; CAM.base=feet+CAM.band; } }
+    else if(feet>CAM.base+TS*.5) CAM.base=feet-TS*.5; }
+  const anchor=CAM.base, off=Math.max(viewH*.17,TS*5.5-viewH/2);   // Füße bei 67 % der Bildhöhe; über Sam bleibt Platz für einen vollen Sprung
+  const deep=!P.ground&&((CAM.climb&&P.vy<0)||feet>(CAM.from??feet)+TS*2);     // weit weg von der Absprunghöhe: das am Boden ermittelte Einrahmen gilt nicht mehr
+  CAM.fa=damp(CAM.fa??1,deep?0:1,.3,'vfa',dt,CAM);
   // Vorausschau aufs Gelände: nur am Boden, mit Hysterese
   if(P.ground){ const a=surfaceAhead(CAM.lookDir);
     let d=a.y!==null?Math.max(-TS*3,Math.min(TS*4,a.y-CAM.base))*.4:0; if(a.gaps>=5) d=Math.max(d,TS*1.2);
@@ -3601,12 +3617,15 @@ function camera(dt){
     CAM.fcyT=steady('fcy',fcy,TS,.3,dt); }
   CAM.fk=damp(CAM.fk,CAM.fkT||0,.5,'vfk',dt,CAM);
   CAM.fcy=CAM.fcy?damp(CAM.fcy,CAM.fcyT||CAM.cy,.45,'vfcy',dt,CAM):(CAM.fcyT||CAM.cy);
-  // Blick nach unten nur beim echten Fall (mehr als eine Kachel unter die Standhöhe)
-  const fallT=(!P.ground&&!P.glide&&P.vy>220&&feet>CAM.base+TS*2)?Math.min(TS*3,(P.vy-220)*.4):0;
+  // Blick nach unten beim Fall unter die Absprunghöhe: je schneller, desto mehr vom Landeplatz zeigen
+  const from=CAM.from??feet, fallT=(!P.ground&&!P.glide&&P.vy>160&&feet>from+TS)?Math.min(TS*3.2,(P.vy-160)*.35):0;
   CAM.fall=damp(CAM.fall,fallT,fallT>CAM.fall?.25:.3,'vfall',dt,CAM);
   // Ein Zoom aus Tempo und Gelände: Tempo-Stufe mit Hysterese, hinaus zügig, hinein erst nach 1 s und langsam
   const want=steady('want',Math.round(Math.min(1,sf*.7+tier()*.1)*4)/4,.2,.6,dt);
-  const zCand=Math.max(1+PH.camZoom*want,1+((CAM.fzT||1)-1)*CAM.fk);
+  // Langer Sturz oder Sprung weit hinunter: so weit auszoomen, dass Sam und die Landestelle zugleich ins Bild passen (höchstens doppelt so weit)
+  const land=P.ground?null:landingAhead(); CAM.landRaw=land; const drop=land!=null?land+TS*1.4-(P.y-TS):0;
+  if(drop>viewH&&P.vy>-100) CAM.zDrop=Math.max(CAM.zDrop||1,Math.min(2,drop/VIEW_H)); else if(P.ground&&CAM.gT>1.2) CAM.zDrop=1;   // nach der Landung erst nach gut 1 s wieder hinein
+  const zCand=Math.max(1+PH.camZoom*want,1+((CAM.fzT||1)-1)*CAM.fk,CAM.zDrop||1);
   if(zCand>CAM.zT+.02){ CAM.zT=zCand; CAM.zHold=1; }
   else { CAM.zHold-=dt; if(CAM.zHold<=0&&zCand<CAM.zT-.02) CAM.zT=zCand; }
   const zGoal=snapZoom(CAM.zT);   // Pixel-Raster: Zoomziel so, dass jedes Grafikpixel ganzzahlig breit ist (kein Flimmern)
@@ -3617,24 +3636,34 @@ function camera(dt){
   // Ziele: waagrecht mit Totzone (kleine Bewegungen bewegen die Kamera nicht)
   const tx=pcx+CAM.look, wx=viewW*.05;
   if(tx>CAM.tx+wx) CAM.tx=tx-wx; else if(tx<CAM.tx-wx) CAM.tx=tx+wx;
-  const ty0=anchor+CAM.ahead+CAM.fall-off;
-  const fk=P.ground||feet<=CAM.base+TS?CAM.fk:CAM.fk*.5;
+  const ty0=anchor+CAM.ahead*CAM.fa+CAM.fall-off, fk=CAM.fk*CAM.fa;
   const ty=Math.min(ty0+(Math.min(CAM.fcy,anchor+viewH*.33-TS)-ty0)*fk, anchor+CAM.fall-TS*5.5*(1-.55*fk)+viewH/2);   // Sprungraum oben bleibt; beim Einrahmen nach unten hat das Ziel Vorrang
-  // Während normaler Sprünge bleibt das senkrechte Ziel stehen (nur Aufstieg über das Fenster oder Fall darunter zieht mit)
-  let tyF=ty; if(P.ground||onWall||CAM.tyG===undefined||CAM.kickHold>0) CAM.tyG=ty; else if(anchor===CAM.base) tyF=CAM.tyG;
-  const W=L.w*TS, H=L.h*TS, gx0=Math.max(viewW/2,Math.min(W-viewW/2,CAM.tx)), gy0=Math.max(viewH/2,Math.min(H-viewH/2,tyF));
-  // Nachführzeit: kürzer, je tiefer Sam fällt oder je schneller er ist
-  const fallK=Math.max(0,Math.min(1,(feet-CAM.base)/(TS*2)));
-  const stX=(1-.35*Math.min(1,sp/220))/Math.max(1,PH.camSmooth), stY=(1-.45*fallK)/Math.max(1,PH.camSmoothY);
-  // Weite Ränder: nur wenn Sam wirklich Richtung Bildrand kommt, rückt das Ziel nach
-  const mx=viewW*.38, myTop=viewH*.5-6, myBot=viewH*.32;   // Füße nie tiefer als 82 % der Bildhöhe
-  const gx=Math.min(Math.max(gx0,pcx-mx),pcx+mx), gy=Math.min(Math.max(gy0,feet-myBot),P.y+myTop);
+  const W=L.w*TS, H=L.h*TS, gx0=Math.max(viewW/2,Math.min(W-viewW/2,CAM.tx)), gy0=Math.max(viewH/2,Math.min(H-viewH/2,ty));
+  // Nachführzeit: kürzer, je schneller Sam ist, je tiefer er fällt oder wenn er klettert
+  const fallK=Math.max(0,Math.min(1,(feet-from)/(TS*2)));
+  const stX=(1-.35*Math.min(1,sp/220))/Math.max(1,PH.camSmooth), high=CAM.climb||(!P.ground&&feet<CAM.base-CAM.band), stY=(high?1.3:2-1.1*fallK)/Math.max(1,PH.camSmoothY);
+  // Weite Ränder: kommt Sam trotzdem Richtung Bildrand, rückt das Ziel nach (Kopf mindestens 12 % unter dem oberen Rand – außer
+  // ein normaler Sprung braucht den Platz oder Sam fällt auf eine bekannte Landestelle zu –, Füße nie tiefer als 80 % der Bildhöhe)
+  const mT=!P.ground&&P.vy>60&&CAM.landY!=null?4:CAM.climb?viewH*.16:high?viewH*.11:Math.max(3,Math.min(viewH*.12,viewH/2+off-TS*5.5)), mx=viewW*.38, myTop=viewH*.5-mT, myBot=viewH*.3;
+  // In der Luft: die vorausberechnete Landestelle soll rechtzeitig im Bild sein (unten mit gut einer Kachel Rand)
+  // (Vorhersage mit Hysterese: kurz fehlende oder springende Werte lassen das Ziel nicht zucken; beim Klettern erst, wenn Sam
+  // wirklich stürzt – das Hin und Her zwischen zwei Wänden soll die Kamera nicht nach unten ziehen)
+  if(land!=null&&land>feet-TS&&!onWall&&(!CAM.climb||P.vy>=PH.fall-20)){ CAM.landT=.25; const lT=land+TS*1.4-viewH/2; CAM.landY=CAM.landY==null?lT:CAM.landY+(lT-CAM.landY)*Math.min(1,dt*8); }
+  else if((CAM.landT=(CAM.landT||0)-dt)<=0||P.ground) CAM.landY=null;
+  const lead=high&&P.vy<0?P.vy*.12:0;   // beim Klettern dem Aufstieg etwas vorausfahren
+  // Fällt Sam deutlich unter die Absprunghöhe und die Landestelle ist bekannt, wartet die Kamera dort (kein Blick unter den Boden, kein Überschwingen)
+  const wait=CAM.landY!=null&&P.vy>0&&CAM.landRaw!=null&&CAM.landRaw>from+TS*2;
+  const gyL=wait?Math.max(Math.min(gy0,CAM.landY),CAM.landY):Math.max(gy0,CAM.landY??-1e9);
+  const gy=Math.min(Math.max(gyL,feet-myBot),P.y+lead+myTop);
+  const gx=Math.min(Math.max(gx0,pcx-mx),pcx+mx);
   CAM.cx=damp(CAM.cx,gx,stX,'vx',dt,CAM);
-  CAM.cy=damp(CAM.cy,gy,stY,'vy',dt,CAM);
+  CAM.gyS=CAM.gyS==null?gy:CAM.gyS+(gy-CAM.gyS)*Math.min(1,dt*14);   // Ziel vorglätten: Wechsel zwischen Grenzen ergeben keine Knicke
+  CAM.cy=damp(CAM.cy,CAM.gyS,wait?Math.max(stY,.2):stY,'vy',dt,CAM);   // auf die Landestelle weich einschwenken
   // Sicherheitsgrenze nur ganz am Rand
   const hx=viewW*.46, hy=viewH*.5-3;
   if(pcx>CAM.cx+hx) CAM.cx=pcx-hx; if(pcx<CAM.cx-hx) CAM.cx=pcx+hx;
-  if(feet>CAM.cy+hy) CAM.cy=feet-hy; if(P.y<CAM.cy-hy) CAM.cy=P.y+hy;
+  const hyT=high&&P.vy<0?viewH*.43:hy;   // steigt Sam über einen Sprung hinaus, bleibt sein Kopf sicher 7 % unter dem Rand
+  if(feet>CAM.cy+hy) CAM.cy=feet-hy; if(P.y<CAM.cy-hyT){ CAM.cy=P.y+hyT; CAM.vy=Math.min(CAM.vy,P.vy); }
   clampCam();
 }
 
@@ -3950,7 +3979,7 @@ if(EDIT_DRAFT&&!EDIT_ENGINE){ const id=isNaN(+EDIT_ID)?EDIT_ID:+EDIT_ID, ab=(EDI
   addEventListener('keydown',e=>{ try{ audioInit(); }catch(_){} if(e.key==='Escape'){ e.preventDefault(); parent.postMessage({supersam:'back'},'*'); } });
   addEventListener('pointerdown',()=>{ try{ audioInit(); }catch(_){} }); }
 if(!EDIT_ENGINE) requestAnimationFrame(frame);
-window.__dz={map:{get nodes(){return MAPS.nodes;},get i(){return MAPS.i;},get to(){return MAPS.to;},go(k){ const i=MAPS.nodes.findIndex(n=>String(n.key)===String(k)); if(i>=0){ MAPS.i=i; MAPS.to=-1; } return i; },hints:w=>worldHints(w),finish:()=>finishLevel(true),medals:w=>medals(w),gold:w=>goldTime(w),screen(k){ const n=MAPS.nodes.find(n=>String(n.key)===String(k)), v=mapView(), r=cv.width/innerWidth; return n?[(v.ox+n.mx*v.s)/r,(v.oy+(n.my-3)*v.s)/r]:null; },walkTo(k){ const i=MAPS.nodes.findIndex(n=>String(n.key)===String(k)); if(i>=0) MAPS.goal=i; return i; },enter:()=>mapEnter()},editor:{levelData,EDITABLE,BONUS,BONUS_AB,goldTime,defFromData,PH,TS,ETYPE,NAMES,WNO,deco:{list:DECO_LIST,icon:decoIcon,preview:decoPreview},spr:{T,SPIKE,slopeTile,ES,BEETLE:BEETLE_A,STAR,COIN:COIN[0],CRYSTAL,SPRING,CROWN,get SHOES(){ return shoesImg(); }},
+window.__dz={map:{get nodes(){return MAPS.nodes;},get i(){return MAPS.i;},get to(){return MAPS.to;},go(k){ const i=MAPS.nodes.findIndex(n=>String(n.key)===String(k)); if(i>=0){ MAPS.i=i; MAPS.to=-1; } return i; },hints:w=>worldHints(w),finish:()=>finishLevel(true),medals:w=>medals(w),gold:w=>goldTime(w),screen(k){ const n=MAPS.nodes.find(n=>String(n.key)===String(k)), v=mapView(), r=cv.width/innerWidth; return n?[(v.ox+n.mx*v.s)/r,(v.oy+(n.my-3)*v.s)/r]:null; },walkTo(k){ const i=MAPS.nodes.findIndex(n=>String(n.key)===String(k)); if(i>=0) MAPS.goal=i; return i; },enter:()=>mapEnter()},editor:{levelData,EDITABLE,BONUS,BONUS_AB,goldTime,camTick:dt=>camera(dt),get CAM(){return CAM;},setFlow:v=>{flow=v;},camSnap:()=>cameraSnap(),get view(){return {x:camX,y:camY,w:viewW,h:viewH,zoom};},defFromData,PH,TS,ETYPE,NAMES,WNO,deco:{list:DECO_LIST,icon:decoIcon,preview:decoPreview},spr:{T,SPIKE,slopeTile,ES,BEETLE:BEETLE_A,STAR,COIN:COIN[0],CRYSTAL,SPRING,CROWN,get SHOES(){ return shoesImg(); }},
   load(D,ab){ EDIT_ID=String(D.id); EDIT_DRAFT=D; EDIT_MODE=true; Object.assign(save.ab,{double:ab.includes('double'),wall:ab.includes('wall'),dash:ab.includes('dash'),glide:ab.includes('glide')}); loadLevel(D.id); state='play'; L.timeLimit=0; return L; },   // nur für Editor/Engine: EDIT_MODE verhindert das Speichern
   tick(dt){ clock+=dt; update(dt); }, keys(l,r,j){ keyL=l; keyR=r; if(j&&!keyJump){ keyJump=true; triggerJump(); } else if(!j) keyJump=false; recompute(); }, dash(){ requestDash(P.face); },
   get P(){return P;}, get L(){return L;}, get state(){return state;}, set state(v){state=v;}},
