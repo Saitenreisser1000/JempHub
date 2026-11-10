@@ -147,3 +147,22 @@ it('colorGroups: eine einzige Farbe ergibt keine Gruppen', async () => {
   const ms = [1, 2, 3].map(() => ({ dur: 12, dots: [{ s: 0, f: 1 }], color: null }))
   assert.deepEqual(colorGroups(ms, () => '#7cc4f2'), [])
 })
+
+it('moveBlock: verschiebt einen Block nach vorne und hinten', async () => {
+  const { moveBlock } = await import('./model.js')
+  const ms = () => ['a', 'b', 'c', 'd', 'e'].map((x) => ({ x }))
+  let m = ms(); assert.equal(moveBlock(m, 1, 2, 0), 0); assert.deepEqual(m.map((q) => q.x).join(''), 'bcade')
+  m = ms(); assert.equal(moveBlock(m, 1, 2, 5), 3); assert.deepEqual(m.map((q) => q.x).join(''), 'adebc')
+  m = ms(); assert.equal(moveBlock(m, 1, 2, 4), 2); assert.deepEqual(m.map((q) => q.x).join(''), 'adbce')
+  m = ms(); assert.equal(moveBlock(m, 1, 2, 2), 1); assert.deepEqual(m.map((q) => q.x).join(''), 'abcde')
+})
+
+it('shiftFrets: verschiebt alle Töne, aber nie aus dem Griffbrett', async () => {
+  const { shiftFrets } = await import('./model.js')
+  const m = [{ dots: [{ s: 0, f: 0 }] }, { dots: [{ s: 1, f: 3 }, { s: 2, f: 2 }] }, { dots: [] }]
+  assert.equal(shiftFrets(m, 0, 2, -1, 15), false)
+  assert.equal(m[0].dots[0].f, 0)
+  assert.equal(shiftFrets(m, 0, 2, 2, 15), true)
+  assert.deepEqual(m.flatMap((q) => q.dots.map((d) => d.f)), [2, 5, 4])
+  assert.equal(shiftFrets(m, 1, 1, 11, 15), false)
+})

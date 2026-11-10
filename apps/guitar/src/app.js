@@ -4,7 +4,7 @@ import {
   n, mo, setKey, onsets as coreOnsets, barTicks, durName, durFromSpec, decodeDur,
   posLabel as corePosLabel, momentAt as coreMomentAt, nextSounding as coreNext,
   prevSounding as corePrev, isValidExercise, moveMoment, dropIndex, snapDur, canMoveDot, moveDot,
-  colorGroups, groupOf,
+  colorGroups, groupOf, moveBlock, shiftFrets,
 } from './core/model.js'
 import { useFlats, pcName as corePcName, noteName as coreNoteName, harmony as coreHarmony } from './core/music.js'
 import { examples } from './core/exercises.js'
@@ -56,6 +56,13 @@ const midiOf = (d) => cur().tuning[d.s] + d.f
 const noteName = (d, oct) => coreNoteName(d, cur().tuning, flats(), oct)
 function colorOf(m){return m.color||cur().color||SKY}
 const cgroups=()=>colorGroups(cur().moments,colorOf);
+// Ausgewählte Gruppe als Block {a,b}; gilt nur, solange die Indizes gültig sind
+const blk=()=>{const b=state.block,n=cur().moments.length;return b&&b.a>=0&&b.b<n&&b.a<=b.b?b:null};
+const inBlk=i=>{const b=blk();return !!b&&i>=b.a&&i<=b.b};
+function selectGroup(i){
+  const grp=groupOf(cgroups(),i);if(!grp){toast('This note is not part of a colour group');return false}
+  if(P.on||P.wait)stopPlay();
+  state.block={a:grp.a,b:grp.b};selectMoment(grp.a,true);state.caret='after';renderStrip();renderMoments();return true}
 function stringName(s){const t=cur().tuning,nm=pcName(t[s]%12);if(s===0&&cur().inst==='guitar')return 'high '+nm;if(s===t.length-1)return 'low '+nm;return nm}
 const durTicks = () => durFromSpec(state.dur)
 const posLabel = (t) => corePosLabel(t, cur().ts)
@@ -235,7 +242,7 @@ function renderMoments(){
     const idx=[];for(let i=grp.a;i<=grp.b;i++)if(ms[i].dots.length&&vis[i]!==undefined)idx.push(i);
     if(idx.length<2)return;
     const seenP=new Set(),pts=[];idx.forEach(i=>ms[i].dots.forEach(d=>{const k=d.s+':'+d.f;if(!seenP.has(k)){seenP.add(k);pts.push(g.pos(d.s,d.f))}}));
-    const op=(Math.min(...idx.map(opOf))*.13).toFixed(3),sw=2*(R+11);
+    const bk=blk(),on_=bk&&bk.a===grp.a&&bk.b===grp.b,op=(Math.min(...idx.map(opOf))*(on_?.3:.13)).toFixed(3),sw=2*(R+11);
     gs+='<g class="cgrp" style="opacity:'+op+'">'+(pts.length>1?'<path d="'+hullPath(pts)+'" fill="'+grp.color+'" stroke="'+grp.color+'" stroke-width="'+sw+'" stroke-linejoin="round" stroke-linecap="round"/>':'<circle cx="'+pts[0][0]+'" cy="'+pts[0][1]+'" r="'+(R+11)+'" fill="'+grp.color+'"/>')+'</g>';
   });
   $('#L-moments').innerHTML=gs+cs+s;
@@ -311,14 +318,15 @@ function renderStrip(){
     else{s+='<rect x="'+x+'" y="'+(top+1)+'" width="'+w+'" height="'+(H-top-bot-2)+'" rx="4" fill="'+c+'" fill-opacity=".08"/>';
       s+='<rect x="'+x+'" y="'+(top+1)+'" width="2" height="'+(H-top-bot-2)+'" rx="1" fill="'+c+'" fill-opacity=".8"/>';
       m.dots.forEach(d=>{const y=top+(d.s+.5)*lh;s+='<rect x="'+(x+3)+'" y="'+(y-1.6)+'" width="'+Math.max(2,w-6)+'" height="3.2" rx="1.6" fill="'+c+'" fill-opacity=".55"/><circle cx="'+(x+4.5)+'" cy="'+y+'" r="2.8" fill="'+c+'"/>'})}
-    if(DRAG&&DRAG.mode==='move'&&DRAG.moved&&i===DRAG.i)s+='<rect x="'+(x-1)+'" y="'+(top-1)+'" width="'+(w+2)+'" height="'+(H-top-bot+2)+'" rx="5" fill="#0f1311" fill-opacity=".55"/>';
-    if(i===state.sel&&!(P.on))s+='<rect x="'+(x-1.5)+'" y="'+(top-1)+'" width="'+(w+3)+'" height="'+(H-top-bot+2)+'" rx="5" fill="none" stroke="#fff" stroke-opacity=".75" stroke-width="1.3"'+(state.mode==='edit'&&state.caret==='inside'?'':' stroke-dasharray="none"')+'/>';
+    if(DRAG&&DRAG.moved&&((DRAG.mode==='move'&&i===DRAG.i)||(DRAG.mode==='moveblock'&&inBlk(i))))s+='<rect x="'+(x-1)+'" y="'+(top-1)+'" width="'+(w+2)+'" height="'+(H-top-bot+2)+'" rx="5" fill="#0f1311" fill-opacity=".55"/>';
+    if(i===state.sel&&!(P.on)&&!inBlk(i))s+='<rect x="'+(x-1.5)+'" y="'+(top-1)+'" width="'+(w+3)+'" height="'+(H-top-bot+2)+'" rx="5" fill="none" stroke="#fff" stroke-opacity=".75" stroke-width="1.3"'+(state.mode==='edit'&&state.caret==='inside'?'':' stroke-dasharray="none"')+'/>';
   });
-  if(state.mode==='edit'&&!P.on){
+  {const b=blk();if(b&&ms[b.b]){const x0=X(on[b.a])-2.5,x1=X(on[b.b]+ms[b.b].dur)+2.5;s+='<rect class="blk" x="'+x0+'" y="'+(top-4.5)+'" width="'+(x1-x0)+'" height="'+(H-top-bot+8)+'" rx="8" fill="none" stroke="var(--fg)" stroke-opacity=".9" stroke-width="2"/>'}}
+  if(state.mode==='edit'&&!P.on&&!blk()){
     const sel=state.sel,cx=ms.length?(state.caret==='after'?X(on[sel]+ms[sel].dur):null):X(0);
     if(cx!=null)s+='<line x1="'+(cx+1)+'" x2="'+(cx+1)+'" y1="'+(top-2)+'" y2="'+(H-3)+'" stroke="#d8b46a" stroke-width="2"/><path d="M'+(cx-3)+' '+(top-6)+'h8l-4 5z" fill="#d8b46a"/>';
   }
-  if(DRAG&&DRAG.mode==='move'&&DRAG.moved&&DRAG.to!=null){const tx=DRAG.to>=ms.length?on.total:on[DRAG.to];s+='<line x1="'+(X(tx)+1)+'" x2="'+(X(tx)+1)+'" y1="2" y2="'+(H-2)+'" stroke="#d8b46a" stroke-width="3" stroke-linecap="round"/><circle cx="'+(X(tx)+1)+'" cy="4" r="4" fill="#d8b46a"/>'}
+  if(DRAG&&(DRAG.mode==='move'||DRAG.mode==='moveblock')&&DRAG.moved&&DRAG.to!=null){const tx=DRAG.to>=ms.length?on.total:on[DRAG.to];s+='<line x1="'+(X(tx)+1)+'" x2="'+(X(tx)+1)+'" y1="2" y2="'+(H-2)+'" stroke="#d8b46a" stroke-width="3" stroke-linecap="round"/><circle cx="'+(X(tx)+1)+'" cy="4" r="4" fill="#d8b46a"/>'}
   if(DRAG&&DRAG.mode==='resize'&&DRAG.moved&&ms[DRAG.i]){const ex2=X(on[DRAG.i]+ms[DRAG.i].dur);s+='<text class="strip-t" x="'+(ex2+4)+'" y="'+(H-8)+'" style="fill:#d8b46a">'+durName(ms[DRAG.i].dur)+'</text>'}
   s+='<line id="ph" x1="0" x2="0" y1="1" y2="'+(H-1)+'" stroke="#d8b46a" stroke-width="2" opacity="0"/>';
   const svg=$('#strip');svg.setAttribute('width',W);svg.setAttribute('height',H);svg.setAttribute('viewBox','0 0 '+W+' '+H);svg.innerHTML=s;
@@ -550,7 +558,7 @@ function afterEdit(){
 
 /* ---------- editing ---------- */
 function pushUndo(){state.undo.push(JSON.stringify({m:cur().moments,sel:state.sel,caret:state.caret}));if(state.undo.length>100)state.undo.shift()}
-function undo(){const u=state.undo.pop();if(!u)return;const o=JSON.parse(u);cur().moments=o.m;state.sel=o.sel;state.caret=o.caret;afterEdit()}
+function undo(){const u=state.undo.pop();if(!u)return;const o=JSON.parse(u);cur().moments=o.m;state.block=null;state.sel=o.sel;state.caret=o.caret;afterEdit()}
 const caretFor=()=>state.entry==='melody'?'after':'inside';
 function placeDot(s,f,shift){
   if(P.on||P.wait)stopPlay();
@@ -567,7 +575,7 @@ function nextMoment(){state.caret='after';renderStrip()}
 function insertRest(){const ms=cur().moments;pushUndo();const m=mo(durTicks(),[]);if(!ms.length){ms.push(m);state.sel=0}else{ms.splice(state.sel+1,0,m);state.sel++}state.caret='after';afterEdit()}
 function repeatMoment(){const ms=cur().moments,a=ms[state.sel];if(!a)return;pushUndo();ms.splice(state.sel+1,0,JSON.parse(JSON.stringify(a)));state.sel++;state.caret='after';afterEdit()}
 function deleteMoment(){const ms=cur().moments;if(!ms[state.sel])return;pushUndo();ms.splice(state.sel,1);state.sel=clamp(state.sel-(state.caret==='after'?1:0),0,Math.max(0,ms.length-1));state.caret='after';afterEdit()}
-function selectMoment(i){const ms=cur().moments;if(!ms.length)return;state.sel=clamp(i,0,ms.length-1);state.caret=state.mode==='edit'?caretFor():'after';
+function selectMoment(i,keepBlock){const ms=cur().moments;if(!ms.length)return;if(!keepBlock)state.block=null;state.sel=clamp(i,0,ms.length-1);state.caret=state.mode==='edit'?caretFor():'after';
   if(P.wait){P.wi=ms[state.sel].dots.length?state.sel:nextSounding(state.sel,P.order,true);waitShow();renderStrip();return}
   renderMoments();renderStrip();renderInspector();renderTools();updatePos();renderNow(state.sel,nextSounding(state.sel,allOrder(),false));scrollStripTo(onsets()[state.sel]);follow(state.sel);
   if(state.mode==='practice'&&ms[state.sel].dots.length){ensureAudio();playMoment(state.sel,clock()+.01,spt())}
@@ -614,11 +622,15 @@ svg.addEventListener('click',e=>{
 });
 
 /* ---------- strip pointer ---------- */
+let lastTap={i:-1,t:0};
 function stripClick(e){
   const ms=cur().moments;if(!ms.length)return;const t=stripTickAt(e.clientX);let i=momentAt(t);
   if(i<0)i=t<0?0:ms.length-1;
   if(e.shiftKey){state.range=[state.sel,i];if(!state.loop)state.loop=true;renderStrip();renderTransport();if(P.on){stopPlay();play()}return}
+  const now=performance.now(),dbl=lastTap.i===i&&now-lastTap.t<380;lastTap={i,t:dbl?0:now};
+  if(dbl&&!P.on){if(inBlk(i)){selectMoment(i);return}if(selectGroup(i))return}
   if(P.on){state.sel=i;stopPlay();play();return}
+  if(inBlk(i)){selectMoment(i,true);renderStrip();return}
   selectMoment(i);
   if(state.mode==='edit'&&t>=onsets().total){state.caret='after';renderStrip()}
 }
@@ -635,7 +647,7 @@ strip.addEventListener('pointerdown',e=>{
   if(e.button===2)return;
   const h=stripHit(e),editing=state.mode==='edit'&&!P.on&&!P.wait;
   DRAG={id:e.pointerId,x0:e.clientX,y0:e.clientY,i:h.i,mode:null,moved:false,to:null};
-  if(editing&&e.pointerType==='mouse'){if(h.edge>=0){DRAG.mode='resize';DRAG.i=h.edge}else if(h.i>=0)DRAG.mode='move'}
+  if(editing&&e.pointerType==='mouse'){if(h.edge>=0&&!inBlk(h.edge)){DRAG.mode='resize';DRAG.i=h.edge}else if(h.i>=0)DRAG.mode=inBlk(h.i)?'moveblock':'move'}
   if(DRAG.mode){e.preventDefault();strip.setPointerCapture(e.pointerId)}
   if(editing&&e.pointerType!=='mouse'&&h.i>=0)DRAG.lp=setTimeout(()=>{if(DRAG&&!DRAG.moved){const d=DRAG;DRAG=null;openCtx(d.i,d.x0,d.y0)}},500);
 });
@@ -658,6 +670,7 @@ window.addEventListener('pointerup',e=>{
   const d=DRAG;DRAG=null;clearTimeout(d.lp);
   if(!d.moved){if(e.target.closest&&e.target.closest('#strip'))stripClick(e);return}
   if(d.mode==='resize'){state.sel=d.i;afterEdit();return}
+  if(d.mode==='moveblock'&&d.to!=null){const b=blk(),ms=cur().moments;if(b&&(d.to<b.a||d.to>b.b+1)){pushUndo();const na=moveBlock(ms,b.a,b.b,d.to);state.block={a:na,b:na+b.b-b.a};state.sel=na;state.caret='after';afterEdit();renderCtx();return}}
   if(d.mode==='move'&&d.to!=null){const ms=cur().moments;let to=d.to;if(to>d.i)to--;
     if(to!==d.i){pushUndo();state.sel=moveMoment(ms,d.i,to);state.caret='after';afterEdit();return}}
   strip.style.cursor='';renderStrip();
@@ -740,13 +753,25 @@ svg.addEventListener('touchmove',e=>{if(DOT&&DOT.lifted)e.preventDefault()},{pas
 /* ---------- Kontextmenü eines Moments ---------- */
 function openCtx(i,x,y){
   if(P.on||P.wait)stopPlay();
-  closePops();selectMoment(i);ctxOpenT=performance.now();
+  closePops();selectMoment(i,inBlk(i));ctxOpenT=performance.now();
   const c=$('#ctx');c.hidden=false;renderCtx();
   const r=c.getBoundingClientRect(),W=window.innerWidth,H=window.innerHeight;
   c.style.left=clamp(x,8,W-r.width-8)+'px';c.style.top=clamp(y,8,H-r.height-8)+'px';
 }
+function renderBlockCtx(c,b){
+  const ms=cur().moments,cols=new Set(ms.slice(b.a,b.b+1).filter(m=>m.dots.length).map(colorOf)),col=cols.size===1?[...cols][0]:null;
+  const n=ms.slice(b.a,b.b+1).filter(m=>m.dots.length).length;
+  let h='<div class="ctx-h"><span class="ctx-n grp" style="background:'+(col||'var(--raise)')+'">'+(b.a+1)+'–'+(b.b+1)+'</span><b>Group</b><span class="ctx-d">'+n+' notes</span><button class="gbtn icon-only" data-bact="close" aria-label="Close">×</button></div>';
+  h+='<div class="ctx-r"><span>Colour</span><div class="ctx-sw">'+COLORS.map(cc=>'<button class="sw" data-bcol="'+cc+'" style="background:'+cc+'" aria-pressed="'+(cc===col)+'" aria-label="Colour"></button>').join('')+'</div></div>';
+  h+='<div class="ctx-r"><span>Frets</span><div class="seg mono"><button data-bact="down" title="One fret lower">−1</button><button data-bact="up" title="One fret higher">+1</button></div></div>';
+  h+='<div class="ctx-a"><button class="gbtn" data-bact="left" '+(b.a>0?'':'disabled')+' title="Move earlier">←</button><button class="gbtn" data-bact="right" '+(b.b<ms.length-1?'':'disabled')+' title="Move later">→</button>'+
+    '<button class="gbtn" data-bact="play">Play</button><button class="gbtn" data-bact="loop">Loop</button><button class="gbtn" data-bact="dup">Repeat</button><button class="gbtn danger" data-bact="del">Delete</button></div>';
+  h+='<div class="ctx-foot"><button class="linkbtn" data-bact="single">Edit single note</button></div>';
+  c.innerHTML=h;
+}
 function renderCtx(){
   const c=$('#ctx');if(c.hidden)return;const ms=cur().moments,i=state.sel,m=ms[i];if(!m){c.hidden=true;return}
+  const b=blk();if(b&&inBlk(i))return renderBlockCtx(c,b);
   const dd=decodeDur(m.dur)||{},col=colorOf(m),d=describe(m);
   const bases=[[6,'1/16'],[12,'1/8'],[24,'¼'],[48,'½'],[96,'1']];
   let h='<div class="ctx-h"><span class="ctx-n">'+(i+1)+'</span><b>'+d.big+'</b><span class="ctx-d">'+durName(m.dur)+'</span><button class="gbtn icon-only" data-cact="close" aria-label="Close">×</button></div>';
@@ -754,7 +779,7 @@ function renderCtx(){
     '<button data-cflag="dot" aria-pressed="'+!!dd.dot+'" title="Dotted">.</button><button data-cflag="trip" aria-pressed="'+!!dd.trip+'" title="Triplet">3</button></div></div>';
   h+='<div class="ctx-r"><span>Colour</span><div class="ctx-sw">'+COLORS.map(cc=>'<button class="sw" data-ccol="'+cc+'" style="background:'+cc+'" aria-pressed="'+(cc===col)+'" aria-label="Colour"></button>').join('')+'</div></div>';
   const grp=groupOf(cgroups(),i);
-  if(grp)h+='<div class="ctx-r"><span>Group</span><span class="ctx-grp"><span class="ctx-d">'+(grp.a+1)+'–'+(grp.b+1)+' · '+grp.count+' notes</span><button class="gbtn" data-cact="loopgrp">Loop group</button></span></div>';
+  if(grp)h+='<div class="ctx-r"><span>Group</span><span class="ctx-grp"><span class="ctx-d">'+(grp.a+1)+'–'+(grp.b+1)+' · '+grp.count+' notes</span><button class="gbtn" data-cact="selgrp">Select</button><button class="gbtn" data-cact="loopgrp">Loop</button></span></div>';
   if(m.dots.length>1)h+='<div class="ctx-r"><span>Strum</span><div class="seg">'+[['','together'],['d','↓'],['u','↑']].map(([v,l])=>'<button data-cstrum="'+v+'" aria-pressed="'+((m.strum||'')===v)+'">'+l+'</button>').join('')+'</div></div>';
   m.dots.slice().sort((a,b)=>b.s-a.s).forEach(dt=>{const k=m.dots.indexOf(dt);
     h+='<div class="ctx-r dot"><span><b>'+noteName(dt,true)+'</b> '+stringName(dt.s)+' '+(dt.f===0?'open':dt.f)+'</span><span class="ctx-sel">'+
@@ -766,14 +791,31 @@ function renderCtx(){
   c.innerHTML=h;
 }
 function ctxEdit(fn){const m=cur().moments[state.sel];if(!m)return;pushUndo();fn(m);afterEdit();renderCtx()}
+function playBlock(b){const ms=cur().moments,on=onsets(),t0=clock()+.05,sp=spt();ensureAudio();for(let i=b.a;i<=b.b;i++)playMoment(i,t0+(on[i]-on[b.a])*sp,sp)}
+function blockEdit(fn){const b=blk();if(!b)return;pushUndo();const r=fn(cur().moments,b);if(r===false){state.undo.pop();return}afterEdit();renderCtx()}
+function deleteBlock(){const b=blk();if(!b)return;pushUndo();const ms=cur().moments;ms.splice(b.a,b.b-b.a+1);state.block=null;state.sel=clamp(b.a-1,0,Math.max(0,ms.length-1));state.caret='after';$('#ctx').hidden=true;afterEdit();toast('Group deleted')}
 $('#ctx').addEventListener('click',e=>{
-  e.stopPropagation();const b=e.target.closest('button');if(!b)return;const ms=cur().moments,i=state.sel;
+  const bt=e.target.closest('[data-bact],[data-bcol]');if(!bt)return;e.stopPropagation();const b=blk();if(!b)return;
+  if(bt.dataset.bcol)return blockEdit((ms,b)=>{for(let i=b.a;i<=b.b;i++)if(ms[i].dots.length)ms[i].color=bt.dataset.bcol});
+  const a=bt.dataset.bact;
+  if(a==='close'){$('#ctx').hidden=true;return}
+  if(a==='single'){state.block=null;renderStrip();renderMoments();renderCtx();return}
+  if(a==='up'||a==='down')return blockEdit((ms,b)=>{const ok=shiftFrets(ms,b.a,b.b,a==='up'?1:-1,geo.maxF);if(!ok)toast(a==='up'?'Already at the top of the neck':'Already at the open strings');return ok});
+  if(a==='left'||a==='right')return blockEdit((ms,b)=>{const na=moveBlock(ms,b.a,b.b,a==='left'?b.a-1:b.b+2);state.block={a:na,b:na+b.b-b.a};state.sel=na;state.caret='after'});
+  if(a==='dup')return blockEdit((ms,b)=>{const copy=JSON.parse(JSON.stringify(ms.slice(b.a,b.b+1)));ms.splice(b.b+1,0,...copy);state.block={a:b.b+1,b:b.b+copy.length};state.sel=b.b+1;state.caret='after'});
+  if(a==='play'){playBlock(b);return}
+  if(a==='loop'){const was=P.on;if(P.on||P.wait)stopPlay();state.range=[b.a,b.b];state.loop=true;$('#ctx').hidden=true;renderStrip();renderTransport();if(was)play();return}
+  if(a==='del'){deleteBlock();return}
+});
+$('#ctx').addEventListener('click',e=>{
+  e.stopPropagation();const b=e.target.closest('button');if(!b||b.dataset.bact||b.dataset.bcol)return;const ms=cur().moments,i=state.sel;
   if(b.dataset.cbase)return ctxEdit(m=>{const dd=decodeDur(m.dur)||{};m.dur=durFromSpec({base:+b.dataset.cbase,dot:!!dd.dot,trip:!!dd.trip})});
   if(b.dataset.cflag)return ctxEdit(m=>{const dd=decodeDur(m.dur)||{base:24};const dot=b.dataset.cflag==='dot'?!dd.dot:false,trip=b.dataset.cflag==='trip'?!dd.trip:false;m.dur=durFromSpec({base:dd.base||24,dot,trip})});
   if(b.dataset.ccol)return ctxEdit(m=>{m.color=b.dataset.ccol});
   if(b.dataset.cstrum!=null)return ctxEdit(m=>{m.strum=b.dataset.cstrum||null});
   const a=b.dataset.cact;
   if(a==='close'){$('#ctx').hidden=true;return}
+  if(a==='selgrp'){if(selectGroup(i))renderCtx();return}
   if(a==='loopgrp'){const grp=groupOf(cgroups(),i);if(!grp)return;const was=P.on;if(P.on||P.wait)stopPlay();state.range=[grp.a,grp.b];state.loop=true;state.sel=grp.a;$('#ctx').hidden=true;renderAll();if(was)play();return}
   if(a==='left'||a==='right'){pushUndo();state.sel=moveMoment(ms,i,i+(a==='left'?-1:1));state.caret='after';afterEdit();renderCtx();return}
   if(a==='play'){if(ms[i].dots.length){ensureAudio();playMoment(i,clock()+.01,spt())}return}
@@ -813,7 +855,7 @@ $('#insp').addEventListener('click',e=>{e.stopPropagation();const r=e.currentTar
 $('#durs').addEventListener('click',e=>{const b=e.target.closest('button');if(b&&b.dataset.base)setTimeout(closePops,0)});
 $('#exTitle').addEventListener('change',e=>{cur().title=e.target.value.trim().slice(0,200)||'Untitled exercise';renderLib();save()});
 $('#libList').addEventListener('click',e=>{const b=e.target.closest('.lib-item');if(!b)return;loadEx(+b.dataset.i);document.body.classList.remove('lib-open')});
-function loadEx(i){if(P.on||P.wait)stopPlay();state.cur=clamp(i,0,state.exs.length-1);if(cur().origin==='shared'){if(!state.modeBeforeShared)state.modeBeforeShared=state.mode;state.mode='practice'}else if(state.modeBeforeShared){state.mode=state.modeBeforeShared;state.modeBeforeShared=null}state.sel=0;state.range=null;state.undo=[];state.caret=caretFor();state.speed=1;renderAll();save()}
+function loadEx(i){if(P.on||P.wait)stopPlay();state.cur=clamp(i,0,state.exs.length-1);if(cur().origin==='shared'){if(!state.modeBeforeShared)state.modeBeforeShared=state.mode;state.mode='practice'}else if(state.modeBeforeShared){state.mode=state.modeBeforeShared;state.modeBeforeShared=null}state.sel=0;state.range=null;state.block=null;state.undo=[];state.caret=caretFor();state.speed=1;renderAll();save()}
 // Neue eigene Übung (auch Import und Kopie) in die Bibliothek aufnehmen und öffnen
 function atLimit(){const p=state.profile;if(!cloud.currentUser()||!p||p.max_exercises==null)return false;
   const n=state.exs.filter(r=>r.origin==='mine').length;if(n<p.max_exercises)return false;
@@ -898,14 +940,14 @@ document.addEventListener('keydown',e=>{
   if(k==='ArrowRight'){e.preventDefault();if(P.wait)waitStep(1);else if(!P.on)selectMoment(state.sel+1);return}
   if(k==='ArrowLeft'){e.preventDefault();if(P.wait)waitStep(-1);else if(!P.on)selectMoment(state.sel-1);return}
   if(k==='?'){const hp=$('#help'),open=hp.hidden;closePops();hp.hidden=!open;return}
-  if(k==='Escape'){if(P.on||P.wait)stopPlay();closePops();return}
+  if(k==='Escape'){if(P.on||P.wait)stopPlay();closePops();if(blk()){state.block=null;renderStrip();renderMoments()}return}
   if(k==='h'||k==='H'){const o=['whole','near','now'];state.horizon[state.mode]=o[(o.indexOf(hor())+1)%3];segSet('#horizonSeg',hor());if(P.wait){renderMoments();waitShow()}else if(!P.on)renderMoments();return}
   if(k==='n'||k==='N'){const o=['order','finger','note'];state.labels=o[(o.indexOf(state.labels)+1)%3];segSet('#labelSeg',state.labels);renderMoments();if(P.wait)waitShow();return}
   if(k==='m'||k==='M'){state.metro=!state.metro;renderTransport();return}
   if(k==='l'||k==='L'){$('#loopBtn').click();return}
   if(!edit)return;
   if(k==='Enter'){e.preventDefault();nextMoment();return}
-  if(k==='Backspace'||k==='Delete'){e.preventDefault();deleteMoment();return}
+  if(k==='Backspace'||k==='Delete'){e.preventDefault();if(blk())deleteBlock();else deleteMoment();return}
   if(k==='r'||k==='R'){insertRest();return}
   if(k==='d'||k==='D'){repeatMoment();return}
   if(k==='g'||k==='G'){state.entry=state.entry==='melody'?'chord':'melody';state.caret=caretFor();renderTools();renderStrip();return}
