@@ -86,3 +86,14 @@ describe('mergeLibrary', () => {
     assert.deepEqual(libraryAfterSignOut(lib).map((r) => r.id), ['ex0', 'b'])
   })
 })
+
+describe('sanitizeExercise: Gruppenname', () => {
+  it('behält einen Namen, kürzt auf 40 Zeichen und lässt leere weg', () => {
+    const ex = examples()[0]
+    ex.moments[0].gname = 'Aufwärts ' + 'x'.repeat(60)
+    ex.moments[1].gname = '   '
+    const out = sanitizeExercise(ex)
+    assert.equal(out.moments[0].gname.length, 40)
+    assert.equal('gname' in out.moments[1], false)
+  })
+})

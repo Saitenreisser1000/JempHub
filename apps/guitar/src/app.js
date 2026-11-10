@@ -298,6 +298,23 @@ function follow(i,instant){
 
 /* ---------- time strip ---------- */
 const ST={ppt:3,H:66,top:15};
+const groupLabel=(grp,gi)=>cur().moments[grp.a].gname||('Group '+(gi+1));
+let measureCtx=null;
+function textW(t){if(!measureCtx){measureCtx=document.createElement('canvas').getContext('2d');measureCtx.font='600 9px Figtree, system-ui, sans-serif'}return measureCtx.measureText(t).width+t.length*.36}
+function fitText(t,max){if(textW(t)<=max)return t;while(t.length>1&&textW(t+'…')>max)t=t.slice(0,-1);return t+'…'}
+// Gruppe umbenennen: Eingabefeld direkt über dem Reiter
+function renameGroup(a){
+  const tab=document.querySelector('#strip [data-gtab="'+a+'"]');if(!tab)return;
+  const wrap=$('#stripWrap'),r=tab.getBoundingClientRect(),wr=wrap.getBoundingClientRect(),m=cur().moments[a];
+  const inp=document.createElement('input');inp.className='gtab-edit';inp.maxLength=40;inp.value=m.gname||'';inp.placeholder='Group name';
+  inp.style.left=(r.left-wr.left+wrap.scrollLeft)+'px';inp.style.top=(r.top-wr.top)+'px';inp.style.width=Math.max(140,r.width)+'px';
+  wrap.appendChild(inp);inp.focus();inp.select();
+  let done=false;const finish=ok=>{if(done)return;done=true;const v=inp.value.trim().slice(0,40)||null;inp.remove();
+    if(ok&&v!==(m.gname||null)){pushUndo();m.gname=v;afterEdit();renderCtx()}};
+  inp.addEventListener('keydown',e=>{e.stopPropagation();if(e.key==='Enter')finish(true);if(e.key==='Escape')finish(false)});
+  inp.addEventListener('blur',()=>finish(true));
+  inp.addEventListener('pointerdown',e=>e.stopPropagation());
+}
 function renderStrip(){
   const ex=cur(),ms=ex.moments,on=onsets(),bt=barT(),nS=ex.tuning.length;
   const wrap=$('#stripWrap'),W0=Math.max(240,wrap.clientWidth-2);
@@ -312,14 +329,15 @@ function renderStrip(){
   for(let st=0;st<nS;st++)s+='<line x1="8" x2="'+X(span)+'" y1="'+(top+(st+.5)*lh)+'" y2="'+(top+(st+.5)*lh)+'" stroke="#e6ebe4" stroke-opacity=".035"/>';
   if(state.range){const a=Math.min(state.range[0],state.range[1]),b=Math.max(state.range[0],state.range[1]);if(ms[a]&&ms[b])s+='<rect x="'+X(on[a])+'" y="1" width="'+(X(on[b]+ms[b].dur)-X(on[a]))+'" height="'+(H-2)+'" rx="6" fill="#d8b46a" fill-opacity=".09" stroke="#d8b46a" stroke-opacity=".55" stroke-dasharray="4 3"/>'}
   const bk=blk();
-  groups.forEach(grp=>{
+  groups.forEach((grp,gi)=>{
     const x0=X(on[grp.a])-1,x1=X(on[grp.b]+ms[grp.b].dur)+1,y0=T,h=H-bot+2-T,w=x1-x0,c=grp.color;
     const sel=bk&&bk.a===grp.a&&bk.b===grp.b;
     s+='<rect class="cgrp" x="'+x0+'" y="'+y0+'" width="'+w+'" height="'+h+'" rx="7" fill="'+c+'" fill-opacity="'+(sel?.12:.06)+'" stroke="'+c+'" stroke-opacity="'+(sel?.95:.5)+'" stroke-width="'+(sel?2:1.2)+'"/>';
     // Reiter: wählt die ganze Gruppe aus
-    const ty=2,r=6;
-    s+='<g class="gtab" data-gtab="'+grp.a+'"><title>Select group ('+grp.count+' notes)</title><path d="M'+x0+' '+(y0+1)+'V'+(ty+r)+'Q'+x0+' '+ty+' '+(x0+r)+' '+ty+'H'+(x1-r)+'Q'+x1+' '+ty+' '+x1+' '+(ty+r)+'V'+(y0+1)+'Z" fill="'+c+'" fill-opacity="'+(sel?.95:.3)+'"/>'+
-      (w>34?'<text class="gtab-t" x="'+(x0+8)+'" y="'+(ty+9.5)+'" fill="'+(sel?'#0d110f':c)+'">'+(w>90?'Group · ':'')+grp.count+'</text>':'')+'</g>';
+    // Reiter links: mindestens ein Feld breit, sonst so breit wie die Bezeichnung
+    const ty=2,r=5,label=groupLabel(grp,gi),field=ms[grp.a].dur*ppt,tw=Math.min(w,Math.max(field,textW(label)+16)),tx1=x0+tw;
+    s+='<g class="gtab" data-gtab="'+grp.a+'" data-gi="'+gi+'"><title>'+esc(label)+' · '+grp.count+' notes'+(state.mode==='edit'?' (tap again to rename)':'')+'</title><path d="M'+x0+' '+(y0+1)+'V'+(ty+r)+'Q'+x0+' '+ty+' '+(x0+r)+' '+ty+'H'+(tx1-r)+'Q'+tx1+' '+ty+' '+tx1+' '+(ty+r)+'V'+(y0+1)+'Z" fill="'+c+'" fill-opacity="'+(sel?.95:.3)+'"/>'+
+      '<text class="gtab-t" x="'+(x0+8)+'" y="'+(ty+9.5)+'" fill="'+(sel?'#0d110f':c)+'">'+esc(fitText(label,tw-14))+'</text></g>';
   });
   ms.forEach((m,i)=>{
     const x=X(on[i])+1,w=Math.max(3,m.dur*ppt-2),c=colorOf(m);
@@ -653,7 +671,7 @@ strip.addEventListener('pointerdown',e=>{
   if(e.button===2)return;
   const tab=e.target.closest&&e.target.closest('[data-gtab]');
   if(tab){e.preventDefault();e.stopPropagation();const a=+tab.dataset.gtab,b=blk();
-    if(b&&b.a===a){state.block=null;selectMoment(a)}else selectGroup(a);
+    if(b&&b.a===a){if(state.mode==='edit'&&!P.on&&!P.wait){renameGroup(a);return}state.block=null;selectMoment(a)}else selectGroup(a);
     if(!$('#ctx').hidden)renderCtx();return}
   const h=stripHit(e),editing=state.mode==='edit'&&!P.on&&!P.wait;
   DRAG={id:e.pointerId,x0:e.clientX,y0:e.clientY,i:h.i,mode:null,moved:false,to:null};
@@ -771,7 +789,8 @@ function openCtx(i,x,y){
 function renderBlockCtx(c,b){
   const ms=cur().moments,cols=new Set(ms.slice(b.a,b.b+1).filter(m=>m.dots.length).map(colorOf)),col=cols.size===1?[...cols][0]:null;
   const n=ms.slice(b.a,b.b+1).filter(m=>m.dots.length).length;
-  let h='<div class="ctx-h"><span class="ctx-n grp" style="background:'+(col||'var(--raise)')+'">'+(b.a+1)+'–'+(b.b+1)+'</span><b>Group</b><span class="ctx-d">'+n+' notes</span><button class="gbtn icon-only" data-bact="close" aria-label="Close">×</button></div>';
+  let h='<div class="ctx-h"><span class="ctx-n grp" style="background:'+(col||'var(--raise)')+'">'+(b.a+1)+'–'+(b.b+1)+'</span><b>'+esc(cur().moments[b.a].gname||('Group '+(cgroups().findIndex(g=>g.a===b.a)+1)))+'</b><span class="ctx-d">'+n+' notes</span><button class="gbtn icon-only" data-bact="close" aria-label="Close">×</button></div>';
+  h+='<input type="text" class="ctx-note" id="ctxGname" maxlength="40" placeholder="Group name" value="'+esc(ms[b.a].gname||'')+'">';
   h+='<div class="ctx-r"><span>Colour</span><div class="ctx-sw">'+COLORS.map(cc=>'<button class="sw" data-bcol="'+cc+'" style="background:'+cc+'" aria-pressed="'+(cc===col)+'" aria-label="Colour"></button>').join('')+'</div></div>';
   h+='<div class="ctx-r"><span>Frets</span><div class="seg mono"><button data-bact="down" title="One fret lower">−1</button><button data-bact="up" title="One fret higher">+1</button></div></div>';
   h+='<div class="ctx-a"><button class="gbtn" data-bact="left" '+(b.a>0?'':'disabled')+' title="Move earlier">←</button><button class="gbtn" data-bact="right" '+(b.b<ms.length-1?'':'disabled')+' title="Move later">→</button>'+
@@ -835,6 +854,7 @@ $('#ctx').addEventListener('click',e=>{
 });
 $('#ctx').addEventListener('change',e=>{
   const t=e.target;
+  if(t.id==='ctxGname'){const b=blk();if(b){const v=t.value.trim().slice(0,40)||null;if(v!==(cur().moments[b.a].gname||null)){pushUndo();cur().moments[b.a].gname=v;afterEdit();renderCtx()}}return}
   if(t.id==='ctxNote'){const m=cur().moments[state.sel];if(m){m.note=t.value.trim()||null;save();renderInspector()}return}
   if(t.dataset.k!=null)ctxEdit(m=>{const d=m.dots[+t.dataset.k];if(t.dataset.p==='fg')d.fg=t.value?(t.value==='T'?'T':+t.value):null;else d.t=t.value||null});
 });

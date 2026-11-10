@@ -41,6 +41,7 @@ export function sanitizeMoment(m, strings) {
     color: color(m.color),
     strum: m.strum === 'd' || m.strum === 'u' ? m.strum : null,
     note: optStr(m.note, 300),
+    ...(optStr(m.gname, 40) ? { gname: optStr(m.gname, 40) } : {}),
   }
 }
 

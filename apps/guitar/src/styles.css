@@ -372,3 +372,5 @@ a.linkbtn{text-decoration:none}
 .gtab{cursor:pointer}
 .gtab:hover path{fill-opacity:.55}
 .gtab-t{font:600 9px var(--font-body);letter-spacing:.04em;pointer-events:none}
+.strip{position:relative}
+.gtab-edit{position:absolute;z-index:4;height:22px;margin-top:-4px;padding:0 8px;border-radius:7px;border:1.5px solid var(--brass);background:var(--bg);color:var(--fg);font:600 12px var(--font-body);outline:none;box-shadow:var(--shadow-pop)}
