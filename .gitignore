@@ -17,3 +17,4 @@ apps/*/vendor/
 
 # GuitarJemp: Supabase-Zugang (nur öffentlicher anon-Key), wird nicht eingecheckt
 apps/guitar/config.js
+apps/hub/admin/config.js

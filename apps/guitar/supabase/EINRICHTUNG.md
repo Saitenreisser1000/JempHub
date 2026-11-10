@@ -54,3 +54,39 @@ Niemals den `service_role`-Key verwenden: er umgeht alle Zugriffsregeln.
 - Teilen geht nur mit bestehenden Konten (Suche per E-Mail-Adresse). Wer
   angemeldet ist, kann dabei erfahren, ob zu einer Adresse ein Konto existiert.
 - Nicht angemeldete Besucher haben keinen Zugriff auf die Tabellen.
+
+## 5. Rollen, Vernetzung und Admin (002_roles_network.sql)
+
+Vom Repository-Ordner auf dem Mac aus:
+
+```sh
+ssh root@VPS_IP 'docker exec -i supabase-db psql -U postgres -d postgres -v ON_ERROR_STOP=1' < apps/guitar/supabase/002_roles_network.sql
+```
+
+Rollen:
+
+| Rolle | Darf |
+| --- | --- |
+| Admin | alles: Benutzer, Rollen, Sperren, Löschen, Verbindungen, Freigaben, Einstellungen |
+| Lehrer | beliebig viele eigene Übungen, teilen, Mitglieder suchen und vernetzen |
+| Schüler | vernetzen; eigene Übungen bis zur Grenze, teilen nur wenn in den Einstellungen erlaubt |
+
+Neue Konten sind Schüler. „I teach guitar“ im Konto stellt einen Antrag, den ein Admin bestätigt.
+
+Ersten Admin festlegen (E-Mail-Adresse anpassen; das Konto muss schon existieren):
+
+```sh
+ssh root@VPS_IP "docker exec supabase-db psql -U postgres -d postgres -c \"update public.gj_profiles set role = 'admin' where id = (select id from auth.users where email = 'ADRESSE');\""
+```
+
+## 6. Admin-Seite (jemphub.com/admin)
+
+Die Seite kommt mit dem Hub (`apps/hub/deploy/publish.sh`). Sie braucht dieselbe
+`config.js` wie GuitarJemp, abgelegt in `/var/www/jemphub/admin/config.js`:
+
+```sh
+ssh root@VPS_IP 'cp /var/www/guitarjemp/config.js /var/www/jemphub/admin/config.js && chown www-data:www-data /var/www/jemphub/admin/config.js'
+```
+
+Anmelden mit dem eigenen Konto. Konten ohne Admin-Rolle sehen nur „Kein Zugriff“;
+alle Rechte prüft die Datenbank, nicht die Seite.
