@@ -126,12 +126,17 @@ async function capturePreview(kind: 'png' | 'jpeg') {
   const element = preview.value?.element
   if (!element) throw new Error('Vorschau nicht verfügbar')
   await nextTick()
+  // Die Karte wird in Vorschaugröße gerendert und auf das Zielformat skaliert,
+  // damit Schriften und Abstände genau wie in der Vorschau sitzen.
   const options = {
-    width: currentFormat.value.width,
-    height: currentFormat.value.height,
+    width: element.offsetWidth,
+    height: element.offsetHeight,
+    canvasWidth: currentFormat.value.width,
+    canvasHeight: currentFormat.value.height,
     pixelRatio: 1,
     cacheBust: true,
-    backgroundColor: '#fbc02d',
+    backgroundColor: '#08081f',
+    style: { boxShadow: 'none', margin: '0' },
     filter: (node: HTMLElement) => !node.classList?.contains('safe-zone'),
   }
   return kind === 'png' ? toPng(element, options) : toJpeg(element, { ...options, quality: 0.94 })

@@ -248,6 +248,7 @@ defineExpose({ element: previewElement })
 
 <template>
   <article v-if="page === 1" ref="previewElement" class="social-card" :class="`format-${format}`" :style="previewStyle">
+    <div class="card-bg"></div>
     <div class="card-grid"></div>
     <div class="card-head">
       <img class="school-logo" src="/logo-white.png?v=1" alt="" />
@@ -281,6 +282,7 @@ defineExpose({ element: previewElement })
   </article>
 
   <article v-else ref="previewElement" class="social-card second-page" :class="`format-${format}`" :style="previewStyle">
+    <div class="card-bg"></div>
     <div class="card-grid"></div>
     <div class="card-head">
       <img class="school-logo" src="/logo-white.png?v=1" alt="" />
