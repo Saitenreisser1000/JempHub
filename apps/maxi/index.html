@@ -118,7 +118,14 @@ html,body{height:100%;margin:0;background:var(--night);color:var(--cream);overfl
 .btn:disabled{opacity:.55}
 .hsnote{font-size:14px!important;margin:0}
 .hsnote:empty{display:none}
-.btn.ghost{background:transparent;border:2px solid var(--cream);color:var(--cream);font-size:18px;padding:10px 14px}
+.btn.ghost{background:rgba(20,26,36,.88);border:2px solid var(--cream);color:var(--cream);font-size:18px;padding:10px 14px}
+.levels{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.lvl{min-width:0;font:700 16px var(--f-ui);letter-spacing:.02em;padding:11px 6px;border-radius:10px;border:2px solid var(--cream);background:rgba(20,26,36,.88);color:var(--cream);cursor:pointer;display:grid;gap:1px;line-height:1.15}
+.lvl .k{font-size:11px;letter-spacing:.14em;text-transform:uppercase;opacity:.75}
+.lvl .n{font-size:17px}
+.lvl.locked{border-color:rgba(243,230,196,.4);color:rgba(243,230,196,.62)}
+.lvl:focus-visible{outline:3px solid var(--copper);outline-offset:2px}
+.lvlhint:empty{display:none}
 .rankline{font:600 15px var(--f-ui);letter-spacing:.04em;color:var(--ink);opacity:.8}
 .promorank{font:400 27px/1.1 var(--f-display);color:var(--hop);overflow-wrap:anywhere;hyphens:auto}
 .promocard p{font-size:16px}
@@ -158,8 +165,11 @@ html,body{height:100%;margin:0;background:var(--night);color:var(--cream);overfl
   </div>
   <div class="startbox">
     <button class="btn" id="playBtn" type="button">Prost, los geht's</button>
-    <button class="btn ghost" id="play2Btn" type="button">Level 2: Am Fließband</button>
-    <button class="btn ghost" id="play3Btn" type="button">Level 3: Im Sudhaus</button>
+    <div class="levels" role="group" aria-label="Weitere Level">
+      <button class="lvl" id="play2Btn" type="button"><span class="k">Level 2</span><span class="n">Fließband</span></button>
+      <button class="lvl" id="play3Btn" type="button"><span class="k">Level 3</span><span class="n">Sudhaus</span></button>
+    </div>
+    <p class="hint lvlhint" id="lvlHint" aria-live="polite"></p>
     <button class="btn ghost" id="boardBtn" type="button" data-board hidden>Bestenliste</button>
     <p class="hint" id="bestStart"></p>
     <nav class="legal" aria-label="Rechtliches"><button type="button" data-legal="imp">Impressum</button><button type="button" data-legal="priv">Datenschutz</button></nav>
@@ -1718,13 +1728,25 @@ let rank = 0, promoTarget = 2;
 try { rank = Math.max(0, Math.min(RANKS.length - 1, +localStorage.getItem('ftb-rank') || 0)); } catch(e) {}
 function saveRank(){ try { localStorage.setItem('ftb-rank', rank); } catch(e) {} }
 function updateMenu(){
-  $('rankLine').textContent = 'Stufe: ' + RANKS[rank].t;
-  const b = $('play2Btn'), locked = rank < 1;
-  b.disabled = locked;
-  b.textContent = locked ? `🔒 Level 2 ab ${RANKS[1].t} (${RANKS[1].pts} Punkte in Level 1)` : 'Level 2: Am Fließband';
-  const b3 = $('play3Btn'), locked3 = rank < 2;
-  b3.disabled = locked3;
-  b3.textContent = locked3 ? `🔒 Level 3 ab ${RANKS[2].t} (${RANKS[2].pts} Punkte)` : 'Level 3: Im Sudhaus';
+  const all = typeof UNLOCK_ALL !== 'undefined' && UNLOCK_ALL;
+  $('rankLine').textContent = 'Stufe: ' + RANKS[rank].t + (all ? ' · Testversion: alle Level offen' : '');
+  const set = (id, lv, name, needRank) => {
+    const b = $(id), locked = !all && rank < needRank;
+    b.classList.toggle('locked', locked); b.setAttribute('aria-disabled', locked ? 'true' : 'false');
+    const k = document.createElement('span'), n = document.createElement('span');
+    k.className = 'k'; k.textContent = `Level ${lv}`; n.className = 'n'; n.textContent = (locked ? '🔒 ' : '') + name;
+    b.replaceChildren(k, n);
+  };
+  set('play2Btn', 2, 'Fließband', 1); set('play3Btn', 3, 'Sudhaus', 2);
+  $('lvlHint').textContent = '';
+}
+function tryLevel(lv){
+  const all = typeof UNLOCK_ALL !== 'undefined' && UNLOCK_ALL, need = lv - 1;
+  if (!all && rank < need){
+    $('lvlHint').textContent = `Level ${lv} gibt es ab ${RANKS[need].t}: ${RANKS[need].pts} Punkte in einer Runde.`;
+    beep(220, .12, 'square', .05); return;
+  }
+  if (lv === 3) start3(); else start2();
 }
 function checkPromo(){
   if (state !== 'play' || rank >= RANKS.length - 1) return;
@@ -2067,9 +2089,9 @@ function drawIntro3(g){
     finger(r.x + r.w/2, r.y + 34);
   }
 }
-$('playBtn').onclick = () => start(); $('play2Btn').onclick = () => start2();
+$('playBtn').onclick = () => start(); $('play2Btn').onclick = () => tryLevel(2);
 $('againBtn').onclick = () => stage === 3 ? start3() : stage === 2 ? start2() : start();
-$('play3Btn').onclick = () => start3();
+$('play3Btn').onclick = () => tryLevel(3);
 $('menuBtn').onclick = toTitle;
 // Impressum und Datenschutz
 let legalFrom = null;
