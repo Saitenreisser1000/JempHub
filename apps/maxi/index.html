@@ -232,6 +232,9 @@ const P = { x: W/2, vx: 0, count: 0, extra: 0, walk: 0, emptyT: 0, trip: 0, trip
 let nanas = [], nanaT = 5;
 let caught = 0, forceRed = false, introKind = null, introT = 0;
 const unlocked = { red: false, nana: false, move: false, catch: false, stork: false }, seen = { red: false, nana: false, move: false, catch: false, stork: false };
+// Erklärungen nur beim allerersten Mal: gesehene Einführungen merkt sich das Gerät
+try { Object.assign(seen, JSON.parse(localStorage.getItem('ftb-seen') || '{}')); } catch(e) {}
+function saveSeen(){ try { localStorage.setItem('ftb-seen', JSON.stringify(seen)); } catch(e) {} }
 let introTarget = null;
 const INTRO_LEN = { move: 3.6, catch: 2.8, stork: 3.4 }, INTRO_TAP = { move: .4, catch: .7, stork: .7 };
 const UNLOCK_AT = { red: 10, nana: 30, stork: 36 };
@@ -722,8 +725,8 @@ const INTRO = {
 function unlock(kind){
   unlocked[kind] = true;
   if (kind === 'red') forceRed = true; else if (kind === 'nana') nanaT = 1.2;
-  if (seen[kind]) { showToast(INTRO[kind].title + ' ' + INTRO[kind].text); return; }
-  seen[kind] = true; introKind = kind; introT = 0; state = 'intro'; touchX = null;
+  if (seen[kind]) return;
+  seen[kind] = true; saveSeen(); introKind = kind; introT = 0; state = 'intro'; touchX = null;
   $('introTitle').textContent = INTRO[kind].title; $('introText').textContent = INTRO[kind].text;
   $('introGo').style.visibility = 'hidden'; $('intro').hidden = kind === 'move'; $('toast').hidden = true;
   $('introGo').textContent = kind === 'catch' ? 'Tippen zum Weiterspielen' : 'Tippen zum Weiterspielen';
