@@ -616,7 +616,9 @@ function drawBottle(x, y, rot, red){
   ctx.fillStyle = 'rgba(255,255,255,.22)'; ctx.fillRect(-4,0,1.4,19); ctx.fillRect(-1.5,-21,.9,8);
   ctx.restore();
 }
-function drawCrate(cx, topY, count, w=70, h=35){
+function drawCrate(cx, topY, count, w=70, h=35, sty){
+  // sty: andere Kistenfarbe und Aufschrift (Level 2: eine Kiste je Sorte)
+  const cc = sty?.c || C.crate, cd = sty?.d || C.crateDark, cl = sty?.l || C.crateLight;
   // Flaschenhälse in 4 Reihen à 5, hinterste zuerst
   for (let row=3; row>=0; row--) for (let col=0; col<5; col++){
     const i = row*5 + col; if (i >= count) continue;
@@ -628,21 +630,21 @@ function drawCrate(cx, topY, count, w=70, h=35){
   }
   // Kiste nach Art einer Freistädter-Mehrwegkiste: grüner Kunststoff, Eckpfeiler, Griffmulden, Rippen, helles Logofeld
   const x0 = cx - w/2, k = w/70;
-  ctx.fillStyle = C.crate; rr(x0, topY, w, h, 4*k); ctx.fill();
-  ctx.fillStyle = C.crateLight; ctx.fillRect(x0 + 2*k, topY, w - 4*k, 2.5*k);
-  ctx.fillStyle = C.crateDark;
+  ctx.fillStyle = cc; rr(x0, topY, w, h, 4*k); ctx.fill();
+  ctx.fillStyle = cl; ctx.fillRect(x0 + 2*k, topY, w - 4*k, 2.5*k);
+  ctx.fillStyle = cd;
   ctx.fillRect(x0, topY + 3*k, 6*k, h - 3*k); ctx.fillRect(x0 + w - 6*k, topY + 3*k, 6*k, h - 3*k);
   ctx.fillRect(x0 + 2*k, topY + h - 4*k, w - 4*k, 4*k);
   for (let rx = x0 + 9*k; rx < x0 + w - 9*k; rx += 6*k) ctx.fillRect(rx, topY + 5*k, 1.2*k, h - 10*k);
   // Griffmulden in den Eckpfeilern
-  ctx.fillStyle = '#0a2f18'; rr(x0 + 1.5*k, topY + 5*k, 3*k, 8*k, 1.5*k); ctx.fill(); rr(x0 + w - 4.5*k, topY + 5*k, 3*k, 8*k, 1.5*k); ctx.fill();
+  ctx.fillStyle = sty?.g || '#0a2f18'; rr(x0 + 1.5*k, topY + 5*k, 3*k, 8*k, 1.5*k); ctx.fill(); rr(x0 + w - 4.5*k, topY + 5*k, 3*k, 8*k, 1.5*k); ctx.fill();
   // Logofeld mit Schriftzug in Schreibschrift
   const pw = w - 24*k, ph = h - 14*k, px = cx - pw/2, py = topY + 5.5*k;
-  ctx.fillStyle = C.crate; rr(px, py, pw, ph, 3*k); ctx.fill();
-  ctx.strokeStyle = C.crateLight; ctx.lineWidth = 1.2*k; ctx.stroke();
-  ctx.fillStyle = '#ffffff'; ctx.font = `italic 700 ${10*k}px Georgia, "Times New Roman", serif`; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
-  ctx.fillText('Freetown', cx, py + ph/2 + .5*k);
-  ctx.fillStyle = C.labelR; ctx.fillRect(cx - 4*k, py + ph - 3*k, 8*k, 1.6*k);
+  ctx.fillStyle = cc; rr(px, py, pw, ph, 3*k); ctx.fill();
+  ctx.strokeStyle = cl; ctx.lineWidth = 1.2*k; ctx.stroke();
+  ctx.fillStyle = sty?.t || '#ffffff'; ctx.font = `italic 700 ${10*k}px Georgia, "Times New Roman", serif`; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+  ctx.fillText(sty?.label || 'Freetown', cx, py + ph/2 + .5*k);
+  ctx.fillStyle = sty?.s || C.labelR; ctx.fillRect(cx - 4*k, py + ph - 3*k, 8*k, 1.6*k);
 }
 function drawBanana(x, y, rot, onGround){
   // Bananenschale: in der Luft hängen die Lappen nach unten, am Boden liegen sie flach
@@ -1471,6 +1473,12 @@ let stage = 1, best2 = 0;
 try { best2 = +localStorage.getItem('ftb-best2') || 0; } catch(e) {}
 const L2BIN = ['ft', 'krone', 'radler'];               // Weiche: 0 links, 1 unten, 2 rechts
 const L2NAME = { ft: 'Freetown', krone: 'Krone', radler: 'Radler' };
+// je Sorte eine eigene Kiste: grün (Freetown), rot mit Gold (Krone), gelb (Radler)
+const L2CRATE = {
+  ft: null,
+  krone: { c: '#a3302a', d: '#7a1f1a', l: '#cf5a4c', g: '#3e0f0b', t: '#f2cf66', s: '#e6b84a', label: 'Krone' },
+  radler: { c: '#e2b62c', d: '#b8901a', l: '#f5d965', g: '#5c4610', t: '#24521f', s: '#2f6b2a', label: 'Radler' }
+};
 const L2 = { sw: 1, swA: Math.PI/2, items: [], spawnT: 0, sorted: 0, jamT: 0, leverT: 0, types: 2, caps: false, pump: 0, belt: 0 };
 const down2 = new Set();
 let bg2 = document.createElement('canvas');
@@ -1661,15 +1669,15 @@ function beltStripes(x, y, w, h, vertical, off){
 }
 function drawBin(x, y, t, closed, sx, sy){
   // Kiste unter dem Bandende, Sortenschild darüber oder daneben
-  drawCrate(x, y, 0, 58, 30);
+  drawCrate(x, y, 0, 58, 30, L2CRATE[t]);
   sx = sx ?? x; sy = sy ?? y - 74; x = sx;
-  ctx.fillStyle = closed ? '#8a8f96' : '#fbf6ea'; rr(x - 30, sy - 16, 60, 34, 6); ctx.fill();
+  ctx.fillStyle = closed ? '#8a8f96' : '#fbf6ea'; rr(x - 36, sy - 16, 76, 34, 6); ctx.fill();
   ctx.strokeStyle = '#2f5d3a'; ctx.lineWidth = 2; ctx.stroke();
   if (closed){
     ctx.fillStyle = '#20232a'; ctx.font = '700 13px "Barlow Condensed", sans-serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillText('BALD', x, sy + 1);
   } else {
-    drawBottle2(t, x - 15, sy + 4, .62);
-    ctx.fillStyle = '#20232a'; ctx.font = '700 12px "Barlow Condensed", sans-serif'; ctx.textAlign = 'left'; ctx.textBaseline = 'middle'; ctx.fillText(L2NAME[t].toUpperCase(), x - 7, sy + 1);
+    drawBottle2(t, x - 23, sy + 4, .62);
+    ctx.fillStyle = '#20232a'; ctx.font = '700 12px "Barlow Condensed", sans-serif'; ctx.textAlign = 'left'; ctx.textBaseline = 'middle'; ctx.fillText(L2NAME[t].toUpperCase(), x - 14, sy + 1);
   }
 }
 function drawLever(x, base){
