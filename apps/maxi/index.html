@@ -232,6 +232,8 @@ html,body{height:100%;margin:0;background:var(--night);color:var(--cream);overfl
   <div class="label">
     <h2>Pause</h2>
     <button class="btn" id="resumeBtn" type="button">Weiter</button>
+    <button class="btn sec" id="pauseMenuBtn" type="button">Zum Titel</button>
+    <p class="hsnote">Die Runde endet, Rekord und Stufe bleiben erhalten.</p>
   </div>
 </div>
 
@@ -1809,9 +1811,19 @@ function drawRankStars(){
 }
 $('promoStay').onclick = () => promoContinue(false);
 $('promoGo').onclick = () => promoContinue(true);
+function quitToTitle(){
+  // Runde beenden: erreichte Punkte zählen für den Rekord des jeweiligen Levels
+  const key = ['', 'ftb-best', 'ftb-best2', 'ftb-best3'][stage];
+  if (stage === 1 && score > best) best = score;
+  if (stage === 2 && score > best2) best2 = score;
+  if (stage === 3 && score > best3) best3 = score;
+  try { localStorage.setItem(key, [0, best, best2, best3][stage]); } catch(e) {}
+  try { wake?.release(); } catch(e) {}
+  toTitle();
+}
 function toTitle(){
   stage = 1; P.noCrate = false; P.slim = false; state = 'menu';
-  ['over','paused','hud','board','legalBox'].forEach(id => $(id).hidden = true); $('intro').hidden = true;
+  ['over','paused','hud','board','legalBox','promo','toast'].forEach(id => $(id).hidden = true); $('intro').hidden = true;
   $('start').hidden = false; updateMenu(); $('bestStart').textContent = best ? `Dein Rekord: ${best} Punkte` : 'Steuerung: Finger auflegen und nach links oder rechts ziehen.';
 }
 /* ================= Level 3: Im Sudhaus =================
@@ -2116,6 +2128,7 @@ $('playBtn').onclick = () => start(); $('play2Btn').onclick = () => tryLevel(2);
 $('againBtn').onclick = () => stage === 3 ? start3() : stage === 2 ? start2() : start();
 $('play3Btn').onclick = () => tryLevel(3);
 $('menuBtn').onclick = toTitle;
+$('pauseMenuBtn').onclick = quitToTitle;
 // Impressum und Datenschutz
 let legalFrom = null;
 function openLegal(which, from){ legalFrom = from; $(from).hidden = true; $('legalBox').hidden = false;
