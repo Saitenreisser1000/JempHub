@@ -1899,7 +1899,9 @@ function newBrew(){
 function curStep(){ return L3.steps[L3.stepI]; }
 function startStep(){
   const st = curStep(), items = Object.values(st.need).reduce((a, b) => a + b, 0);
-  L3.have = {}; L3.timerMax = Math.max(3.6, 7.5 - L3.brews*.45) + items*.9; L3.timer = L3.timerMax;
+  // mit jedem Sud weniger Grundzeit und weniger Zeit pro Zutat, damit es trotz größerer Mengen schneller wird
+  const base = Math.max(2.4, 6 - L3.brews*.5), per = Math.max(.42, .9 - L3.brews*.06);
+  L3.have = {}; L3.timerMax = base + items*per; L3.timer = L3.timerMax;
   L3.boilOn = false; L3.boilDone = false; L3.boilAt = st.boil ? L3.timerMax - (.5 + Math.random()*.6) : -1;
 }
 function reset3(){
@@ -1971,6 +1973,7 @@ function stepDone(){
   const bonus = (100 + 50 * L3.brews) * mult; score += bonus; L3.doneT = 1.6; L3.liquid = '#cfe3f0';
   floatText(W/2, g.ky - 140, `Sud fertig! +${bonus}`, C.gold); sCash(); setMood('proud', 1.6); updateHud();
   if (!L3.boilUnlocked && L3.brews >= 2) L3.boilUnlocked = true;
+  if (L3.brews >= 2) setTimeout(() => { if (stage === 3 && state === 'play') floatText(W/2, geo3().ky + 110, 'Schneller!', '#ff9a6a'); }, 700);
   if (!L3.karamell && L3.brews >= 4){ L3.karamell = true; newBrew(); unlock('l3karamell'); return; }
   newBrew();
 }
