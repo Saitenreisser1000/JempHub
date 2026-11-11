@@ -142,7 +142,7 @@ html,body{height:100%;margin:0;background:var(--night);color:var(--cream);overfl
 .ranknote:empty{display:none}
 .promorank{font:400 27px/1.1 var(--f-display);color:var(--hop);overflow-wrap:anywhere;hyphens:auto}
 .promocard p{font-size:16px}
-/* Startbild: praehortus studios (lat. prae hortus, „vor dem Garten“): Gartentor mit Keimling */
+/* Startbild: on praehortus studios (lat. prae hortus, „vor dem Garten“): Gartentor mit Keimling */
 .splash{position:fixed;inset:0;z-index:30;display:grid;place-content:center;justify-items:center;gap:6px;background:radial-gradient(circle at 50% 42%,#22352a 0%,#141c17 62%);color:#f3e6c4;transition:opacity .55s ease;cursor:pointer}
 .splash.out{opacity:0;pointer-events:none}
 .ph-logo{width:140px;height:140px;margin-bottom:10px;overflow:visible}
@@ -157,6 +157,7 @@ html,body{height:100%;margin:0;background:var(--night);color:var(--cream);overfl
 .ph-l2{fill:#a6dc72;stroke:#a6dc72}
 .ph-sun{fill:#e6b84a;stroke:none;opacity:0;animation:phFade .4s ease-out 1.5s forwards}
 .ph-word{font:600 40px/1 "Barlow Condensed","Arial Narrow",sans-serif;letter-spacing:.06em;opacity:0;transform:translateY(8px);animation:phUp .6s ease-out 1.2s forwards}
+.ph-on{font-weight:400;color:#e6b84a}
 .ph-sub{font:600 14px/1 "Barlow Condensed","Arial Narrow",sans-serif;letter-spacing:.62em;padding-left:.62em;text-transform:uppercase;color:#e6b84a;opacity:0;animation:phFade .6s ease-out 1.5s forwards}
 @keyframes phDraw{to{stroke-dashoffset:0}}
 @keyframes phFade{to{opacity:1}}
@@ -178,7 +179,7 @@ html,body{height:100%;margin:0;background:var(--night);color:var(--cream);overfl
 <body>
 <canvas id="c" aria-label="Spielfeld"></canvas>
 
-<div class="splash" id="splash" role="img" aria-label="praehortus studios">
+<div class="splash" id="splash" role="img" aria-label="on praehortus studios">
   <svg class="ph-logo" viewBox="0 0 120 120" aria-hidden="true">
     <circle class="ph-ring" cx="60" cy="60" r="54"/>
     <path class="ph-fence" d="M21 88V73l3.5-4 3.5 4v15M31 88V69l3.5-4 3.5 4v19M82 88V69l3.5-4 3.5 4v19M92 88V73l3.5-4 3.5 4v15"/>
@@ -191,7 +192,7 @@ html,body{height:100%;margin:0;background:var(--night);color:var(--cream);overfl
     </g>
     <circle class="ph-sun" cx="60" cy="34" r="4"/>
   </svg>
-  <div class="ph-word">praehortus</div>
+  <div class="ph-word"><span class="ph-on">on</span> praehortus</div>
   <div class="ph-sub">studios</div>
 </div>
 
