@@ -105,6 +105,15 @@ html,body{height:100%;margin:0;background:var(--night);color:var(--cream);overfl
 .hslist li::before{content:counter(r) ".";font-weight:700;color:var(--hop)}
 .hslist li:nth-child(-n+3)::before{color:var(--crate)}
 .hslist li.me{background:var(--gold)}
+.shopcard{max-height:calc(100% - 16px);overflow-y:auto}
+.taler{font:700 18px var(--f-ui);margin:0 0 10px}
+.shoplist{list-style:none;margin:0 0 12px;padding:0;display:grid;gap:8px;text-align:left}
+.shoplist li{display:grid;grid-template-columns:1fr auto;gap:2px 10px;align-items:center;padding:8px 10px;border-radius:8px;background:rgba(47,93,58,.1)}
+.shoplist b{font:700 17px var(--f-ui)}
+.shoplist .lv{color:var(--crate);letter-spacing:2px;font-size:13px;margin-left:6px}
+.shoplist small{grid-column:1;font:500 13px var(--f-ui);opacity:.8}
+.shoplist button{grid-column:2;grid-row:1 / span 2;font:700 15px var(--f-ui);padding:9px 12px;border-radius:8px;border:0;background:var(--hop);color:#fff;min-width:86px;cursor:pointer}
+.shoplist button:disabled{opacity:.45;cursor:default}
 .hslist .n{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .hslist .n small{display:block;font:500 12px var(--f-ui);opacity:.7;overflow:hidden;text-overflow:ellipsis}
 .hslist .s{font:400 17px var(--f-display)}
@@ -217,12 +226,13 @@ html,body{height:100%;margin:0;background:var(--night);color:var(--cream);overfl
     <div class="ranknote" id="rankLine"></div>
   </div>
   <div class="startbox">
-    <button class="btn" id="playBtn" type="button">Prost, los geht's</button>
+    <button class="btn" id="playBtn" type="button">Level 1: Vor der Brauerei</button>
     <div class="levels" role="group" aria-label="Weitere Level">
       <button class="lvl" id="play2Btn" type="button"><span class="k">Level 2</span><span class="n">Fließband</span></button>
       <button class="lvl" id="play3Btn" type="button"><span class="k">Level 3</span><span class="n">Sudhaus</span></button>
     </div>
     <p class="hint lvlhint" id="lvlHint" aria-live="polite"></p>
+    <button class="btn ghost" id="shopBtn" type="button">Brauerei-Shop</button>
     <button class="btn ghost" id="boardBtn" type="button" data-board hidden>Bestenliste</button>
     <p class="hint" id="bestStart"></p>
     <nav class="legal" aria-label="Rechtliches"><button type="button" data-legal="imp">Impressum</button><button type="button" data-legal="priv">Datenschutz</button></nav>
@@ -239,7 +249,7 @@ html,body{height:100%;margin:0;background:var(--night);color:var(--cream);overfl
       <dt>Grundlegende Richtung</dt><dd>Unterhaltung, ohne Inhalte zur Beeinflussung der öffentlichen Meinung</dd>
     </dl>
     <h3 id="privTitle">Datenschutz</h3>
-    <p>Das Spiel läuft vollständig in deinem Browser. Es gibt kein Konto, keine Cookies und keine Statistik- oder Werbedienste. Dein Rekord wird nur lokal auf deinem Gerät gespeichert.</p>
+    <p>Das Spiel läuft vollständig in deinem Browser. Es gibt kein Konto, keine Cookies und keine Statistik- oder Werbedienste. Rekord, Stufe, Brauereitaler und Shop-Käufe werden nur lokal auf deinem Gerät gespeichert.</p>
     <p>Trägst du dich in die Bestenliste ein, werden der gewählte Name, Punkte, Kisten, Level, Stufe und der Zeitpunkt auf unserem eigenen Server gespeichert und öffentlich in der Bestenliste gezeigt. Nimm deshalb lieber einen Spitznamen. Einträge löschen wir auf Anfrage an office@jemphub.com.</p>
     <p>Beim Aufruf verarbeitet der Webserver technisch notwendige Daten wie die IP-Adresse. Die Schriften werden von Google Fonts geladen; dabei wird deine IP-Adresse an Google übertragen.</p>
     <button class="btn" id="legalClose" type="button">Zurück</button>
@@ -253,6 +263,17 @@ html,body{height:100%;margin:0;background:var(--night);color:var(--cream);overfl
     <ol class="hslist" id="hsList"></ol>
     <p class="hsmsg" id="hsMsg"></p>
     <button class="btn" id="boardClose" type="button">Zurück</button>
+  </div>
+</div>
+
+<div class="overlay" id="shop" hidden>
+  <div class="label shopcard" role="dialog" aria-modal="true" aria-labelledby="shopTitle">
+    <div class="brand">Freetown Brewery</div>
+    <h2 id="shopTitle">Brauerei-Shop</h2>
+    <p class="taler" id="shopTaler"></p>
+    <ul class="shoplist" id="shopList"></ul>
+    <p class="hsnote">Brauereitaler gibt es am Ende jeder Runde: 1 Taler je 100 Punkte.</p>
+    <button class="btn" id="shopClose" type="button">Zurück</button>
   </div>
 </div>
 
@@ -283,6 +304,7 @@ html,body{height:100%;margin:0;background:var(--night);color:var(--cream);overfl
     <h2 id="overTitle">Zu viel Bruch!</h2>
     <div class="big" id="finalScore">0</div>
     <p id="finalInfo"></p>
+    <p class="hsnote" id="talerInfo"></p>
     <div class="hsentry" id="hsEntry" hidden>
       <label for="hsName">Dein Name für die Bestenliste</label>
       <div class="hsrow"><input id="hsName" type="text" maxlength="12" autocomplete="nickname" enterkeyhint="send" placeholder="3 bis 12 Zeichen"><button class="btn hsbtn" id="hsSend" type="button">Eintragen</button></div>
@@ -302,7 +324,47 @@ html,body{height:100%;margin:0;background:var(--night);color:var(--cream);overfl
 const cv = document.getElementById('c'), ctx = cv.getContext('2d');
 const $ = id => document.getElementById(id);
 const W = 400; let H = 700, S = 1, dpr = 1, groundY = 620, OX = 0, XL = 0, XR = 400;
-const CAP = 20, MAXMISS = 5;
+const CAP = 20; let MAXMISS = 5;
+/* Shop: Brauereitaler (1 je 100 Punkte) gegen dauerhafte Verbesserungen, auf dem Gerät gespeichert */
+const SHOP = [
+  { k: 'life',  n: 'Ersatzbier',          d: 'Ein Fehler mehr erlaubt, in allen Levels', p: [40, 100] },
+  { k: 'mult',  n: 'Eingespielt',         d: 'Start mit höherem Multiplikator; nach einem Fehler fällt er nur bis dorthin', p: [60, 150] },
+  { k: 'catch', n: 'Breite Kiste',        d: 'Level 1: Flaschen landen leichter in der Kiste', p: [30, 80] },
+  { k: 'belt',  n: 'Ruhiges Band',        d: 'Level 2: Das Fließband läuft 10 % langsamer', p: [50, 120] },
+  { k: 'time',  n: 'Routinierter Brauer', d: 'Level 3: 15 % mehr Zeit pro Brauschritt', p: [50, 120] }
+];
+let taler = 0, U = { life: 0, mult: 0, catch: 0, belt: 0, time: 0 }, baseMult = 1, roundPaid = false;
+try { taler = Math.max(0, +localStorage.getItem('ftb-taler') || 0); Object.assign(U, JSON.parse(localStorage.getItem('ftb-upg') || '{}')); } catch(e) {}
+function saveShop(){ try { localStorage.setItem('ftb-taler', taler); localStorage.setItem('ftb-upg', JSON.stringify(U)); } catch(e) {} }
+function applyUpg(){
+  // zu Beginn jeder Runde: gekaufte Verbesserungen wirken
+  MAXMISS = 5 + (U.life || 0); baseMult = 1 + (U.mult || 0); mult = baseMult; streak = 0; roundPaid = false; setMultUI(null);
+}
+function catchW(){ return 38 + 6*(U.catch || 0); }
+function earnTaler(){
+  if (roundPaid) return 0; roundPaid = true;
+  const n = Math.floor(score / 100); taler += n; saveShop(); return n;
+}
+function renderShop(){
+  $('shopTaler').textContent = `🪙 ${taler} Brauereitaler`;
+  $('shopList').replaceChildren(...SHOP.map(it => {
+    const li = document.createElement('li'), b = document.createElement('b'), lv = document.createElement('span'), sm = document.createElement('small'), bt = document.createElement('button');
+    const have = U[it.k] || 0, max = it.p.length, price = it.p[have];
+    b.textContent = it.n; lv.className = 'lv'; lv.textContent = '●'.repeat(have) + '○'.repeat(max - have); b.append(lv);
+    sm.textContent = it.d; bt.type = 'button';
+    if (have >= max){ bt.textContent = 'Max.'; bt.disabled = true; }
+    else { bt.textContent = `${price} 🪙`; bt.disabled = taler < price; bt.onclick = () => buy(it); }
+    li.append(b, sm, bt); return li;
+  }));
+}
+function buy(it){
+  const have = U[it.k] || 0, price = it.p[have];
+  if (price == null || taler < price) return;
+  taler -= price; U[it.k] = have + 1; saveShop(); renderShop(); updateShopBtn();
+  try { ac = ac || new (window.AudioContext || window.webkitAudioContext)(); ac.resume(); } catch(e) {}
+  [660, 880, 1320].forEach((f, i) => setTimeout(() => beep(f, .1, 'triangle', .08), i*80));
+}
+function updateShopBtn(){ $('shopBtn').textContent = `Brauerei-Shop · ${taler} 🪙`; }
 const C = {
   skyTop:'#24314a', skyBot:'#c98a52', wall:'#6e3f2c', wallDark:'#56301f', brick:'#7c4733', roof:'#2a2a33',
   stone:'#5d5f66', stoneLight:'#73757d', jacket:'#3f7f3c', jacketDark:'#2e5f2c', pants:'#262b36', beard:'#c8944c',
@@ -320,7 +382,7 @@ const unlocked = { red: false, nana: false, move: false, catch: false, stork: fa
 try { Object.assign(seen, JSON.parse(localStorage.getItem('ftb-seen') || '{}')); } catch(e) {}
 function saveSeen(){ try { localStorage.setItem('ftb-seen', JSON.stringify(seen)); } catch(e) {} }
 let introTarget = null;
-const INTRO_LEN = { move: 3.6, catch: 2.8, stork: 3.4, l2switch: 5, l2radler: 3.6, l2cap: 4.8, l3brew: 5, l3boil: 4.2, l3karamell: 3.6, l3rast: 5, l2broken: 3.6, l2full: 3.6 }, INTRO_TAP = { l3rast: .8, l2broken: .7, l2full: .7, l3brew: .8, l3boil: .6, l3karamell: .7, move: .4, catch: .7, stork: .7, l2switch: .8, l2radler: .7, l2cap: .8 };
+const INTRO_LEN = { move: 3.6, catch: 2.8, stork: 3.4, l2switch: 5, l2radler: 3.6, l2cap: 4.8, l3brew: 5, l3boil: 4.2, l3karamell: 3.6, l3rast: 5, l3rush: 5, l2broken: 3.6, l2full: 3.6 }, INTRO_TAP = { l3rush: 1, l3rast: .8, l2broken: .7, l2full: .7, l3brew: .8, l3boil: .6, l3karamell: .7, move: .4, catch: .7, stork: .7, l2switch: .8, l2radler: .7, l2cap: .8 };
 const UNLOCK_AT = { red: 10, nana: 30, stork: 36 };
 let bottles = [], parts = [], texts = [], score = 0, crates = 0, missed = 0, spawnT = 0, shake = 0, zone = 'left', stack = 0;
 let best = 0; try { best = +localStorage.getItem('ftb-best') || 0; } catch(e) {}
@@ -866,6 +928,7 @@ const INTRO = {
   l3brew: { title: 'Im Sudhaus', text: 'Auf der Tafel stehen Biersorte und was der Sudkessel gerade braucht. Tipp unten auf die richtige Zutat, Maxi wirft sie hinein.' },
   l3boil: { title: 'Der Kessel kocht über!', text: 'Schnell umrühren: Wisch mit dem Finger zweimal im Kreis um den Kessel, damit nichts überläuft.' },
   l3rast: { title: 'Maischrast: Temperatur halten', text: 'Halt den Finger auf den Kessel, dann heizt das Feuer. Loslassen kühlt. Bleib im grünen Bereich, bis die Rast fertig ist.' },
+  l3rush: { title: 'Eilauftrag!', text: 'Der Wirt braucht schnell Nachschub. Nimmst du an, gibt es viele Extrapunkte, aber schaffst du es nicht rechtzeitig, kostet es einen Fehler. Du entscheidest.' },
   l3karamell: { title: 'Neu: Dunkles mit Karamellmalz', text: 'Für das Dunkle braucht der Braumeister Karamellmalz. Jede Biersorte hat ihr eigenes Rezept, schau genau auf die Tafel.' },
   l2switch: { title: 'Am Fließband', text: 'Tipp unten auf ◀ ▼ ▶, um die Weiche zu stellen. Freetown gehört nach links, Krone nach unten.' },
   l2radler: { title: 'Neu: Radler', text: 'Flaschen mit gelbem Etikett kommen jetzt auch. Sie gehören auf das rechte Band.' },
@@ -958,7 +1021,7 @@ function updateForklift(dt){
   } else if (FL.phase === 2){
     if (moveTo(zoneX() - FL.face*FORK, sp, dt)){
       crates++; stack++; const used = mult, pts = 100 * level() * used; score += pts; FL.carry = null;
-      streak = 0; mult = 1; setMultUI(null);
+      streak = 0; mult = baseMult; setMultUI(null);
       if (missed > 0){ missed = 0; floatText(W/2, groundY - 260, 'Bruch zurückgesetzt', '#9fe0a8'); }
       floatText(zoneX(), groundY - 130, used > 1 ? `+${pts} (×${used})` : `+${pts}`, C.gold); sCash();
       if (used > 1) floatText(W/2, groundY - 285, `Multiplikator ×${used} eingelöst!`, C.gold);
@@ -1157,7 +1220,7 @@ function drawSplats(){
 function reset(){
   P.x = W/2; P.vx = 0; P.count = 0; P.extra = 0; P.emptyT = 0; P.trip = 0; nanas = []; nanaT = 5 + Math.random()*3;
   storkOn = false; storkT = 99; poops = []; splats = []; blindT = 0; ST.mode = 'nest'; ST.x = chimneyX(); ST.y = chimneyTop() - 14;
-  streak = 0; mult = 1; setMultUI(null);
+  applyUpg();
   hearts = []; heartT = 14; caught = 0; forceRed = false; unlocked.red = unlocked.nana = false; nanaT = 99;
   bottles = []; parts = []; seedGuests(2); texts = []; score = 0; crates = 0; missed = 0; spawnT = .6; stack = 0; zone = 'right'; FL = null;
   updateHud();
@@ -1287,7 +1350,7 @@ function cleanCatch(){
   }
 }
 function breakStreak(){
-  const had = mult > 1; streak = 0; mult = 1; setMultUI(had ? 'lost' : null);
+  const had = mult > baseMult; streak = 0; mult = baseMult; setMultUI(had ? 'lost' : null);
   if (had) floatText(W/2, groundY - 240, 'Multiplikator weg', '#ff8a6a');
 }
 function updateHud(){
@@ -1324,12 +1387,12 @@ function update(dt){
     b.vy += (b.g || 120)*dt; b.y += b.vy*dt; b.x += b.vx*dt; b.rot += b.spin*dt;
     const bottom = b.y + 18;
     if (b.flicked){ if (b.y > H + 60 || b.x < -60 || b.x > W + 60) bottles.splice(i,1); continue; }
-    if (b.red && !b.bounced && P.trip <= 0 && b.vy > 0 && bottom >= crateTop && bottom <= crateTop + 22 && Math.abs(b.x - P.x) < 38){
+    if (b.red && !b.bounced && P.trip <= 0 && b.vy > 0 && bottom >= crateTop && bottom <= crateTop + 22 && Math.abs(b.x - P.x) < catchW()){
       bottles.splice(i,1); const lost = Math.min(P.count, 5); P.count -= lost; P.emptyT = 0;
       setMood('angry', 1.1); floatText(P.x, crateTop - 50, 'Falsches Bier!', '#ff8a6a'); if (lost) floatText(P.x, crateTop - 26, `−${lost} Flaschen`, '#ff8a6a');
       beep(180, .35, 'sawtooth', .12, .6); shake = .2; continue;
     }
-    if (!b.bounced && P.trip <= 0 && b.vy > 0 && bottom >= crateTop && bottom <= crateTop + 22 && Math.abs(b.x - P.x) < 38){
+    if (!b.bounced && P.trip <= 0 && b.vy > 0 && bottom >= crateTop && bottom <= crateTop + 22 && Math.abs(b.x - P.x) < catchW()){
       if (P.count < CAP){
         P.count++; caught++; bottles.splice(i,1); sClink(); setMood('happy', .45); cleanCatch();
         if (!unlocked.red && caught >= UNLOCK_AT.red) { unlock('red'); return; }
@@ -1459,6 +1522,7 @@ function gameOver(){
     $('overTitle').textContent = 'Zu viel Bruch!';
     $('finalInfo').textContent = `${crates} ${crates === 1 ? 'volle Kiste' : 'volle Kisten'} abgegeben · Rekord ${best}`;
   }
+  const tn = earnTaler(); $('talerInfo').textContent = tn ? `+${tn} Brauereitaler, jetzt ${taler}. Einlösen im Shop auf dem Titelbild.` : '';
   $('boardBtn2').hidden = !HS; $('intro').hidden = true;
   $('over').hidden = false; try { wake?.release(); } catch(e) {}
   hsAfterGame();
@@ -1492,12 +1556,12 @@ function geo2(){
   const J = Math.round(H*0.56), bottom = H - 112;
   return { bx: W/2, top: 176, J, bottom, lx: 40, rx: W - 40, barY: H - 50 };
 }
-function l2Speed(){ return Math.min(170, 66 + L2.sorted*1.6); }
+function l2Speed(){ return Math.min(170, 66 + L2.sorted*1.6) * (1 - .1*(U.belt || 0)); }
 function reset2(){
   L2.sw = 1; L2.swA = Math.PI/2; L2.items = []; L2.spawnT = .6; L2.sorted = 0; L2.jamT = 0; L2.leverT = 0;
   L2.types = 2; L2.caps = false; L2.broken = false; L2.pump = 0; L2.belt = 0; L2.fill = [0, 0, 0];
   parts = []; texts = []; score = 0; crates = 0; missed = 0; shake = 0;
-  streak = 0; mult = 1; setMultUI(null); setMood('idle', 0);
+  applyUpg(); setMood('idle', 0);
   P.trip = 0; P.count = 0; P.extra = 0; P.vx = 0; P.noCrate = true;
   updateHud();
 }
@@ -1924,12 +1988,18 @@ function quitToTitle(){
   if (stage === 3 && score > best3) best3 = score;
   try { localStorage.setItem(key, [0, best, best2, best3][stage]); } catch(e) {}
   try { wake?.release(); } catch(e) {}
+  earnTaler();
   toTitle();
+}
+function showRecords(){
+  // Rekorde je Level; die Steuerung erklärt jedes Level beim ersten Spielen selbst
+  const r = [best, best2, best3].map((v, i) => v ? `L${i + 1}: ${v.toLocaleString('de-DE')}` : '').filter(Boolean);
+  $('bestStart').textContent = r.length ? 'Deine Rekorde · ' + r.join(' · ') : '';
 }
 function toTitle(){
   stage = 1; P.noCrate = false; P.slim = false; state = 'menu';
-  ['over','paused','hud','board','legalBox','promo','toast'].forEach(id => $(id).hidden = true); $('intro').hidden = true;
-  $('start').hidden = false; updateMenu(); $('bestStart').textContent = best ? `Dein Rekord: ${best} Punkte` : 'Steuerung: Finger auflegen und nach links oder rechts ziehen.';
+  ['over','paused','hud','board','legalBox','promo','toast','shop'].forEach(id => $(id).hidden = true); $('intro').hidden = true;
+  $('start').hidden = false; updateMenu(); updateShopBtn(); showRecords();
 }
 /* ================= Level 3: Im Sudhaus =================
    Maxi unterstützt den Brauprozess: Auf der Tafel steht, was der Sudkessel im
@@ -1945,7 +2015,7 @@ const ING = {
   wasser:   { name: 'Wasser' }
 };
 const L3 = { brews: 0, stepI: 0, steps: [], have: {}, timer: 0, timerMax: 8, flying: [], maxiX: 200, boilOn: false, boilT: 0, stirSum: 0, stirId: null, stirA: 0, paddle: null, boilDone: false,
-             boilUnlocked: false, karamell: false, liquid: '#cfe3f0', puffs: [], doneT: 0, beer: null, temp: 50, tv: 0, heat: false, hold: 0, holdNeed: 3, lo: 62, hi: 68 };
+             boilUnlocked: false, karamell: false, liquid: '#cfe3f0', puffs: [], doneT: 0, offer: null, rush: null, offerCool: 0, beer: null, temp: 50, tv: 0, heat: false, hold: 0, holdNeed: 3, lo: 62, hi: 68 };
 // Biersorten: jede hat ihr eigenes Rezept
 const RECIPES = [
   { n: 'Märzen',   mash: { wasser: 1, malz: 3 }, hop: 2, hefe: 1, col: '#e0a63a', rast: 63 },
@@ -1962,7 +2032,7 @@ function geo3(){
 function binRect(k, g){ return { x: 8 + k*(g.bw + g.gap), y: g.binTop, w: g.bw, h: 84 }; }
 function newBrew(){
   const d = L3.brews;
-  const r = d < RECIPES.length ? RECIPES[d] : RECIPES[Math.floor(Math.random()*RECIPES.length)];
+  const r = L3.rush ? L3.rush.beer : d < RECIPES.length ? RECIPES[d] : RECIPES[Math.floor(Math.random()*RECIPES.length)];
   const extra = d >= RECIPES.length ? Math.min(2, Math.floor((d - RECIPES.length)/3) + 1) : 0;
   const mash = { ...r.mash }; if (extra) mash.malz += extra;
   L3.beer = r;
@@ -1987,11 +2057,12 @@ function startStep(){
     L3.timerMax = L3.holdNeed + Math.max(4, 8 - L3.brews*.4); L3.timer = L3.timerMax;
     if (!seen.l3rast) unlock('l3rast');
   }
+  L3.timerMax *= 1 + .15*(U.time || 0); L3.timer = L3.timerMax;
 }
 function reset3(){
-  L3.brews = 0; L3.flying = []; L3.maxiX = 200; L3.heat = false; L3.hold = 0; L3.boilUnlocked = false; L3.karamell = false; L3.liquid = '#cfe3f0'; L3.puffs = []; L3.doneT = 0;
+  L3.brews = 0; L3.flying = []; L3.maxiX = 200; L3.heat = false; L3.hold = 0; L3.offer = null; L3.rush = null; L3.offerCool = 0; L3.boilUnlocked = false; L3.karamell = false; L3.liquid = '#cfe3f0'; L3.puffs = []; L3.doneT = 0;
   parts = []; texts = []; score = 0; crates = 0; missed = 0; shake = 0;
-  streak = 0; mult = 1; setMultUI(null); setMood('idle', 0);
+  applyUpg(); setMood('idle', 0);
   P.trip = 0; P.count = 0; P.extra = 0; P.vx = 0; P.noCrate = true; P.slim = true;
   newBrew(); updateHud();
 }
@@ -2014,6 +2085,7 @@ function throwIng(k){
 }
 function tap3(e){
   const fx = toLogical(e.clientX), fy = e.clientY / S, g = geo3();
+  if (L3.offer){ const R = offerRects(g); if (inR(R.ok, fx, fy)) answerOffer(true); else if (inR(R.no, fx, fy)) answerOffer(false); return; }
   if (L3.boilOn && fy < g.binTop - 16){ stirStart(e, fx, fy); return; }
   if (curStep().rast && fy < g.binTop - 16){ L3.heat = true; return; }
   if (fy >= g.binTop - 16){
@@ -2082,12 +2154,68 @@ function stepDone(){
   floatText(W/2, g.ky - 140, `${L3.beer ? L3.beer.n : 'Sud'} fertig! +${bonus}`, C.gold); sCash(); setMood('proud', 1.6); updateHud();
   if (!L3.boilUnlocked && L3.brews >= 2) L3.boilUnlocked = true;
   if (L3.brews >= 2) setTimeout(() => { if (stage === 3 && state === 'play') floatText(W/2, geo3().ky + 110, 'Schneller!', '#ff9a6a'); }, 700);
+  if (L3.rush && L3.beer === L3.rush.beer){
+    L3.rush.done++;
+    if (L3.rush.done >= L3.rush.n){ const rb = L3.rush.reward * mult; score += rb; L3.rush = null; L3.offerCool = 2;
+      setTimeout(() => { if (stage === 3) floatText(W/2, geo3().ky - 170, `Eilauftrag erfüllt! +${rb}`, C.gold); }, 500); sCash(); updateHud(); }
+  }
   if (!L3.karamell && L3.brews >= 4){ L3.karamell = true; newBrew(); unlock('l3karamell'); return; }
-  newBrew();
+  newBrew(); maybeOffer();
+}
+/* Eilauftrag: der Wirt will schnell mehrere Sude einer Sorte. Annehmen bringt viel, verpassen kostet einen Fehler */
+function maybeOffer(){
+  if (L3.rush || L3.offer || L3.brews < 3) return;
+  if (L3.offerCool > 0){ L3.offerCool--; return; }
+  if (Math.random() > .45) return;
+  const pool = RECIPES.filter(r => L3.karamell || !r.dark), beer = pool[Math.floor(Math.random()*pool.length)], n = 2;
+  const base = Math.max(2.4, 6 - L3.brews*.5), per = Math.max(.42, .9 - L3.brews*.06), tm = 1 + .15*(U.time || 0);
+  const items = [Object.values(beer.mash).reduce((a, b) => a + b, 0), beer.hop, beer.hefe];
+  const est = items.reduce((a, k) => a + (base + k*per)*.85*tm, 0) + Math.min(4, 2.5 + L3.brews*.2) + 3;
+  L3.offer = { beer, n, t: Math.round(n*est + 3), reward: 250 + 60*L3.brews };
+  beep(990, .1, 'triangle', .08); setTimeout(() => beep(1320, .14, 'triangle', .08), 120);
+  if (!seen.l3rush) unlock('l3rush');
+}
+function offerRects(g){
+  const px = 28, pw = W - 56, py = g.ky - 112, ph = 204, bw = (pw - 42)/2;
+  return { px, pw, py, ph, ok: { x: px + 14, y: py + ph - 58, w: bw, h: 44 }, no: { x: px + 28 + bw, y: py + ph - 58, w: bw, h: 44 } };
+}
+function inR(r, x, y){ return x >= r.x && x <= r.x + r.w && y >= r.y && y <= r.y + r.h; }
+function answerOffer(yes){
+  const o = L3.offer; L3.offer = null;
+  if (!yes){ L3.offerCool = 1; beep(330, .08, 'square', .05); return; }
+  L3.rush = { beer: o.beer, n: o.n, done: 0, t: o.t, tMax: o.t, reward: o.reward };
+  newBrew(); setMood('proud', .8); beep(880, .1, 'square', .07);
+  floatText(W/2, geo3().ky - 130, `Los: ${o.n} × ${o.beer.n}!`, C.gold);
+}
+function drawOffer(g, hl){
+  const o = L3.offer; if (!o) return;
+  const R = offerRects(g);
+  ctx.fillStyle = 'rgba(10,14,22,.45)'; ctx.fillRect(XL, 0, XR - XL, H);
+  ctx.fillStyle = '#6b4a2e'; rr(R.px - 5, R.py - 5, R.pw + 10, R.ph + 10, 12); ctx.fill();
+  ctx.fillStyle = '#fbf6ea'; rr(R.px, R.py, R.pw, R.ph, 9); ctx.fill();
+  if (hl){ ctx.strokeStyle = C.gold; ctx.lineWidth = 4; rr(R.px - 5, R.py - 5, R.pw + 10, R.ph + 10, 12); ctx.stroke(); }
+  ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+  ctx.fillStyle = '#9a2a20'; ctx.font = '22px "Alfa Slab One", Georgia, serif'; ctx.fillText('Eilauftrag vom Wirt!', W/2, R.py + 28);
+  ctx.fillStyle = '#20232a'; ctx.font = '700 20px "Barlow Condensed", sans-serif'; ctx.fillText(`${o.n} × ${o.beer.n} in ${o.t} Sekunden`, W/2, R.py + 62);
+  ctx.font = '600 16px "Barlow Condensed", sans-serif'; ctx.fillStyle = '#2f5d3a'; ctx.fillText(`Belohnung: +${o.reward} × Multiplikator`, W/2, R.py + 88);
+  ctx.fillStyle = '#7a3a2a'; ctx.fillText('Nicht geschafft: 1 Fehler', W/2, R.py + 110);
+  for (const [r, t, c] of [[R.ok, 'Annehmen', '#2f5d3a'], [R.no, 'Ablehnen', '#7d848c']]){
+    ctx.fillStyle = c; rr(r.x, r.y, r.w, r.h, 10); ctx.fill();
+    ctx.fillStyle = '#fff'; ctx.font = '700 18px "Barlow Condensed", sans-serif'; ctx.fillText(t, r.x + r.w/2, r.y + r.h/2 + 1);
+  }
+}
+function drawRush(g){
+  const r = L3.rush; if (!r) return;
+  const y = g.boardY + 90, low = r.t < 10, blink = low && Math.floor(tTotal*4) % 2;
+  ctx.fillStyle = blink ? '#c22a22' : low ? '#8f1d17' : 'rgba(20,26,36,.78)'; rr(W/2 - 168, y, 336, 28, 14); ctx.fill();
+  ctx.strokeStyle = C.gold; ctx.lineWidth = 2; ctx.stroke();
+  ctx.fillStyle = C.cream; ctx.font = '700 16px "Barlow Condensed", sans-serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+  ctx.fillText(`⏱ Eilauftrag ${r.beer.n}: ${r.done}/${r.n} · noch ${Math.ceil(Math.max(0, r.t))} s`, W/2, y + 14.5);
 }
 function update3(dt){
   tTotal += dt;
   const g = geo3();
+  if (L3.offer) return; // Entscheidung abwarten, die Zeit steht
   if (L3.doneT > 0) L3.doneT -= dt;
   // Würfe
   for (let i = L3.flying.length-1; i >= 0; i--){ const f = L3.flying[i]; f.t += dt; if (f.t >= f.dur){ L3.flying.splice(i,1); arrive3(f); if (state !== 'play') return; } }
@@ -2106,6 +2234,7 @@ function update3(dt){
     L3.timer -= dt;
     if (L3.timer <= 0){ L3.timer = L3.timerMax; if (fault3('Zu langsam!', g.kx, g.ky - 100)) return; }
   }
+  if (L3.rush){ L3.rush.t -= dt; if (L3.rush.t <= 0){ L3.rush = null; L3.offerCool = 2; if (fault3('Eilauftrag verpasst!', W/2, g.ky - 130)) return; } }
   if (st.rast){
     L3.tv += ((L3.heat ? 16 : -9) - L3.tv) * Math.min(1, dt*3); L3.temp += L3.tv*dt;
     if (L3.temp < 40){ L3.temp = 40; L3.tv = Math.max(0, L3.tv); }
@@ -2293,6 +2422,8 @@ function render3(){
   for (const t of texts){ ctx.globalAlpha = Math.max(0, t.life); ctx.fillStyle = t.c; ctx.font = '22px "Alfa Slab One", Georgia, serif'; ctx.textAlign='center';
     ctx.strokeStyle = 'rgba(0,0,0,.5)'; ctx.lineWidth = 4; ctx.strokeText(t.t, t.x, t.y); ctx.fillText(t.t, t.x, t.y); }
   ctx.globalAlpha = 1;
+  drawRush(g);
+  if (state !== 'intro') drawOffer(g);
   if (state === 'intro') drawIntro3(g);
 }
 function drawIntro3(g){
@@ -2315,6 +2446,9 @@ function drawIntro3(g){
     const press = Math.sin(introT*1.8 + Math.PI/2) < 0;
     if (press){ ctx.fillStyle = 'rgba(255,140,30,.9)'; for (let k=-3;k<=3;k++){ ctx.beginPath(); ctx.ellipse(g.kx + k*18, g.ky + 58, 7, 16, 0, 0, Math.PI*2); ctx.fill(); } }
     finger(g.kx + 10, g.ky - 10, press ? .86 : 1);
+  } else if (introKind === 'l3rush'){
+    drawOffer(g, true); const R = offerRects(g);
+    finger(R.ok.x + R.ok.w/2, R.ok.y + 18, (introT % 1.1) < .15 ? .88 : 1);
   } else if (introKind === 'l3karamell'){
     drawBins(g, 'karamell');
     const k = bins3().indexOf('karamell'), r = binRect(k, g);
@@ -2408,13 +2542,16 @@ async function sendScore(){
 }
 for (const b of document.querySelectorAll('[data-board]')) b.addEventListener('click', () => openBoard(b.closest('.overlay').id));
 $('boardClose').onclick = closeBoard;
+$('shopBtn').onclick = () => { renderShop(); $('start').hidden = true; $('shop').hidden = false; $('shopClose').focus(); };
+$('shopClose').onclick = () => { $('shop').hidden = true; $('start').hidden = false; updateShopBtn(); };
+updateShopBtn();
 $('hsSend').onclick = sendScore;
 $('hsName').addEventListener('keydown', e => { e.stopPropagation(); if (e.key === 'Enter') sendScore(); });
 $('hsName').addEventListener('keyup', e => e.stopPropagation());
 hsInit();
 $('pauseBtn').onclick = togglePause; $('resumeBtn').onclick = togglePause;
 document.addEventListener('visibilitychange', () => { if (document.hidden && state === 'play') togglePause(); });
-$('bestStart').textContent = best ? `Dein Rekord: ${best} Punkte` : 'Steuerung: Finger auflegen und nach links oder rechts ziehen.';
+showRecords();
 updateMenu();
 // Startbild ausblenden: nach kurzer Zeit oder bei Tipp
 { const sp = $('splash'); let gone = false;

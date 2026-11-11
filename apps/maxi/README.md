@@ -54,3 +54,11 @@ Einmalig auf dem Server:
    `ln -s /etc/nginx/sites-available/maxi.conf /etc/nginx/sites-enabled/`
 3. `nginx -t && systemctl reload nginx`
 4. `certbot --nginx -d maxi.jemphub.com`
+
+## Brauerei-Shop
+
+Am Ende jeder Runde (auch beim Abbruch über „Zum Titel“) gibt es 1 Brauereitaler je 100 Punkte. Im Shop auf dem Titelbild kauft man damit dauerhafte Verbesserungen, jeweils in zwei Stufen: Ersatzbier (ein Fehler mehr erlaubt), Eingespielt (Start mit höherem Multiplikator, nach Fehlern fällt er nur bis dorthin), Breite Kiste (Level 1), Ruhiges Band (Level 2, 10 % langsamer), Routinierter Brauer (Level 3, 15 % mehr Zeit pro Schritt). Taler und Käufe speichert das Gerät (`localStorage`: `ftb-taler`, `ftb-upg`).
+
+## Eilaufträge (Level 3)
+
+Ab dem 4. Sud bietet der Wirt manchmal einen Eilauftrag an, etwa „2 × Pils in 45 Sekunden“. Während der Entscheidung steht die Zeit. Annehmen: Die nächsten Sude sind diese Sorte, eine Uhr läuft; geschafft gibt es 250 + 60 × Sude Punkte mal Multiplikator, verpasst kostet es einen Fehler. Ablehnen: weiter wie bisher.
