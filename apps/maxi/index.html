@@ -320,7 +320,7 @@ const unlocked = { red: false, nana: false, move: false, catch: false, stork: fa
 try { Object.assign(seen, JSON.parse(localStorage.getItem('ftb-seen') || '{}')); } catch(e) {}
 function saveSeen(){ try { localStorage.setItem('ftb-seen', JSON.stringify(seen)); } catch(e) {} }
 let introTarget = null;
-const INTRO_LEN = { move: 3.6, catch: 2.8, stork: 3.4, l2switch: 5, l2radler: 3.6, l2cap: 4.8, l3brew: 5, l3boil: 3, l3karamell: 3.6, l3rast: 5, l2broken: 3.6, l2full: 3.6 }, INTRO_TAP = { l3rast: .8, l2broken: .7, l2full: .7, l3brew: .8, l3boil: .6, l3karamell: .7, move: .4, catch: .7, stork: .7, l2switch: .8, l2radler: .7, l2cap: .8 };
+const INTRO_LEN = { move: 3.6, catch: 2.8, stork: 3.4, l2switch: 5, l2radler: 3.6, l2cap: 4.8, l3brew: 5, l3boil: 4.2, l3karamell: 3.6, l3rast: 5, l2broken: 3.6, l2full: 3.6 }, INTRO_TAP = { l3rast: .8, l2broken: .7, l2full: .7, l3brew: .8, l3boil: .6, l3karamell: .7, move: .4, catch: .7, stork: .7, l2switch: .8, l2radler: .7, l2cap: .8 };
 const UNLOCK_AT = { red: 10, nana: 30, stork: 36 };
 let bottles = [], parts = [], texts = [], score = 0, crates = 0, missed = 0, spawnT = 0, shake = 0, zone = 'left', stack = 0;
 let best = 0; try { best = +localStorage.getItem('ftb-best') || 0; } catch(e) {}
@@ -418,9 +418,9 @@ function updateHearts(dt, crateTop){
   }
 }
 cv.addEventListener('pointerdown', e => { if (stage === 3 && state === 'play'){ tap3(e); return; } if (stage === 3 && state !== 'intro') return; if (stage === 2 && state === 'play'){ tap2(e); return; } if (stage === 2 && state !== 'intro') return; if (startRub(e)) return; if (state === 'play' && nearZone(toLogical(e.clientX), e.clientY / S)) { startForklift(); return; } if (state === 'intro'){ if (introT > (INTRO_TAP[introKind] ?? 1.2)) endIntro(); return; } if (tryFlick(e.clientX, e.clientY)) { flickIds.add(e.pointerId); return; } touchX = toLogical(e.clientX); });
-cv.addEventListener('pointermove', e => { if (stage === 3) return; if (stage === 2){ if (state === 'play' && down2.has(e.pointerId)) move2(e); return; } if (RUB.has(e.pointerId)) { moveRub(e); return; } if (flickIds.has(e.pointerId)) { tryFlick(e.clientX, e.clientY); return; } if (touchX !== null || e.pointerType === 'mouse') touchX = toLogical(e.clientX); });
-cv.addEventListener('pointerup', e => { down2.delete(e.pointerId); L3.heat = false; if (RUB.delete(e.pointerId)) return; if (flickIds.delete(e.pointerId)) return; touchX = null; });
-cv.addEventListener('pointercancel', e => { L3.heat = false; RUB.delete(e.pointerId); flickIds.delete(e.pointerId); touchX = null; });
+cv.addEventListener('pointermove', e => { if (stage === 3){ if (state === 'play') stirMove(e); return; } if (stage === 2){ if (state === 'play' && down2.has(e.pointerId)) move2(e); return; } if (RUB.has(e.pointerId)) { moveRub(e); return; } if (flickIds.has(e.pointerId)) { tryFlick(e.clientX, e.clientY); return; } if (touchX !== null || e.pointerType === 'mouse') touchX = toLogical(e.clientX); });
+cv.addEventListener('pointerup', e => { down2.delete(e.pointerId); L3.heat = false; if (L3.stirId === e.pointerId){ L3.stirId = null; L3.paddle = null; } if (RUB.delete(e.pointerId)) return; if (flickIds.delete(e.pointerId)) return; touchX = null; });
+cv.addEventListener('pointercancel', e => { L3.heat = false; L3.stirId = null; L3.paddle = null; RUB.delete(e.pointerId); flickIds.delete(e.pointerId); touchX = null; });
 addEventListener('keydown', e => { keys[e.key] = true; if (stage === 3 && state === 'play'){ const n = +e.key; if (n >= 1 && n <= bins3().length) throwIng(n - 1); if (e.key === ' ' && L3.boilOn) stir3(); } if (stage === 2 && state === 'play'){ const k = { ArrowLeft: 0, ArrowDown: 1, ArrowRight: 2 }[e.key]; if (k !== undefined) setSwitch(k); } if (e.key === 'Enter' || e.key === ' ') startForklift(); if (e.key === 'p' || e.key === 'Escape') togglePause(); });
 addEventListener('keyup', e => { keys[e.key] = false; });
 
@@ -864,7 +864,7 @@ function drawFill(){
 function level(){ return 1 + Math.floor(crates/2); }
 const INTRO = {
   l3brew: { title: 'Im Sudhaus', text: 'Auf der Tafel stehen Biersorte und was der Sudkessel gerade braucht. Tipp unten auf die richtige Zutat, Maxi wirft sie hinein.' },
-  l3boil: { title: 'Der Kessel kocht über!', text: 'Tipp schnell mehrmals auf den Kessel, damit nichts überläuft.' },
+  l3boil: { title: 'Der Kessel kocht über!', text: 'Schnell umrühren: Wisch mit dem Finger zweimal im Kreis um den Kessel, damit nichts überläuft.' },
   l3rast: { title: 'Maischrast: Temperatur halten', text: 'Halt den Finger auf den Kessel, dann heizt das Feuer. Loslassen kühlt. Bleib im grünen Bereich, bis die Rast fertig ist.' },
   l3karamell: { title: 'Neu: Dunkles mit Karamellmalz', text: 'Für das Dunkle braucht der Braumeister Karamellmalz. Jede Biersorte hat ihr eigenes Rezept, schau genau auf die Tafel.' },
   l2switch: { title: 'Am Fließband', text: 'Tipp unten auf ◀ ▼ ▶, um die Weiche zu stellen. Freetown gehört nach links, Krone nach unten.' },
@@ -1944,7 +1944,7 @@ const ING = {
   hefe:     { name: 'Hefe' },
   wasser:   { name: 'Wasser' }
 };
-const L3 = { brews: 0, stepI: 0, steps: [], have: {}, timer: 0, timerMax: 8, flying: [], maxiX: 200, boilOn: false, boilT: 0, boilTaps: 0, boilDone: false,
+const L3 = { brews: 0, stepI: 0, steps: [], have: {}, timer: 0, timerMax: 8, flying: [], maxiX: 200, boilOn: false, boilT: 0, stirSum: 0, stirId: null, stirA: 0, paddle: null, boilDone: false,
              boilUnlocked: false, karamell: false, liquid: '#cfe3f0', puffs: [], doneT: 0, beer: null, temp: 50, tv: 0, heat: false, hold: 0, holdNeed: 3, lo: 62, hi: 68 };
 // Biersorten: jede hat ihr eigenes Rezept
 const RECIPES = [
@@ -2014,19 +2014,42 @@ function throwIng(k){
 }
 function tap3(e){
   const fx = toLogical(e.clientX), fy = e.clientY / S, g = geo3();
-  if (L3.boilOn && Math.hypot(fx - g.kx, fy - g.ky) < 95){ stir3(); return; }
+  if (L3.boilOn && fy < g.binTop - 16){ stirStart(e, fx, fy); return; }
   if (curStep().rast && fy < g.binTop - 16){ L3.heat = true; return; }
   if (fy >= g.binTop - 16){
     const n = bins3().length;
     for (let k=0;k<n;k++){ const r = binRect(k, g); if (fx >= r.x - g.gap/2 && fx <= r.x + r.w + g.gap/2){ throwIng(k); return; } }
   }
 }
-function stir3(){
-  L3.boilTaps++; beep(300 + L3.boilTaps*80, .05, 'square', .06);
-  for (let k=0;k<4;k++) parts.push({ x: geo3().kx + (Math.random()-.5)*80, y: geo3().ky - 60, vx: (Math.random()-.5)*80, vy: -60 - Math.random()*60, life: .5, c: '#fffaf0', s: 3 + Math.random()*3, round: true });
-  if (L3.boilTaps >= 4){
-    L3.boilOn = false; L3.boilDone = true; const pts = 20 * mult; score += pts; updateHud();
-    floatText(geo3().kx, geo3().ky - 90, `Gerettet! +${pts}`, C.gold); setMood('happy', .6);
+const STIR_TURNS = 2; // so oft im Kreis rühren
+function stirStart(e, fx, fy){
+  const g = geo3(); L3.stirId = e.pointerId; L3.stirA = Math.atan2(fy - (g.ky - 10), fx - g.kx); L3.paddle = { x: fx, y: fy };
+}
+function stirMove(e){
+  if (L3.stirId !== e.pointerId || !L3.boilOn) return;
+  const g = geo3(), fx = toLogical(e.clientX), fy = e.clientY / S, cy = g.ky - 10;
+  L3.paddle = { x: fx, y: fy };
+  if (Math.hypot(fx - g.kx, fy - cy) < 18) return; // zu nah an der Mitte: kein sauberer Winkel
+  const a = Math.atan2(fy - cy, fx - g.kx); let d = a - L3.stirA; L3.stirA = a;
+  if (d > Math.PI) d -= Math.PI*2; else if (d < -Math.PI) d += Math.PI*2;
+  const before = Math.floor(Math.abs(L3.stirSum) / (Math.PI/2));
+  L3.stirSum += d;
+  const q = Math.floor(Math.abs(L3.stirSum) / (Math.PI/2));
+  if (q > before){
+    beep(300 + q*60, .05, 'square', .05);
+    for (let k=0;k<3;k++) parts.push({ x: fx + (Math.random()-.5)*20, y: fy + (Math.random()-.5)*20, vx: (Math.random()-.5)*80, vy: -50 - Math.random()*60, life: .5, c: '#fffaf0', s: 3 + Math.random()*3, round: true });
+  }
+  if (Math.abs(L3.stirSum) >= STIR_TURNS*Math.PI*2) stirDone();
+}
+function stir3(){ // Tastatur: Leertaste rührt eine Vierteldrehung
+  if (!L3.boilOn) return; L3.stirSum = Math.abs(L3.stirSum) + Math.PI/2; beep(400, .05, 'square', .05);
+  if (L3.stirSum >= STIR_TURNS*Math.PI*2) stirDone();
+}
+function stirDone(){
+  const g = geo3();
+  {
+    L3.boilOn = false; L3.boilDone = true; L3.stirId = null; L3.paddle = null; const pts = 20 * mult; score += pts; updateHud();
+    floatText(g.kx, g.ky - 90, `Gerettet! +${pts}`, C.gold); setMood('happy', .6);
   }
 }
 function fault3(msg, x, y){
@@ -2071,7 +2094,7 @@ function update3(dt){
   // Überkochen
   const st = curStep();
   if (!L3.boilOn && !L3.boilDone && L3.boilAt > 0 && L3.timer <= L3.boilAt){
-    L3.boilOn = true; L3.boilT = 3.2; L3.boilTaps = 0; beep(180, .3, 'sawtooth', .07, 1.5);
+    L3.boilOn = true; L3.boilT = 3.6; L3.stirSum = 0; L3.stirId = null; L3.paddle = null; beep(180, .3, 'sawtooth', .07, 1.5);
     if (!seen.l3boil){ unlock('l3boil'); return; }
   }
   if (L3.boilOn){
@@ -2170,15 +2193,28 @@ function drawKettle(g){
   for (const p of L3.puffs){ ctx.fillStyle = `rgba(255,255,255,${Math.max(0, p.life/1.6)*.35})`; ctx.beginPath(); ctx.arc(p.x, p.y, p.r, 0, Math.PI*2); ctx.fill(); }
   // Überkochen: Schaum quillt über den Rand
   if (L3.boilOn){
-    const k = 1 - L3.boilT/3.2, h = 10 + k*60;
+    const k = 1 - L3.boilT/3.6, h = 10 + k*60;
     ctx.fillStyle = '#fffaf0';
     for (let i=-4;i<=4;i++){ ctx.beginPath(); ctx.arc(kx + i*17, ky - 64 + Math.abs(i)*3 - k*10, 10 + k*8 + Math.sin(tTotal*10 + i)*2, 0, Math.PI*2); ctx.fill(); }
     for (const s of [-1, 1]) { ctx.fillRect(kx + s*(r - 6) - 7, ky - 40, 14, h); ctx.beginPath(); ctx.arc(kx + s*(r - 6), ky - 40 + h, 7, 0, Math.PI*2); ctx.fill(); }
     const pulse = (Math.sin(tTotal*12) + 1)/2;
-    ctx.fillStyle = `rgba(194,42,34,${.75 + pulse*.25})`; rr(kx - 70, ky - 128, 140, 28, 8); ctx.fill();
-    ctx.fillStyle = '#fff'; ctx.font = '700 16px "Barlow Condensed", sans-serif'; ctx.fillText(`Schnell tippen! ${4 - L3.boilTaps}×`, kx, ky - 113);
+    ctx.fillStyle = `rgba(194,42,34,${.75 + pulse*.25})`; rr(kx - 108, ky - 128, 216, 28, 8); ctx.fill();
+    ctx.fillStyle = '#fff'; ctx.font = '700 16px "Barlow Condensed", sans-serif'; ctx.fillText('Umrühren! Im Kreis wischen', kx, ky - 113);
+    // Rührkreis mit Fortschritt
+    const cy = ky - 10, pr = Math.min(1, Math.abs(L3.stirSum || 0) / (STIR_TURNS*Math.PI*2));
+    ctx.save(); ctx.setLineDash([7, 7]); ctx.lineDashOffset = -tTotal*30; ctx.strokeStyle = 'rgba(255,255,255,.75)'; ctx.lineWidth = 3;
+    ctx.beginPath(); ctx.arc(kx, cy, 58, 0, Math.PI*2); ctx.stroke(); ctx.restore();
+    ctx.strokeStyle = '#9fe0a8'; ctx.lineWidth = 7; ctx.lineCap = 'round'; ctx.beginPath(); ctx.arc(kx, cy, 58, -Math.PI/2, -Math.PI/2 + pr*Math.PI*2); ctx.stroke(); ctx.lineCap = 'butt';
+    const aa = tTotal*3; ctx.fillStyle = 'rgba(255,255,255,.9)'; ctx.save(); ctx.translate(kx + Math.cos(aa)*58, cy + Math.sin(aa)*58); ctx.rotate(aa + Math.PI/2);
+    ctx.beginPath(); ctx.moveTo(8, 0); ctx.lineTo(-5, -7); ctx.lineTo(-5, 7); ctx.fill(); ctx.restore();
+    // Rührpaddel folgt dem Finger
+    if (L3.paddle) drawPaddle(kx, ky - 66, L3.paddle.x, L3.paddle.y);
   }
   if (L3.doneT > 0){ ctx.globalAlpha = Math.min(1, L3.doneT); ctx.font = '26px "Alfa Slab One", Georgia, serif'; ctx.fillStyle = C.gold; ctx.strokeStyle = 'rgba(0,0,0,.5)'; ctx.lineWidth = 4; ctx.strokeText('Prost!', kx, ky - 4); ctx.fillText('Prost!', kx, ky - 4); ctx.globalAlpha = 1; }
+}
+function drawPaddle(x0, y0, x, y){
+  ctx.strokeStyle = '#8a5a2c'; ctx.lineWidth = 6; ctx.lineCap = 'round'; ctx.beginPath(); ctx.moveTo(x0 + (x - x0)*.35, y0 - 40); ctx.lineTo(x, y); ctx.stroke();
+  ctx.fillStyle = '#b07a40'; ctx.beginPath(); ctx.ellipse(x, y, 9, 15, Math.atan2(y - y0 + 40, x - x0) - Math.PI/2, 0, Math.PI*2); ctx.fill(); ctx.lineCap = 'butt';
 }
 function drawThermo(x, y, w){
   // Temperaturskala 40–90 °C mit grünem Zielbereich und Fortschritt der Rast
@@ -2268,8 +2304,9 @@ function drawIntro3(g){
     finger(r.x + r.w/2, r.y + 34, p < .15 ? .9 : 1);
     if (p > .15 && p < .65){ const k = (p - .15)/.5; drawIng('malz', r.x + r.w/2 + (g.kx - r.x - r.w/2)*k, r.y - 10 + (g.ky - 70 - r.y + 10)*k - Math.sin(k*Math.PI)*90, 1.2); }
   } else if (introKind === 'l3boil'){
-    drawKettle(g);
-    finger(g.kx + 10, g.ky + 6, (introT % .5) < .12 ? .88 : 1);
+    L3.stirSum = (introT * 3) % (STIR_TURNS*Math.PI*2); const a = introT*3 - Math.PI/2, fx = g.kx + Math.cos(a)*58, fy = g.ky - 10 + Math.sin(a)*58;
+    L3.paddle = { x: fx, y: fy }; drawKettle(g); L3.paddle = null;
+    finger(fx - 4, fy - 6);
   } else if (introKind === 'l3rast'){
     L3.temp = (L3.lo + L3.hi)/2 + Math.sin(introT*1.8)*9; L3.hold = Math.min(L3.holdNeed, (introT % 4) * .8);
     drawKettle(g);
