@@ -320,7 +320,7 @@ const unlocked = { red: false, nana: false, move: false, catch: false, stork: fa
 try { Object.assign(seen, JSON.parse(localStorage.getItem('ftb-seen') || '{}')); } catch(e) {}
 function saveSeen(){ try { localStorage.setItem('ftb-seen', JSON.stringify(seen)); } catch(e) {} }
 let introTarget = null;
-const INTRO_LEN = { move: 3.6, catch: 2.8, stork: 3.4, l2switch: 5, l2radler: 3.6, l2cap: 4.8, l3brew: 5, l3boil: 3, l3karamell: 3.6 }, INTRO_TAP = { l3brew: .8, l3boil: .6, l3karamell: .7, move: .4, catch: .7, stork: .7, l2switch: .8, l2radler: .7, l2cap: .8 };
+const INTRO_LEN = { move: 3.6, catch: 2.8, stork: 3.4, l2switch: 5, l2radler: 3.6, l2cap: 4.8, l3brew: 5, l3boil: 3, l3karamell: 3.6, l3rast: 5, l2broken: 3.6, l2full: 3.6 }, INTRO_TAP = { l3rast: .8, l2broken: .7, l2full: .7, l3brew: .8, l3boil: .6, l3karamell: .7, move: .4, catch: .7, stork: .7, l2switch: .8, l2radler: .7, l2cap: .8 };
 const UNLOCK_AT = { red: 10, nana: 30, stork: 36 };
 let bottles = [], parts = [], texts = [], score = 0, crates = 0, missed = 0, spawnT = 0, shake = 0, zone = 'left', stack = 0;
 let best = 0; try { best = +localStorage.getItem('ftb-best') || 0; } catch(e) {}
@@ -419,8 +419,8 @@ function updateHearts(dt, crateTop){
 }
 cv.addEventListener('pointerdown', e => { if (stage === 3 && state === 'play'){ tap3(e); return; } if (stage === 3 && state !== 'intro') return; if (stage === 2 && state === 'play'){ tap2(e); return; } if (stage === 2 && state !== 'intro') return; if (startRub(e)) return; if (state === 'play' && nearZone(toLogical(e.clientX), e.clientY / S)) { startForklift(); return; } if (state === 'intro'){ if (introT > (INTRO_TAP[introKind] ?? 1.2)) endIntro(); return; } if (tryFlick(e.clientX, e.clientY)) { flickIds.add(e.pointerId); return; } touchX = toLogical(e.clientX); });
 cv.addEventListener('pointermove', e => { if (stage === 3) return; if (stage === 2){ if (state === 'play' && down2.has(e.pointerId)) move2(e); return; } if (RUB.has(e.pointerId)) { moveRub(e); return; } if (flickIds.has(e.pointerId)) { tryFlick(e.clientX, e.clientY); return; } if (touchX !== null || e.pointerType === 'mouse') touchX = toLogical(e.clientX); });
-cv.addEventListener('pointerup', e => { down2.delete(e.pointerId); if (RUB.delete(e.pointerId)) return; if (flickIds.delete(e.pointerId)) return; touchX = null; });
-cv.addEventListener('pointercancel', e => { RUB.delete(e.pointerId); flickIds.delete(e.pointerId); touchX = null; });
+cv.addEventListener('pointerup', e => { down2.delete(e.pointerId); L3.heat = false; if (RUB.delete(e.pointerId)) return; if (flickIds.delete(e.pointerId)) return; touchX = null; });
+cv.addEventListener('pointercancel', e => { L3.heat = false; RUB.delete(e.pointerId); flickIds.delete(e.pointerId); touchX = null; });
 addEventListener('keydown', e => { keys[e.key] = true; if (stage === 3 && state === 'play'){ const n = +e.key; if (n >= 1 && n <= bins3().length) throwIng(n - 1); if (e.key === ' ' && L3.boilOn) stir3(); } if (stage === 2 && state === 'play'){ const k = { ArrowLeft: 0, ArrowDown: 1, ArrowRight: 2 }[e.key]; if (k !== undefined) setSwitch(k); } if (e.key === 'Enter' || e.key === ' ') startForklift(); if (e.key === 'p' || e.key === 'Escape') togglePause(); });
 addEventListener('keyup', e => { keys[e.key] = false; });
 
@@ -863,11 +863,14 @@ function drawFill(){
 /* ---------- game logic ---------- */
 function level(){ return 1 + Math.floor(crates/2); }
 const INTRO = {
-  l3brew: { title: 'Im Sudhaus', text: 'Auf der Tafel steht, was der Sudkessel gerade braucht. Tipp unten auf die richtige Zutat, Maxi wirft sie hinein.' },
+  l3brew: { title: 'Im Sudhaus', text: 'Auf der Tafel stehen Biersorte und was der Sudkessel gerade braucht. Tipp unten auf die richtige Zutat, Maxi wirft sie hinein.' },
   l3boil: { title: 'Der Kessel kocht über!', text: 'Tipp schnell mehrmals auf den Kessel, damit nichts überläuft.' },
-  l3karamell: { title: 'Neu: Karamellmalz', text: 'Für dunklere Sude braucht der Braumeister jetzt manchmal Karamellmalz. Schau genau auf die Tafel.' },
+  l3rast: { title: 'Maischrast: Temperatur halten', text: 'Halt den Finger auf den Kessel, dann heizt das Feuer. Loslassen kühlt. Bleib im grünen Bereich, bis die Rast fertig ist.' },
+  l3karamell: { title: 'Neu: Dunkles mit Karamellmalz', text: 'Für das Dunkle braucht der Braumeister Karamellmalz. Jede Biersorte hat ihr eigenes Rezept, schau genau auf die Tafel.' },
   l2switch: { title: 'Am Fließband', text: 'Tipp unten auf ◀ ▼ ▶, um die Weiche zu stellen. Freetown gehört nach links, Krone nach unten.' },
   l2radler: { title: 'Neu: Radler', text: 'Flaschen mit gelbem Etikett kommen jetzt auch. Sie gehören auf das rechte Band.' },
+  l2broken: { title: 'Kaputte Flaschen!', text: 'Flaschen mit Sprung im Glas dürfen nicht in die Kiste. Tipp sie an, dann landen sie im Ausschuss.' },
+  l2full: { title: 'Kiste voll!', text: 'Jede Kiste fasst 10 Flaschen. Tipp auf eine volle Kiste, dann gibt es eine leere und Bonuspunkte. In eine volle Kiste passt nichts mehr.' },
   l2cap: { title: 'Lose Kronkorken!', text: 'Kronkorken auf dem Band verklemmen die Weiche. Tipp sie an, dann fliegen sie weg.' },
   stork: { title: 'Achtung, Storch!', text: 'Den Storchen-Gruß nicht auffangen, sonst ist die Sicht verschmiert. Rubbel mit dem Finger über den Storch, dann fliegt er weg.' },
   catch: { title: 'Fang die Flasche!', text: 'Lauf mit Maxi darunter, damit sie in die Kiste fällt.' },
@@ -884,7 +887,7 @@ function unlock(kind){
   $('introGo').style.visibility = 'hidden'; $('intro').hidden = kind === 'move'; $('toast').hidden = true;
   $('introGo').textContent = kind === 'catch' ? 'Tippen zum Weiterspielen' : 'Tippen zum Weiterspielen';
 }
-function endIntro(){ if (state !== 'intro') return; if (introKind === 'l2switch') L2.sw = 1; state = 'play'; introKind = null; introTarget = null; $('intro').hidden = true; spawnT = Math.min(spawnT, .4); }
+function endIntro(){ if (state !== 'intro') return; if (introKind === 'l2switch') L2.sw = 1; if (introKind === 'l3rast'){ L3.temp = L3.lo - 14; L3.hold = 0; L3.heat = false; } state = 'play'; introKind = null; introTarget = null; $('intro').hidden = true; spawnT = Math.min(spawnT, .4); }
 function drawIntro(){
   if (introKind === 'stork' && introTarget){
     const p = introTarget, pr = (Math.sin(introT*8)+1)/2;
@@ -1479,7 +1482,9 @@ const L2CRATE = {
   krone: { c: '#a3302a', d: '#7a1f1a', l: '#cf5a4c', g: '#3e0f0b', t: '#f2cf66', s: '#e6b84a', label: 'Krone' },
   radler: { c: '#e2b62c', d: '#b8901a', l: '#f5d965', g: '#5c4610', t: '#24521f', s: '#2f6b2a', label: 'Radler' }
 };
-const L2 = { sw: 1, swA: Math.PI/2, items: [], spawnT: 0, sorted: 0, jamT: 0, leverT: 0, types: 2, caps: false, pump: 0, belt: 0 };
+const L2 = { sw: 1, swA: Math.PI/2, items: [], spawnT: 0, sorted: 0, jamT: 0, leverT: 0, types: 2, caps: false, broken: false, pump: 0, belt: 0, fill: [0, 0, 0] };
+const L2CAP = 10; // Flaschen pro Kiste
+function crate2(bin, g){ return bin === 0 ? { x: g.lx, y: g.J + 26 } : bin === 2 ? { x: g.rx, y: g.J + 26 } : { x: g.bx, y: g.bottom + 12 }; }
 const down2 = new Set();
 let bg2 = document.createElement('canvas');
 
@@ -1490,7 +1495,7 @@ function geo2(){
 function l2Speed(){ return Math.min(170, 66 + L2.sorted*1.6); }
 function reset2(){
   L2.sw = 1; L2.swA = Math.PI/2; L2.items = []; L2.spawnT = .6; L2.sorted = 0; L2.jamT = 0; L2.leverT = 0;
-  L2.types = 2; L2.caps = false; L2.pump = 0; L2.belt = 0;
+  L2.types = 2; L2.caps = false; L2.broken = false; L2.pump = 0; L2.belt = 0; L2.fill = [0, 0, 0];
   parts = []; texts = []; score = 0; crates = 0; missed = 0; shake = 0;
   streak = 0; mult = 1; setMultUI(null); setMood('idle', 0);
   P.trip = 0; P.count = 0; P.extra = 0; P.vx = 0; P.noCrate = true;
@@ -1524,35 +1529,61 @@ function flickCap(c, fx){
 function tap2(e){
   const fx = toLogical(e.clientX), fy = e.clientY / S;
   const c = capHit(fx, fy); if (c){ flickCap(c, fx); down2.add(e.pointerId); return; }
+  const bk = brokenHit(fx, fy); if (bk){ sortOut(bk); down2.add(e.pointerId); return; }
+  const cb = crateHit(fx, fy, geo2()); if (cb >= 0){ swapCrate(cb, geo2()); return; }
   setSwitch(fx < W/3 ? 0 : fx > W*2/3 ? 2 : 1);
 }
 function move2(e){
   const fx = toLogical(e.clientX), fy = e.clientY / S;
   const c = capHit(fx, fy); if (c) flickCap(c, fx);
+  const bk = brokenHit(fx, fy); if (bk) sortOut(bk);
 }
 function spawn2(g){
   if (L2.caps && Math.random() < .3){
     L2.items.push({ kind: 'cap', x: g.bx + (Math.random()-.5)*22, y: g.top + 4, seg: 'main', rot: Math.random()*6 });
   } else {
     const t = L2BIN[Math.floor(Math.random()*L2.types)];
-    L2.items.push({ kind: 'bottle', t, x: g.bx, y: g.top + 6, seg: 'main' });
+    L2.items.push({ kind: 'bottle', t, x: g.bx, y: g.top + 6, seg: 'main', broken: L2.broken && Math.random() < .2 });
   }
   L2.pump = .35;
 }
 function deliver2(it, bin, g){
-  const bx = bin === 0 ? g.lx : bin === 2 ? g.rx : g.bx, by = bin === 1 ? g.bottom : g.J;
-  if (it.t === L2BIN[bin]){
-    L2.sorted++; crates = L2.sorted;
-    const pts = 20 * (1 + Math.floor(L2.sorted/15)) * mult; score += pts;
-    beep(1700 + Math.random()*300, .07, 'triangle', .1); setMood('happy', .45);
-    floatText(bx, by - 46, `+${pts}`, C.gold); cleanCatch(); updateHud();
-    if (L2.types < 3 && L2.sorted >= 10){ L2.types = 3; unlock('l2radler'); }
-    else if (!L2.caps && L2.sorted >= 20){ L2.caps = true; unlock('l2cap'); }
-  } else {
-    missed++; breakStreak(); setMood('shock', .9); shake = .2; sBreak();
-    burst(bx, by - 12, true); floatText(bx, by - 46, 'Falsches Band!', '#ff8a6a'); updateHud();
-    if (missed >= MAXMISS) gameOver();
-  }
+  const c = crate2(bin, g), bx = Math.max(XL + 62, Math.min(XR - 62, c.x)), by = c.y - 4;
+  const fail = msg => { missed++; breakStreak(); setMood('shock', .9); shake = .2; sBreak();
+    burst(bx, by - 8, true); floatText(bx, by - 40, msg, '#ff8a6a'); updateHud();
+    if (missed >= MAXMISS) gameOver(); };
+  if (it.broken) return fail('Kaputte Flasche!');
+  if (it.t !== L2BIN[bin]) return fail('Falsches Band!');
+  if (L2.fill[bin] >= L2CAP) return fail('Kiste voll!');
+  L2.sorted++; crates = L2.sorted; L2.fill[bin]++;
+  const pts = 20 * (1 + Math.floor(L2.sorted/15)) * mult; score += pts;
+  beep(1700 + Math.random()*300, .07, 'triangle', .1); setMood('happy', .45);
+  floatText(bx, by - 40, `+${pts}`, C.gold); cleanCatch(); updateHud();
+  if (L2.fill[bin] >= L2CAP){ floatText(bx, by - 66, 'Kiste voll!', C.cream); beep(1180, .12, 'square', .06); if (!seen.l2full){ unlock('l2full'); return; } }
+  if (L2.types < 3 && L2.sorted >= 10){ L2.types = 3; unlock('l2radler'); }
+  else if (!L2.broken && L2.sorted >= 18){ L2.broken = true; unlock('l2broken'); }
+  else if (!L2.caps && L2.sorted >= 28){ L2.caps = true; unlock('l2cap'); }
+}
+function brokenHit(fx, fy){
+  let best = null, bd = 30;
+  for (const it of L2.items){ if (it.kind !== 'bottle' || !it.broken || it.flicked) continue; const d = Math.hypot(it.x - fx, it.y - 8 - fy); if (d < bd){ bd = d; best = it; } }
+  return best;
+}
+function sortOut(it){
+  const i = L2.items.indexOf(it); if (i < 0) return; L2.items.splice(i, 1);
+  burst(it.x, it.y - 8, false);
+  const pts = 10 * mult; score += pts; updateHud();
+  floatText(it.x, it.y - 30, `Aussortiert! +${pts}`, C.gold); beep(520, .08, 'triangle', .09, .6);
+}
+function crateHit(fx, fy, g){
+  for (let b=0;b<3;b++){ if (L2.fill[b] < L2CAP) continue; const c = crate2(b, g); if (Math.abs(fx - c.x) < 42 && fy > c.y - 34 && fy < c.y + 34) return b; }
+  return -1;
+}
+function swapCrate(b, g){
+  const c = crate2(b, g); L2.fill[b] = 0;
+  const pts = 50 * mult; score += pts; updateHud(); sCash(); setMood('proud', .8);
+  floatText(Math.max(XL + 80, Math.min(XR - 80, c.x)), c.y - 40, `Neue Kiste! +${pts}`, C.gold);
+  for (let k=0;k<12;k++) parts.push({ x: c.x + (Math.random()-.5)*50, y: c.y + 10, vx: (Math.random()-.5)*160, vy: -60 - Math.random()*140, life: .7, c: k%2 ? C.gold : C.cream, s: 2 + Math.random()*2, round: true });
 }
 function jam2(c, g){
   L2.jamT = 1.1; missed++; breakStreak(); setMood('angry', 1.2); shake = .25;
@@ -1645,6 +1676,17 @@ function drawRadler(x, y, rot){
   ctx.fillStyle = 'rgba(255,255,255,.22)'; ctx.fillRect(-4,0,1.4,19); ctx.fillRect(-1.5,-21,.9,8);
   ctx.restore();
 }
+function drawCrack(x, y, sc){
+  // Sprung im Glas: weiße Zickzack-Linien und ein pulsierender Warnring
+  ctx.save(); ctx.translate(x, y); ctx.scale(sc, sc);
+  const p = (Math.sin(tTotal*8) + 1)/2;
+  ctx.strokeStyle = `rgba(255,96,70,${.45 + p*.45})`; ctx.lineWidth = 2; ctx.beginPath(); ctx.arc(0, 2, 17, 0, Math.PI*2); ctx.stroke();
+  ctx.strokeStyle = '#ffffff'; ctx.lineWidth = 1.3; ctx.lineJoin = 'round';
+  ctx.beginPath(); ctx.moveTo(-5, -3); ctx.lineTo(-1, 2); ctx.lineTo(-3.5, 7); ctx.lineTo(1.5, 12); ctx.lineTo(-.5, 17); ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(-1, 2); ctx.lineTo(4, 5); ctx.moveTo(-3.5, 7); ctx.lineTo(-5.5, 9); ctx.stroke();
+  ctx.fillStyle = '#20140c'; ctx.beginPath(); ctx.moveTo(5.5, -1); ctx.lineTo(2.5, 1.5); ctx.lineTo(5.5, 4); ctx.fill();
+  ctx.restore();
+}
 function drawBottle2(t, x, y, sc){
   ctx.save(); ctx.translate(x, y); ctx.scale(sc, sc);
   if (t === 'radler') drawRadler(0, 0, 0); else drawBottle(0, 0, 0, t === 'krone');
@@ -1667,9 +1709,17 @@ function beltStripes(x, y, w, h, vertical, off){
   else for (let xx = x - step + o; xx < x + w; xx += step) ctx.fillRect(xx, y, 5, h);
   ctx.restore();
 }
-function drawBin(x, y, t, closed, sx, sy){
-  // Kiste unter dem Bandende, Sortenschild darüber oder daneben
-  drawCrate(x, y, 0, 58, 30, L2CRATE[t]);
+function drawBin(x, y, t, closed, sx, sy, fill){
+  // Kiste unter dem Bandende, Sortenschild darüber oder daneben; sie füllt sich sichtbar
+  fill = fill || 0;
+  drawCrate(x, y, Math.round(fill / L2CAP * 20), 58, 30, L2CRATE[t]);
+  if (fill >= L2CAP){
+    const on = Math.floor(tTotal*4) % 2;
+    ctx.strokeStyle = on ? C.gold : '#fff6dc'; ctx.lineWidth = 3; rr(x - 33, y - 18, 66, 52, 8); ctx.stroke();
+    const lx = Math.max(XL + 30, Math.min(XR - 30, x));
+    ctx.fillStyle = on ? '#c22a22' : '#8f1d17'; rr(lx - 27, y + 6, 54, 22, 5); ctx.fill();
+    ctx.fillStyle = '#fff'; ctx.font = '700 11px "Barlow Condensed", sans-serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillText('VOLL!', lx, y + 12); ctx.fillText('tippen', lx, y + 22.5);
+  }
   sx = sx ?? x; sy = sy ?? y - 74; x = sx;
   ctx.fillStyle = closed ? '#8a8f96' : '#fbf6ea'; rr(x - 36, sy - 16, 76, 34, 6); ctx.fill();
   ctx.strokeStyle = '#2f5d3a'; ctx.lineWidth = 2; ctx.stroke();
@@ -1730,9 +1780,9 @@ function render2(){
   ctx.fillStyle = C.gold; ctx.beginPath(); ctx.moveTo(22, 0); ctx.lineTo(6, -12); ctx.lineTo(6, -5); ctx.lineTo(-14, -5); ctx.lineTo(-14, 5); ctx.lineTo(6, 5); ctx.lineTo(6, 12); ctx.closePath(); ctx.fill();
   ctx.restore();
   // Kisten am Bandende
-  drawBin(g.lx, g.J + 26, 'ft', false, g.lx + 6, g.J - 52);
-  drawBin(g.rx, g.J + 26, 'radler', L2.types < 3, g.rx - 6, g.J - 52);
-  drawBin(g.bx, g.bottom + 12, 'krone', false, g.bx + 66, g.bottom + 2);
+  drawBin(g.lx, g.J + 26, 'ft', false, g.lx + 6, g.J - 52, L2.fill[0]);
+  drawBin(g.rx, g.J + 26, 'radler', L2.types < 3, g.rx - 6, g.J - 52, L2.fill[2]);
+  drawBin(g.bx, g.bottom + 12, 'krone', false, g.bx + 66, g.bottom + 2, L2.fill[1]);
   // Verschließmaschine oben
   const pY = g.top - 18 + (L2.pump > 0 ? Math.sin((L2.pump/.35)*Math.PI)*10 : 0);
   ctx.fillStyle = '#7d848c'; ctx.fillRect(g.bx - 6, pY - 30, 12, 30);
@@ -1741,7 +1791,7 @@ function render2(){
   ctx.fillStyle = C.cream; ctx.font = '11px "Alfa Slab One", Georgia, serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillText('FREETOWN', g.bx, g.top - 40);
   ctx.fillStyle = '#c7ccd2'; ctx.fillRect(g.bx - 10, pY - 4, 20, 6);
   // Flaschen und Kronkorken
-  for (const it of L2.items){ if (it.kind === 'bottle') drawBottle2(it.t, it.x, it.y - 10, .95); else drawCap(it.x, it.y, it.rot, 1.5); }
+  for (const it of L2.items){ if (it.kind === 'bottle'){ drawBottle2(it.t, it.x, it.y - 10, .95); if (it.broken) drawCrack(it.x, it.y - 10, .95); } else drawCap(it.x, it.y, it.rot, 1.5); }
   // Maxi am Hebel
   P.noCrate = true; P.slim = true;
   const mb = H - 60, msc = .8;
@@ -1770,6 +1820,15 @@ function drawIntro2(g){
     drawBin(g.rx, g.J + 26, 'radler', false, g.rx - 6, g.J - 52);
     ctx.strokeStyle = C.gold; ctx.lineWidth = 3; rr(g.rx - 44, g.J - 74, 80, 136, 10); ctx.stroke();
     drawBottle2('radler', W/2, g.J - 120, 2.4);
+  } else if (introKind === 'l2broken'){
+    const p = introT % 1.8, cx = W/2, cy = g.top + (g.J - g.top)*.5;
+    if (p < 1.0){ drawBottle2('ft', cx, cy - 28, 2.6); drawCrack(cx, cy - 28, 2.6); }
+    else if (p < 1.06){ burst(cx, cy, false); }
+    finger(cx + 46 - Math.min(1, p/.9)*40, cy + 70 - Math.min(1, p/.9)*50, p > .85 && p < 1 ? .88 : 1);
+  } else if (introKind === 'l2full'){
+    const b = L2.fill.findIndex(f => f >= L2CAP), c = crate2(b < 0 ? 0 : b, g);
+    ctx.strokeStyle = C.gold; ctx.lineWidth = 4; rr(c.x - 40, c.y - 26, 80, 66, 10); ctx.stroke();
+    finger(Math.max(XL + 30, Math.min(XR - 30, c.x + 4)), c.y + 20, (introT % 1.1) < .15 ? .88 : 1);
   } else if (introKind === 'l2cap'){
     const p = introT % 2.4, cx = g.bx, cy = g.top + (g.J - g.top)*.45;
     let x = cx, y = cy, r = 0;
@@ -1886,7 +1945,15 @@ const ING = {
   wasser:   { name: 'Wasser' }
 };
 const L3 = { brews: 0, stepI: 0, steps: [], have: {}, timer: 0, timerMax: 8, flying: [], maxiX: 200, boilOn: false, boilT: 0, boilTaps: 0, boilDone: false,
-             boilUnlocked: false, karamell: false, liquid: '#cfe3f0', puffs: [], doneT: 0 };
+             boilUnlocked: false, karamell: false, liquid: '#cfe3f0', puffs: [], doneT: 0, beer: null, temp: 50, tv: 0, heat: false, hold: 0, holdNeed: 3, lo: 62, hi: 68 };
+// Biersorten: jede hat ihr eigenes Rezept
+const RECIPES = [
+  { n: 'Märzen',   mash: { wasser: 1, malz: 3 }, hop: 2, hefe: 1, col: '#e0a63a', rast: 63 },
+  { n: 'Pils',     mash: { wasser: 1, malz: 2 }, hop: 4, hefe: 1, col: '#f2cf5a', rast: 64 },
+  { n: 'Zwickl',   mash: { wasser: 1, malz: 2 }, hop: 3, hefe: 2, col: '#e8b04a', rast: 66 },
+  { n: 'Festbier', mash: { wasser: 2, malz: 4 }, hop: 2, hefe: 1, col: '#d9952e', rast: 65 },
+  { n: 'Dunkles',  mash: { wasser: 1, malz: 2, karamell: 2 }, hop: 1, hefe: 1, col: '#7a3e18', rast: 68, dark: true }
+];
 function bins3(){ return L3.karamell ? ['malz', 'karamell', 'hopfen', 'hefe', 'wasser'] : ['malz', 'hopfen', 'hefe', 'wasser']; }
 function geo3(){
   const binTop = H - 104, n = bins3().length, gap = 8, bw = (W - 16 - gap*(n-1)) / n;
@@ -1895,13 +1962,14 @@ function geo3(){
 function binRect(k, g){ return { x: 8 + k*(g.bw + g.gap), y: g.binTop, w: g.bw, h: 84 }; }
 function newBrew(){
   const d = L3.brews;
-  const mash = { wasser: 1 + (d >= 3 ? 1 : 0), malz: 2 + Math.min(2, Math.floor(d/2)) };
-  if (L3.karamell && Math.random() < .65) mash.karamell = 1;
-  L3.steps = [
-    { name: 'Einmaischen', need: mash, liquid: '#e8c47a' },
-    { name: 'Würzekochen', need: { hopfen: 2 + Math.min(2, Math.floor(d/3)) }, liquid: '#c98a2e', boil: L3.boilUnlocked },
-    { name: 'Anstellen', need: { hefe: 1 + (d >= 5 ? 1 : 0) }, liquid: '#e0a63a' }
-  ];
+  const r = d < RECIPES.length ? RECIPES[d] : RECIPES[Math.floor(Math.random()*RECIPES.length)];
+  const extra = d >= RECIPES.length ? Math.min(2, Math.floor((d - RECIPES.length)/3) + 1) : 0;
+  const mash = { ...r.mash }; if (extra) mash.malz += extra;
+  L3.beer = r;
+  L3.steps = [{ name: 'Einmaischen', need: mash, liquid: r.dark ? '#9a5a28' : '#e8c47a' }];
+  if (d >= 1) L3.steps.push({ name: 'Maischrast', need: {}, rast: true, liquid: r.dark ? '#8a4c20' : '#e2b866' });
+  L3.steps.push({ name: 'Würzekochen', need: { hopfen: r.hop + (extra > 1 ? 1 : 0) }, liquid: r.dark ? '#6a3414' : '#c98a2e', boil: L3.boilUnlocked });
+  L3.steps.push({ name: 'Anstellen', need: { hefe: r.hefe }, liquid: r.col });
   L3.stepI = 0; startStep();
 }
 function curStep(){ return L3.steps[L3.stepI]; }
@@ -1911,9 +1979,17 @@ function startStep(){
   const base = Math.max(2.4, 6 - L3.brews*.5), per = Math.max(.42, .9 - L3.brews*.06);
   L3.have = {}; L3.timerMax = base + items*per; L3.timer = L3.timerMax;
   L3.boilOn = false; L3.boilDone = false; L3.boilAt = st.boil ? L3.timerMax - (.5 + Math.random()*.6) : -1;
+  if (st.rast){
+    // Temperatur halten: Finger drauf heizt, loslassen kühlt
+    const c = L3.beer ? L3.beer.rast : 65;
+    L3.lo = c - 3; L3.hi = c + 3; L3.temp = c - 14; L3.tv = 0; L3.hold = 0; L3.heat = false;
+    L3.holdNeed = Math.min(4, 2.5 + L3.brews*.2);
+    L3.timerMax = L3.holdNeed + Math.max(4, 8 - L3.brews*.4); L3.timer = L3.timerMax;
+    if (!seen.l3rast) unlock('l3rast');
+  }
 }
 function reset3(){
-  L3.brews = 0; L3.flying = []; L3.maxiX = 200; L3.boilUnlocked = false; L3.karamell = false; L3.liquid = '#cfe3f0'; L3.puffs = []; L3.doneT = 0;
+  L3.brews = 0; L3.flying = []; L3.maxiX = 200; L3.heat = false; L3.hold = 0; L3.boilUnlocked = false; L3.karamell = false; L3.liquid = '#cfe3f0'; L3.puffs = []; L3.doneT = 0;
   parts = []; texts = []; score = 0; crates = 0; missed = 0; shake = 0;
   streak = 0; mult = 1; setMultUI(null); setMood('idle', 0);
   P.trip = 0; P.count = 0; P.extra = 0; P.vx = 0; P.noCrate = true; P.slim = true;
@@ -1939,6 +2015,7 @@ function throwIng(k){
 function tap3(e){
   const fx = toLogical(e.clientX), fy = e.clientY / S, g = geo3();
   if (L3.boilOn && Math.hypot(fx - g.kx, fy - g.ky) < 95){ stir3(); return; }
+  if (curStep().rast && fy < g.binTop - 16){ L3.heat = true; return; }
   if (fy >= g.binTop - 16){
     const n = bins3().length;
     for (let k=0;k<n;k++){ const r = binRect(k, g); if (fx >= r.x - g.gap/2 && fx <= r.x + r.w + g.gap/2){ throwIng(k); return; } }
@@ -1973,13 +2050,13 @@ function arrive3(f){
 function stepDone(){
   const g = geo3(), st = curStep(); L3.liquid = st.liquid;
   const pts = Math.round(L3.timer / L3.timerMax * 40) * mult + 20 * mult; score += pts;
-  if (L3.stepI < L3.steps.length - 1) floatText(g.kx, g.ky - 110, `${st.name} fertig! +${pts}`, C.gold); setMood('happy', .7);
+  if (L3.stepI < L3.steps.length - 1) floatText(g.kx, g.ky - 110, `${st.rast ? 'Rast' : st.name} fertig! +${pts}`, C.gold); setMood('happy', .7);
   beep(660, .1, 'square', .07); setTimeout(() => beep(990, .16, 'square', .07), 110);
   if (L3.stepI < L3.steps.length - 1){ L3.stepI++; startStep(); return; }
   // ganzer Sud fertig
   L3.brews++; crates = L3.brews;
   const bonus = (100 + 50 * L3.brews) * mult; score += bonus; L3.doneT = 1.6; L3.liquid = '#cfe3f0';
-  floatText(W/2, g.ky - 140, `Sud fertig! +${bonus}`, C.gold); sCash(); setMood('proud', 1.6); updateHud();
+  floatText(W/2, g.ky - 140, `${L3.beer ? L3.beer.n : 'Sud'} fertig! +${bonus}`, C.gold); sCash(); setMood('proud', 1.6); updateHud();
   if (!L3.boilUnlocked && L3.brews >= 2) L3.boilUnlocked = true;
   if (L3.brews >= 2) setTimeout(() => { if (stage === 3 && state === 'play') floatText(W/2, geo3().ky + 110, 'Schneller!', '#ff9a6a'); }, 700);
   if (!L3.karamell && L3.brews >= 4){ L3.karamell = true; newBrew(); unlock('l3karamell'); return; }
@@ -2005,6 +2082,12 @@ function update3(dt){
   } else {
     L3.timer -= dt;
     if (L3.timer <= 0){ L3.timer = L3.timerMax; if (fault3('Zu langsam!', g.kx, g.ky - 100)) return; }
+  }
+  if (st.rast){
+    L3.tv += ((L3.heat ? 16 : -9) - L3.tv) * Math.min(1, dt*3); L3.temp += L3.tv*dt;
+    if (L3.temp < 40){ L3.temp = 40; L3.tv = Math.max(0, L3.tv); }
+    if (L3.temp >= L3.lo && L3.temp <= L3.hi){ L3.hold += dt; if (L3.hold >= L3.holdNeed){ cleanCatch(); stepDone(); if (state !== 'play') return; } }
+    else if (L3.temp > L3.hi + 9){ L3.temp = L3.lo - 6; L3.tv = 0; L3.heat = false; if (fault3('Zu heiß!', g.kx, g.ky - 100)) return; }
   }
   // Dampf
   if (Math.random() < dt*6) L3.puffs.push({ x: g.kx + (Math.random()-.5)*30, y: g.ky - 96, r: 6 + Math.random()*6, life: 1.6 });
@@ -2097,14 +2180,29 @@ function drawKettle(g){
   }
   if (L3.doneT > 0){ ctx.globalAlpha = Math.min(1, L3.doneT); ctx.font = '26px "Alfa Slab One", Georgia, serif'; ctx.fillStyle = C.gold; ctx.strokeStyle = 'rgba(0,0,0,.5)'; ctx.lineWidth = 4; ctx.strokeText('Prost!', kx, ky - 4); ctx.fillText('Prost!', kx, ky - 4); ctx.globalAlpha = 1; }
 }
+function drawThermo(x, y, w){
+  // Temperaturskala 40–90 °C mit grünem Zielbereich und Fortschritt der Rast
+  const T0 = 40, T1 = 90, tx = t => x + (Math.max(T0, Math.min(T1, t)) - T0) / (T1 - T0) * w, ok = L3.temp >= L3.lo && L3.temp <= L3.hi;
+  const tg = ctx.createLinearGradient(x, 0, x + w, 0); tg.addColorStop(0, '#3d6fa8'); tg.addColorStop(.55, '#c9a640'); tg.addColorStop(1, '#c22a22');
+  ctx.fillStyle = tg; rr(x, y, w, 14, 7); ctx.fill();
+  ctx.fillStyle = 'rgba(120,230,140,.9)'; ctx.fillRect(tx(L3.lo), y - 3, tx(L3.hi) - tx(L3.lo), 20);
+  ctx.strokeStyle = '#fff'; ctx.lineWidth = 1.5; ctx.strokeRect(tx(L3.lo), y - 3, tx(L3.hi) - tx(L3.lo), 20);
+  const mx = tx(L3.temp);
+  ctx.fillStyle = '#fff'; ctx.beginPath(); ctx.moveTo(mx, y - 2); ctx.lineTo(mx - 6, y - 10); ctx.lineTo(mx + 6, y - 10); ctx.fill(); ctx.fillRect(mx - 1.5, y - 2, 3, 18);
+  ctx.fillStyle = ok ? '#9fe0a8' : 'rgba(243,230,196,.95)'; ctx.font = '700 14px "Barlow Condensed", sans-serif'; ctx.textAlign = 'left'; ctx.textBaseline = 'middle';
+  ctx.fillText(`${Math.round(L3.temp)} °C`, x, y + 28);
+  ctx.textAlign = 'right'; ctx.fillStyle = 'rgba(243,230,196,.95)';
+  ctx.fillText(`Rast ${L3.lo}–${L3.hi} °C halten: ${Math.min(L3.hold, L3.holdNeed).toFixed(1)} / ${L3.holdNeed.toFixed(1)} s`, x + w, y + 28);
+}
 function drawBoard(g, hl){
   const st = curStep(), x = 22, y = g.boardY, w = W - 44, h = 76;
   ctx.fillStyle = '#6b4a2e'; rr(x - 5, y - 5, w + 10, h + 10, 8); ctx.fill();
   ctx.fillStyle = '#1f2a24'; rr(x, y, w, h, 5); ctx.fill();
   if (hl){ ctx.strokeStyle = C.gold; ctx.lineWidth = 3; rr(x - 5, y - 5, w + 10, h + 10, 8); ctx.stroke(); }
   ctx.fillStyle = 'rgba(243,230,196,.92)'; ctx.font = '700 14px "Barlow Condensed", sans-serif'; ctx.textAlign = 'left'; ctx.textBaseline = 'middle';
-  ctx.fillText(`Sud ${L3.brews + 1} · Schritt ${L3.stepI + 1}/3: ${st.name}`, x + 10, y + 13);
-  const keys = Object.keys(st.need), cw = Math.min(86, (w - 20) / keys.length);
+  ctx.fillText(`${L3.beer ? L3.beer.n + ' · ' : ''}Sud ${L3.brews + 1} · Schritt ${L3.stepI + 1}/${L3.steps.length}: ${st.name}`, x + 10, y + 13);
+  if (st.rast) drawThermo(x + 10, y + 28, w - 20);
+  const keys = Object.keys(st.need), cw = Math.min(86, (w - 20) / Math.max(1, keys.length));
   keys.forEach((ing, i) => {
     const cx = x + 10 + i*cw, have = L3.have[ing] || 0, need = st.need[ing], ok = have >= need;
     drawIng(ing, cx + 14, y + 44, .95);
@@ -2134,8 +2232,14 @@ function render3(){
   const sx = shake ? (Math.random()-.5)*8*shake/.25 : 0;
   ctx.setTransform(dpr*S,0,0,dpr*S, dpr*(OX + sx*S), 0);
   const g = geo3();
-  drawBoard(g, state === 'intro' && introKind === 'l3brew');
+  drawBoard(g, state === 'intro' && (introKind === 'l3brew' || introKind === 'l3rast'));
   drawKettle(g);
+  if (curStep() && curStep().rast){
+    if (L3.heat){ ctx.fillStyle = `rgba(255,${120 + Math.sin(tTotal*14)*40},30,.9)`; for (let k=-3;k<=3;k++){ ctx.beginPath(); ctx.ellipse(g.kx + k*18, g.ky + 58, 7, 14 + Math.sin(tTotal*16 + k)*4, 0, 0, Math.PI*2); ctx.fill(); } }
+    ctx.fillStyle = 'rgba(20,26,36,.7)'; rr(W/2 - 104, g.ky + 92, 208, 26, 13); ctx.fill();
+    ctx.fillStyle = C.cream; ctx.font = '700 15px "Barlow Condensed", sans-serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+    ctx.fillText(L3.heat ? '🔥 Heizen … loslassen kühlt' : 'Finger halten = heizen', W/2, g.ky + 105);
+  }
   // Maxi läuft zur Zutat
   P.noCrate = true; P.slim = true;
   const tx = L3.maxiX, cur = P.x3 ?? 200; P.x3 = cur + (tx - cur) * .18; P.vx = (tx - cur) * 8; P.walk += Math.abs(tx - cur) * .05;
@@ -2166,6 +2270,14 @@ function drawIntro3(g){
   } else if (introKind === 'l3boil'){
     drawKettle(g);
     finger(g.kx + 10, g.ky + 6, (introT % .5) < .12 ? .88 : 1);
+  } else if (introKind === 'l3rast'){
+    L3.temp = (L3.lo + L3.hi)/2 + Math.sin(introT*1.8)*9; L3.hold = Math.min(L3.holdNeed, (introT % 4) * .8);
+    drawKettle(g);
+    ctx.fillStyle = '#1f2a24'; rr(18, g.ky + 124, W - 36, 58, 8); ctx.fill(); ctx.strokeStyle = C.gold; ctx.lineWidth = 3; ctx.stroke();
+    drawThermo(30, g.ky + 140, W - 60);
+    const press = Math.sin(introT*1.8 + Math.PI/2) < 0;
+    if (press){ ctx.fillStyle = 'rgba(255,140,30,.9)'; for (let k=-3;k<=3;k++){ ctx.beginPath(); ctx.ellipse(g.kx + k*18, g.ky + 58, 7, 16, 0, 0, Math.PI*2); ctx.fill(); } }
+    finger(g.kx + 10, g.ky - 10, press ? .86 : 1);
   } else if (introKind === 'l3karamell'){
     drawBins(g, 'karamell');
     const k = bins3().indexOf('karamell'), r = binRect(k, g);
