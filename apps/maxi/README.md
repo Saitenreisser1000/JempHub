@@ -10,7 +10,7 @@ Handyspiel im Hochformat für die Freetown Brewery: Maximilian Weichl steht vor 
 
 ## Beförderungen
 
-Maxi beginnt als **Brauereilakai**. Erreicht eine Runde 5000 Punkte, wird er **Mitarbeiter**: Das Spiel hält an, Level 2 wird freigeschaltet, und man spielt vor der Brauerei weiter oder geht mit den bisherigen Punkten in die Brauerei. Bei 12 000 Punkten wird er **Produktionsmitarbeiter**, bei 25 000 **Brauer** (jeweils mit Wahl, wo es weitergeht). Die erreichte Stufe merkt sich das Gerät (`localStorage`); sie steht auf dem Titelbild, und Maxi trägt pro Beförderung einen goldenen Stern auf der Jacke. Level 2 ist im Menü erst ab Mitarbeiter wählbar.
+Maxi beginnt als **Brauereilakai**. Erreicht eine Runde 3000 Punkte, wird er **Mitarbeiter**: Das Spiel hält an, Level 2 wird freigeschaltet, und man spielt vor der Brauerei weiter oder geht mit den bisherigen Punkten in die Brauerei. Bei 12 000 Punkten wird er **Produktionsmitarbeiter**, bei 25 000 **Brauer** (jeweils mit Wahl, wo es weitergeht). Die erreichte Stufe merkt sich das Gerät (`localStorage`); sie steht auf dem Titelbild, und Maxi trägt pro Beförderung einen goldenen Stern auf der Jacke. Level 2 ist im Menü erst ab Mitarbeiter wählbar.
 
 ## Level 2: Am Fließband
 
