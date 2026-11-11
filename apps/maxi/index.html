@@ -119,6 +119,9 @@ html,body{height:100%;margin:0;background:var(--night);color:var(--cream);overfl
 .hsnote{font-size:14px!important;margin:0}
 .hsnote:empty{display:none}
 .btn.ghost{background:transparent;border:2px solid var(--cream);color:var(--cream);font-size:18px;padding:10px 14px}
+.rankline{font:600 15px var(--f-ui);letter-spacing:.04em;color:var(--ink);opacity:.8}
+.promorank{font:400 27px/1.1 var(--f-display);color:var(--hop);overflow-wrap:anywhere;hyphens:auto}
+.promocard p{font-size:16px}
 .hint{margin:0;font:500 15px var(--f-ui);color:var(--cream);text-shadow:0 1px 2px rgba(0,0,0,.6)}
 .label h1{font-family:var(--f-display);font-weight:400;font-size:38px;line-height:1;margin:0;color:var(--crate);text-wrap:balance}
 .label h2{font-family:var(--f-display);font-weight:400;font-size:30px;line-height:1.05;margin:0;color:var(--crate)}
@@ -149,6 +152,7 @@ html,body{height:100%;margin:0;background:var(--night);color:var(--cream);overfl
     <div class="brand">Freetown Brewery präsentiert</div>
     <h1>Maxis Bierkiste</h1>
     <div class="who">mit Maximilian Weichl</div>
+    <div class="rankline" id="rankLine"></div>
     <div class="rule"></div>
     <p>Fang die Flaschen der Barbesucher mit der Kiste. 20 Flaschen sind eine volle Kiste, dann holt der Stapler sie ab.</p>
   </div>
@@ -185,6 +189,18 @@ html,body{height:100%;margin:0;background:var(--night);color:var(--cream);overfl
     <ol class="hslist" id="hsList"></ol>
     <p class="hsmsg" id="hsMsg"></p>
     <button class="btn" id="boardClose" type="button">Zurück</button>
+  </div>
+</div>
+
+<div class="overlay" id="promo" hidden>
+  <div class="label promocard" role="dialog" aria-modal="true" aria-labelledby="promoTitle">
+    <div class="brand">Freetown Brewery</div>
+    <h2 id="promoTitle">Beförderung!</h2>
+    <div class="promorank" id="promoRank"></div>
+    <p id="promoText"></p>
+    <p class="hsnote" id="promoNext"></p>
+    <button class="btn" id="promoStay" type="button">Weiterspielen</button>
+    <button class="btn sec" id="promoGo" type="button">Anderes Level</button>
   </div>
 </div>
 
@@ -676,6 +692,7 @@ function drawMan(x, base){
   if (P.slim){ ctx.fillStyle = '#2b2f36'; ctx.fillRect(-25*bk*1.0,-36,50*bk,4); ctx.fillStyle = '#c9a646'; ctx.fillRect(-3,-36.5,6,5); }
   ctx.fillStyle = C.jacketDark; ctx.fillRect(-1,-86,2,52);
   ctx.beginPath(); ctx.moveTo(-12,-86); ctx.lineTo(0,-76); ctx.lineTo(12,-86); ctx.lineTo(8,-89); ctx.lineTo(0,-82); ctx.lineTo(-8,-89); ctx.fill();
+  drawRankStars();
   // Kopf
   ctx.fillStyle = C.skin; ctx.beginPath(); ctx.arc(0,-104,17,0,Math.PI*2); ctx.fill();
   ctx.beginPath(); ctx.arc(-17,-104,4,0,Math.PI*2); ctx.arc(17,-104,4,0,Math.PI*2); ctx.fill();
@@ -1331,6 +1348,8 @@ function loop(t){
   const dt = Math.min(.033, (t - last)/1000 || 0); last = t;
   if (moodT > 0 && state !== 'intro') moodT -= dt;
   if (state === 'play') (stage === 2 ? update2(dt) : update(dt)); else tTotal += dt;
+  if (state === 'play') checkPromo();
+  if (state === 'promo') for (const p of parts){ p.vy += 420*dt; p.x += p.vx*dt; p.y += p.vy*dt; p.life -= dt*.45; }
   if (state === 'forklift') updateForklift(dt);
   if (state === 'intro' && introKind === 'move'){ const nx = W/2 + Math.sin(introT*2.2)*95; P.vx = (nx - P.x)/Math.max(dt, .001); P.x = nx; P.walk += dt*Math.abs(P.vx)/22; }
   if (state === 'intro'){ introT += dt; const tap = INTRO_TAP[introKind] ?? 1.2; if (introT > tap) $('introGo').style.visibility = 'visible'; if (introT > (INTRO_LEN[introKind] ?? 7)) endIntro(); }
@@ -1341,11 +1360,12 @@ function loop(t){
 /* ---------- flow ---------- */
 let wake = null;
 async function keepAwake(){ try { wake = await navigator.wakeLock?.request('screen'); } catch(e) {} }
-async function start(){
+async function start(keep){
   try { ac = ac || new (window.AudioContext || window.webkitAudioContext)(); ac.resume(); } catch(e) {}
   stage = 1; P.noCrate = false; P.slim = false; reset(); calibrating = false;
+  if (typeof keep === 'number'){ score = keep; updateHud(); }
   $('cratesLbl').textContent = 'Kisten'; $('livesLbl').textContent = 'Bruch'; $('bar').hidden = false; $('fillTxt').hidden = false;
-  ['start','over','paused'].forEach(id => $(id).hidden = true); $('hud').hidden = false;
+  ['start','over','paused','promo'].forEach(id => $(id).hidden = true); $('hud').hidden = false;
   state = 'play'; keepAwake();
   if (!seen.move) unlock('move');
 }
@@ -1395,10 +1415,11 @@ function reset2(){
   P.trip = 0; P.count = 0; P.extra = 0; P.vx = 0; P.noCrate = true;
   updateHud();
 }
-async function start2(){
+async function start2(keep){
   try { ac = ac || new (window.AudioContext || window.webkitAudioContext)(); ac.resume(); } catch(e) {}
   stage = 2; reset2(); calibrating = false;
-  ['start','over','paused','board','legalBox'].forEach(id => $(id).hidden = true); $('hud').hidden = false;
+  if (typeof keep === 'number'){ score = keep; updateHud(); }
+  ['start','over','paused','board','legalBox','promo'].forEach(id => $(id).hidden = true); $('hud').hidden = false;
   $('cratesLbl').textContent = 'Sortiert'; $('livesLbl').textContent = 'Fehler';
   $('bar').hidden = true; $('fillTxt').hidden = true;
   state = 'play'; keepAwake();
@@ -1676,10 +1697,62 @@ function drawIntro2(g){
     if (p < 1.5){ const k = Math.min(1, p/.9); finger(cx + 70 - 62*k, cy + 110 - 96*k, p > .9 && p < 1.05 ? .88 : 1); }
   }
 }
+/* Beförderungen: Maxis Laufbahn in der Brauerei (auf dem Gerät gespeichert) */
+const RANKS = [
+  { t: 'Brauereilakai', pts: 0 },
+  { t: 'Mitarbeiter', pts: 5000 },
+  { t: 'Produktionsmitarbeiter', pts: 12000 },
+  { t: 'Brauer', pts: 25000 }
+];
+let rank = 0;
+try { rank = Math.max(0, Math.min(RANKS.length - 1, +localStorage.getItem('ftb-rank') || 0)); } catch(e) {}
+function saveRank(){ try { localStorage.setItem('ftb-rank', rank); } catch(e) {} }
+function updateMenu(){
+  $('rankLine').textContent = 'Stufe: ' + RANKS[rank].t;
+  const b = $('play2Btn'), locked = rank < 1;
+  b.disabled = locked;
+  b.textContent = locked ? `🔒 Level 2 ab ${RANKS[1].t} (${RANKS[1].pts} Punkte in Level 1)` : 'Level 2: Am Fließband';
+}
+function checkPromo(){
+  if (state !== 'play' || rank >= RANKS.length - 1) return;
+  if (score >= RANKS[rank + 1].pts) promote();
+}
+function promote(){
+  rank++; saveRank(); state = 'promo'; touchX = null; down2.clear(); setMood('proud', 99);
+  const r = RANKS[rank];
+  $('promoRank').textContent = r.t;
+  $('promoText').textContent = rank === 1 ? 'Maxi hat sich bewährt. Ab sofort darf er auch drinnen in der Brauerei arbeiten: Level 2 ist freigeschaltet.'
+    : rank === RANKS.length - 1 ? 'Maxi ist jetzt Brauer. Höher geht es in der Freetown Brewery nicht. Prost!'
+    : 'Maxi arbeitet jetzt fix in der Produktion.';
+  $('promoNext').textContent = rank < RANKS.length - 1 ? `Nächste Stufe: ${RANKS[rank + 1].t} ab ${RANKS[rank + 1].pts} Punkten` : '';
+  $('promoStay').textContent = stage === 2 ? 'Am Fließband weiterspielen' : 'Vor der Brauerei weiterspielen';
+  $('promoGo').textContent = stage === 2 ? 'Zurück vor die Brauerei' : 'Ab in die Brauerei (Level 2)';
+  $('promo').hidden = false;
+  // Fanfare und Konfetti
+  [523, 659, 784, 1047].forEach((f, i) => setTimeout(() => beep(f, i === 3 ? .4 : .14, 'square', .08), i*120));
+  for (let k=0;k<60;k++) parts.push({ x: W/2 + (Math.random()-.5)*60, y: H*.3, vx: (Math.random()-.5)*420, vy: -200 - Math.random()*320, life: 1.6, c: ['#e6b84a','#2f5d3a','#c22a22','#f3e6c4'][k%4], s: 2 + Math.random()*3, rot: Math.random()*6 });
+}
+function promoContinue(goOther){
+  $('promo').hidden = true; setMood('happy', 1);
+  if (!goOther){ state = 'play'; return; }
+  const keep = score;
+  if (stage === 2) start(keep); else start2(keep);
+}
+function drawRankStars(){
+  // Abzeichen auf der Jacke: ein Stern je Beförderung
+  for (let i=0;i<rank;i++){
+    const sx = 13 + i*6.5, sy = -72;
+    ctx.fillStyle = C.gold; ctx.beginPath();
+    for (let k=0;k<10;k++){ const a = -Math.PI/2 + k*Math.PI/5, r = k%2 ? 1.4 : 3.2; ctx.lineTo(sx + Math.cos(a)*r, sy + Math.sin(a)*r); }
+    ctx.closePath(); ctx.fill();
+  }
+}
+$('promoStay').onclick = () => promoContinue(false);
+$('promoGo').onclick = () => promoContinue(true);
 function toTitle(){
   stage = 1; P.noCrate = false; P.slim = false; state = 'menu';
   ['over','paused','hud','board','legalBox'].forEach(id => $(id).hidden = true); $('intro').hidden = true;
-  $('start').hidden = false; $('bestStart').textContent = best ? `Dein Rekord: ${best} Punkte` : 'Steuerung: Finger auflegen und nach links oder rechts ziehen.';
+  $('start').hidden = false; updateMenu(); $('bestStart').textContent = best ? `Dein Rekord: ${best} Punkte` : 'Steuerung: Finger auflegen und nach links oder rechts ziehen.';
 }
 $('playBtn').onclick = start; $('play2Btn').onclick = start2;
 $('againBtn').onclick = () => stage === 2 ? start2() : start();
@@ -1766,6 +1839,7 @@ hsInit();
 $('pauseBtn').onclick = togglePause; $('resumeBtn').onclick = togglePause;
 document.addEventListener('visibilitychange', () => { if (document.hidden && state === 'play') togglePause(); });
 $('bestStart').textContent = best ? `Dein Rekord: ${best} Punkte` : 'Steuerung: Finger auflegen und nach links oder rechts ziehen.';
+updateMenu();
 
 resize();
 if (document.fonts) document.fonts.ready.then(buildBg);
