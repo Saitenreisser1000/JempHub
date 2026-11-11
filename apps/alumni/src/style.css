@@ -40,6 +40,8 @@ button:disabled { cursor: not-allowed; opacity: .5; }
 .topbar .button-dark { background: var(--yellow); color: var(--ink); }
 .button-soft { background: #efefe9; color: var(--ink); }
 .button-white { background: #fff; color: var(--ink); border: 1px solid #d5d5dc; }
+.topbar .button-white { border-color: transparent; }
+.button:disabled:hover { transform: none; }
 .text-button { border: 0; color: #605b4a; background: transparent; padding: 4px; font-weight: 700; font-size: 12px; }
 
 .workspace { display: grid; grid-template-columns: minmax(390px, 44%) 1fr; min-height: calc(100vh - 82px); }
@@ -327,6 +329,7 @@ button:disabled { cursor: not-allowed; opacity: .5; }
   .topbar { height: 68px; }
   .brand img { width: 124px; }
   .button { padding: 9px 11px; }
+  .header-actions .label-long { display: none; }
   .preview-panel { height: 610px; }
   .preview-toolbar { align-items: flex-start; flex-direction: column; }
   .segmented { width: 100%; }

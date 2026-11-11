@@ -384,6 +384,7 @@ onMounted(() => {
       <div class="header-actions">
         <button class="button button-ghost" @click="loadLocal">Entwurf laden</button>
         <button class="button button-dark" @click="saveLocally">Entwurf speichern</button>
+        <button class="button button-white" :disabled="busy" @click="exportRaster('jpeg')"><template v-if="busy">Wird erstellt …</template><template v-else>JPEG<span class="label-long"> herunterladen</span></template></button>
       </div>
     </header>
 
