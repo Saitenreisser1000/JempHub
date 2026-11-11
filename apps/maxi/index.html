@@ -126,7 +126,20 @@ html,body{height:100%;margin:0;background:var(--night);color:var(--cream);overfl
 .lvl.locked{border-color:rgba(243,230,196,.4);color:rgba(243,230,196,.62)}
 .lvl:focus-visible{outline:3px solid var(--copper);outline-offset:2px}
 .lvlhint:empty{display:none}
-.rankline{font:600 15px var(--f-ui);letter-spacing:.04em;color:var(--ink);opacity:.8}
+.ranks{list-style:none;margin:2px 0 0;padding:0;display:grid;grid-template-columns:repeat(4,minmax(0,1fr));font-variant-numeric:tabular-nums}
+.ranks li{position:relative;display:grid;justify-items:center;gap:3px;text-align:center;min-width:0}
+.ranks li::before{content:"";position:absolute;top:9px;right:50%;width:100%;height:3px;background:rgba(47,93,58,.25);z-index:0}
+.ranks li:first-child::before{display:none}
+.ranks li.done::before,.ranks li.cur::before{background:var(--hop)}
+.ranks .dot{position:relative;z-index:1;width:20px;height:20px;border-radius:50%;display:grid;place-items:center;font:700 12px var(--f-ui);border:2px solid rgba(47,93,58,.45);background:var(--cream);color:var(--hop)}
+.ranks li.done .dot{background:var(--hop);border-color:var(--hop);color:var(--cream)}
+.ranks li.cur .dot{background:var(--gold);border-color:var(--hop);color:var(--ink);box-shadow:0 0 0 3px rgba(230,184,74,.35)}
+.ranks .nm{font:700 13px/1.1 var(--f-ui);color:var(--ink);overflow-wrap:anywhere}
+.ranks li:not(.done):not(.cur) .nm{opacity:.6}
+.ranks li.cur .nm{color:var(--hop)}
+.ranks .pt{font:500 11px var(--f-ui);color:var(--ink);opacity:.65}
+.ranknote{font:600 12px var(--f-ui);color:var(--crate)}
+.ranknote:empty{display:none}
 .promorank{font:400 27px/1.1 var(--f-display);color:var(--hop);overflow-wrap:anywhere;hyphens:auto}
 .promocard p{font-size:16px}
 .hint{margin:0;font:500 15px var(--f-ui);color:var(--cream);text-shadow:0 1px 2px rgba(0,0,0,.6)}
@@ -159,9 +172,9 @@ html,body{height:100%;margin:0;background:var(--night);color:var(--cream);overfl
     <div class="brand">Freetown Brewery präsentiert</div>
     <h1>Maxis Bierkiste</h1>
     <div class="who">mit Maximilian Weichl</div>
-    <div class="rankline" id="rankLine"></div>
     <div class="rule"></div>
-    <p>Fang die Flaschen der Barbesucher mit der Kiste. 20 Flaschen sind eine volle Kiste, dann holt der Stapler sie ab.</p>
+    <ol class="ranks" id="rankSteps" aria-label="Maxis Beförderungsstufen"></ol>
+    <div class="ranknote" id="rankLine"></div>
   </div>
   <div class="startbox">
     <button class="btn" id="playBtn" type="button">Prost, los geht's</button>
@@ -1729,7 +1742,17 @@ try { rank = Math.max(0, Math.min(RANKS.length - 1, +localStorage.getItem('ftb-r
 function saveRank(){ try { localStorage.setItem('ftb-rank', rank); } catch(e) {} }
 function updateMenu(){
   const all = typeof UNLOCK_ALL !== 'undefined' && UNLOCK_ALL;
-  $('rankLine').textContent = 'Stufe: ' + RANKS[rank].t + (all ? ' · Testversion: alle Level offen' : '');
+  $('rankLine').textContent = all ? 'Testversion: alle Level offen' : '';
+  const short = ['Lakai', 'Mitarbeiter', 'Produktion', 'Brauer'], ol = $('rankSteps');
+  ol.replaceChildren(...RANKS.map((r, i) => {
+    const li = document.createElement('li'), dot = document.createElement('span'), nm = document.createElement('span'), pt = document.createElement('span');
+    li.className = i < rank ? 'done' : i === rank ? 'cur' : 'todo';
+    if (i === rank) li.setAttribute('aria-current', 'step');
+    li.title = r.t; dot.className = 'dot'; dot.textContent = i < rank ? '✓' : i + 1;
+    nm.className = 'nm'; nm.textContent = short[i];
+    pt.className = 'pt'; pt.textContent = i === rank ? 'jetzt' : i < rank ? 'erreicht' : `ab ${r.pts.toLocaleString('de-DE')}`;
+    li.append(dot, nm, pt); return li;
+  }));
   const set = (id, lv, name, needRank) => {
     const b = $(id), locked = !all && rank < needRank;
     b.classList.toggle('locked', locked); b.setAttribute('aria-disabled', locked ? 'true' : 'false');
