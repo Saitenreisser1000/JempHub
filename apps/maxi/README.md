@@ -25,7 +25,8 @@ Freigeschaltet ab Produktionsmitarbeiter. Maxi hilft beim Brauen: Die Tafel zeig
 - Eine einzige Datei `index.html`: Canvas-Spiel in reinem JavaScript, alle Figuren werden im Code gezeichnet, Töne entstehen live mit der Web Audio API.
 - Impressum und Datenschutzhinweis sind im Spiel selbst (Titelbild und Spielende); bei geänderten Diensten (z. B. Highscore über Supabase) den Datenschutztext anpassen.
 - Der persönliche Rekord liegt im `localStorage` des Browsers.
-- Bestenliste (Top 10) über Supabase: Tabelle und Eintragsfunktion in `supabase/highscore.sql`. Den Zugang liest das Spiel aus `config.json` neben `index.html` (Vorlage `config.example.json`, nur der öffentliche Anon-/Publishable-Key). Die Datei liegt nur auf dem Server und wird beim Deploy nicht überschrieben; fehlt sie, ist die Bestenliste ausgeblendet.
+- Bestenliste (Top 10) über Supabase, für Runden aus allen Levels; gespeichert werden auch das Level, in dem die Runde endete, und Maxis Stufe (in der Liste unter dem Namen angezeigt).
+- Technik der Bestenliste: Tabelle und Eintragsfunktion in `supabase/highscore.sql`. Den Zugang liest das Spiel aus `config.json` neben `index.html` (Vorlage `config.example.json`, nur der öffentliche Anon-/Publishable-Key). Die Datei liegt nur auf dem Server und wird beim Deploy nicht überschrieben; fehlt sie, ist die Bestenliste ausgeblendet.
 
 ## Bestenliste einrichten (einmalig)
 

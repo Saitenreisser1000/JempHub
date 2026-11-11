@@ -106,6 +106,7 @@ html,body{height:100%;margin:0;background:var(--night);color:var(--cream);overfl
 .hslist li:nth-child(-n+3)::before{color:var(--crate)}
 .hslist li.me{background:var(--gold)}
 .hslist .n{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.hslist .n small{display:block;font:500 12px var(--f-ui);opacity:.7;overflow:hidden;text-overflow:ellipsis}
 .hslist .s{font:400 17px var(--f-display)}
 .hsmsg{font-size:15px!important;opacity:.8}
 .hsmsg:empty{display:none}
@@ -239,7 +240,7 @@ html,body{height:100%;margin:0;background:var(--night);color:var(--cream);overfl
     </dl>
     <h3 id="privTitle">Datenschutz</h3>
     <p>Das Spiel läuft vollständig in deinem Browser. Es gibt kein Konto, keine Cookies und keine Statistik- oder Werbedienste. Dein Rekord wird nur lokal auf deinem Gerät gespeichert.</p>
-    <p>Trägst du dich in die Bestenliste ein, werden der gewählte Name, Punkte, Kisten und der Zeitpunkt auf unserem eigenen Server gespeichert und öffentlich in der Bestenliste gezeigt. Nimm deshalb lieber einen Spitznamen. Einträge löschen wir auf Anfrage an office@jemphub.com.</p>
+    <p>Trägst du dich in die Bestenliste ein, werden der gewählte Name, Punkte, Kisten, Level, Stufe und der Zeitpunkt auf unserem eigenen Server gespeichert und öffentlich in der Bestenliste gezeigt. Nimm deshalb lieber einen Spitznamen. Einträge löschen wir auf Anfrage an office@jemphub.com.</p>
     <p>Beim Aufruf verarbeitet der Webserver technisch notwendige Daten wie die IP-Adresse. Die Schriften werden von Google Fonts geladen; dabei wird deine IP-Adresse an Google übertragen.</p>
     <button class="btn" id="legalClose" type="button">Zurück</button>
   </div>
@@ -1444,20 +1445,18 @@ function gameOver(){
     if (score > best3){ best3 = score; try { localStorage.setItem('ftb-best3', best3); } catch(e) {} }
     $('overTitle').textContent = 'Sud verdorben!';
     $('finalInfo').textContent = `${L3.brews} ${L3.brews === 1 ? 'Sud' : 'Sude'} fertig gebraut · Rekord ${best3}`;
-    $('hsEntry').hidden = true; $('hsInfo').hidden = true; $('boardBtn2').hidden = true;
   } else if (stage === 2){
     if (score > best2){ best2 = score; try { localStorage.setItem('ftb-best2', best2); } catch(e) {} }
     $('overTitle').textContent = 'Zu viele Fehler!';
     $('finalInfo').textContent = `${L2.sorted} ${L2.sorted === 1 ? 'Flasche' : 'Flaschen'} richtig sortiert · Rekord ${best2}`;
-    $('hsEntry').hidden = true; $('hsInfo').hidden = true; $('boardBtn2').hidden = true;
   } else {
     if (score > best){ best = score; try { localStorage.setItem('ftb-best', best); } catch(e) {} }
     $('overTitle').textContent = 'Zu viel Bruch!';
     $('finalInfo').textContent = `${crates} ${crates === 1 ? 'volle Kiste' : 'volle Kisten'} abgegeben · Rekord ${best}`;
-    if (HS) $('boardBtn2').hidden = false;
   }
+  $('boardBtn2').hidden = !HS; $('intro').hidden = true;
   $('over').hidden = false; try { wake?.release(); } catch(e) {}
-  if (stage === 1) hsAfterGame();
+  hsAfterGame();
 }
 function togglePause(){
   if (state === 'play'){ state = 'pause'; $('paused').hidden = false; }
@@ -2189,12 +2188,17 @@ async function hsInit(){
   } catch(e) { HS = null; }
 }
 async function hsLoad(){
-  const r = await fetch(`${HS.url}/rest/v1/maxi_scores?select=name,score,crates,created_at&order=score.desc,created_at.asc&limit=10`, { headers: hsHeaders() });
+  // mit Level und Stufe; ältere Datenbank ohne diese Spalten: einfache Abfrage
+  const q = cols => fetch(`${HS.url}/rest/v1/maxi_scores?select=${cols}&order=score.desc,created_at.asc&limit=10`, { headers: hsHeaders() });
+  let r = await q('name,score,crates,level,rank,created_at');
+  if (!r.ok) r = await q('name,score,crates,created_at');
   if (!r.ok) throw new Error('load ' + r.status);
   hsTop = await r.json(); return hsTop;
 }
 async function hsSubmit(name, pts, cr){
-  const r = await fetch(`${HS.url}/rest/v1/rpc/maxi_submit_score`, { method: 'POST', headers: hsHeaders(), body: JSON.stringify({ p_name: name, p_score: pts, p_crates: cr }) });
+  const send = body => fetch(`${HS.url}/rest/v1/rpc/maxi_submit_score`, { method: 'POST', headers: hsHeaders(), body: JSON.stringify(body) });
+  let r = await send({ p_name: name, p_score: pts, p_crates: cr, p_level: stage, p_rank: rank });
+  if (!r.ok && r.status === 404) r = await send({ p_name: name, p_score: pts, p_crates: cr });
   if (!r.ok){ let m = ''; try { m = (await r.json()).message || ''; } catch(e) {} throw new Error(m || ('send ' + r.status)); }
   return +(await r.json());
 }
@@ -2204,6 +2208,7 @@ function renderBoard(highlightName, highlightScore){
   for (const e of hsTop){
     const li = document.createElement('li'), n = document.createElement('span'), s = document.createElement('span');
     n.className = 'n'; n.textContent = e.name; s.className = 's'; s.textContent = e.score;
+    if (e.level){ const sub = document.createElement('small'); sub.textContent = `Level ${e.level}` + (e.rank != null && RANKS[e.rank] ? ` · ${RANKS[e.rank].t}` : ''); n.append(sub); }
     if (!marked && highlightName && e.name === highlightName && e.score === highlightScore){ li.className = 'me'; marked = true; }
     li.append(n, s); ol.append(li);
   }
