@@ -10,11 +10,15 @@ Handyspiel im Hochformat für die Freetown Brewery: Maximilian Weichl steht vor 
 
 ## Beförderungen
 
-Maxi beginnt als **Brauereilakai**. Erreicht eine Runde 3000 Punkte, wird er **Mitarbeiter**: Das Spiel hält an, Level 2 wird freigeschaltet, und man spielt vor der Brauerei weiter oder geht mit den bisherigen Punkten in die Brauerei. Bei 12 000 Punkten wird er **Produktionsmitarbeiter**, bei 25 000 **Brauer** (jeweils mit Wahl, wo es weitergeht). Die erreichte Stufe merkt sich das Gerät (`localStorage`); sie steht auf dem Titelbild, und Maxi trägt pro Beförderung einen goldenen Stern auf der Jacke. Level 2 ist im Menü erst ab Mitarbeiter wählbar.
+Maxi beginnt als **Brauereilakai**. Erreicht eine Runde 3000 Punkte, wird er **Mitarbeiter**: Das Spiel hält an, Level 2 wird freigeschaltet, und man spielt vor der Brauerei weiter oder geht mit den bisherigen Punkten in die Brauerei. Bei 12 000 Punkten wird er **Produktionsmitarbeiter** (Level 3 freigeschaltet), bei 25 000 **Brauer** (jeweils mit Wahl, wo es weitergeht). Die erreichte Stufe merkt sich das Gerät (`localStorage`); sie steht auf dem Titelbild, und Maxi trägt pro Beförderung einen goldenen Stern auf der Jacke. Level 2 ist im Menü erst ab Mitarbeiter wählbar.
 
 ## Level 2: Am Fließband
 
 In der Brauerei kommen Flaschen von der Verschließmaschine aufs Hauptband. Maxi stellt am Hebel die Weiche (Tipp unten auf ◀ ▼ ▶ oder Pfeiltasten): Freetown nach links, Krone nach unten, ab der 10. sortierten Flasche auch Radler nach rechts. Ab der 20. liegen lose Kronkorken auf dem Band, die man wegschnippt; erreicht einer die Weiche, verklemmt sie kurz. Falsches Band oder verklemmte Weiche zählen als Fehler, fünf Fehler beenden das Spiel. Punkte: 20 × Tempostufe × Multiplikator pro richtig sortierter Flasche, das Band wird stetig schneller. Eigener lokaler Rekord; die Bestenliste gilt bisher nur für Level 1.
+
+## Level 3: Im Sudhaus
+
+Freigeschaltet ab Produktionsmitarbeiter. Maxi hilft beim Brauen: Die Tafel zeigt, was der Sudkessel im aktuellen Schritt braucht (Einmaischen: Wasser und Malz, Würzekochen: Hopfen, Anstellen: Hefe). Ein Tipp auf die Zutat unten (oder Taste 1–5) lässt Maxi sie in den Kessel werfen. Falsche oder zu viele Zutaten und abgelaufene Zeit zählen als Fehler, fünf Fehler beenden das Spiel. Jeder fertige Sud bringt einen Bonus, die Mengen steigen und die Zeit wird knapper. Ab dem 3. Sud kann der Kessel beim Würzekochen überkochen (schnell viermal auf den Kessel tippen), ab dem 5. Sud braucht es manchmal Karamellmalz. Eigener lokaler Rekord.
 
 ## Technik
 

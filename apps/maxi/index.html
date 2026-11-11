@@ -159,6 +159,7 @@ html,body{height:100%;margin:0;background:var(--night);color:var(--cream);overfl
   <div class="startbox">
     <button class="btn" id="playBtn" type="button">Prost, los geht's</button>
     <button class="btn ghost" id="play2Btn" type="button">Level 2: Am Fließband</button>
+    <button class="btn ghost" id="play3Btn" type="button">Level 3: Im Sudhaus</button>
     <button class="btn ghost" id="boardBtn" type="button" data-board hidden>Bestenliste</button>
     <p class="hint" id="bestStart"></p>
     <nav class="legal" aria-label="Rechtliches"><button type="button" data-legal="imp">Impressum</button><button type="button" data-legal="priv">Datenschutz</button></nav>
@@ -254,7 +255,7 @@ const unlocked = { red: false, nana: false, move: false, catch: false, stork: fa
 try { Object.assign(seen, JSON.parse(localStorage.getItem('ftb-seen') || '{}')); } catch(e) {}
 function saveSeen(){ try { localStorage.setItem('ftb-seen', JSON.stringify(seen)); } catch(e) {} }
 let introTarget = null;
-const INTRO_LEN = { move: 3.6, catch: 2.8, stork: 3.4, l2switch: 5, l2radler: 3.6, l2cap: 4.8 }, INTRO_TAP = { move: .4, catch: .7, stork: .7, l2switch: .8, l2radler: .7, l2cap: .8 };
+const INTRO_LEN = { move: 3.6, catch: 2.8, stork: 3.4, l2switch: 5, l2radler: 3.6, l2cap: 4.8, l3brew: 5, l3boil: 3, l3karamell: 3.6 }, INTRO_TAP = { l3brew: .8, l3boil: .6, l3karamell: .7, move: .4, catch: .7, stork: .7, l2switch: .8, l2radler: .7, l2cap: .8 };
 const UNLOCK_AT = { red: 10, nana: 30, stork: 36 };
 let bottles = [], parts = [], texts = [], score = 0, crates = 0, missed = 0, spawnT = 0, shake = 0, zone = 'left', stack = 0;
 let best = 0; try { best = +localStorage.getItem('ftb-best') || 0; } catch(e) {}
@@ -351,11 +352,11 @@ function updateHearts(dt, crateTop){
     if (h.y > groundY - 10){ h.fade -= dt*2; if (h.fade <= 0) hearts.splice(i,1); }
   }
 }
-cv.addEventListener('pointerdown', e => { if (stage === 2 && state === 'play'){ tap2(e); return; } if (stage === 2 && state !== 'intro') return; if (startRub(e)) return; if (state === 'play' && nearZone(toLogical(e.clientX), e.clientY / S)) { startForklift(); return; } if (state === 'intro'){ if (introT > (INTRO_TAP[introKind] ?? 1.2)) endIntro(); return; } if (tryFlick(e.clientX, e.clientY)) { flickIds.add(e.pointerId); return; } touchX = toLogical(e.clientX); });
-cv.addEventListener('pointermove', e => { if (stage === 2){ if (state === 'play' && down2.has(e.pointerId)) move2(e); return; } if (RUB.has(e.pointerId)) { moveRub(e); return; } if (flickIds.has(e.pointerId)) { tryFlick(e.clientX, e.clientY); return; } if (touchX !== null || e.pointerType === 'mouse') touchX = toLogical(e.clientX); });
+cv.addEventListener('pointerdown', e => { if (stage === 3 && state === 'play'){ tap3(e); return; } if (stage === 3 && state !== 'intro') return; if (stage === 2 && state === 'play'){ tap2(e); return; } if (stage === 2 && state !== 'intro') return; if (startRub(e)) return; if (state === 'play' && nearZone(toLogical(e.clientX), e.clientY / S)) { startForklift(); return; } if (state === 'intro'){ if (introT > (INTRO_TAP[introKind] ?? 1.2)) endIntro(); return; } if (tryFlick(e.clientX, e.clientY)) { flickIds.add(e.pointerId); return; } touchX = toLogical(e.clientX); });
+cv.addEventListener('pointermove', e => { if (stage === 3) return; if (stage === 2){ if (state === 'play' && down2.has(e.pointerId)) move2(e); return; } if (RUB.has(e.pointerId)) { moveRub(e); return; } if (flickIds.has(e.pointerId)) { tryFlick(e.clientX, e.clientY); return; } if (touchX !== null || e.pointerType === 'mouse') touchX = toLogical(e.clientX); });
 cv.addEventListener('pointerup', e => { down2.delete(e.pointerId); if (RUB.delete(e.pointerId)) return; if (flickIds.delete(e.pointerId)) return; touchX = null; });
 cv.addEventListener('pointercancel', e => { RUB.delete(e.pointerId); flickIds.delete(e.pointerId); touchX = null; });
-addEventListener('keydown', e => { keys[e.key] = true; if (stage === 2 && state === 'play'){ const k = { ArrowLeft: 0, ArrowDown: 1, ArrowRight: 2 }[e.key]; if (k !== undefined) setSwitch(k); } if (e.key === 'Enter' || e.key === ' ') startForklift(); if (e.key === 'p' || e.key === 'Escape') togglePause(); });
+addEventListener('keydown', e => { keys[e.key] = true; if (stage === 3 && state === 'play'){ const n = +e.key; if (n >= 1 && n <= bins3().length) throwIng(n - 1); if (e.key === ' ' && L3.boilOn) stir3(); } if (stage === 2 && state === 'play'){ const k = { ArrowLeft: 0, ArrowDown: 1, ArrowRight: 2 }[e.key]; if (k !== undefined) setSwitch(k); } if (e.key === 'Enter' || e.key === ' ') startForklift(); if (e.key === 'p' || e.key === 'Escape') togglePause(); });
 addEventListener('keyup', e => { keys[e.key] = false; });
 
 /* ---------- audio ---------- */
@@ -381,7 +382,7 @@ function resize(){
   // Spielfeld ist 400 breit; bei breiten Fenstern nach Höhe skalieren und mittig setzen
   S = Math.min(w / W, h / 560); OX = (w - W*S) / 2; H = h / S; groundY = H - 78;
   XL = -OX / S; XR = W + OX / S;
-  buildBg(); buildBg2();
+  buildBg(); buildBg2(); buildBg3();
 }
 addEventListener('resize', resize);
 
@@ -795,6 +796,9 @@ function drawFill(){
 /* ---------- game logic ---------- */
 function level(){ return 1 + Math.floor(crates/2); }
 const INTRO = {
+  l3brew: { title: 'Im Sudhaus', text: 'Auf der Tafel steht, was der Sudkessel gerade braucht. Tipp unten auf die richtige Zutat, Maxi wirft sie hinein.' },
+  l3boil: { title: 'Der Kessel kocht über!', text: 'Tipp schnell mehrmals auf den Kessel, damit nichts überläuft.' },
+  l3karamell: { title: 'Neu: Karamellmalz', text: 'Für dunklere Sude braucht der Braumeister jetzt manchmal Karamellmalz. Schau genau auf die Tafel.' },
   l2switch: { title: 'Am Fließband', text: 'Tipp unten auf ◀ ▼ ▶, um die Weiche zu stellen. Freetown gehört nach links, Krone nach unten.' },
   l2radler: { title: 'Neu: Radler', text: 'Flaschen mit gelbem Etikett kommen jetzt auch. Sie gehören auf das rechte Band.' },
   l2cap: { title: 'Lose Kronkorken!', text: 'Kronkorken auf dem Band verklemmen die Weiche. Tipp sie an, dann fliegen sie weg.' },
@@ -1302,6 +1306,7 @@ function update(dt){
 }
 
 function render(){
+  if (stage === 3 && state !== 'menu'){ render3(); return; }
   if (stage === 2 && state !== 'menu'){ render2(); return; }
   ctx.setTransform(1,0,0,1,0,0);
   ctx.drawImage(bg, 0, 0);
@@ -1347,7 +1352,7 @@ function render(){
 function loop(t){
   const dt = Math.min(.033, (t - last)/1000 || 0); last = t;
   if (moodT > 0 && state !== 'intro') moodT -= dt;
-  if (state === 'play') (stage === 2 ? update2(dt) : update(dt)); else tTotal += dt;
+  if (state === 'play') (stage === 3 ? update3(dt) : stage === 2 ? update2(dt) : update(dt)); else tTotal += dt;
   if (state === 'play') checkPromo();
   if (state === 'promo') for (const p of parts){ p.vy += 420*dt; p.x += p.vx*dt; p.y += p.vy*dt; p.life -= dt*.45; }
   if (state === 'forklift') updateForklift(dt);
@@ -1371,7 +1376,12 @@ async function start(keep){
 }
 function gameOver(){
   state = 'over'; $('finalScore').textContent = score;
-  if (stage === 2){
+  if (stage === 3){
+    if (score > best3){ best3 = score; try { localStorage.setItem('ftb-best3', best3); } catch(e) {} }
+    $('overTitle').textContent = 'Sud verdorben!';
+    $('finalInfo').textContent = `${L3.brews} ${L3.brews === 1 ? 'Sud' : 'Sude'} fertig gebraut · Rekord ${best3}`;
+    $('hsEntry').hidden = true; $('hsInfo').hidden = true; $('boardBtn2').hidden = true;
+  } else if (stage === 2){
     if (score > best2){ best2 = score; try { localStorage.setItem('ftb-best2', best2); } catch(e) {} }
     $('overTitle').textContent = 'Zu viele Fehler!';
     $('finalInfo').textContent = `${L2.sorted} ${L2.sorted === 1 ? 'Flasche' : 'Flaschen'} richtig sortiert · Rekord ${best2}`;
@@ -1704,7 +1714,7 @@ const RANKS = [
   { t: 'Produktionsmitarbeiter', pts: 12000 },
   { t: 'Brauer', pts: 25000 }
 ];
-let rank = 0;
+let rank = 0, promoTarget = 2;
 try { rank = Math.max(0, Math.min(RANKS.length - 1, +localStorage.getItem('ftb-rank') || 0)); } catch(e) {}
 function saveRank(){ try { localStorage.setItem('ftb-rank', rank); } catch(e) {} }
 function updateMenu(){
@@ -1712,6 +1722,9 @@ function updateMenu(){
   const b = $('play2Btn'), locked = rank < 1;
   b.disabled = locked;
   b.textContent = locked ? `🔒 Level 2 ab ${RANKS[1].t} (${RANKS[1].pts} Punkte in Level 1)` : 'Level 2: Am Fließband';
+  const b3 = $('play3Btn'), locked3 = rank < 2;
+  b3.disabled = locked3;
+  b3.textContent = locked3 ? `🔒 Level 3 ab ${RANKS[2].t} (${RANKS[2].pts} Punkte)` : 'Level 3: Im Sudhaus';
 }
 function checkPromo(){
   if (state !== 'play' || rank >= RANKS.length - 1) return;
@@ -1723,10 +1736,12 @@ function promote(){
   $('promoRank').textContent = r.t;
   $('promoText').textContent = rank === 1 ? 'Maxi hat sich bewährt. Ab sofort darf er auch drinnen in der Brauerei arbeiten: Level 2 ist freigeschaltet.'
     : rank === RANKS.length - 1 ? 'Maxi ist jetzt Brauer. Höher geht es in der Freetown Brewery nicht. Prost!'
-    : 'Maxi arbeitet jetzt fix in der Produktion.';
+    : 'Maxi arbeitet jetzt in der Produktion und hilft im Sudhaus beim Brauen: Level 3 ist freigeschaltet.';
   $('promoNext').textContent = rank < RANKS.length - 1 ? `Nächste Stufe: ${RANKS[rank + 1].t} ab ${RANKS[rank + 1].pts} Punkten` : '';
-  $('promoStay').textContent = stage === 2 ? 'Am Fließband weiterspielen' : 'Vor der Brauerei weiterspielen';
-  $('promoGo').textContent = stage === 2 ? 'Zurück vor die Brauerei' : 'Ab in die Brauerei (Level 2)';
+  promoTarget = rank >= 2 ? 3 : 2;
+  $('promoStay').textContent = ['', 'Vor der Brauerei weiterspielen', 'Am Fließband weiterspielen', 'Im Sudhaus weiterspielen'][stage];
+  $('promoGo').textContent = promoTarget === 3 ? 'Ab ins Sudhaus (Level 3)' : 'Ab in die Brauerei (Level 2)';
+  $('promoGo').hidden = promoTarget === stage;
   $('promo').hidden = false;
   // Fanfare und Konfetti
   [523, 659, 784, 1047].forEach((f, i) => setTimeout(() => beep(f, i === 3 ? .4 : .14, 'square', .08), i*120));
@@ -1736,7 +1751,7 @@ function promoContinue(goOther){
   $('promo').hidden = true; setMood('happy', 1);
   if (!goOther){ state = 'play'; return; }
   const keep = score;
-  if (stage === 2) start(keep); else start2(keep);
+  if (promoTarget === 3) start3(keep); else start2(keep);
 }
 function drawRankStars(){
   // Abzeichen auf der Jacke: ein Stern je Beförderung
@@ -1754,8 +1769,307 @@ function toTitle(){
   ['over','paused','hud','board','legalBox'].forEach(id => $(id).hidden = true); $('intro').hidden = true;
   $('start').hidden = false; updateMenu(); $('bestStart').textContent = best ? `Dein Rekord: ${best} Punkte` : 'Steuerung: Finger auflegen und nach links oder rechts ziehen.';
 }
-$('playBtn').onclick = start; $('play2Btn').onclick = start2;
-$('againBtn').onclick = () => stage === 2 ? start2() : start();
+/* ================= Level 3: Im Sudhaus =================
+   Maxi unterstützt den Brauprozess: Auf der Tafel steht, was der Sudkessel im
+   aktuellen Schritt braucht. Ein Tipp auf die Zutat unten wirft sie hinein.
+   Ein Sud hat drei Schritte: Einmaischen, Würzekochen, Anstellen. */
+let best3 = 0;
+try { best3 = +localStorage.getItem('ftb-best3') || 0; } catch(e) {}
+const ING = {
+  malz:     { name: 'Malz' },
+  karamell: { name: 'Karamellmalz', short: 'Karamell' },
+  hopfen:   { name: 'Hopfen' },
+  hefe:     { name: 'Hefe' },
+  wasser:   { name: 'Wasser' }
+};
+const L3 = { brews: 0, stepI: 0, steps: [], have: {}, timer: 0, timerMax: 8, flying: [], maxiX: 200, boilOn: false, boilT: 0, boilTaps: 0, boilDone: false,
+             boilUnlocked: false, karamell: false, liquid: '#cfe3f0', puffs: [], doneT: 0 };
+function bins3(){ return L3.karamell ? ['malz', 'karamell', 'hopfen', 'hefe', 'wasser'] : ['malz', 'hopfen', 'hefe', 'wasser']; }
+function geo3(){
+  const binTop = H - 104, n = bins3().length, gap = 8, bw = (W - 16 - gap*(n-1)) / n;
+  return { kx: W/2, ky: Math.round(150 + (binTop - 150) * .52), binTop, bw, gap, boardY: 122 };
+}
+function binRect(k, g){ return { x: 8 + k*(g.bw + g.gap), y: g.binTop, w: g.bw, h: 84 }; }
+function newBrew(){
+  const d = L3.brews;
+  const mash = { wasser: 1 + (d >= 3 ? 1 : 0), malz: 2 + Math.min(2, Math.floor(d/2)) };
+  if (L3.karamell && Math.random() < .65) mash.karamell = 1;
+  L3.steps = [
+    { name: 'Einmaischen', need: mash, liquid: '#e8c47a' },
+    { name: 'Würzekochen', need: { hopfen: 2 + Math.min(2, Math.floor(d/3)) }, liquid: '#c98a2e', boil: L3.boilUnlocked },
+    { name: 'Anstellen', need: { hefe: 1 + (d >= 5 ? 1 : 0) }, liquid: '#e0a63a' }
+  ];
+  L3.stepI = 0; startStep();
+}
+function curStep(){ return L3.steps[L3.stepI]; }
+function startStep(){
+  const st = curStep(), items = Object.values(st.need).reduce((a, b) => a + b, 0);
+  L3.have = {}; L3.timerMax = Math.max(3.6, 7.5 - L3.brews*.45) + items*.9; L3.timer = L3.timerMax;
+  L3.boilOn = false; L3.boilDone = false; L3.boilAt = st.boil ? L3.timerMax - (.5 + Math.random()*.6) : -1;
+}
+function reset3(){
+  L3.brews = 0; L3.flying = []; L3.maxiX = 200; L3.boilUnlocked = false; L3.karamell = false; L3.liquid = '#cfe3f0'; L3.puffs = []; L3.doneT = 0;
+  parts = []; texts = []; score = 0; crates = 0; missed = 0; shake = 0;
+  streak = 0; mult = 1; setMultUI(null); setMood('idle', 0);
+  P.trip = 0; P.count = 0; P.extra = 0; P.vx = 0; P.noCrate = true; P.slim = true;
+  newBrew(); updateHud();
+}
+async function start3(keep){
+  try { ac = ac || new (window.AudioContext || window.webkitAudioContext)(); ac.resume(); } catch(e) {}
+  stage = 3; reset3(); calibrating = false;
+  if (typeof keep === 'number'){ score = keep; updateHud(); }
+  ['start','over','paused','board','legalBox','promo'].forEach(id => $(id).hidden = true); $('hud').hidden = false;
+  $('cratesLbl').textContent = 'Sude'; $('livesLbl').textContent = 'Fehler';
+  $('bar').hidden = true; $('fillTxt').hidden = true;
+  state = 'play'; keepAwake();
+  if (!seen.l3brew) unlock('l3brew');
+}
+function throwIng(k){
+  if (L3.boilOn){ floatText(geo3().kx, geo3().ky - 150, 'Erst umrühren!', '#ff8a6a'); return; }
+  const g = geo3(), ing = bins3()[k], r = binRect(k, g);
+  L3.maxiX = Math.max(46, Math.min(W - 46, r.x + r.w/2));
+  L3.flying.push({ ing, x0: r.x + r.w/2, y0: r.y - 10, t: 0, dur: .5 });
+  beep(420 + k*60, .06, 'triangle', .07);
+}
+function tap3(e){
+  const fx = toLogical(e.clientX), fy = e.clientY / S, g = geo3();
+  if (L3.boilOn && Math.hypot(fx - g.kx, fy - g.ky) < 95){ stir3(); return; }
+  if (fy >= g.binTop - 16){
+    const n = bins3().length;
+    for (let k=0;k<n;k++){ const r = binRect(k, g); if (fx >= r.x - g.gap/2 && fx <= r.x + r.w + g.gap/2){ throwIng(k); return; } }
+  }
+}
+function stir3(){
+  L3.boilTaps++; beep(300 + L3.boilTaps*80, .05, 'square', .06);
+  for (let k=0;k<4;k++) parts.push({ x: geo3().kx + (Math.random()-.5)*80, y: geo3().ky - 60, vx: (Math.random()-.5)*80, vy: -60 - Math.random()*60, life: .5, c: '#fffaf0', s: 3 + Math.random()*3, round: true });
+  if (L3.boilTaps >= 4){
+    L3.boilOn = false; L3.boilDone = true; const pts = 20 * mult; score += pts; updateHud();
+    floatText(geo3().kx, geo3().ky - 90, `Gerettet! +${pts}`, C.gold); setMood('happy', .6);
+  }
+}
+function fault3(msg, x, y){
+  missed++; breakStreak(); setMood('shock', .9); shake = .2; sBreak();
+  floatText(x, y, msg, '#ff8a6a'); updateHud();
+  if (missed >= MAXMISS){ gameOver(); return true; }
+  return false;
+}
+function arrive3(f){
+  const g = geo3(), st = curStep(), need = st.need[f.ing] || 0, have = L3.have[f.ing] || 0;
+  for (let k=0;k<8;k++) parts.push({ x: g.kx + (Math.random()-.5)*30, y: g.ky - 62, vx: (Math.random()-.5)*120, vy: -80 - Math.random()*100, life: .5, c: st.liquid, s: 2 + Math.random()*2, round: true });
+  if (have < need){
+    L3.have[f.ing] = have + 1; const pts = 10 * mult; score += pts;
+    beep(900, .08, 'sine', .1); cleanCatch(); updateHud();
+    const done = Object.keys(st.need).every(i => (L3.have[i] || 0) >= st.need[i]);
+    if (done) stepDone();
+  } else {
+    fault3(need ? `Genug ${ING[f.ing].name}!` : 'Falsche Zutat!', g.kx, g.ky - 96);
+  }
+}
+function stepDone(){
+  const g = geo3(), st = curStep(); L3.liquid = st.liquid;
+  const pts = Math.round(L3.timer / L3.timerMax * 40) * mult + 20 * mult; score += pts;
+  if (L3.stepI < L3.steps.length - 1) floatText(g.kx, g.ky - 110, `${st.name} fertig! +${pts}`, C.gold); setMood('happy', .7);
+  beep(660, .1, 'square', .07); setTimeout(() => beep(990, .16, 'square', .07), 110);
+  if (L3.stepI < L3.steps.length - 1){ L3.stepI++; startStep(); return; }
+  // ganzer Sud fertig
+  L3.brews++; crates = L3.brews;
+  const bonus = (100 + 50 * L3.brews) * mult; score += bonus; L3.doneT = 1.6; L3.liquid = '#cfe3f0';
+  floatText(W/2, g.ky - 140, `Sud fertig! +${bonus}`, C.gold); sCash(); setMood('proud', 1.6); updateHud();
+  if (!L3.boilUnlocked && L3.brews >= 2) L3.boilUnlocked = true;
+  if (!L3.karamell && L3.brews >= 4){ L3.karamell = true; newBrew(); unlock('l3karamell'); return; }
+  newBrew();
+}
+function update3(dt){
+  tTotal += dt;
+  const g = geo3();
+  if (L3.doneT > 0) L3.doneT -= dt;
+  // Würfe
+  for (let i = L3.flying.length-1; i >= 0; i--){ const f = L3.flying[i]; f.t += dt; if (f.t >= f.dur){ L3.flying.splice(i,1); arrive3(f); if (state !== 'play') return; } }
+  // Überkochen
+  const st = curStep();
+  if (!L3.boilOn && !L3.boilDone && L3.boilAt > 0 && L3.timer <= L3.boilAt){
+    L3.boilOn = true; L3.boilT = 3.2; L3.boilTaps = 0; beep(180, .3, 'sawtooth', .07, 1.5);
+    if (!seen.l3boil){ unlock('l3boil'); return; }
+  }
+  if (L3.boilOn){
+    L3.boilT -= dt;
+    if (L3.boilT <= 0){ L3.boilOn = false; L3.boilDone = true;
+      for (let k=0;k<20;k++) parts.push({ x: g.kx + (Math.random()-.5)*120, y: g.ky - 70, vx: (Math.random()-.5)*160, vy: -40 - Math.random()*80, life: .9, c: '#fffaf0', s: 3 + Math.random()*4, round: true });
+      if (fault3('Übergekocht!', g.kx, g.ky - 100)) return; }
+  } else {
+    L3.timer -= dt;
+    if (L3.timer <= 0){ L3.timer = L3.timerMax; if (fault3('Zu langsam!', g.kx, g.ky - 100)) return; }
+  }
+  // Dampf
+  if (Math.random() < dt*6) L3.puffs.push({ x: g.kx + (Math.random()-.5)*30, y: g.ky - 96, r: 6 + Math.random()*6, life: 1.6 });
+  for (let i = L3.puffs.length-1; i >= 0; i--){ const p = L3.puffs[i]; p.y -= 24*dt; p.x += Math.sin(tTotal + i)*6*dt; p.r += 8*dt; p.life -= dt; if (p.life <= 0) L3.puffs.splice(i,1); }
+  for (let i = parts.length-1; i >= 0; i--){ const p = parts[i]; p.vy += 600*dt; p.x += p.vx*dt; p.y += p.vy*dt; p.life -= dt; if (p.life <= 0) parts.splice(i,1); }
+  for (let i = texts.length-1; i >= 0; i--){ const t = texts[i]; t.y -= 40*dt; t.life -= dt*.9; if (t.life <= 0) texts.splice(i,1); }
+  shake = Math.max(0, shake - dt);
+}
+
+/* ---- Zeichnen ---- */
+let bg3 = document.createElement('canvas');
+function buildBg3(){
+  bg3.width = cv.width; bg3.height = cv.height;
+  const b = bg3.getContext('2d'); b.setTransform(dpr*S,0,0,dpr*S,dpr*OX,0);
+  const floorY = H - 128;
+  // warme Holzvertäfelung
+  b.fillStyle = '#6b4a2e'; b.fillRect(XL, 0, XR-XL, floorY);
+  for (let x = Math.floor(XL/28)*28; x < XR; x += 28){ b.fillStyle = (x/28) % 2 ? '#734f31' : '#664529'; b.fillRect(x, 0, 28, floorY); b.fillStyle = 'rgba(0,0,0,.18)'; b.fillRect(x, 0, 2, floorY); }
+  b.fillStyle = '#4a3220'; b.fillRect(XL, floorY - 60, XR-XL, 60); b.fillStyle = '#8a6440'; b.fillRect(XL, floorY - 64, XR-XL, 4);
+  // Fenster mit Abendlicht
+  for (const wx of [40, 300]){ b.fillStyle = '#3a2716'; b.fillRect(wx - 4, 236, 68, 92);
+    const wg = b.createLinearGradient(0, 240, 0, 324); wg.addColorStop(0, '#f6c77a'); wg.addColorStop(1, '#c97a3c'); b.fillStyle = wg; b.fillRect(wx, 240, 60, 84);
+    b.fillStyle = '#3a2716'; b.fillRect(wx + 28, 240, 4, 84); b.fillRect(wx, 280, 60, 4); }
+  // Decke
+  const cg = b.createLinearGradient(0, 0, 0, 132); cg.addColorStop(0, '#1c1712'); cg.addColorStop(.8, '#2a2119'); cg.addColorStop(1, 'rgba(42,33,25,0)');
+  b.fillStyle = cg; b.fillRect(XL, 0, XR-XL, 132);
+  b.fillStyle = '#3a2c20'; b.fillRect(XL, 112, XR-XL, 8);
+  // Fliesenboden
+  b.fillStyle = '#8c6f58'; b.fillRect(XL, floorY, XR-XL, H - floorY);
+  for (let y = floorY, r = 0; y < H; y += 20, r++) for (let x = Math.floor(XL/40)*40 + (r%2)*20; x < XR; x += 40){ b.fillStyle = (r + x/20) % 2 ? '#7e624c' : '#94765e'; b.fillRect(x, y, 20, 20); }
+  b.fillStyle = 'rgba(0,0,0,.2)'; b.fillRect(XL, floorY, XR-XL, 4);
+}
+function drawIng(ing, x, y, sc){
+  ctx.save(); ctx.translate(x, y); ctx.scale(sc, sc); ctx.lineJoin = 'round';
+  if (ing === 'malz' || ing === 'karamell'){
+    const c = ing === 'malz' ? '#e3c58a' : '#9a6232', d = ing === 'malz' ? '#b89456' : '#6e4220';
+    ctx.fillStyle = c; ctx.beginPath(); ctx.moveTo(-11, 12); ctx.quadraticCurveTo(-14, -4, -7, -10); ctx.lineTo(7, -10); ctx.quadraticCurveTo(14, -4, 11, 12); ctx.closePath(); ctx.fill();
+    ctx.fillStyle = d; ctx.fillRect(-7, -12, 14, 3); ctx.beginPath(); ctx.moveTo(-5, -12); ctx.lineTo(-8, -17); ctx.lineTo(0, -13); ctx.lineTo(8, -17); ctx.lineTo(5, -12); ctx.fill();
+    ctx.fillStyle = ing === 'malz' ? '#f6e7c4' : '#c99a62';
+    for (const [gx, gy] of [[-4, 2], [0, 4], [4, 2], [-2, 7], [2, 7], [0, -1]]){ ctx.beginPath(); ctx.ellipse(gx, gy, 1.6, 2.6, .3, 0, Math.PI*2); ctx.fill(); }
+  } else if (ing === 'hopfen'){
+    ctx.fillStyle = '#4c8a32'; ctx.fillRect(-1, -15, 2, 5);
+    for (let r = 0; r < 4; r++){ const yy = -9 + r*5, ww = 9 - Math.abs(r - 1.2)*1.6;
+      for (const s of [-1, 1]){ ctx.fillStyle = r % 2 ? '#7ab84e' : '#8fca5c'; ctx.beginPath(); ctx.ellipse(s*ww*.45, yy, ww*.55, 4, s*.4, 0, Math.PI*2); ctx.fill(); } }
+    ctx.fillStyle = '#9fd66c'; ctx.beginPath(); ctx.ellipse(0, 9, 3, 3.5, 0, 0, Math.PI*2); ctx.fill();
+  } else if (ing === 'hefe'){
+    ctx.fillStyle = 'rgba(220,235,240,.85)'; rr(-8, -9, 16, 21, 3); ctx.fill();
+    ctx.fillStyle = '#f2e3b8'; rr(-7, -2, 14, 13, 2); ctx.fill();
+    ctx.fillStyle = '#e0cf9a'; for (const [bx, by] of [[-3, 2], [2, 5], [-1, 8], [4, 1]]){ ctx.beginPath(); ctx.arc(bx, by, 1.2, 0, Math.PI*2); ctx.fill(); }
+    ctx.fillStyle = '#c22a22'; rr(-9, -13, 18, 5, 1.5); ctx.fill();
+  } else if (ing === 'wasser'){
+    ctx.fillStyle = '#9aa3ab'; ctx.beginPath(); ctx.moveTo(-10, -8); ctx.lineTo(10, -8); ctx.lineTo(8, 12); ctx.lineTo(-8, 12); ctx.closePath(); ctx.fill();
+    ctx.fillStyle = '#4aa3df'; ctx.beginPath(); ctx.ellipse(0, -8, 10, 3, 0, 0, Math.PI*2); ctx.fill();
+    ctx.strokeStyle = '#6b737b'; ctx.lineWidth = 1.5; ctx.beginPath(); ctx.arc(0, -8, 11, Math.PI*1.05, Math.PI*1.95); ctx.stroke();
+    ctx.fillStyle = 'rgba(255,255,255,.35)'; ctx.fillRect(-6, -4, 2, 13);
+  }
+  ctx.restore();
+}
+function drawKettle(g){
+  const { kx, ky } = g, r = 78;
+  // Feuerung
+  ctx.fillStyle = '#3a2c20'; rr(kx - r + 10, ky + 52, (r - 10)*2, 30, 6); ctx.fill();
+  ctx.fillStyle = `rgba(255,${140 + Math.sin(tTotal*9)*30},40,.85)`; for (let k=-2;k<=2;k++){ ctx.beginPath(); ctx.ellipse(kx + k*20, ky + 66, 6, 7 + Math.sin(tTotal*12 + k)*2, 0, 0, Math.PI*2); ctx.fill(); }
+  // Kessel
+  const kg = ctx.createLinearGradient(kx - r, 0, kx + r, 0); kg.addColorStop(0, '#7a3e1c'); kg.addColorStop(.42, '#f0aa66'); kg.addColorStop(.6, '#d98a48'); kg.addColorStop(1, '#6a3416');
+  ctx.fillStyle = kg; ctx.beginPath(); ctx.moveTo(kx - r, ky + 54); ctx.lineTo(kx - r, ky - 20); ctx.quadraticCurveTo(kx - r, ky - 64, kx, ky - 68); ctx.quadraticCurveTo(kx + r, ky - 64, kx + r, ky - 20); ctx.lineTo(kx + r, ky + 54); ctx.closePath(); ctx.fill();
+  ctx.fillStyle = '#5e2e12'; ctx.fillRect(kx - r - 3, ky + 50, r*2 + 6, 7); ctx.fillRect(kx - r - 3, ky - 22, r*2 + 6, 5);
+  ctx.fillStyle = '#b8743c'; rr(kx - 14, ky - 92, 28, 26, 4); ctx.fill();
+  // Schauglas mit Würze
+  ctx.fillStyle = '#3a2416'; ctx.beginPath(); ctx.arc(kx, ky + 16, 25, 0, Math.PI*2); ctx.fill();
+  ctx.save(); ctx.beginPath(); ctx.arc(kx, ky + 16, 20, 0, Math.PI*2); ctx.clip();
+  ctx.fillStyle = '#2b1e14'; ctx.fillRect(kx - 22, ky - 6, 44, 44);
+  const lv = ky + 16 - 4 + Math.sin(tTotal*3)*2;
+  ctx.fillStyle = L3.liquid; ctx.fillRect(kx - 22, lv, 44, 40);
+  ctx.fillStyle = 'rgba(255,255,255,.35)'; for (let k=0;k<4;k++){ ctx.beginPath(); ctx.arc(kx - 10 + k*7, lv + 8 + ((tTotal*20 + k*9) % 20), 1.6, 0, Math.PI*2); ctx.fill(); }
+  ctx.restore();
+  ctx.fillStyle = 'rgba(255,255,255,.3)'; ctx.fillRect(kx - r*.52, ky - 40, 6, 80);
+  ctx.fillStyle = C.cream; ctx.font = '12px "Alfa Slab One", Georgia, serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillText('SUDKESSEL', kx, ky - 34);
+  // Dampf
+  for (const p of L3.puffs){ ctx.fillStyle = `rgba(255,255,255,${Math.max(0, p.life/1.6)*.35})`; ctx.beginPath(); ctx.arc(p.x, p.y, p.r, 0, Math.PI*2); ctx.fill(); }
+  // Überkochen: Schaum quillt über den Rand
+  if (L3.boilOn){
+    const k = 1 - L3.boilT/3.2, h = 10 + k*60;
+    ctx.fillStyle = '#fffaf0';
+    for (let i=-4;i<=4;i++){ ctx.beginPath(); ctx.arc(kx + i*17, ky - 64 + Math.abs(i)*3 - k*10, 10 + k*8 + Math.sin(tTotal*10 + i)*2, 0, Math.PI*2); ctx.fill(); }
+    for (const s of [-1, 1]) { ctx.fillRect(kx + s*(r - 6) - 7, ky - 40, 14, h); ctx.beginPath(); ctx.arc(kx + s*(r - 6), ky - 40 + h, 7, 0, Math.PI*2); ctx.fill(); }
+    const pulse = (Math.sin(tTotal*12) + 1)/2;
+    ctx.fillStyle = `rgba(194,42,34,${.75 + pulse*.25})`; rr(kx - 70, ky - 128, 140, 28, 8); ctx.fill();
+    ctx.fillStyle = '#fff'; ctx.font = '700 16px "Barlow Condensed", sans-serif'; ctx.fillText(`Schnell tippen! ${4 - L3.boilTaps}×`, kx, ky - 113);
+  }
+  if (L3.doneT > 0){ ctx.globalAlpha = Math.min(1, L3.doneT); ctx.font = '26px "Alfa Slab One", Georgia, serif'; ctx.fillStyle = C.gold; ctx.strokeStyle = 'rgba(0,0,0,.5)'; ctx.lineWidth = 4; ctx.strokeText('Prost!', kx, ky - 4); ctx.fillText('Prost!', kx, ky - 4); ctx.globalAlpha = 1; }
+}
+function drawBoard(g, hl){
+  const st = curStep(), x = 22, y = g.boardY, w = W - 44, h = 76;
+  ctx.fillStyle = '#6b4a2e'; rr(x - 5, y - 5, w + 10, h + 10, 8); ctx.fill();
+  ctx.fillStyle = '#1f2a24'; rr(x, y, w, h, 5); ctx.fill();
+  if (hl){ ctx.strokeStyle = C.gold; ctx.lineWidth = 3; rr(x - 5, y - 5, w + 10, h + 10, 8); ctx.stroke(); }
+  ctx.fillStyle = 'rgba(243,230,196,.92)'; ctx.font = '700 14px "Barlow Condensed", sans-serif'; ctx.textAlign = 'left'; ctx.textBaseline = 'middle';
+  ctx.fillText(`Sud ${L3.brews + 1} · Schritt ${L3.stepI + 1}/3: ${st.name}`, x + 10, y + 13);
+  const keys = Object.keys(st.need), cw = Math.min(86, (w - 20) / keys.length);
+  keys.forEach((ing, i) => {
+    const cx = x + 10 + i*cw, have = L3.have[ing] || 0, need = st.need[ing], ok = have >= need;
+    drawIng(ing, cx + 14, y + 44, .95);
+    ctx.fillStyle = ok ? '#9fe0a8' : 'rgba(243,230,196,.95)'; ctx.font = '700 16px "Barlow Condensed", sans-serif'; ctx.textAlign = 'left';
+    ctx.fillText(ok ? '✓' : `${have}/${need}`, cx + 31, y + 45);
+  });
+  // Zeitbalken
+  const k = Math.max(0, L3.timer / L3.timerMax);
+  ctx.fillStyle = 'rgba(255,255,255,.12)'; ctx.fillRect(x + 8, y + h - 8, w - 16, 4);
+  ctx.fillStyle = k > .35 ? '#9fe0a8' : '#ff8a6a'; ctx.fillRect(x + 8, y + h - 8, (w - 16)*k, 4);
+}
+function drawBins(g, hlIng){
+  const list = bins3();
+  list.forEach((ing, k) => {
+    const r = binRect(k, g);
+    ctx.fillStyle = '#5a3c22'; rr(r.x, r.y, r.w, r.h, 8); ctx.fill();
+    ctx.fillStyle = '#7a5532'; rr(r.x + 3, r.y + 3, r.w - 6, r.h - 26, 6); ctx.fill();
+    if (hlIng === ing){ ctx.strokeStyle = C.gold; ctx.lineWidth = 3; rr(r.x, r.y, r.w, r.h, 8); ctx.stroke(); }
+    drawIng(ing, r.x + r.w/2, r.y + 31, 1.45);
+    ctx.fillStyle = C.cream; ctx.font = `700 ${r.w < 76 ? 12 : 14}px "Barlow Condensed", sans-serif`; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+    ctx.fillText(ING[ing].short || ING[ing].name, r.x + r.w/2, r.y + r.h - 11);
+  });
+}
+function render3(){
+  ctx.setTransform(1,0,0,1,0,0);
+  ctx.drawImage(bg3, 0, 0);
+  const sx = shake ? (Math.random()-.5)*8*shake/.25 : 0;
+  ctx.setTransform(dpr*S,0,0,dpr*S, dpr*(OX + sx*S), 0);
+  const g = geo3();
+  drawBoard(g, state === 'intro' && introKind === 'l3brew');
+  drawKettle(g);
+  // Maxi läuft zur Zutat
+  P.noCrate = true; P.slim = true;
+  const tx = L3.maxiX, cur = P.x3 ?? 200; P.x3 = cur + (tx - cur) * .18; P.vx = (tx - cur) * 8; P.walk += Math.abs(tx - cur) * .05;
+  ctx.save(); ctx.translate(P.x3, g.binTop - 6); ctx.scale(.72, .72); drawMan(0, 0); ctx.restore();
+  drawBins(g, state === 'intro' && introKind === 'l3karamell' ? 'karamell' : null);
+  // fliegende Zutaten
+  for (const f of L3.flying){
+    const k = f.t / f.dur, x = f.x0 + (g.kx - f.x0)*k, y = f.y0 + (g.ky - 70 - f.y0)*k - Math.sin(k*Math.PI)*90;
+    drawIng(f.ing, x, y, 1.2 - k*.3);
+  }
+  for (const p of parts){ ctx.globalAlpha = Math.max(0, p.life/.8); ctx.fillStyle = p.c;
+    if (p.round){ ctx.beginPath(); ctx.arc(p.x, p.y, p.s, 0, Math.PI*2); ctx.fill(); }
+    else { ctx.save(); ctx.translate(p.x,p.y); ctx.rotate(p.rot); ctx.beginPath(); ctx.moveTo(0,-p.s); ctx.lineTo(p.s,p.s); ctx.lineTo(-p.s,p.s*.6); ctx.fill(); ctx.restore(); } }
+  ctx.globalAlpha = 1;
+  for (const t of texts){ ctx.globalAlpha = Math.max(0, t.life); ctx.fillStyle = t.c; ctx.font = '22px "Alfa Slab One", Georgia, serif'; ctx.textAlign='center';
+    ctx.strokeStyle = 'rgba(0,0,0,.5)'; ctx.lineWidth = 4; ctx.strokeText(t.t, t.x, t.y); ctx.fillText(t.t, t.x, t.y); }
+  ctx.globalAlpha = 1;
+  if (state === 'intro') drawIntro3(g);
+}
+function drawIntro3(g){
+  ctx.fillStyle = 'rgba(10,14,22,.4)'; ctx.fillRect(XL, 0, XR - XL, H);
+  const finger = (x, y, sc) => { ctx.save(); ctx.translate(x, y); ctx.scale(sc || 1, sc || 1); ctx.font = '42px "Apple Color Emoji","Segoe UI Emoji","Noto Color Emoji",sans-serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'top'; ctx.fillText('👆', 4, -4); ctx.restore(); };
+  if (introKind === 'l3brew'){
+    drawBoard(g, true); drawBins(g, 'malz');
+    const r = binRect(0, g), p = introT % 1.6;
+    finger(r.x + r.w/2, r.y + 34, p < .15 ? .9 : 1);
+    if (p > .15 && p < .65){ const k = (p - .15)/.5; drawIng('malz', r.x + r.w/2 + (g.kx - r.x - r.w/2)*k, r.y - 10 + (g.ky - 70 - r.y + 10)*k - Math.sin(k*Math.PI)*90, 1.2); }
+  } else if (introKind === 'l3boil'){
+    drawKettle(g);
+    finger(g.kx + 10, g.ky + 6, (introT % .5) < .12 ? .88 : 1);
+  } else if (introKind === 'l3karamell'){
+    drawBins(g, 'karamell');
+    const k = bins3().indexOf('karamell'), r = binRect(k, g);
+    drawIng('karamell', W/2, g.ky, 3);
+    finger(r.x + r.w/2, r.y + 34);
+  }
+}
+$('playBtn').onclick = () => start(); $('play2Btn').onclick = () => start2();
+$('againBtn').onclick = () => stage === 3 ? start3() : stage === 2 ? start2() : start();
+$('play3Btn').onclick = () => start3();
 $('menuBtn').onclick = toTitle;
 // Impressum und Datenschutz
 let legalFrom = null;
