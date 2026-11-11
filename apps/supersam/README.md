@@ -1,14 +1,18 @@
 # Supersam
 
-Jump'n'Run fürs Handy im Querformat mit Sam, einem kleinen blonden Jungen, gesteuert mit zwei Daumen: ein Daumen läuft, der zweite springt. Eine Hubwelt verbindet vier Welten (Wald, Felsen, See, Gipfel); jede schenkt eine Fähigkeit (Doppelsprung, Wandsprung, Dash, Gleiten), mit der man woanders weiterkommt. Kristalle hinter späteren Fähigkeiten sorgen für Wiederspielwert, das Schwung-System belohnt flüssiges Spielen. Am Ziel sitzt das Fähigkeits-Item in einem Käfig, der erst mit genug Punkten aufgeht (Münze 10, Diamant 100, Stern 200, Gegner +50, Tod −100, Restzeit 2 pro Sekunde; 3 Minuten je Welt). Mit zu wenig Punkten wird der Käfig zur Tür, die die Welt neu startet. Auf dem Arena-Platz der Hubwelt warten hinter Diamanten-Toren (7/10/12) drei Endgegner: Igelkönig (Dash), Felsgolem (Doppel- oder Wandsprung), Sturmgeist (Gleiten).
+Jump'n'Run fürs Handy im Querformat mit Sam, einem kleinen blonden Jungen, gesteuert mit zwei Daumen: ein Daumen läuft, der zweite springt. Eine Weltkarte verbindet die Übungswiese, acht Welten, drei Bonuswelten und die Endgegner; die Welten schenken Fähigkeiten (Doppelsprung, Wandsprung, Dash, Gleiten), mit denen man woanders weiterkommt.
 
-## Technik
+## Stand
 
-- Eine einzige Datei `index.html`: Canvas-Spiel in reinem JavaScript, Pixel-Sprites im SNES-Stil werden im Code gezeichnet.
-- WebGL-Effektschicht: das 2D-Bild läuft als Textur durch Shader (Licht und Schatten, Glühen, Bloom, Farbstimmung, Dunst, Vignette), Werte je Welt in `FXT`. Ohne WebGL bleibt das 2D-Bild sichtbar; im Debug-Menü abschaltbar.
-- Musik und Effekte entstehen live mit der Web Audio API (keine Audiodateien).
-- Fortschritt, Debug-Werte und Lautstärke liegen im `localStorage` des Browsers.
-- `src/game.test.js`: Rauchtest, der jede Welt mit Browser-Attrappen anspielt.
+Die Hauptseite zeigt den Stand des Labors vom 11. November 2026 (Weltkarte als Hub, Übungswiese, Leben,
+Bonuswelten, Medaillen, überarbeitete Kamera, klassische Grafik, Hochformat-Hinweis). Die Beschreibung der
+einzelnen Teile steht in `apps/supersam-labor/README.md`.
+
+- Eine Datei `index.html`, dazu die Level-Dateien in `levels/`, die beim Bauen eingebaut werden (`levels.mjs`).
+- Spielstand und Einstellungen liegen im `localStorage` unter `supersam-…` – getrennt vom Labor
+  (`supersam-labor-…`) und vom früheren Demo-Spielstand (`daumensprung-…`, wird nicht mehr gelesen).
+- `src/game.test.js`: dieselben Tests wie im Labor.
+- Kein Leveleditor auf der Hauptseite; der bleibt unter `/labor/editor/`.
 
 ## Entwicklung und Veröffentlichung
 
@@ -28,4 +32,4 @@ Einmalig auf dem Server:
 3. `nginx -t && systemctl reload nginx`
 4. `certbot --nginx -d supersam.jemphub.com`
 
-Experimente laufen in `apps/supersam-labor` (veröffentlicht unter https://supersam.jemphub.com/labor/, eigener Spielstand). Diese Demo bleibt beim Stand, bis ein Labor-Stand bewusst übernommen wird.
+Experimente laufen in `apps/supersam-labor` (veröffentlicht unter https://supersam.jemphub.com/labor/, eigener Spielstand). Die Hauptseite bleibt beim übernommenen Stand, bis ein neuer Labor-Stand bewusst übernommen wird: `index.html`, `src/game.test.js`, `levels.mjs` und `levels/` aus dem Labor kopieren, `supersam-labor-` durch `supersam-` ersetzen, Titel „Supersam“.
