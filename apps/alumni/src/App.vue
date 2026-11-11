@@ -3,6 +3,7 @@ import { computed, nextTick, onMounted, reactive, ref, watch } from 'vue'
 import { toJpeg, toPng } from 'html-to-image'
 import { jsPDF } from 'jspdf'
 import * as XLSX from 'xlsx'
+import { createZip, type ZipEntry } from './utils/zip'
 import SocialCard, { type AlumniRecord, type ContentBlock, type FormatKey } from './components/SocialCard.vue'
 
 const formats: Record<FormatKey, { label: string; width: number; height: number }> = {
@@ -61,10 +62,17 @@ const pageTextboxes = computed(() => Array.from({ length: Math.max(0, pageCount.
 }))
 const hasSecondPage = computed(() => format.value !== 'story' && pageCount.value > 1)
 
-const filename = computed(() => {
-  const base = record.name.trim().toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '') || 'alumni'
-  return `${base}-${format.value}`
-})
+const fileBase = computed(() => record.name.trim().toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '') || 'alumni')
+const filename = computed(() => `${fileBase.value}-${format.value}`)
+
+// Download-Menü: welche Formate heruntergeladen werden
+const formatKeys = Object.keys(formats) as FormatKey[]
+const downloadOpen = ref(false)
+const downloadChoice = reactive<Record<FormatKey, boolean>>({ portrait: true, square: false, story: false })
+const silentFormatSwitch = ref(false)
+const pagesFor = (key: FormatKey) => key === 'story' ? 1 : pageCount.value
+const downloadCount = computed(() => formatKeys.filter(key => downloadChoice[key]).reduce((sum, key) => sum + pagesFor(key), 0))
+const downloadLabel = computed(() => downloadCount.value === 1 ? 'JPEG herunterladen' : `ZIP herunterladen · ${downloadCount.value} Bilder`)
 
 function notify(message: string) {
   toast.value = message
@@ -176,6 +184,55 @@ async function downloadImageData(url: string, name: string) {
     downloadDataUrl(objectUrl, name)
   } finally {
     window.setTimeout(() => URL.revokeObjectURL(objectUrl), 1200)
+  }
+}
+
+async function downloadSelection() {
+  const targets = formatKeys.filter(key => downloadChoice[key])
+  if (!targets.length) return
+  downloadOpen.value = false
+  busy.value = true
+  silentFormatSwitch.value = true
+  const previous = { format: format.value, page: page.value }
+  try {
+    const entries: { name: string; data: string }[] = []
+    for (const target of targets) {
+      format.value = target
+      await nextTick()
+      await wait(180) // Textanpassung an das neue Format nachziehen lassen
+      const pages = pagesFor(target)
+      for (let pageNumber = 1; pageNumber <= pages; pageNumber += 1) {
+        page.value = pageNumber
+        await nextTick()
+        await wait(90)
+        const label = formats[target].label.toLowerCase()
+        const name = pages === 1 ? `${fileBase.value}-${label}.jpg` : `${fileBase.value}-${label}-seite-${pageNumber}.jpg`
+        entries.push({ name, data: await capturePreview('jpeg') })
+      }
+    }
+    if (entries.length === 1) {
+      await downloadImageData(entries[0].data, entries[0].name)
+      notify('JPEG wurde erstellt')
+    } else {
+      const files: ZipEntry[] = await Promise.all(entries.map(async entry => ({
+        name: entry.name,
+        data: new Uint8Array(await (await fetch(entry.data)).arrayBuffer()),
+      })))
+      const objectUrl = URL.createObjectURL(createZip(files))
+      downloadDataUrl(objectUrl, `${fileBase.value}.zip`)
+      window.setTimeout(() => URL.revokeObjectURL(objectUrl), 1200)
+      notify(`ZIP mit ${entries.length} Bildern wurde erstellt`)
+    }
+  } catch (error) {
+    notify('Export fehlgeschlagen – bitte nochmals versuchen')
+    console.error(error)
+  } finally {
+    format.value = previous.format
+    await nextTick()
+    page.value = previous.page
+    await nextTick()
+    silentFormatSwitch.value = false
+    busy.value = false
   }
 }
 
@@ -370,7 +427,7 @@ watch(format, () => {
   if (format.value === 'story') page.value = 1
 })
 
-watch(format, () => notify(`${currentFormat.value.label}: ${currentFormat.value.width} × ${currentFormat.value.height} px`))
+watch(format, () => { if (!silentFormatSwitch.value) notify(`${currentFormat.value.label}: ${currentFormat.value.width} × ${currentFormat.value.height} px`) })
 
 onMounted(() => {
   loadLocal()
@@ -389,7 +446,20 @@ onMounted(() => {
       <div class="header-actions">
         <button class="button button-ghost" @click="loadLocal">Entwurf laden</button>
         <button class="button button-dark" @click="saveLocally">Entwurf speichern</button>
-        <button class="button button-white" :disabled="busy" @click="exportRaster('jpeg')"><template v-if="busy">Wird erstellt …</template><template v-else>JPEG<span class="label-long"> herunterladen</span></template></button>
+        <div class="download-menu">
+          <button class="button button-white" :disabled="busy" :aria-expanded="downloadOpen" aria-haspopup="dialog" @click="downloadOpen = !downloadOpen">{{ busy ? 'Wird erstellt …' : 'Herunterladen' }}</button>
+          <div v-if="downloadOpen" class="download-backdrop" @click="downloadOpen = false"></div>
+          <div v-if="downloadOpen" class="download-popover" role="dialog" aria-label="Formate herunterladen" @keydown.esc="downloadOpen = false">
+            <label v-for="key in formatKeys" :key="key" class="download-option">
+              <input v-model="downloadChoice[key]" type="checkbox" />
+              <span>
+                <strong>{{ formats[key].label }}</strong>
+                <small>{{ formats[key].width }} × {{ formats[key].height }}<template v-if="pagesFor(key) > 1"> · {{ pagesFor(key) }} Seiten</template></small>
+              </span>
+            </label>
+            <button class="button button-dark" :disabled="!downloadCount" @click="downloadSelection">{{ downloadCount ? downloadLabel : 'Format wählen' }}</button>
+          </div>
+        </div>
       </div>
     </header>
 
