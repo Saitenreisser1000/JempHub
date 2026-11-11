@@ -226,7 +226,7 @@ html,body{height:100%;margin:0;background:var(--night);color:var(--cream);overfl
     <div class="ranknote" id="rankLine"></div>
   </div>
   <div class="startbox">
-    <button class="btn" id="playBtn" type="button">Prost, los geht's</button>
+    <button class="btn" id="playBtn" type="button">Level 1: Vor der Brauerei</button>
     <div class="levels" role="group" aria-label="Weitere Level">
       <button class="lvl" id="play2Btn" type="button"><span class="k">Level 2</span><span class="n">Fließband</span></button>
       <button class="lvl" id="play3Btn" type="button"><span class="k">Level 3</span><span class="n">Sudhaus</span></button>
@@ -1991,10 +1991,15 @@ function quitToTitle(){
   earnTaler();
   toTitle();
 }
+function showRecords(){
+  // Rekorde je Level; die Steuerung erklärt jedes Level beim ersten Spielen selbst
+  const r = [best, best2, best3].map((v, i) => v ? `L${i + 1}: ${v.toLocaleString('de-DE')}` : '').filter(Boolean);
+  $('bestStart').textContent = r.length ? 'Deine Rekorde · ' + r.join(' · ') : '';
+}
 function toTitle(){
   stage = 1; P.noCrate = false; P.slim = false; state = 'menu';
   ['over','paused','hud','board','legalBox','promo','toast','shop'].forEach(id => $(id).hidden = true); $('intro').hidden = true;
-  $('start').hidden = false; updateMenu(); updateShopBtn(); $('bestStart').textContent = best ? `Dein Rekord: ${best} Punkte` : 'Steuerung: Finger auflegen und nach links oder rechts ziehen.';
+  $('start').hidden = false; updateMenu(); updateShopBtn(); showRecords();
 }
 /* ================= Level 3: Im Sudhaus =================
    Maxi unterstützt den Brauprozess: Auf der Tafel steht, was der Sudkessel im
@@ -2546,7 +2551,7 @@ $('hsName').addEventListener('keyup', e => e.stopPropagation());
 hsInit();
 $('pauseBtn').onclick = togglePause; $('resumeBtn').onclick = togglePause;
 document.addEventListener('visibilitychange', () => { if (document.hidden && state === 'play') togglePause(); });
-$('bestStart').textContent = best ? `Dein Rekord: ${best} Punkte` : 'Steuerung: Finger auflegen und nach links oder rechts ziehen.';
+showRecords();
 updateMenu();
 // Startbild ausblenden: nach kurzer Zeit oder bei Tipp
 { const sp = $('splash'); let gone = false;
