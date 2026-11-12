@@ -57,7 +57,7 @@ Einmalig auf dem Server:
 
 ## Brauerei-Shop
 
-Am Ende jeder Runde (auch beim Abbruch über „Zum Titel“) gibt es 1 Brauereitaler je 100 Punkte. Im Shop auf dem Titelbild kauft man damit dauerhafte Verbesserungen, jeweils in zwei Stufen: Ersatzbier (ein Fehler mehr erlaubt), Eingespielt (Start mit höherem Multiplikator, nach Fehlern fällt er nur bis dorthin), Breite Kiste (Level 1), Ruhiges Band (Level 2, 10 % langsamer), Routinierter Brauer (Level 3, 15 % mehr Zeit pro Schritt). Taler und Käufe speichert das Gerät (`localStorage`: `ftb-taler`, `ftb-upg`).
+Brauereitaler verdient man durch Verkäufe in der Bar (siehe Wirtschaft). Im Shop auf dem Titelbild kauft man damit dauerhafte Verbesserungen, jeweils in zwei Stufen: Ersatzbier (ein Fehler mehr erlaubt), Eingespielt (Start mit höherem Multiplikator, nach Fehlern fällt er nur bis dorthin), Breite Kiste (Level 1), Ruhiges Band (Level 2, 10 % langsamer), Routinierter Brauer (Level 3, 15 % mehr Zeit pro Schritt). Taler und Käufe speichert das Gerät (`localStorage`: `ftb-taler`, `ftb-upg`).
 
 ## Eilaufträge (Level 3)
 
@@ -66,4 +66,10 @@ Ab dem 4. Sud bietet der Wirt manchmal einen Eilauftrag an, etwa „2 × Pils in
 ## Menü und Karte
 
 Das Hauptmenü zeigt nur Start und Bestenliste. Start öffnet „Maxis Laufbahn“: oben die Beförderungsstufen mit dem nächsten Ziel und den Rekorden, darunter eine Karte des Brauereigeländes. Tippt man auf ein Gebäude (Bar = Level 1, Abfüllhalle = Level 2, Sudhaus = Level 3, Brauerei-Laden = Shop), geht Maxi über die Wege dorthin; dann startet man das Level über den Knopf oder durch erneutes Tippen. Gesperrte Gebäude sind grau mit Schloss und nennen die nötige Stufe.
+
+## Wirtschaft: Lager, Warenfluss und Spieltage
+
+Die drei Level hängen als Warenkette zusammen. Das Sudhaus (Level 3) verbraucht je fertigem Sud Malz und Hopfen nach Rezept und legt 1 Fass ins Lager. Die Abfüllhalle (Level 2) füllt bei jedem Kistentausch eine Kiste aus dem Fass (4 Kisten je Fass). In der Bar (Level 1) verkauft jede gelieferte Kiste eine Kiste aus dem Lager für 12 Brauereitaler. Fehlt Ware, kann man trotzdem spielen und Punkte sammeln, verdient aber nichts (in der Bar nur 1 Taler Trinkgeld). Brauereitaler gibt es nur noch aus Verkäufen.
+
+Malz und Hopfen kauft man unter „Lager & Einkauf“ im Laufbahn-Screen; die Preise ändern sich jeden Tag. Jede gespielte Runde ist eine Schicht, drei Schichten sind ein Tag. Danach zeigt die Abrechnung Verkäufe, Produktion, Einnahmen, Einkauf, 10 Taler Strom und Miete und den Gewinn mit Verlauf der letzten 7 Tage. Gespeichert lokal unter `ftb-eco`.
 
