@@ -10,7 +10,7 @@ Handyspiel im Hochformat für die Freetown Brewery: Maximilian Weichl steht vor 
 
 ## Beförderungen
 
-Maxi beginnt als **Brauereilakai**. Erreicht eine Runde 3000 Punkte, wird er **Mitarbeiter**: Das Spiel hält an, Level 2 wird freigeschaltet, und man spielt vor der Brauerei weiter oder geht mit den bisherigen Punkten in die Brauerei. Bei 12 000 Punkten wird er **Produktionsmitarbeiter** (Level 3 freigeschaltet), bei 25 000 **Brauer** (jeweils mit Wahl, wo es weitergeht). Die erreichte Stufe merkt sich das Gerät (`localStorage`); sie steht auf dem Titelbild, und Maxi trägt pro Beförderung einen goldenen Stern auf der Jacke. Level 2 ist im Menü erst ab Mitarbeiter wählbar.
+Maxi beginnt als **Brauereilakai**. Erreicht eine Runde 3000 Punkte, wird er **Mitarbeiter** (Level 2 frei, Angebot für den alten Sudkessel), bei 12 000 Punkten **Produktionsmitarbeiter**, bei 25 000 **Vorarbeiter**; jede Stufe erhöht den Lohn. Die Stufe merkt sich das Gerät (`localStorage`), Maxi trägt pro Beförderung einen goldenen Stern auf der Jacke. Braumeister wird er über sein eigenes Sudhaus (siehe Spielbogen).
 
 ## Level 2: Am Fließband
 
@@ -18,7 +18,7 @@ In der Brauerei kommen Flaschen von der Verschließmaschine aufs Hauptband. Maxi
 
 ## Level 3: Im Sudhaus
 
-Freigeschaltet ab Produktionsmitarbeiter. Maxi hilft beim Brauen: Jeder Sud ist eine Biersorte mit eigenem Rezept (Märzen, Pils, Zwickl, Festbier, Dunkles, danach zufällig und mit mehr Malz). Die Tafel zeigt, was der Sudkessel im aktuellen Schritt braucht (Einmaischen: Wasser und Malz, Würzekochen: Hopfen, Anstellen: Hefe). Ab dem 2. Sud folgt nach dem Einmaischen die Maischrast: Finger auf dem Bildschirm halten heizt, loslassen kühlt; die Temperatur muss im grünen Bereich bleiben, bis die Rastzeit voll ist (zu heiß ist ein Fehler). Ein Tipp auf die Zutat unten (oder Taste 1–5) lässt Maxi sie in den Kessel werfen. Falsche oder zu viele Zutaten und abgelaufene Zeit zählen als Fehler, fünf Fehler beenden das Spiel. Jeder fertige Sud bringt einen Bonus, die Mengen steigen und die Zeit wird knapper. Ab dem 3. Sud kann der Kessel beim Würzekochen überkochen (schnell zweimal mit dem Finger im Kreis um den Kessel rühren), ab dem 5. Sud (Dunkles) braucht es Karamellmalz. Eigener lokaler Rekord.
+Maxis eigenes Sudhaus, nach dem Kauf des alten Sudkessels. Jeder Sud ist eine Biersorte mit eigenem Rezept; anfangs nur Märzen, mit Läuterbottich Pils und Zwickl, mit Gärkeller Festbier und Dunkles. Die Tafel zeigt, was der Sudkessel im aktuellen Schritt braucht (Einmaischen: Wasser und Malz, Würzekochen: Hopfen, Anstellen: Hefe). Ab dem 2. Sud folgt nach dem Einmaischen die Maischrast: Finger auf dem Bildschirm halten heizt, loslassen kühlt; die Temperatur muss im grünen Bereich bleiben, bis die Rastzeit voll ist (zu heiß ist ein Fehler). Ein Tipp auf die Zutat unten (oder Taste 1–5) lässt Maxi sie in den Kessel werfen. Falsche oder zu viele Zutaten und abgelaufene Zeit zählen als Fehler, fünf Fehler beenden das Spiel. Jeder fertige Sud bringt einen Bonus, die Mengen steigen und die Zeit wird knapper. Ab dem 3. Sud kann der Kessel beim Würzekochen überkochen (schnell zweimal mit dem Finger im Kreis um den Kessel rühren), für Dunkles braucht es Karamellmalz. Eigener lokaler Rekord.
 
 ## Technik
 
@@ -55,41 +55,25 @@ Einmalig auf dem Server:
 3. `nginx -t && systemctl reload nginx`
 4. `certbot --nginx -d maxi.jemphub.com`
 
-## Brauerei-Shop
+## Spielbogen
 
-Brauereitaler verdient man durch Verkäufe in der Bar (siehe Wirtschaft). Im Shop auf dem Titelbild kauft man damit dauerhafte Verbesserungen, jeweils in zwei Stufen: Ersatzbier (ein Fehler mehr erlaubt), Eingespielt (Start mit höherem Multiplikator, nach Fehlern fällt er nur bis dorthin), Breite Kiste (Level 1), Ruhiges Band (Level 2, 10 % langsamer), Routinierter Brauer (Level 3, 15 % mehr Zeit pro Schritt). Taler und Käufe speichert das Gerät (`localStorage`: `ftb-taler`, `ftb-upg`).
+1. **Brauereilakai (Level 1, Bar):** Maxi fängt Flaschen und bekommt Lohn je voller Kiste (6 Taler, +2 je Stufe).
+2. **Mitarbeiter (ab 3.000 Punkten, Level 2, Förderband):** Lohn je voller Kiste am Band (8 Taler, +2 je weiterer Stufe). Der Braumeister bietet Maxi den alten Sudkessel für 250 Taler an; Maxi spart seinen Lohn.
+3. **Eigenes Sudhaus (Level 3):** Gekauft wird direkt am alten Sudhaus auf der Karte (verbretterte Fenster, „Zu verkaufen“). Danach braut Maxi selbst: Malz und Hopfen kaufen („Lager & Einkauf“), brauen, die Wirte kaufen am Ende jedes Tages bis zu 3 Fässer (+1 mit Läuterbottich, +1 mit Gärkeller, +1 je Kesselstufe). Preis je Fass nach Sorte (Märzen 26 bis Festbier 36) und Qualität.
+4. **Anfangs schlecht:** Der alte Kessel ist undicht, Bier hat höchstens 2 Sterne, nur Märzen. Betriebskosten 10 Taler pro Tag (+2 je Ausbau). Die Einnahmen reichen anfangs nicht, Maxi arbeitet weiter an Bar und Band.
+5. **Reparieren und erweitern** (Knopf „Reparieren“/„Ausbau“ am Sudhaus): Kessel abdichten (bis 3 Sterne), Neues Thermometer (Rast leichter, bis 4 Sterne, Premium-Zutaten lohnen sich), Kupfer aufpolieren (bis 5 Sterne, Kuppel glänzt), Läuterbottich (Pils, Zwickl), Gärkeller (Festbier, Dunkles mit Karamellmalz), Größerer Sudkessel, Routinierter Brauer.
+6. **Braumeister:** Sind Abdichtung, Thermometer, Kupfer, Läuterbottich und Gärkeller fertig, wird Maxi Braumeister.
+
+Die Stufen Produktionsmitarbeiter (12.000) und Vorarbeiter (25.000) erhöhen den Lohn. Spieltage und Abrechnung (Lohn, Bierverkauf, Zutaten, Ausbau, Betriebskosten, Ergebnis) gibt es, sobald Maxi das Sudhaus besitzt; drei Runden sind ein Tag. Das Sudhaus bucht die Zutaten am Anfang jedes Suds ab; reichen sie nicht, endet die Schicht („Zutaten aufgebraucht!“). Wer vor dieser Version schon im Sudhaus gespielt hat, besitzt es bereits.
+
+## Brauerei-Laden und Ausbauten
+
+Allgemeine Verbesserungen im Brauerei-Laden: Ersatzbier (ein Fehler mehr), Eingespielt (höherer Startmultiplikator). An der Bar: Breite Kiste, Stammgäste (+2 Taler Lohn je Kiste). Am Förderband: Ruhiges Band, Akkordprämie (+2 Taler Lohn je Kiste). Alles wird lokal gespeichert (`ftb-taler`, `ftb-upg`, `ftb-eco`).
 
 ## Eilaufträge (Level 3)
 
-Ab dem 4. Sud bietet der Wirt manchmal einen Eilauftrag an, etwa „2 × Pils in 45 Sekunden“. Während der Entscheidung steht die Zeit. Annehmen: Die nächsten Sude sind diese Sorte, eine Uhr läuft; geschafft gibt es 250 + 60 × Sude Punkte mal Multiplikator, verpasst kostet es einen Fehler. Ablehnen: weiter wie bisher.
+Ab dem 4. Sud einer Runde bietet der Wirt manchmal einen Eilauftrag an, etwa „2 × Märzen in 45 Sekunden“. Annehmen bringt Bonuspunkte, verpasst kostet es einen Fehler.
 
 ## Menü und Karte
 
-Das Hauptmenü zeigt nur Start und Bestenliste. Start öffnet „Maxis Laufbahn“: oben die Beförderungsstufen mit dem nächsten Ziel und den Rekorden, darunter eine Karte des Brauereigeländes. Tippt man auf ein Gebäude (Bar = Level 1, Abfüllhalle = Level 2, Sudhaus = Level 3, Brauerei-Laden = Shop), geht Maxi über die Wege dorthin; dann startet man das Level über den Knopf oder durch erneutes Tippen. Gesperrte Gebäude sind grau mit Schloss und nennen die nötige Stufe.
-
-## Wirtschaft: Lager, Warenfluss und Spieltage
-
-Die drei Level hängen als Warenkette zusammen. Das Sudhaus (Level 3) verbraucht je fertigem Sud Malz und Hopfen nach Rezept und legt 1 Fass ins Lager. Die Abfüllhalle (Level 2) füllt bei jedem Kistentausch eine Kiste aus dem Fass (4 Kisten je Fass). In der Bar (Level 1) verkauft jede gelieferte Kiste eine Kiste aus dem Lager für 12 Brauereitaler. Fehlt Ware, kann man trotzdem spielen und Punkte sammeln, verdient aber nichts (in der Bar nur 1 Taler Trinkgeld). Brauereitaler gibt es nur noch aus Verkäufen.
-
-Malz und Hopfen kauft man unter „Lager & Einkauf“ im Laufbahn-Screen; die Preise ändern sich jeden Tag. Jede gespielte Runde ist eine Schicht, drei Schichten sind ein Tag. Danach zeigt die Abrechnung Verkäufe, Produktion, Einnahmen, Einkauf, 10 Taler Strom und Miete und den Gewinn mit Verlauf der letzten 7 Tage. Gespeichert lokal unter `ftb-eco`.
-
-## Bierpreis und Ausbauten
-
-An der Bar stellt man den Bierpreis ein (8 bis 18 Taler je Kiste, Start 12). Billiges Bier bringt mehr Andrang: In Level 1 fliegen deutlich mehr Flaschen, dafür bringt jede Kiste weniger. Teures Bier macht die Bar ruhiger.
-
-Ausbauten kauft man direkt an den Gebäuden auf der Karte (Knopf „Ausbauen“), je zwei mit drei Stufen: Bar (Breite Kiste, Mehr Tische: +2 Taler je Kiste), Abfüllhalle (Ruhiges Band, Besserer Füller: +1 Kiste je Fass), Sudhaus (Routinierter Brauer, Größerer Sudkessel: +½ Fass je Sud). Der Brauerei-Laden führt die allgemeinen Verbesserungen (Ersatzbier, Eingespielt). Ausbauten sieht man auf der Karte: Sterne am Namensschild, zusätzliche Tische, Kupfer- und Edelstahltanks.
-
-Während einer Runde zeigt die Anzeige oben den Ertrag der Schicht (Bar: Taler, Abfüllhalle: Kisten, Sudhaus: Fässer). In der Pause beendet „Schicht beenden“ die Runde mit Bilanz und Talerstand; von der Spielende-Karte führt „Zur Brauerei“ direkt zurück auf die Karte.
-
-## Einstieg Schritt für Schritt
-
-Neue Spieler starten über „Start“ direkt in Level 1; die Karte kommt erst nach der ersten Runde („Zur Brauerei“) mit einer Begrüßung und einem Pfeil zur Bar. Der Laufbahn-Screen zeigt oben nur die aktuelle Stufe mit Fortschrittsbalken; antippen klappt alle Stufen und Rekorde auf. Die Wirtschaft (Lager, Tage, Abrechnung, Bierpreis) beginnt erst mit der Beförderung zum Mitarbeiter und wird dann einmal erklärt; davor verkauft die Bar jede volle Kiste für 12 Taler ohne Lager. Fässer kann man zukaufen (Lohnbrauerei), Malz und Hopfen erscheinen im Einkauf erst mit dem Sudhaus. „Ausbauen“ zeigt sich, sobald man sich einen Ausbau leisten kann.
-
-## Bierqualität
-
-Ab dem Sudhaus (Produktionsmitarbeiter) gibt es Standard- und Premium-Zutaten (Premium-Malz, Aroma-Hopfen, etwa doppelt so teuer). Am Sudhaus wählt man, womit gebraut wird. Jeder Sud bekommt 1 bis 5 Sterne: Standard ergibt 2 bis 3,5, Premium 3,5 bis 5; dazu zählt, wie sauber gebraut wurde (keine Fehler, zügige Schritte). Fässer und Kisten im Lager tragen die durchschnittliche Qualität (zugekaufte Fässer 2,5 Sterne). Die Qualität bestimmt den fairen Preis an der Bar (12 Taler bei 2,5 Sternen, rund +2,4 je Stern): Gutes Bier kann teurer verkauft werden, ohne dass der Andrang sinkt. Bei der Beförderung zum Produktionsmitarbeiter wird das einmal erklärt.
-
-## Leeres Lager beendet die Schicht
-
-Ab Mitarbeiter sind die Bestände bindend. Das Sudhaus bucht die Zutaten am Anfang jedes Suds ab (bei einem Abbruch vor der ersten Zutat kommen sie zurück; ein verdorbener Sud ist verloren). Reichen Malz oder Hopfen für den nächsten Sud nicht, endet die Schicht mit „Zutaten aufgebraucht!“. In der Abfüllhalle endet sie mit „Tank leer!“, sobald kein Bier mehr für eine Kiste da ist, in der Bar mit „Ausverkauft!“, wenn die letzte Kiste verkauft ist. Ohne Ware startet ein Level gar nicht erst: Die Karte zeigt, was fehlt, und führt zu „Lager & Einkauf“ (bzw. von der Bar zur Abfüllhalle).
-
+„Start“ führt Neulinge direkt in Level 1; danach zeigt „Maxis Laufbahn“ oben die Stufe mit Fortschrittsbalken (antippen klappt alle Stufen und Rekorde auf), die Taler bzw. das Sparziel und darunter die Karte des Brauereigeländes. Maxi geht zu einem Gebäude, unten erscheinen Infos und Knöpfe. In der Pause beendet „Schicht beenden“ die Runde mit Bilanz.
