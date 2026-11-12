@@ -56,6 +56,8 @@ html,body{height:100%;margin:0;background:var(--night);color:var(--cream);overfl
 @keyframes blink{50%{opacity:.35}}
 @media (prefers-reduced-motion:reduce){.bar.full i{animation:none}}
 #fillTxt{font-weight:700;font-size:15px;letter-spacing:.06em;min-width:52px}
+.earn{display:inline-block;margin-top:4px;font:700 14px/1 var(--f-ui);padding:4px 8px;border-radius:7px;background:rgba(20,26,36,.6);color:var(--gold);font-variant-numeric:tabular-nums}
+.earn:empty{display:none}
 .mult{font:400 17px/1 var(--f-display);min-width:38px;text-align:center;padding:5px 7px 4px;border-radius:7px;background:rgba(20,26,36,.6);color:rgba(243,230,196,.55);transition:background .2s,color .2s}
 .mult.on{background:var(--gold);color:var(--ink);text-shadow:none}
 .mult.pop{animation:pop .45s ease-out}
@@ -248,7 +250,7 @@ html,body{height:100%;margin:0;background:var(--night);color:var(--cream);overfl
 
 <div class="hud" id="hud" hidden>
   <div><div class="lbl">Punkte</div><div class="val" id="score">0</div></div>
-  <div class="mid"><div class="lbl" id="cratesLbl">Kisten</div><div class="val" id="crates">0</div></div>
+  <div class="mid"><div class="lbl" id="cratesLbl">Kisten</div><div class="val" id="crates">0</div><div class="earn" id="earn" title="Ertrag dieser Schicht"></div></div>
   <div class="right"><div class="lbl" id="livesLbl">Bruch</div><div id="lives"></div><button id="pauseBtn" type="button">Pause</button></div>
   <div class="fillrow"><div class="bar" id="bar"></div><span id="fillTxt">0 / 20</span><span class="mult" id="mult" title="Punktemultiplikator">×1</span></div>
 </div>
@@ -366,8 +368,9 @@ html,body{height:100%;margin:0;background:var(--night);color:var(--cream);overfl
   <div class="label">
     <h2>Pause</h2>
     <button class="btn" id="resumeBtn" type="button">Weiter</button>
+    <button class="btn sec" id="endShiftBtn" type="button">Schicht beenden</button>
     <button class="btn sec" id="pauseMenuBtn" type="button">Zum Titel</button>
-    <p class="hsnote">Die Runde endet, Rekord und Stufe bleiben erhalten.</p>
+    <p class="hsnote">„Schicht beenden“ zeigt die Bilanz mit dem verdienten Geld. Rekord und Stufe bleiben erhalten.</p>
   </div>
 </div>
 
@@ -385,7 +388,8 @@ html,body{height:100%;margin:0;background:var(--night);color:var(--cream);overfl
     </div>
     <p class="hsnote" id="hsInfo" hidden></p>
     <button class="btn" id="againBtn" type="button">Nochmal</button>
-    <button class="btn sec" id="menuBtn" type="button">Zum Titel</button>
+    <button class="btn sec" id="toMapBtn" type="button">Zur Brauerei</button>
+    <button class="btn sec" id="menuBtn" type="button">Hauptmenü</button>
     <button class="btn sec" id="boardBtn2" type="button" data-board>Bestenliste</button>
     <nav class="legal dark" aria-label="Rechtliches"><button type="button" data-legal="imp">Impressum</button><button type="button" data-legal="priv">Datenschutz</button></nav>
   </div>
@@ -443,15 +447,15 @@ const fmtF = v => (+v).toLocaleString('de-DE', { maximumFractionDigits: 2 });
 const kis = n => `${n} ${n === 1 ? 'Kiste' : 'Kisten'}`;
 function ecoBrew(need){
   if (ECO.malz < need.malz || ECO.hopfen < need.hopfen){ ECO.round.short++; return false; }
-  ECO.malz -= need.malz; ECO.hopfen -= need.hopfen; ECO.fass += 1 + .5*(U.kettle || 0); ECO.today.brewed++; ECO.round.brewed++; saveEco(); return true;
+  const add = 1 + .5*(U.kettle || 0); ECO.malz -= need.malz; ECO.hopfen -= need.hopfen; ECO.fass += add; ECO.round.fass = (ECO.round.fass || 0) + add; updateEarn(); ECO.today.brewed++; ECO.round.brewed++; saveEco(); return true;
 }
 function ecoFill(){
   if (ECO.fass < 1/perFass() - 1e-6){ ECO.round.short++; return false; }
-  ECO.fass = Math.max(0, Math.round((ECO.fass - 1/perFass())*1000)/1000); ECO.kisten++; ECO.today.filled++; ECO.round.filled++; saveEco(); return true;
+  ECO.fass = Math.max(0, Math.round((ECO.fass - 1/perFass())*1000)/1000); ECO.kisten++; ECO.today.filled++; ECO.round.filled++; saveEco(); updateEarn(); return true;
 }
 function ecoSell(){
-  if (ECO.kisten < 1){ taler += 1; ECO.today.sales += 1; ECO.round.earned += 1; ECO.round.short++; saveShop(); saveEco(); return 0; }
-  const pr = salePrice(); ECO.kisten--; taler += pr; ECO.today.sales += pr; ECO.today.sold++; ECO.round.sold++; ECO.round.earned += pr; saveShop(); saveEco(); return pr;
+  if (ECO.kisten < 1){ taler += 1; ECO.today.sales += 1; ECO.round.earned += 1; ECO.round.short++; saveShop(); saveEco(); updateEarn(); return 0; }
+  const pr = salePrice(); ECO.kisten--; taler += pr; ECO.today.sales += pr; ECO.today.sold++; ECO.round.sold++; ECO.round.earned += pr; saveShop(); saveEco(); updateEarn(); return pr;
 }
 function endShift(){
   // einmal pro Runde: Schicht zählen, nach drei Schichten ist Abrechnung
@@ -463,10 +467,10 @@ function endShift(){
 function shiftText(r){
   if (!r) return '';
   const p = [];
-  if (r.brewed) p.push(`${r.brewed} Fass gebraut`); if (r.filled) p.push(`${kis(r.filled)} abgefüllt`); if (r.sold) p.push(`${kis(r.sold)} verkauft`);
+  if (r.brewed) p.push(`${fmtF(r.fass || r.brewed)} Fass gebraut`); if (r.filled) p.push(`${kis(r.filled)} abgefüllt`); if (r.sold) p.push(`${kis(r.sold)} verkauft`);
   let t = `Schicht ${Math.min(3, ECO.shift)}/3 von Tag ${ECO.day}` + (p.length ? ': ' + p.join(', ') : '') + (r.earned ? ` · +${r.earned} 🪙` : '') + '.';
   if (r.short) t += ' Es fehlte Ware im Lager, schau bei „Lager & Einkauf“ vorbei.';
-  return t;
+  return t + ` Talerstand: ${taler} 🪙.`;
 }
 function updateEcoBar(){
   $('ecoStock').textContent = `🌾 ${ECO.malz} Malz · 🌿 ${ECO.hopfen} Hopfen · 🛢 ${fmtF(ECO.fass)} Fass · 📦 ${ECO.kisten} Kisten · 🪙 ${taler}`;
@@ -1519,6 +1523,12 @@ function breakStreak(){
 function updateHud(){
   $('score').textContent = score; $('crates').textContent = crates;
   $('lives').textContent = '🍺'.repeat(Math.max(0, MAXMISS-missed)) + '💥'.repeat(Math.min(MAXMISS, missed));
+  updateEarn();
+}
+function updateEarn(){
+  // Ertrag der laufenden Schicht: Bar = Taler, Abfüllhalle = Kisten, Sudhaus = Fässer
+  const r = ECO.round; if (!r) return;
+  $('earn').textContent = stage === 3 ? `🛢 +${fmtF(r.fass || 0)}` : stage === 2 ? `📦 +${r.filled}` : `🪙 +${r.earned}`;
 }
 
 function update(dt){
@@ -1671,8 +1681,8 @@ async function start(keep){
   state = 'play'; keepAwake();
   if (!seen.move) unlock('move');
 }
-function gameOver(){
-  state = 'over'; $('finalScore').textContent = score;
+function gameOver(voluntary){
+  state = 'over'; $('finalScore').textContent = score; $('paused').hidden = true;
   if (stage === 3){
     if (score > best3){ best3 = score; try { localStorage.setItem('ftb-best3', best3); } catch(e) {} }
     $('overTitle').textContent = 'Sud verdorben!';
@@ -1686,6 +1696,7 @@ function gameOver(){
     $('overTitle').textContent = 'Zu viel Bruch!';
     $('finalInfo').textContent = `${crates} ${crates === 1 ? 'volle Kiste' : 'volle Kisten'} abgegeben · Rekord ${best}`;
   }
+  if (voluntary === true) $('overTitle').textContent = 'Feierabend!';
   $('talerInfo').textContent = shiftText(endShift());
   $('intro').hidden = true;
   $('over').hidden = false; try { wake?.release(); } catch(e) {}
@@ -2928,6 +2939,8 @@ function drawIntro3(g){
 $('againBtn').onclick = () => stage === 3 ? start3() : stage === 2 ? start2() : start();
 $('menuBtn').onclick = toTitle;
 $('pauseMenuBtn').onclick = quitToTitle;
+$('endShiftBtn').onclick = () => { if (state === 'pause') gameOver(true); };
+$('toMapBtn').onclick = () => { toTitle(); openCareer(); };
 // Impressum und Datenschutz
 let legalFrom = null;
 function openLegal(which, from){ legalFrom = from; $(from).hidden = true; $('legalBox').hidden = false;
