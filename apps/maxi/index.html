@@ -180,7 +180,8 @@ html,body{height:100%;margin:0;background:var(--night);color:var(--cream);overfl
 @media (max-height:740px){#career .nextrank,#career .records{display:none}#career h2{font-size:24px}.mapcard{padding:8px 12px}.mapcard .btn{padding:8px;font-size:19px}}
 .mapcard{gap:4px;padding:10px 14px;text-align:center}
 .mapname{font:400 21px var(--f-display);color:var(--crate)}
-.mapdesc{font:600 14px/1.25 var(--f-ui);color:var(--ink);min-height:2.5em}
+.mapdesc{font:600 14px/1.25 var(--f-ui);color:var(--ink);height:3.75em;overflow:hidden}
+#career{overflow:hidden;overscroll-behavior:none}
 .mapcard .btn{margin-top:4px;padding:10px;font-size:22px}
 .mapprice{display:flex;justify-content:center;align-items:center;gap:8px;font:700 15px var(--f-ui);color:var(--ink)}
 .mapprice button{width:34px;height:34px;border-radius:50%;border:0;background:var(--hop);color:#fff;font:700 20px var(--f-ui);cursor:pointer;line-height:1}
@@ -713,7 +714,8 @@ function resize(){
   XL = -OX / S; XR = W + OX / S;
   buildBg(); buildBg2(); buildBg3();
 }
-addEventListener('resize', resize);
+let rzF = 0, rzW = 0, rzH = 0;
+addEventListener('resize', () => { cancelAnimationFrame(rzF); rzF = requestAnimationFrame(() => { if (innerWidth === rzW && innerHeight === rzH) return; rzW = innerWidth; rzH = innerHeight; resize(); mapA = null; }); });
 
 function buildBg(){
   bg.width = cv.width; bg.height = cv.height;
@@ -1767,7 +1769,7 @@ function geo2(){
   const J = Math.round(H*0.56), bottom = H - 112;
   return { bx: W/2, top: 176, J, bottom, lx: 40, rx: W - 40, barY: H - 50 };
 }
-function l2Speed(){ return Math.min(170, 66 + L2.sorted*1.6) * (1 - .1*(U.belt || 0)); }
+function l2Speed(){ return Math.min(135, 58 + L2.sorted*.9) * (1 - .1*(U.belt || 0)); } // langsamer Anstieg
 function reset2(){
   L2.sw = 1; L2.swA = Math.PI/2; L2.items = []; L2.spawnT = .6; L2.sorted = 0; L2.jamT = 0; L2.leverT = 0;
   L2.types = 2; L2.caps = false; L2.broken = false; L2.pump = 0; L2.belt = 0; L2.fill = [0, 0, 0];
@@ -1814,11 +1816,11 @@ function move2(e){
   const bk = brokenHit(fx, fy); if (bk) sortOut(bk);
 }
 function spawn2(g){
-  if (L2.caps && Math.random() < .3){
+  if (L2.caps && Math.random() < .22){
     L2.items.push({ kind: 'cap', x: g.bx + (Math.random()-.5)*22, y: g.top + 4, seg: 'main', rot: Math.random()*6 });
   } else {
     const t = L2BIN[Math.floor(Math.random()*L2.types)];
-    L2.items.push({ kind: 'bottle', t, x: g.bx, y: g.top + 6, seg: 'main', broken: L2.broken && Math.random() < .2 });
+    L2.items.push({ kind: 'bottle', t, x: g.bx, y: g.top + 6, seg: 'main', broken: L2.broken && Math.random() < .14 });
   }
   L2.pump = .35;
 }
@@ -1835,9 +1837,9 @@ function deliver2(it, bin, g){
   beep(1700 + Math.random()*300, .07, 'triangle', .1); setMood('happy', .45);
   floatText(bx, by - 40, `+${pts}`, C.gold); cleanCatch(); updateHud();
   if (L2.fill[bin] >= L2CAP){ floatText(bx, by - 66, 'Kiste voll!', C.cream); beep(1180, .12, 'square', .06); if (!seen.l2full){ unlock('l2full'); return; } }
-  if (L2.types < 3 && L2.sorted >= 10){ L2.types = 3; unlock('l2radler'); }
-  else if (!L2.broken && L2.sorted >= 18){ L2.broken = true; unlock('l2broken'); }
-  else if (!L2.caps && L2.sorted >= 28){ L2.caps = true; unlock('l2cap'); }
+  if (L2.types < 3 && L2.sorted >= 12){ L2.types = 3; unlock('l2radler'); }
+  else if (!L2.broken && L2.sorted >= 25){ L2.broken = true; unlock('l2broken'); }
+  else if (!L2.caps && L2.sorted >= 40){ L2.caps = true; unlock('l2cap'); }
 }
 function brokenHit(fx, fy){
   let best = null, bd = 30;
@@ -1880,7 +1882,7 @@ function update2(dt){
     // neue Flasche, sobald auf dem Hauptband Platz ist
     L2.spawnT -= dt;
     const lastMain = L2.items.filter(it => it.seg === 'main' && !it.flicked).reduce((m, it) => Math.min(m, it.y), Infinity);
-    if (L2.spawnT <= 0 && lastMain - g.top > 62){ spawn2(g); L2.spawnT = (70 + Math.random()*60) / v; }
+    if (L2.spawnT <= 0 && lastMain - g.top > 62){ spawn2(g); L2.spawnT = (Math.max(72, 110 - L2.sorted*.8) + Math.random()*60) / v; }
     for (let i = L2.items.length-1; i >= 0; i--){
       const it = L2.items[i];
       if (it.flicked) continue;
@@ -2161,9 +2163,12 @@ const LOCK = ['sud', 'halle', 'bar', 'laden'];
 const MAP = { at: 'plaza', x: 0, y: 0, pts: [], dest: null, placed: false, dust: [], last: 0 };
 let mapA = null, mapAT = -1;
 function mapArea(){
-  if (mapAT === tTotal && mapA) return mapA;
+  if (mapA && tTotal - mapAT < .5 && tTotal >= mapAT) return mapA;
   const c = $('career').querySelector('.titlecard').getBoundingClientRect(), p = $('career').querySelector('.startbox').getBoundingClientRect();
-  mapA = { top: c.bottom / S + 10, bot: p.top / S - 6 }; mapAT = tTotal; return mapA;
+  const n = { top: Math.round(c.bottom / S + 10), bot: Math.round(p.top / S - 6) };
+  // kleine Messschwankungen ignorieren, sonst zuckt die Karte
+  if (!mapA || Math.abs(n.top - mapA.top) > 3 || Math.abs(n.bot - mapA.bot) > 3) mapA = n;
+  mapAT = tTotal; return mapA;
 }
 function mapUV(u, v){ const a = mapArea(); return { x: 26 + u*(W - 52), y: a.top + 62 + v*Math.max(110, a.bot - a.top - 108) }; }
 function mapK(){ const a = mapArea(); return Math.max(.62, Math.min(1, (a.bot - a.top)/400)); }
