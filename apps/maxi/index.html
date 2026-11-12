@@ -492,11 +492,23 @@ ECO.round = ecoRound0();
 function saveEco(){ try { const { round, ...keep } = ECO; localStorage.setItem('ftb-eco', JSON.stringify(keep)); } catch(e) {} }
 const fmtF = v => (+v).toLocaleString('de-DE', { maximumFractionDigits: 2 });
 const kis = n => `${n} ${n === 1 ? 'Kiste' : 'Kisten'}`;
-function ecoBrew(need, perf){
-  const pre = ECO.recipe === 'pre', mk = pre ? 'malzP' : 'malz', hk = pre ? 'hopfenP' : 'hopfen';
-  if (ECO[mk] < need.malz || ECO[hk] < need.hopfen){ ECO.round.short++; return 0; }
-  const add = 1 + .5*(U.kettle || 0), q = Math.min(5, (pre ? 3.5 : 2) + perf*1.5);
-  ECO[mk] -= need.malz; ECO[hk] -= need.hopfen; ECO.fassQ = mixQ(ECO.fass, ECO.fassQ, add, q); ECO.fass += add; ECO.round.q = q; ECO.round.fass = (ECO.round.fass || 0) + add; updateEarn(); ECO.today.brewed++; ECO.round.brewed++; saveEco(); return q;
+/* Zutaten werden beim Anfang eines Suds abgebucht; ohne Zutaten endet die Schicht */
+function brewNeed(r){ const m = r.mash || {}; return { malz: (m.malz || 0) + (m.karamell || 0), hopfen: r.hop || 0 }; }
+function canBrew(need){ const pre = ECO.recipe === 'pre'; return ECO[pre ? 'malzP' : 'malz'] >= need.malz && ECO[pre ? 'hopfenP' : 'hopfen'] >= need.hopfen; }
+function chargeBrew(need){
+  if (!ecoOn()) { L3.charged = { need, pre: false }; return true; }
+  if (!canBrew(need)) return false;
+  const pre = ECO.recipe === 'pre'; ECO[pre ? 'malzP' : 'malz'] -= need.malz; ECO[pre ? 'hopfenP' : 'hopfen'] -= need.hopfen;
+  L3.charged = { need, pre }; saveEco(); return true;
+}
+function refundBrew(){
+  const c = L3.charged; L3.charged = null; if (!c || !ecoOn()) return;
+  ECO[c.pre ? 'malzP' : 'malz'] += c.need.malz; ECO[c.pre ? 'hopfenP' : 'hopfen'] += c.need.hopfen; saveEco();
+}
+function ecoBrew(perf){
+  const c = L3.charged; L3.charged = null; if (!c) return 0;
+  const pre = c.pre, add = 1 + .5*(U.kettle || 0), q = pre ? Math.min(5, 3.5 + perf*1.5) : Math.min(3.4, 2 + perf*1.4);
+  ECO.fassQ = mixQ(ECO.fass, ECO.fassQ, add, q); ECO.fass += add; ECO.round.q = q; ECO.round.fass = (ECO.round.fass || 0) + add; updateEarn(); ECO.today.brewed++; ECO.round.brewed++; saveEco(); return q;
 }
 function ecoFill(){
   if (ECO.fass < 1/perFass() - 1e-6){ ECO.round.short++; return false; }
@@ -510,6 +522,8 @@ function ecoSell(){
 function endShift(){
   // einmal pro Runde: Schicht zählen, nach drei Schichten ist Abrechnung
   if (roundPaid) return null; roundPaid = true;
+  // angefangener Sud ohne einzige Zutat im Kessel: Zutaten zurück ins Lager
+  if (stage === 3 && L3.charged && L3.stepI === 0 && !Object.keys(L3.have || {}).length) refundBrew();
   const r = ECO.round;
   if (score <= 0 && !r.brewed && !r.filled && !r.sold && !r.earned) return null;
   if (rank < 1){ saveShop(); return r; }
@@ -1246,7 +1260,8 @@ function updateForklift(dt){
       streak = 0; mult = baseMult; setMultUI(null);
       if (missed > 0){ missed = 0; floatText(W/2, groundY - 260, 'Bruch zurückgesetzt', '#9fe0a8'); }
       floatText(zoneX(), groundY - 130, used > 1 ? `+${pts} (×${used})` : `+${pts}`, C.gold); sCash();
-      { const sold = ecoSell(); floatText(W/2, groundY - 310, sold ? `Kiste verkauft +${sold} 🪙` : 'Lager leer: nur Trinkgeld +1 🪙', sold ? C.gold : '#ff9a6a'); }
+      { const sold = ecoSell(); floatText(W/2, groundY - 310, sold ? `Kiste verkauft +${sold} 🪙` : 'Lager leer: nur Trinkgeld +1 🪙', sold ? C.gold : '#ff9a6a');
+        if (rank >= 1 && ECO.kisten < 1) setTimeout(() => stockOut('Ausverkauft!', 'Alle Kisten aus dem Lager sind verkauft.'), 900); }
       if (used > 1) floatText(W/2, groundY - 285, `Multiplikator ×${used} eingelöst!`, C.gold);
       if (crates % 2 === 0) floatText(W/2, groundY - 220, `Stufe ${level()}`, C.cream);
       updateHud(); FL.phase = 3; FL.t = 0;
@@ -1737,6 +1752,11 @@ async function start(keep){
   state = 'play'; keepAwake();
   if (!seen.move) unlock('move');
 }
+function stockOut(title, why){
+  if (!['play', 'forklift', 'intro'].includes(state)) return;
+  stockWhy = why; gameOver(title);
+}
+let stockWhy = '';
 function gameOver(voluntary){
   state = 'over'; $('finalScore').textContent = score; $('paused').hidden = true;
   if (stage === 3){
@@ -1753,7 +1773,8 @@ function gameOver(voluntary){
     $('finalInfo').textContent = `${crates} ${crates === 1 ? 'volle Kiste' : 'volle Kisten'} abgegeben · Rekord ${best}`;
   }
   if (voluntary === true) $('overTitle').textContent = 'Feierabend!';
-  $('talerInfo').textContent = shiftText(endShift());
+  else if (typeof voluntary === 'string') $('overTitle').textContent = voluntary;
+  $('talerInfo').textContent = (typeof voluntary === 'string' && stockWhy ? stockWhy + ' Nachschub gibt es unter „Lager & Einkauf“. ' : '') + shiftText(endShift()); stockWhy = '';
   $('intro').hidden = true;
   $('over').hidden = false; try { wake?.release(); } catch(e) {}
   hsAfterGame();
@@ -1879,6 +1900,7 @@ function swapCrate(b, g){
   const pts = 50 * mult; score += pts; updateHud(); sCash(); setMood('proud', .8);
   floatText(Math.max(XL + 80, Math.min(XR - 80, c.x)), c.y - 40, `Neue Kiste! +${pts}`, C.gold);
   const okF = ecoFill(); floatText(Math.max(XL + 90, Math.min(XR - 90, c.x)), c.y - 66, okF ? '+1 Kiste ins Lager' : 'Kein Bier im Tank', okF ? '#9fe0a8' : '#ff9a6a');
+  if (ecoOn() && (!okF || ECO.fass < 1/perFass() - 1e-6)) setTimeout(() => stockOut('Tank leer!', 'Das Bier im Lager ist abgefüllt.'), 700);
   for (let k=0;k<12;k++) parts.push({ x: c.x + (Math.random()-.5)*50, y: c.y + 10, vx: (Math.random()-.5)*160, vy: -60 - Math.random()*140, life: .7, c: k%2 ? C.gold : C.cream, s: 2 + Math.random()*2, round: true });
 }
 function jam2(c, g){
@@ -2220,6 +2242,8 @@ function mapInfo(){
   const ds = typeof L.desc === 'function' ? L.desc() : L.desc;
   $('mapDesc').textContent = L.shop ? `${ds} Du hast ${taler} 🪙.` : st ? `${L.sub}: ${st}` : `${L.sub}: ${ds}`;
   go.textContent = L.shop ? 'Laden betreten' : `${L.sub} spielen`; go.style.visibility = 'visible';
+  const sm = stockMsg(MAP.at);
+  if (sm){ $('mapDesc').textContent = '⚠ ' + sm; go.textContent = MAP.at === 'bar' && ECO.fass >= 1/perFass() - 1e-6 && !locked('halle') ? 'Zur Abfüllhalle' : 'Lager & Einkauf'; }
 }
 function mapTap(k){
   if (!LOCS[k]) return;
@@ -2245,8 +2269,16 @@ function mapPointer(e){
   else { const p = locPos('plaza'); if (Math.hypot(fx - p.x, fy - p.y) < 50) mapTap('plaza'); }
 }
 function openShop(b){ renderShop(b); $('career').hidden = true; $('shop').hidden = false; $('shopClose').focus(); }
+function stockMsg(k){
+  if (!ecoOn()) return '';
+  if (k === 'sud' && !canBrew(brewNeed(RECIPES[0]))) return `Zu wenig ${ECO.recipe === 'pre' ? 'Premium-Zutaten' : 'Zutaten'} für einen Sud (mindestens ${brewNeed(RECIPES[0]).malz} Malz und ${brewNeed(RECIPES[0]).hopfen} Hopfen).`;
+  if (k === 'halle' && ECO.fass < 1/perFass() - 1e-6) return 'Kein Bier im Tank. Brau im Sudhaus oder kauf ein Fass zu.';
+  if (k === 'bar' && ECO.kisten < 1) return 'Keine Kisten im Lager. Füll zuerst in der Abfüllhalle ab.';
+  return '';
+}
 function enterLoc(k){
   if (!k || k === 'plaza' || locked(k)) return;
+  if (stockMsg(k)){ if (k === 'bar' && ECO.fass >= 1/perFass() - 1e-6 && !locked('halle')) mapTap('halle'); else { renderStore(); $('career').hidden = true; $('store').hidden = false; $('storeClose').focus(); } return; }
   const L = LOCS[k];
   if (L.shop){ openShop('laden'); return; }
   if (L.lv === 3) start3(); else if (L.lv === 2) start2(); else start();
@@ -2583,6 +2615,9 @@ function newBrew(){
   const extra = d >= RECIPES.length ? Math.min(2, Math.floor((d - RECIPES.length)/3) + 1) : 0;
   const mash = { ...r.mash }; if (extra) mash.malz += extra;
   L3.beer = r;
+  // Zutaten für diesen Sud aus dem Lager nehmen
+  { const need = brewNeed({ mash, hop: r.hop + (extra > 1 ? 1 : 0) }); L3.charged = null;
+    if (!chargeBrew(need)) setTimeout(() => stockOut('Zutaten aufgebraucht!', 'Für den nächsten Sud fehlen Malz oder Hopfen.'), 500); }
   L3.steps = [{ name: 'Einmaischen', need: mash, liquid: r.dark ? '#9a5a28' : '#e8c47a' }];
   if (d >= 1) L3.steps.push({ name: 'Maischrast', need: {}, rast: true, liquid: r.dark ? '#8a4c20' : '#e2b866' });
   L3.steps.push({ name: 'Würzekochen', need: { hopfen: r.hop + (extra > 1 ? 1 : 0) }, liquid: r.dark ? '#6a3414' : '#c98a2e', boil: L3.boilUnlocked });
@@ -2699,10 +2734,9 @@ function stepDone(){
   if (L3.stepI < L3.steps.length - 1){ L3.stepI++; startStep(); return; }
   // ganzer Sud fertig: verbraucht Malz und Hopfen aus dem Lager und ergibt ein Fass
   L3.brews++; crates = L3.brews;
-  { const need = { malz: 0, hopfen: 0 }; for (const s of L3.steps){ need.malz += (s.need.malz || 0) + (s.need.karamell || 0); need.hopfen += s.need.hopfen || 0; }
-    const perf = Math.max(0, 1 - (L3.sudFaults || 0)*.35) * .65 + Math.min(1, (L3.tSum || 0) / Math.max(1, L3.tN || 1) * 1.6) * .35;
-    const q = ecoBrew(need, perf);
-    setTimeout(() => { if (stage === 3) floatText(W/2, geo3().ky + 80, q ? `+Fass ${stars(q)}` : (ECO.recipe === 'pre' ? 'Premium-Zutaten fehlen' : 'Zutaten fehlen: kein Fass'), q ? '#9fe0a8' : '#ff9a6a'); }, 350); }
+  { const perf = Math.max(0, 1 - (L3.sudFaults || 0)*.35) * .65 + Math.min(1, (L3.tSum || 0) / Math.max(1, L3.tN || 1) * 1.6) * .35;
+    const q = ecoBrew(perf);
+    if (q) setTimeout(() => { if (stage === 3) floatText(W/2, geo3().ky + 80, `+Fass ${stars(q)}`, '#9fe0a8'); }, 350); }
   const bonus = (100 + 50 * L3.brews) * mult; score += bonus; L3.doneT = 1.6; L3.liquid = '#cfe3f0';
   floatText(W/2, g.ky - 140, `${L3.beer ? L3.beer.n : 'Sud'} fertig! +${bonus}`, C.gold); sCash(); setMood('proud', 1.6); updateHud();
   if (!L3.boilUnlocked && L3.brews >= 2) L3.boilUnlocked = true;
@@ -2737,7 +2771,7 @@ function answerOffer(yes){
   const o = L3.offer; L3.offer = null;
   if (!yes){ L3.offerCool = 1; beep(330, .08, 'square', .05); return; }
   L3.rush = { beer: o.beer, n: o.n, done: 0, t: o.t, tMax: o.t, reward: o.reward };
-  newBrew(); setMood('proud', .8); beep(880, .1, 'square', .07);
+  refundBrew(); newBrew(); setMood('proud', .8); beep(880, .1, 'square', .07);
   floatText(W/2, geo3().ky - 130, `Los: ${o.n} × ${o.beer.n}!`, C.gold);
 }
 function drawOffer(g, hl){

@@ -89,3 +89,7 @@ Neue Spieler starten über „Start“ direkt in Level 1; die Karte kommt erst n
 
 Ab dem Sudhaus (Produktionsmitarbeiter) gibt es Standard- und Premium-Zutaten (Premium-Malz, Aroma-Hopfen, etwa doppelt so teuer). Am Sudhaus wählt man, womit gebraut wird. Jeder Sud bekommt 1 bis 5 Sterne: Standard ergibt 2 bis 3,5, Premium 3,5 bis 5; dazu zählt, wie sauber gebraut wurde (keine Fehler, zügige Schritte). Fässer und Kisten im Lager tragen die durchschnittliche Qualität (zugekaufte Fässer 2,5 Sterne). Die Qualität bestimmt den fairen Preis an der Bar (12 Taler bei 2,5 Sternen, rund +2,4 je Stern): Gutes Bier kann teurer verkauft werden, ohne dass der Andrang sinkt. Bei der Beförderung zum Produktionsmitarbeiter wird das einmal erklärt.
 
+## Leeres Lager beendet die Schicht
+
+Ab Mitarbeiter sind die Bestände bindend. Das Sudhaus bucht die Zutaten am Anfang jedes Suds ab (bei einem Abbruch vor der ersten Zutat kommen sie zurück; ein verdorbener Sud ist verloren). Reichen Malz oder Hopfen für den nächsten Sud nicht, endet die Schicht mit „Zutaten aufgebraucht!“. In der Abfüllhalle endet sie mit „Tank leer!“, sobald kein Bier mehr für eine Kiste da ist, in der Bar mit „Ausverkauft!“, wenn die letzte Kiste verkauft ist. Ohne Ware startet ein Level gar nicht erst: Die Karte zeigt, was fehlt, und führt zu „Lager & Einkauf“ (bzw. von der Bar zur Abfüllhalle).
+
