@@ -73,8 +73,11 @@ html,body{height:100%;margin:0;background:var(--night);color:var(--cream);overfl
 .intro .go{font-weight:700;font-size:13px;letter-spacing:.1em;text-transform:uppercase;color:var(--hop);opacity:.9}
 .toast{position:fixed;left:50%;transform:translateX(-50%);top:calc(env(safe-area-inset-top,0px) + 116px);width:min(340px,calc(100% - 32px));box-sizing:border-box;
   background:var(--cream);color:var(--ink);border-radius:10px;padding:10px 14px;font:500 15px/1.3 var(--f-ui);text-align:center;box-shadow:0 8px 24px rgba(0,0,0,.4);z-index:4;pointer-events:none}
-#pauseBtn{pointer-events:auto;margin-top:6px;background:rgba(20,26,36,.55);color:var(--cream);border:1px solid rgba(243,230,196,.35);
-  border-radius:6px;font:700 13px var(--f-ui);letter-spacing:.08em;padding:4px 10px;text-transform:uppercase}
+#pauseBtn{pointer-events:auto;width:32px;height:32px;flex:0 0 auto;display:grid;place-items:center;background:rgba(20,26,36,.55);color:var(--cream);border:1px solid rgba(243,230,196,.35);
+  border-radius:50%;font:700 11px var(--f-ui);letter-spacing:-1px;padding:0}
+.liverow{display:flex;align-items:center;gap:8px;justify-content:flex-end}
+.hud.s1 #cratesLbl,.hud.s1 #crates{display:none}
+.hud.s1 .earn{margin-top:14px;font-size:16px;padding:6px 10px}
 .overlay{position:fixed;inset:0;display:grid;place-items:center;background:rgba(15,20,30,.62);
   padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:24px}
 .label{box-sizing:border-box;width:min(360px,100%);background:var(--cream);color:var(--ink);border-radius:14px;padding:22px 20px 20px;text-align:center;
@@ -277,7 +280,7 @@ html,body{height:100%;margin:0;background:var(--night);color:var(--cream);overfl
 <div class="hud" id="hud" hidden>
   <div><div class="lbl">Punkte</div><div class="val" id="score">0</div></div>
   <div class="mid"><div class="lbl" id="cratesLbl">Kisten</div><div class="val" id="crates">0</div><div class="earn" id="earn" title="Ertrag dieser Schicht"></div></div>
-  <div class="right"><div class="lbl" id="livesLbl">Bruch</div><div id="lives"></div><button id="pauseBtn" type="button">Pause</button></div>
+  <div class="right"><div class="lbl" id="livesLbl">Bruch</div><div class="liverow"><div id="lives"></div><button id="pauseBtn" type="button" aria-label="Pause">❚❚</button></div></div>
   <div class="fillrow"><div class="bar" id="bar"></div><span id="fillTxt">0 / 20</span><span class="mult" id="mult" title="Punktemultiplikator">×1</span></div>
 </div>
 
@@ -325,7 +328,7 @@ html,body{height:100%;margin:0;background:var(--night);color:var(--cream);overfl
       <div class="mapbtns"><button class="btn" id="mapGo" type="button" style="visibility:hidden">Spielen</button><button class="btn sec" id="mapUp" type="button" hidden>Ausbauen</button><button class="btn sec" id="ecoBtn" type="button" hidden>Einkauf</button></div>
     </div>
     <div class="maplinks" role="group" aria-label="Orte auf der Karte">
-      <button type="button" id="careerBack">‹ Hauptmenü</button><button type="button" class="sr" data-loc="bar">Bar</button><button type="button" class="sr" data-loc="halle">Abfüllhalle</button><button type="button" class="sr" data-loc="sud">Sudhaus</button><button type="button" class="sr" data-loc="laden">Laden</button>
+      <button type="button" id="careerBack">‹ Hauptmenü</button><button type="button" class="sr" data-loc="bar">Braustüberl</button><button type="button" class="sr" data-loc="halle">Abfüllhalle</button><button type="button" class="sr" data-loc="sud">Sudhaus</button><button type="button" class="sr" data-loc="laden">Laden</button>
     </div>
   </div>
 </div>
@@ -341,7 +344,7 @@ html,body{height:100%;margin:0;background:var(--night);color:var(--cream);overfl
     </dl>
     <h3 id="privTitle">Datenschutz</h3>
     <p>Das Spiel läuft vollständig in deinem Browser. Es gibt kein Konto, keine Cookies und keine Statistik- oder Werbedienste. Rekord, Stufe, Brauereitaler, Lager, Spieltage und Shop-Käufe werden nur lokal auf deinem Gerät gespeichert.</p>
-    <p>Trägst du dich in die Bestenliste ein, werden der gewählte Name, Punkte, Kisten, Level, Stufe und der Zeitpunkt auf unserem eigenen Server gespeichert und öffentlich in der Bestenliste gezeigt. Nimm deshalb lieber einen Spitznamen. Einträge löschen wir auf Anfrage an office@jemphub.com.</p>
+    <p>Trägst du dich in die Bestenliste ein, werden der gewählte Name, Punkte, Kisten, Spielort, Stufe und der Zeitpunkt auf unserem eigenen Server gespeichert und öffentlich in der Bestenliste gezeigt. Nimm deshalb lieber einen Spitznamen. Einträge löschen wir auf Anfrage an office@jemphub.com.</p>
     <p>Beim Aufruf verarbeitet der Webserver technisch notwendige Daten wie die IP-Adresse. Die Schriften werden von Google Fonts geladen; dabei wird deine IP-Adresse an Google übertragen.</p>
     <button class="btn" id="legalClose" type="button">Zurück</button>
   </div>
@@ -363,7 +366,7 @@ html,body{height:100%;margin:0;background:var(--night);color:var(--cream);overfl
     <h2 id="shopTitle">Brauerei-Shop</h2>
     <p class="taler" id="shopTaler"></p>
     <ul class="shoplist" id="shopList"></ul>
-    <p class="hsnote">Brauereitaler verdienst du, wenn die Bar Kisten aus dem Lager verkauft. Ausbauten gibt es direkt an den Gebäuden auf der Karte.</p>
+    <p class="hsnote">Brauereitaler verdienst du mit Lohn im Braustüberl und am Förderband und mit deinem eigenen Bier. Ausbauten gibt es direkt an den Gebäuden auf der Karte.</p>
     <button class="btn" id="shopClose" type="button">Zurück</button>
   </div>
 </div>
@@ -451,11 +454,11 @@ const CAP = 20; let MAXMISS = 5;
 /* Shop: Brauereitaler (1 je 100 Punkte) gegen dauerhafte Verbesserungen, auf dem Gerät gespeichert */
 // Ausbauten: je Gebäude zwei, jeweils drei Stufen; Laden = allgemeine Verbesserungen
 const SHOP = [
-  { k: 'life',   b: 'laden', n: 'Ersatzbier',          d: 'Ein Fehler mehr erlaubt, in allen Levels', p: [40, 100, 200] },
+  { k: 'life',   b: 'laden', n: 'Ersatzbier',          d: 'Ein Fehler mehr erlaubt, überall', p: [40, 100, 200] },
   { k: 'mult',   b: 'laden', n: 'Eingespielt',         d: 'Start mit höherem Multiplikator; nach einem Fehler fällt er nur bis dorthin', p: [60, 150, 300] },
-  { k: 'catch',  b: 'bar',   n: 'Breite Kiste',        d: 'Level 1: Flaschen landen leichter in der Kiste', p: [30, 80, 160] },
-  { k: 'tables', b: 'bar',   n: 'Stammgäste',          d: '+2 🪙 Lohn je voller Kiste in der Bar', p: [80, 180, 320] },
-  { k: 'belt',   b: 'halle', n: 'Ruhiges Band',        d: 'Level 2: Das Fließband läuft 10 % langsamer', p: [50, 120, 240] },
+  { k: 'catch',  b: 'bar',   n: 'Breite Kiste',        d: 'Braustüberl: Flaschen landen leichter in der Kiste', p: [30, 80, 160] },
+  { k: 'tables', b: 'bar',   n: 'Stammgäste',          d: '+2 🪙 Lohn je voller Kiste im Braustüberl', p: [80, 180, 320] },
+  { k: 'belt',   b: 'halle', n: 'Ruhiges Band',        d: 'Das Förderband läuft 10 % langsamer', p: [50, 120, 240] },
   { k: 'filler', b: 'halle', n: 'Akkordprämie',        d: '+2 🪙 Lohn je voller Kiste am Band', p: [90, 200, 360] },
   // Maxis eigenes Sudhaus: reparieren, optimieren, erweitern
   { k: 'seal',   b: 'sud',   n: 'Kessel abdichten',    d: 'Der alte Kessel leckt nicht mehr: Bier bis ★★★', p: [120] },
@@ -464,7 +467,7 @@ const SHOP = [
   { k: 'lauter', b: 'sud',   n: 'Läuterbottich',       d: 'Neue Sorten: Pils und Zwickl', p: [180] },
   { k: 'cellar', b: 'sud',   n: 'Gärkeller',           d: 'Neue Sorten: Festbier und Dunkles', p: [300] },
   { k: 'kettle', b: 'sud',   n: 'Größerer Sudkessel',  d: '+½ Fass je Sud', p: [250, 450] },
-  { k: 'time',   b: 'sud',   n: 'Routinierter Brauer', d: 'Level 3: 15 % mehr Zeit pro Brauschritt', p: [50, 120, 240] }
+  { k: 'time',   b: 'sud',   n: 'Routinierter Brauer', d: '15 % mehr Zeit pro Brauschritt', p: [50, 120, 240] }
 ];
 let taler = 0, U = { life: 0, mult: 0, catch: 0, belt: 0, time: 0, tables: 0, filler: 0, kettle: 0, seal: 0, thermo: 0, copper: 0, lauter: 0, cellar: 0 }, baseMult = 1, roundPaid = false, shopBld = 'laden';
 function bldLevel(b){ return SHOP.filter(it => it.b === b).reduce((a, it) => a + (U[it.k] || 0), 0); }
@@ -593,7 +596,7 @@ function showReport(){
   const profit = t.wage + beer - t.buy - (t.build || 0) - run;
   ECO.log.push({ d: ECO.day, p: profit }); ECO.log = ECO.log.slice(-7);
   $('repTitle').textContent = `Tag ${ECO.day}: Abrechnung`;
-  const rows = [['Lohn (Bar und Band)', `+${t.wage} 🪙`], [`Bierverkauf: ${n} Fass à ${pf}`, `+${beer} 🪙`], ['Zutaten', t.buy ? `−${t.buy} 🪙` : '0 🪙'], ['Ausbau', t.build ? `−${t.build} 🪙` : '0 🪙'], ['Betriebskosten', `−${run} 🪙`], ['Ergebnis', `${profit >= 0 ? '+' : '−'}${Math.abs(profit)} 🪙`]];
+  const rows = [['Lohn (Braustüberl und Band)', `+${t.wage} 🪙`], [`Bierverkauf: ${n} Fass à ${pf}`, `+${beer} 🪙`], ['Zutaten', t.buy ? `−${t.buy} 🪙` : '0 🪙'], ['Ausbau', t.build ? `−${t.build} 🪙` : '0 🪙'], ['Betriebskosten', `−${run} 🪙`], ['Ergebnis', `${profit >= 0 ? '+' : '−'}${Math.abs(profit)} 🪙`]];
   $('repBody').replaceChildren(...rows.flatMap(([a, b], i) => { const x = document.createElement('span'), y = document.createElement('span'); x.textContent = a; y.textContent = b; if (i === rows.length - 1){ x.className = y.className = 'tot' + (profit < 0 ? ' neg' : ''); } return [x, y]; }));
   const mx = Math.max(10, ...ECO.log.map(l => Math.abs(l.p)));
   $('repChart').replaceChildren(...ECO.log.map(l => { const d = document.createElement('div'), s = document.createElement('span'); d.style.height = Math.max(4, Math.abs(l.p)/mx*60) + 'px'; if (l.p < 0) d.className = 'neg'; d.title = `Tag ${l.d}: ${l.p} 🪙`; s.textContent = `T${l.d}`; d.append(s); return d; }));
@@ -1770,7 +1773,7 @@ async function start(keep){
   try { ac = ac || new (window.AudioContext || window.webkitAudioContext)(); ac.resume(); } catch(e) {}
   stage = 1; P.noCrate = false; P.slim = false; reset(); calibrating = false;
   if (typeof keep === 'number'){ score = keep; updateHud(); }
-  $('cratesLbl').textContent = 'Kisten'; $('livesLbl').textContent = 'Bruch'; $('bar').hidden = false; $('fillTxt').hidden = false;
+  $('cratesLbl').textContent = 'Kisten'; $('livesLbl').textContent = 'Bruch'; $('hud').classList.add('s1'); $('bar').hidden = false; $('fillTxt').hidden = false;
   ['start','career','over','paused','promo'].forEach(id => $(id).hidden = true); $('hud').hidden = false;
   state = 'play'; keepAwake();
   if (!seen.move) unlock('move');
@@ -1845,7 +1848,7 @@ async function start2(keep){
   stage = 2; reset2(); calibrating = false;
   if (typeof keep === 'number'){ score = keep; updateHud(); }
   ['start','career','over','paused','board','legalBox','promo'].forEach(id => $(id).hidden = true); $('hud').hidden = false;
-  $('cratesLbl').textContent = 'Sortiert'; $('livesLbl').textContent = 'Fehler';
+  $('cratesLbl').textContent = 'Sortiert'; $('livesLbl').textContent = 'Fehler'; $('hud').classList.remove('s1');
   $('bar').hidden = true; $('fillTxt').hidden = true;
   state = 'play'; keepAwake();
   if (!seen.l2switch) unlock('l2switch');
@@ -2217,10 +2220,10 @@ function updateMenu(){
 /* ---------- Karte: Maxi geht über das Brauereigelände ---------- */
 const LOCS = {
   plaza: { u: .5,  v: .55 },
-  sud:   { u: .3,  v: .2,  c: [.36, .42], name: 'Maxis Sudhaus', sub: 'Level 3', lv: 3, need: 1, desc: () => `Jeder Sud ergibt ${fmtF(1 + .5*(U.kettle || 0))} Fass. Die Wirte kaufen am Tagesende.` },
-  halle: { u: .74, v: .3,  c: [.68, .5],  name: 'Abfüllhalle', sub: 'Level 2', lv: 2, need: 1, desc: () => `Flaschen sortieren: ${lohn2()} 🪙 Lohn je voller Kiste.` },
-  bar:   { u: .25, v: .79, c: [.3, .6],   name: 'Bar vor der Brauerei', sub: 'Level 1', lv: 1, need: 0, desc: () => `Flaschen fangen: ${lohn1()} 🪙 Lohn je voller Kiste.` },
-  laden: { u: .76, v: .82, c: [.7, .7],   name: 'Brauerei-Laden', sub: 'Shop', shop: true, desc: 'Allgemeine Verbesserungen für alle Level.' }
+  sud:   { u: .3,  v: .2,  c: [.36, .42], name: 'Maxis Sudhaus', sub: 'Sudhaus', lv: 3, need: 1, desc: () => `Jeder Sud ergibt ${fmtF(1 + .5*(U.kettle || 0))} Fass. Die Wirte kaufen am Tagesende.` },
+  halle: { u: .74, v: .3,  c: [.68, .5],  name: 'Abfüllhalle', sub: 'Förderband', lv: 2, need: 1, desc: () => `Flaschen sortieren: ${lohn2()} 🪙 Lohn je voller Kiste.` },
+  bar:   { u: .25, v: .79, c: [.3, .6],   name: 'Braustüberl', sub: 'Braustüberl', lv: 1, need: 0, desc: () => `Flaschen fangen: ${lohn1()} 🪙 Lohn je voller Kiste.` },
+  laden: { u: .76, v: .82, c: [.7, .7],   name: 'Brauerei-Laden', sub: 'Shop', shop: true, desc: 'Verbesserungen, die überall helfen.' }
 };
 const LOCK = ['sud', 'halle', 'bar', 'laden'];
 const MAP = { at: 'plaza', x: 0, y: 0, pts: [], dest: null, placed: false, dust: [], last: 0 };
@@ -2260,7 +2263,7 @@ function mapInfo(){
   $('mapName').textContent = L.name;
   if (MAP.at === 'sud' && !ECO.ownSud && rank >= 1){
     $('mapName').textContent = 'Das alte Sudhaus';
-    $('mapDesc').textContent = taler >= KESSEL ? `Du hast genug gespart: Der alte Sudkessel kostet ${KESSEL} 🪙.` : `Zu verkaufen für ${KESSEL} 🪙. Den Rest verdienst du an Bar und Band.`;
+    $('mapDesc').textContent = taler >= KESSEL ? `Du hast genug gespart: Der alte Sudkessel kostet ${KESSEL} 🪙.` : `Zu verkaufen für ${KESSEL} 🪙. Den Rest verdienst du im Braustüberl und am Band.`;
     go.textContent = taler >= KESSEL ? `Sudkessel kaufen (${KESSEL} 🪙)` : `Noch ${KESSEL - taler} 🪙 sparen`; go.style.visibility = 'visible'; go.disabled = taler < KESSEL; return;
   }
   if (locked(MAP.at)){
@@ -2440,7 +2443,7 @@ function drawLoc(k, p){
 }
 function drawLocLabel(k, p){
   const L = LOCS[k], lk = locked(k), sel = MAP.at === k;
-  const name = k === 'bar' ? 'Bar' : k === 'laden' ? 'Laden' : k === 'halle' ? 'Abfüllhalle' : ECO.ownSud ? 'Sudhaus' : 'Altes Sudhaus';
+  const name = k === 'bar' ? 'Braustüberl' : k === 'laden' ? 'Laden' : k === 'halle' ? 'Abfüllhalle' : ECO.ownSud ? 'Sudhaus' : 'Altes Sudhaus';
   const lv = Math.min(5, bldLevel(k));
   const sub = k === 'sud' && !ECO.ownSud ? (rank >= 1 ? `${KESSEL} 🪙` : '') : lk ? `ab ${['Lakai', 'Mitarbeiter', 'Produktion', 'Vorarbeiter'][L.need]}` : lv && !L.shop ? '★'.repeat(lv) : '';
   ctx.save(); ctx.translate(p.x, p.y); ctx.scale(p.k, p.k);
@@ -2545,13 +2548,13 @@ function promote(){
   rank++; saveRank(); state = 'promo'; touchX = null; down2.clear(); setMood('proud', 99);
   const r = RANKS[rank];
   $('promoRank').textContent = r.t;
-  $('promoText').textContent = rank === 1 ? 'Maxi hat sich bewährt und darf drinnen ans Förderband: Level 2 ist freigeschaltet.'
+  $('promoText').textContent = rank === 1 ? 'Maxi hat sich bewährt und darf drinnen ans Förderband.'
     : rank === RANKS.length - 1 ? 'Maxi ist Vorarbeiter: der beste Lohn, den die Freetown Brewery zahlt.'
-    : 'Maxi ist Produktionsmitarbeiter: mehr Lohn an der Bar und am Band.';
+    : 'Maxi ist Produktionsmitarbeiter: mehr Lohn im Braustüberl und am Band.';
   $('promoNext').textContent = rank < RANKS.length - 1 ? `Nächste Stufe: ${RANKS[rank + 1].t} ab ${RANKS[rank + 1].pts} Punkten` : '';
   promoTarget = stage === 2 ? 1 : 2;
-  $('promoStay').textContent = ['', 'Vor der Brauerei weiterspielen', 'Am Fließband weiterspielen', 'Im Sudhaus weiterspielen'][stage];
-  $('promoGo').textContent = promoTarget === 2 ? 'Ab ans Förderband (Level 2)' : 'Zur Bar (Level 1)';
+  $('promoStay').textContent = ['', 'Im Braustüberl weiterspielen', 'Am Förderband weiterspielen', 'Im Sudhaus weiterspielen'][stage];
+  $('promoGo').textContent = promoTarget === 2 ? 'Ab ans Förderband' : 'Ins Braustüberl';
   $('promoGo').hidden = promoTarget === stage;
   $('promoStay').hidden = ECO.story === 0 && stage === 1;
   $('promo').hidden = false;
@@ -2572,7 +2575,7 @@ const SCENES = {
     { bg: 'nice', who: 'bm', text: 'Nicht schlecht für den ersten Tag! Du hast ein Händchen fürs Brauen.' },
     { bg: 'old', who: 'bm', text: 'Komm, ich zeig dir was. Das ist mein alter Sudkessel. Ich brauche ihn nicht mehr.' },
     { bg: 'old', who: 'bm', text: `Für ${KESSEL} Taler gehört er dir, samt dem alten Sudhaus. Er ist undicht und verstaubt, aber er braut.` },
-    { bg: 'old', who: 'maxi', text: 'Abgemacht! Ich spar meinen Lohn von der Bar und vom Band.' },
+    { bg: 'old', who: 'maxi', text: 'Abgemacht! Ich spar meinen Lohn vom Braustüberl und vom Band.' },
     { bg: 'old', who: 'bm', text: 'So gefällt mir das. Ab jetzt steht dir das ganze Brauereigelände offen.' }
   ]
 };
@@ -2713,7 +2716,7 @@ function quitToTitle(){
 }
 function showRecords(){
   // Rekorde je Level; die Steuerung erklärt jedes Level beim ersten Spielen selbst
-  const r = [best, best2, best3].map((v, i) => v ? `L${i + 1}: ${v.toLocaleString('de-DE')}` : '').filter(Boolean);
+  const r = [best, best2, best3].map((v, i) => v ? `${['Braustüberl', 'Band', 'Sudhaus'][i]} ${v.toLocaleString('de-DE')}` : '').filter(Boolean);
   $('bestStart').textContent = r.length ? 'Rekorde · ' + r.join(' · ') : '';
 }
 function toTitle(){
@@ -2795,7 +2798,7 @@ async function start3(keep){
   stage = 3; reset3(); calibrating = false;
   if (typeof keep === 'number'){ score = keep; updateHud(); }
   ['start','career','over','paused','board','legalBox','promo'].forEach(id => $(id).hidden = true); $('hud').hidden = false;
-  $('cratesLbl').textContent = 'Sude'; $('livesLbl').textContent = L3.trial ? 'Schnuppertag' : 'Fehler';
+  $('cratesLbl').textContent = 'Sude'; $('livesLbl').textContent = L3.trial ? 'Schnuppertag' : 'Fehler'; $('hud').classList.remove('s1');
   $('bar').hidden = true; $('fillTxt').hidden = true;
   state = 'play'; keepAwake();
   if (!seen.l3brew) unlock('l3brew');
@@ -3234,7 +3237,7 @@ function renderBoard(highlightName, highlightScore){
   for (const e of hsTop){
     const li = document.createElement('li'), n = document.createElement('span'), s = document.createElement('span');
     n.className = 'n'; n.textContent = e.name; s.className = 's'; s.textContent = e.score;
-    if (e.level){ const sub = document.createElement('small'); sub.textContent = `Level ${e.level}` + (e.rank != null && RANKS[e.rank] ? ` · ${RANKS[e.rank].t}` : ''); n.append(sub); }
+    if (e.level){ const sub = document.createElement('small'); sub.textContent = (['', 'Braustüberl', 'Förderband', 'Sudhaus'][e.level] || '') + (e.rank != null && RANKS[e.rank] ? ` · ${RANKS[e.rank].t}` : ''); n.append(sub); }
     if (!marked && highlightName && e.name === highlightName && e.score === highlightScore){ li.className = 'me'; marked = true; }
     li.append(n, s); ol.append(li);
   }
@@ -3251,9 +3254,9 @@ async function openBoard(from, hlName, hlScore){
 function renderLocal(msg){
   // ohne Online-Bestenliste: eigene Rekorde je Level
   const ol = $('hsList'); ol.textContent = ''; ol.classList.add('local');
-  [['Vor der Brauerei', best], ['Am Fließband', best2], ['Im Sudhaus', best3]].forEach(([nm, v], i) => {
+  [['Braustüberl', best], ['Förderband', best2], ['Sudhaus', best3]].forEach(([nm, v], i) => {
     const li = document.createElement('li'), n = document.createElement('span'), s = document.createElement('span'), sub = document.createElement('small');
-    n.className = 'n'; n.textContent = 'Dein Rekord'; sub.textContent = `Level ${i + 1} · ${nm}`; n.append(sub);
+    n.className = 'n'; n.textContent = 'Dein Rekord'; sub.textContent = nm; n.append(sub);
     s.className = 's'; s.textContent = v ? v.toLocaleString('de-DE') : '–'; li.append(n, s); ol.append(li);
   });
   $('hsMsg').textContent = msg;
@@ -3296,7 +3299,7 @@ function ecoIntro(){
   showTip('Ein Angebot', 'Der alte Sudkessel', [
     p('Der Braumeister nimmt Maxi zur Seite: Im alten Sudhaus steht ein Sudkessel, den keiner mehr braucht.'),
     p(`Für ${KESSEL} 🪙 gehört er Maxi, samt dem verfallenen Sudhaus. Dann kann er sein eigenes Bier brauen.`),
-    p('Spar deinen Lohn aus Bar und Förderband. Sobald du genug hast, kaufst du den Kessel direkt am alten Sudhaus.')
+    p('Spar deinen Lohn aus Braustüberl und Förderband. Sobald du genug hast, kaufst du den Kessel direkt am alten Sudhaus.')
   ]);
 }
 const ecoOn = () => rank >= 1;
@@ -3308,14 +3311,14 @@ function sudIntro(){
   showTip('Geschafft', 'Maxis eigenes Sudhaus', [
     p('Der Kessel gehört dir. So verdienst du mit deinem Bier:'), ch,
     p('Der alte Kessel ist undicht, dein Bier hat erst einmal höchstens ★★. Über „Reparieren“ am Sudhaus machst du es besser und bekommst neue Sorten.'),
-    p(`Jeden Tag kosten Strom und Miete mindestens ${runCost()} 🪙. Bis sich die Brauerei trägt, verdienst du weiter Lohn an Bar und Band.`)
+    p(`Jeden Tag kosten Strom und Miete mindestens ${runCost()} 🪙. Bis sich die Brauerei trägt, verdienst du weiter Lohn im Braustüberl und am Band.`)
   ], () => { MAP.at = 'sud'; openCareer(); });
 }
 function masterIntro(){
   const p = t => { const e = document.createElement('p'); e.style.margin = '0'; e.textContent = t; return e; };
   showTip('Prost!', 'Maxi ist Braumeister', [
     p('Das Sudhaus ist repariert, poliert und erweitert. Maxi braut jetzt fünf Sorten in bester Qualität.'),
-    p('Die Lohnarbeit an Bar und Band braucht er nicht mehr, er kann sie aber weiter für Punkte und die Bestenliste spielen.')
+    p('Die Lohnarbeit im Braustüberl und am Band braucht er nicht mehr, er kann sie aber weiter für Punkte und die Bestenliste spielen.')
   ]);
 }
 function openCareer(){
