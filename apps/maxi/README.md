@@ -85,3 +85,7 @@ Während einer Runde zeigt die Anzeige oben den Ertrag der Schicht (Bar: Taler, 
 
 Neue Spieler starten über „Start“ direkt in Level 1; die Karte kommt erst nach der ersten Runde („Zur Brauerei“) mit einer Begrüßung und einem Pfeil zur Bar. Der Laufbahn-Screen zeigt oben nur die aktuelle Stufe mit Fortschrittsbalken; antippen klappt alle Stufen und Rekorde auf. Die Wirtschaft (Lager, Tage, Abrechnung, Bierpreis) beginnt erst mit der Beförderung zum Mitarbeiter und wird dann einmal erklärt; davor verkauft die Bar jede volle Kiste für 12 Taler ohne Lager. Fässer kann man zukaufen (Lohnbrauerei), Malz und Hopfen erscheinen im Einkauf erst mit dem Sudhaus. „Ausbauen“ zeigt sich, sobald man sich einen Ausbau leisten kann.
 
+## Bierqualität
+
+Ab dem Sudhaus (Produktionsmitarbeiter) gibt es Standard- und Premium-Zutaten (Premium-Malz, Aroma-Hopfen, etwa doppelt so teuer). Am Sudhaus wählt man, womit gebraut wird. Jeder Sud bekommt 1 bis 5 Sterne: Standard ergibt 2 bis 3,5, Premium 3,5 bis 5; dazu zählt, wie sauber gebraut wurde (keine Fehler, zügige Schritte). Fässer und Kisten im Lager tragen die durchschnittliche Qualität (zugekaufte Fässer 2,5 Sterne). Die Qualität bestimmt den fairen Preis an der Bar (12 Taler bei 2,5 Sternen, rund +2,4 je Stern): Gutes Bier kann teurer verkauft werden, ohne dass der Andrang sinkt. Bei der Beförderung zum Produktionsmitarbeiter wird das einmal erklärt.
+
