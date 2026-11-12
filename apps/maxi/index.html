@@ -180,7 +180,8 @@ html,body{height:100%;margin:0;background:var(--night);color:var(--cream);overfl
 @media (max-height:740px){#career .nextrank,#career .records{display:none}#career h2{font-size:24px}.mapcard{padding:8px 12px}.mapcard .btn{padding:8px;font-size:19px}}
 .mapcard{gap:4px;padding:10px 14px;text-align:center}
 .mapname{font:400 21px var(--f-display);color:var(--crate)}
-.mapdesc{font:600 14px/1.25 var(--f-ui);color:var(--ink);min-height:2.5em}
+.mapdesc{font:600 14px/1.25 var(--f-ui);color:var(--ink);height:3.75em;overflow:hidden}
+#career{overflow:hidden;overscroll-behavior:none}
 .mapcard .btn{margin-top:4px;padding:10px;font-size:22px}
 .mapprice{display:flex;justify-content:center;align-items:center;gap:8px;font:700 15px var(--f-ui);color:var(--ink)}
 .mapprice button{width:34px;height:34px;border-radius:50%;border:0;background:var(--hop);color:#fff;font:700 20px var(--f-ui);cursor:pointer;line-height:1}
@@ -189,6 +190,22 @@ html,body{height:100%;margin:0;background:var(--night);color:var(--cream);overfl
 .mapbtns{display:flex;gap:8px}
 .mapbtns .btn{flex:1;min-width:0}
 .mapbtns .btn.sec{flex:0 0 auto;padding-inline:14px;font-size:18px}
+.sr{position:absolute!important;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+.rankmini{display:grid;grid-template-columns:auto 1fr auto;align-items:center;gap:10px;width:100%;background:none;border:0;padding:0;text-align:left;cursor:pointer;color:var(--ink)}
+.rm-badge{width:34px;height:34px;border-radius:50%;display:grid;place-items:center;background:var(--gold);border:2px solid var(--hop);font:700 16px var(--f-ui);color:var(--ink)}
+.rm-txt{display:grid;gap:1px;min-width:0}
+.rm-txt b{font:400 20px var(--f-display);color:var(--crate)}
+.rm-txt small{font:600 13px/1.2 var(--f-ui);color:var(--ink);opacity:.8}
+.rm-more{font-size:18px;color:var(--hop);transition:transform .2s}
+.rankmini[aria-expanded="true"] .rm-more{transform:rotate(180deg)}
+.rm-bar{height:8px;border-radius:4px;background:rgba(47,93,58,.18);overflow:hidden}
+.rm-bar div{height:100%;width:0;background:var(--hop);border-radius:4px;transition:width .4s}
+#rankMore{display:grid;gap:6px}
+#rankMore[hidden]{display:none}
+.tipbody{display:grid;gap:8px;text-align:left;font:600 15px/1.35 var(--f-ui)}
+.tipchain{display:grid;gap:6px;margin:2px 0}
+.tipchain div{display:grid;grid-template-columns:72px 1fr 72px;align-items:center;gap:6px;padding:7px 8px;border-radius:8px;background:rgba(47,93,58,.1);text-align:center;font:700 14px var(--f-ui)}
+.tipchain div span:nth-child(2){color:var(--crate)}
 .maplinks{display:flex;justify-content:center;gap:4px;flex-wrap:wrap}
 .maplinks button{font:600 13px var(--f-ui);color:var(--cream);background:none;border:0;padding:4px 6px;text-decoration:underline;text-underline-offset:3px;cursor:pointer;opacity:.8}
 .ranknote:empty{display:none}
@@ -273,11 +290,19 @@ html,body{height:100%;margin:0;background:var(--night);color:var(--cream);overfl
 
 <div class="overlay titlescreen" id="career" hidden>
   <div class="label titlecard">
-    <h2 id="careerTitle">Maxis Laufbahn</h2>
-    <ol class="ranks" id="rankSteps" aria-label="Maxis Beförderungsstufen"></ol>
-    <p class="nextrank" id="nextRank"></p>
-    <p class="records" id="bestStart"></p>
-    <div class="ecobar"><div class="ecorow" id="ecoStock"></div><div class="ecometa"><span id="ecoDay"></span><button type="button" id="ecoBtn">Lager &amp; Einkauf</button></div></div>
+    <button type="button" class="rankmini" id="rankMini" aria-expanded="false" aria-controls="rankMore">
+      <span class="rm-badge" id="rmBadge">1</span>
+      <span class="rm-txt"><b id="rmName"></b><small id="rmNext"></small></span>
+      <span class="rm-more" aria-hidden="true">▾</span>
+    </button>
+    <div class="rm-bar" aria-hidden="true"><div id="rmFill"></div></div>
+    <div id="rankMore" hidden>
+      <h2 id="careerTitle">Maxis Laufbahn</h2>
+      <ol class="ranks" id="rankSteps" aria-label="Maxis Beförderungsstufen"></ol>
+      <p class="nextrank" id="nextRank"></p>
+      <p class="records" id="bestStart"></p>
+    </div>
+    <div class="ecobar" id="ecoBar" hidden><div class="ecorow" id="ecoStock"></div><div class="ecometa"><span id="ecoDay"></span><button type="button" id="ecoBtn">Lager &amp; Einkauf</button></div></div>
     <div class="ranknote" id="rankLine"></div>
   </div>
   <div class="startbox">
@@ -288,7 +313,7 @@ html,body{height:100%;margin:0;background:var(--night);color:var(--cream);overfl
       <div class="mapbtns"><button class="btn" id="mapGo" type="button" style="visibility:hidden">Spielen</button><button class="btn sec" id="mapUp" type="button" hidden>Ausbauen</button></div>
     </div>
     <div class="maplinks" role="group" aria-label="Orte auf der Karte">
-      <button type="button" id="careerBack">‹ Hauptmenü</button><button type="button" data-loc="bar">Bar</button><button type="button" data-loc="halle">Abfüllhalle</button><button type="button" data-loc="sud">Sudhaus</button><button type="button" data-loc="laden">Laden</button>
+      <button type="button" id="careerBack">‹ Hauptmenü</button><button type="button" class="sr" data-loc="bar">Bar</button><button type="button" class="sr" data-loc="halle">Abfüllhalle</button><button type="button" class="sr" data-loc="sud">Sudhaus</button><button type="button" class="sr" data-loc="laden">Laden</button>
     </div>
   </div>
 </div>
@@ -339,6 +364,15 @@ html,body{height:100%;margin:0;background:var(--night);color:var(--cream);overfl
     <ul class="shoplist" id="storeList"></ul>
     <p class="hsnote" id="storeNote"></p>
     <button class="btn" id="storeClose" type="button">Zurück</button>
+  </div>
+</div>
+
+<div class="overlay" id="tip" hidden>
+  <div class="label" role="dialog" aria-modal="true" aria-labelledby="tipTitle">
+    <div class="brand" id="tipBrand">Neu</div>
+    <h2 id="tipTitle"></h2>
+    <div class="tipbody" id="tipBody"></div>
+    <button class="btn" id="tipOk" type="button">Verstanden</button>
   </div>
 </div>
 
@@ -430,16 +464,16 @@ function catchW(){ return 38 + 6*(U.catch || 0); }
    die Bar verkauft Kisten. Drei Schichten (Runden) sind ein Tag, danach kommt die Abrechnung. */
 const ECO_FIX = 10;
 const perFass = () => 4 + (U.filler || 0);
-const salePrice = () => ECO.barPrice + 2*(U.tables || 0);
+const salePrice = () => (rank < 1 ? 12 : ECO.barPrice) + 2*(U.tables || 0);
 // Bierpreis: billig = volle Bar und viel los, teuer = wenige Gäste
-const barRush = () => 1 + (12 - ECO.barPrice)*.06;
+const barRush = () => rank < 1 ? 1 : 1 + (12 - ECO.barPrice)*.06;
 function rushText(){ const p = ECO.barPrice; return p <= 9 ? 'Andrang: riesig' : p <= 11 ? 'Andrang: groß' : p <= 14 ? 'Andrang: normal' : p <= 16 ? 'Andrang: wenig' : 'Andrang: kaum'; }
 const ECO = { barPrice: 12, day: 1, shift: 0, malz: 15, hopfen: 10, fass: 1, kisten: 6, price: null, prev: null, log: [], today: null, report: false, round: null };
 function ecoDay0(){ return { sales: 0, buy: 0, brewed: 0, filled: 0, sold: 0 }; }
 function ecoRound0(){ return { brewed: 0, filled: 0, sold: 0, earned: 0, short: 0 }; }
-function rollPrices(){ ECO.prev = ECO.price; ECO.price = { malz: 2 + Math.floor(Math.random()*3), hopfen: 3 + Math.floor(Math.random()*4) }; }
+function rollPrices(){ ECO.prev = ECO.price; ECO.price = { malz: 2 + Math.floor(Math.random()*3), hopfen: 3 + Math.floor(Math.random()*4), fass: 26 + Math.floor(Math.random()*9) }; }
 try { Object.assign(ECO, JSON.parse(localStorage.getItem('ftb-eco') || '{}')); } catch(e) {}
-if (!ECO.price) rollPrices();
+if (!ECO.price || !ECO.price.fass) rollPrices();
 if (!ECO.today) ECO.today = ecoDay0();
 ECO.round = ecoRound0();
 function saveEco(){ try { const { round, ...keep } = ECO; localStorage.setItem('ftb-eco', JSON.stringify(keep)); } catch(e) {} }
@@ -454,6 +488,7 @@ function ecoFill(){
   ECO.fass = Math.max(0, Math.round((ECO.fass - 1/perFass())*1000)/1000); ECO.kisten++; ECO.today.filled++; ECO.round.filled++; saveEco(); updateEarn(); return true;
 }
 function ecoSell(){
+  if (rank < 1){ const pr = salePrice(); taler += pr; ECO.round.earned += pr; ECO.round.sold++; saveShop(); updateEarn(); return pr; } // Lakai: Bar verkauft noch ohne Lager
   if (ECO.kisten < 1){ taler += 1; ECO.today.sales += 1; ECO.round.earned += 1; ECO.round.short++; saveShop(); saveEco(); updateEarn(); return 0; }
   const pr = salePrice(); ECO.kisten--; taler += pr; ECO.today.sales += pr; ECO.today.sold++; ECO.round.sold++; ECO.round.earned += pr; saveShop(); saveEco(); updateEarn(); return pr;
 }
@@ -462,10 +497,12 @@ function endShift(){
   if (roundPaid) return null; roundPaid = true;
   const r = ECO.round;
   if (score <= 0 && !r.brewed && !r.filled && !r.sold && !r.earned) return null;
+  if (rank < 1){ saveShop(); return r; }
   ECO.shift++; if (ECO.shift >= 3) ECO.report = true; saveEco(); saveShop(); return r;
 }
 function shiftText(r){
   if (!r) return '';
+  if (rank < 1) return r.earned ? `${kis(r.sold)} verkauft: +${r.earned} 🪙. Talerstand: ${taler} 🪙.` : '';
   const p = [];
   if (r.brewed) p.push(`${fmtF(r.fass || r.brewed)} Fass gebraut`); if (r.filled) p.push(`${kis(r.filled)} abgefüllt`); if (r.sold) p.push(`${kis(r.sold)} verkauft`);
   let t = `Schicht ${Math.min(3, ECO.shift)}/3 von Tag ${ECO.day}` + (p.length ? ': ' + p.join(', ') : '') + (r.earned ? ` · +${r.earned} 🪙` : '') + '.';
@@ -477,21 +514,21 @@ function updateEcoBar(){
   $('ecoDay').textContent = `Tag ${ECO.day} · Schicht ${Math.min(3, ECO.shift + 1)}/3`;
 }
 const STORE = [
-  { k: 'malz', n: 'Malz', ic: '🌾', d: 'Fürs Sudhaus, 2 bis 4 Säcke je Sud', n5: 5 },
-  { k: 'hopfen', n: 'Hopfen', ic: '🌿', d: 'Fürs Sudhaus, 1 bis 4 je Sud', n5: 5 }
+  { k: 'fass', n: 'Fass Bier', ic: '🛢', d: 'Fertig gebraut von der Lohnbrauerei, teurer als selbst brauen', n5: 1, unit: 'Fass' },
+  { k: 'malz', n: 'Malz', ic: '🌾', d: 'Fürs Sudhaus, 2 bis 4 Säcke je Sud', n5: 5, unit: 'Sack', sud: true },
+  { k: 'hopfen', n: 'Hopfen', ic: '🌿', d: 'Fürs Sudhaus, 1 bis 4 je Sud', n5: 5, unit: 'Sack', sud: true }
 ];
 function renderStore(){
   $('storeTaler').textContent = `🪙 ${taler} Brauereitaler · Tag ${ECO.day}`;
-  const items = STORE.map(it => {
+  const items = STORE.filter(it => !it.sud || rank >= 2).map(it => {
     const li = document.createElement('li'), b = document.createElement('b'), sm = document.createElement('small'), bt = document.createElement('button');
     const pr = ECO.price[it.k], pv = ECO.prev ? ECO.prev[it.k] : pr, tr = pr > pv ? ' ▲' : pr < pv ? ' ▼' : '';
-    b.textContent = `${it.ic} ${it.n}: ${ECO[it.k]}`; sm.textContent = `${it.d}. Heute ${pr} 🪙 je Sack${tr}`;
+    b.textContent = `${it.ic} ${it.n}: ${fmtF(ECO[it.k])}`; sm.textContent = `${it.d}. Heute ${pr} 🪙 je ${it.unit}${tr}`;
     const cost = pr*it.n5; bt.type = 'button'; bt.textContent = `+${it.n5} für ${cost} 🪙`; bt.disabled = taler < cost;
     bt.onclick = () => { if (taler < cost) return; taler -= cost; ECO[it.k] += it.n5; ECO.today.buy += cost; saveShop(); saveEco(); beep(880, .07, 'triangle', .07); renderStore(); updateEcoBar(); };
     li.append(b, sm, bt); return li;
   });
   const info = (ic, n, v, d) => { const li = document.createElement('li'), b = document.createElement('b'), sm = document.createElement('small'); b.textContent = `${ic} ${n}: ${v}`; sm.textContent = d; li.append(b, sm); return li; };
-  items.push(info('🛢', 'Fässer', fmtF(ECO.fass), `Jeder fertige Sud im Sudhaus ergibt ${fmtF(1 + .5*(U.kettle || 0))} Fass. Ein Fass reicht für ${perFass()} Kisten.`));
   items.push(info('📦', 'Kisten', ECO.kisten, `Volle Kisten aus der Abfüllhalle. Die Bar verkauft jede Kiste für ${salePrice()} 🪙 (Preis an der Bar einstellen).`));
   $('storeList').replaceChildren(...items);
   $('storeNote').textContent = `Sudhaus: Malz + Hopfen → ${fmtF(1 + .5*(U.kettle || 0))} Fass · Abfüllhalle: Fass → ${perFass()} Kisten · Bar: Kiste → ${salePrice()} 🪙. Rohstoffpreise ändern sich jeden Tag.`;
@@ -677,7 +714,8 @@ function resize(){
   XL = -OX / S; XR = W + OX / S;
   buildBg(); buildBg2(); buildBg3();
 }
-addEventListener('resize', resize);
+let rzF = 0, rzW = 0, rzH = 0;
+addEventListener('resize', () => { cancelAnimationFrame(rzF); rzF = requestAnimationFrame(() => { if (innerWidth === rzW && innerHeight === rzH) return; rzW = innerWidth; rzH = innerHeight; resize(); mapA = null; }); });
 
 function buildBg(){
   bg.width = cv.width; bg.height = cv.height;
@@ -1731,7 +1769,7 @@ function geo2(){
   const J = Math.round(H*0.56), bottom = H - 112;
   return { bx: W/2, top: 176, J, bottom, lx: 40, rx: W - 40, barY: H - 50 };
 }
-function l2Speed(){ return Math.min(170, 66 + L2.sorted*1.6) * (1 - .1*(U.belt || 0)); }
+function l2Speed(){ return Math.min(135, 58 + L2.sorted*.9) * (1 - .1*(U.belt || 0)); } // langsamer Anstieg
 function reset2(){
   L2.sw = 1; L2.swA = Math.PI/2; L2.items = []; L2.spawnT = .6; L2.sorted = 0; L2.jamT = 0; L2.leverT = 0;
   L2.types = 2; L2.caps = false; L2.broken = false; L2.pump = 0; L2.belt = 0; L2.fill = [0, 0, 0];
@@ -1778,11 +1816,11 @@ function move2(e){
   const bk = brokenHit(fx, fy); if (bk) sortOut(bk);
 }
 function spawn2(g){
-  if (L2.caps && Math.random() < .3){
+  if (L2.caps && Math.random() < .22){
     L2.items.push({ kind: 'cap', x: g.bx + (Math.random()-.5)*22, y: g.top + 4, seg: 'main', rot: Math.random()*6 });
   } else {
     const t = L2BIN[Math.floor(Math.random()*L2.types)];
-    L2.items.push({ kind: 'bottle', t, x: g.bx, y: g.top + 6, seg: 'main', broken: L2.broken && Math.random() < .2 });
+    L2.items.push({ kind: 'bottle', t, x: g.bx, y: g.top + 6, seg: 'main', broken: L2.broken && Math.random() < .14 });
   }
   L2.pump = .35;
 }
@@ -1799,9 +1837,9 @@ function deliver2(it, bin, g){
   beep(1700 + Math.random()*300, .07, 'triangle', .1); setMood('happy', .45);
   floatText(bx, by - 40, `+${pts}`, C.gold); cleanCatch(); updateHud();
   if (L2.fill[bin] >= L2CAP){ floatText(bx, by - 66, 'Kiste voll!', C.cream); beep(1180, .12, 'square', .06); if (!seen.l2full){ unlock('l2full'); return; } }
-  if (L2.types < 3 && L2.sorted >= 10){ L2.types = 3; unlock('l2radler'); }
-  else if (!L2.broken && L2.sorted >= 18){ L2.broken = true; unlock('l2broken'); }
-  else if (!L2.caps && L2.sorted >= 28){ L2.caps = true; unlock('l2cap'); }
+  if (L2.types < 3 && L2.sorted >= 12){ L2.types = 3; unlock('l2radler'); }
+  else if (!L2.broken && L2.sorted >= 25){ L2.broken = true; unlock('l2broken'); }
+  else if (!L2.caps && L2.sorted >= 40){ L2.caps = true; unlock('l2cap'); }
 }
 function brokenHit(fx, fy){
   let best = null, bd = 30;
@@ -1844,7 +1882,7 @@ function update2(dt){
     // neue Flasche, sobald auf dem Hauptband Platz ist
     L2.spawnT -= dt;
     const lastMain = L2.items.filter(it => it.seg === 'main' && !it.flicked).reduce((m, it) => Math.min(m, it.y), Infinity);
-    if (L2.spawnT <= 0 && lastMain - g.top > 62){ spawn2(g); L2.spawnT = (70 + Math.random()*60) / v; }
+    if (L2.spawnT <= 0 && lastMain - g.top > 62){ spawn2(g); L2.spawnT = (Math.max(72, 110 - L2.sorted*.8) + Math.random()*60) / v; }
     for (let i = L2.items.length-1; i >= 0; i--){
       const it = L2.items[i];
       if (it.flicked) continue;
@@ -2107,6 +2145,10 @@ function updateMenu(){
     k.className = 'k'; k.textContent = `Level ${lv}`; n.className = 'n'; n.textContent = (locked ? '🔒 ' : '') + name;
     b.replaceChildren(k, n);
   };
+  const top = Math.max(best, best2, best3), nx = RANKS[rank + 1];
+  $('rmBadge').textContent = rank + 1; $('rmName').textContent = RANKS[rank].t;
+  $('rmNext').textContent = nx ? `Nächste Stufe: ${nx.t}, dafür ${nx.pts.toLocaleString('de-DE')} Punkte in einer Runde` : 'Höchste Stufe erreicht. Prost!';
+  $('rmFill').style.width = (nx ? Math.min(100, top / nx.pts * 100) : 100) + '%';
   $('nextRank').textContent = rank < RANKS.length - 1 ? `Nächste Stufe: ${RANKS[rank + 1].t} ab ${RANKS[rank + 1].pts.toLocaleString('de-DE')} Punkten` : 'Maxi ist Brauer, die höchste Stufe. Prost!';
 }
 /* ---------- Karte: Maxi geht über das Brauereigelände ---------- */
@@ -2114,16 +2156,19 @@ const LOCS = {
   plaza: { u: .5,  v: .55 },
   sud:   { u: .3,  v: .2,  c: [.36, .42], name: 'Sudhaus', sub: 'Level 3', lv: 3, need: 2, desc: () => `Jeder Sud braucht Malz und Hopfen aus dem Lager und ergibt ${fmtF(1 + .5*(U.kettle || 0))} Fass.` },
   halle: { u: .74, v: .3,  c: [.68, .5],  name: 'Abfüllhalle', sub: 'Level 2', lv: 2, need: 1, desc: () => `Jede volle Kiste füllt Bier aus dem Fass ab: ${perFass()} Kisten je Fass.` },
-  bar:   { u: .25, v: .79, c: [.3, .6],   name: 'Bar vor der Brauerei', sub: 'Level 1', lv: 1, need: 0, desc: () => `Jede gelieferte Kiste verkauft 1 Kiste aus dem Lager für ${salePrice()} 🪙.` },
+  bar:   { u: .25, v: .79, c: [.3, .6],   name: 'Bar vor der Brauerei', sub: 'Level 1', lv: 1, need: 0, desc: () => rank < 1 ? `Fang die Flaschen der Gäste. Jede volle Kiste bringt ${salePrice()} 🪙.` : `Jede gelieferte Kiste verkauft 1 Kiste aus dem Lager für ${salePrice()} 🪙.` },
   laden: { u: .76, v: .82, c: [.7, .7],   name: 'Brauerei-Laden', sub: 'Shop', shop: true, desc: 'Allgemeine Verbesserungen für alle Level.' }
 };
 const LOCK = ['sud', 'halle', 'bar', 'laden'];
 const MAP = { at: 'plaza', x: 0, y: 0, pts: [], dest: null, placed: false, dust: [], last: 0 };
 let mapA = null, mapAT = -1;
 function mapArea(){
-  if (mapAT === tTotal && mapA) return mapA;
+  if (mapA && tTotal - mapAT < .5 && tTotal >= mapAT) return mapA;
   const c = $('career').querySelector('.titlecard').getBoundingClientRect(), p = $('career').querySelector('.startbox').getBoundingClientRect();
-  mapA = { top: c.bottom / S + 10, bot: p.top / S - 6 }; mapAT = tTotal; return mapA;
+  const n = { top: Math.round(c.bottom / S + 10), bot: Math.round(p.top / S - 6) };
+  // kleine Messschwankungen ignorieren, sonst zuckt die Karte
+  if (!mapA || Math.abs(n.top - mapA.top) > 3 || Math.abs(n.bot - mapA.bot) > 3) mapA = n;
+  mapAT = tTotal; return mapA;
 }
 function mapUV(u, v){ const a = mapArea(); return { x: 26 + u*(W - 52), y: a.top + 62 + v*Math.max(110, a.bot - a.top - 108) }; }
 function mapK(){ const a = mapArea(); return Math.max(.62, Math.min(1, (a.bot - a.top)/400)); }
@@ -2137,26 +2182,27 @@ function curve(k){
 function locked(k){ const L = LOCS[k], all = typeof UNLOCK_ALL !== 'undefined' && UNLOCK_ALL; return !all && L.need != null && rank < L.need; }
 function mapInfo(){
   const L = LOCS[MAP.at], go = $('mapGo');
-  $('mapPrice').style.visibility = MAP.at === 'bar' && !MAP.pts.length ? 'visible' : 'hidden';
+  $('mapPrice').style.visibility = ecoOn() && MAP.at === 'bar' && !MAP.pts.length ? 'visible' : 'hidden';
   $('priceVal').textContent = `${ECO.barPrice} 🪙` + (U.tables ? ` +${2*U.tables}` : ''); $('priceRush').textContent = rushText();
   $('priceDown').disabled = ECO.barPrice <= 8; $('priceUp').disabled = ECO.barPrice >= 18;
-  $('mapUp').hidden = !MAP.at || MAP.at === 'plaza' || MAP.at === 'laden' || !!MAP.pts.length || locked(MAP.at);
+  $('mapUp').hidden = !MAP.at || MAP.at === 'plaza' || MAP.at === 'laden' || !!MAP.pts.length || locked(MAP.at) || (taler < 30 && !bldLevel(MAP.at));
   if (!$('mapUp').hidden){ const lv = bldLevel(MAP.at); $('mapUp').textContent = lv ? `Ausbau ${'★'.repeat(lv)}` : 'Ausbauen'; }
   if (!MAP.at || MAP.at === 'plaza' || MAP.pts.length){
-    $('mapName').textContent = MAP.pts.length ? 'Maxi ist unterwegs …' : 'Brauereigelände';
-    $('mapDesc').textContent = 'Tipp auf ein Gebäude, dann geht Maxi hin.'; go.style.visibility = 'hidden'; return;
+    $('mapName').textContent = MAP.pts.length ? 'Maxi ist unterwegs …' : seen.map ? 'Brauereigelände' : 'Willkommen in der Brauerei';
+    $('mapDesc').textContent = seen.map ? 'Tipp auf ein Gebäude, dann geht Maxi hin.' : 'Hier wählst du, wo Maxi arbeitet. Tipp auf die Bar, um weiterzuspielen. Die anderen Gebäude öffnen sich mit Maxis Beförderungen.'; go.style.visibility = 'hidden'; return;
   }
   $('mapName').textContent = L.name;
   if (locked(MAP.at)){
     $('mapDesc').textContent = `🔒 Noch zu: ab ${RANKS[L.need].t} (${RANKS[L.need].pts.toLocaleString('de-DE')} Punkte in einer Runde).`; go.style.visibility = 'hidden'; return;
   }
-  const st = MAP.at === 'sud' ? ` (Lager: ${ECO.malz} Malz, ${ECO.hopfen} Hopfen)` : MAP.at === 'halle' ? ` (Lager: ${fmtF(ECO.fass)} Fass)` : MAP.at === 'bar' ? ` (Lager: ${ECO.kisten} Kisten)` : '';
+  const st = !ecoOn() ? '' : MAP.at === 'sud' ? ` (Lager: ${ECO.malz} Malz, ${ECO.hopfen} Hopfen)` : MAP.at === 'halle' ? ` (Lager: ${fmtF(ECO.fass)} Fass)` : MAP.at === 'bar' ? ` (Lager: ${ECO.kisten} Kisten)` : '';
   const ds = typeof L.desc === 'function' ? L.desc() : L.desc;
   $('mapDesc').textContent = L.shop ? `${ds} Du hast ${taler} 🪙.` : `${L.sub}: ${ds}${st}`;
   go.textContent = L.shop ? 'Laden betreten' : `${L.sub} spielen`; go.style.visibility = 'visible';
 }
 function mapTap(k){
   if (!LOCS[k]) return;
+  if (!seen.map){ seen.map = true; saveSeen(); }
   if (MAP.at === k && !MAP.pts.length){ if (!locked(k)) enterLoc(k); else beep(220, .12, 'square', .05); return; }
   if ((MAP.pts.length ? MAP.dest : MAP.at) === k) return;
   // vom aktuellen Standort über den Platz zum Ziel
@@ -2218,7 +2264,7 @@ function win(x, y, w, h, lit){
 function plate(t, y, w, bg, fg){ ctx.fillStyle = bg || '#f3e6c4'; rr(-w/2, y, w, 15, 3); ctx.fill(); ctx.strokeStyle = 'rgba(0,0,0,.25)'; ctx.lineWidth = 1; ctx.stroke(); ctx.fillStyle = fg || '#2f5d3a'; ctx.font = '700 11px "Barlow Condensed", sans-serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillText(t, 0, y + 8); }
 function tinyGuest(x, y, c, ph){ const b = Math.sin(tTotal*3 + ph)*1; ctx.fillStyle = c; rr(x - 4, y - 12 + b, 8, 10, 3); ctx.fill(); ctx.fillStyle = '#e8b68a'; ctx.beginPath(); ctx.arc(x, y - 15 + b, 3.5, 0, Math.PI*2); ctx.fill(); }
 function drawLoc(k, p){
-  const L = LOCS[k], lk = locked(k), sel = MAP.at === k || MAP.dest === k;
+  const L = LOCS[k], lk = locked(k), sel = MAP.at === k || MAP.dest === k || (!seen.map && k === 'bar');
   ctx.save(); ctx.translate(p.x, p.y); ctx.scale(p.k, p.k);
   if (sel){ ctx.strokeStyle = `rgba(230,184,74,${.55 + Math.sin(tTotal*5)*.35})`; ctx.lineWidth = 4; ctx.beginPath(); ctx.ellipse(4, 4, 72, 17, 0, 0, Math.PI*2); ctx.stroke(); }
   if (lk) ctx.globalAlpha = .5;
@@ -2418,6 +2464,8 @@ function renderMap(){
   ctx.restore();
   ctx.strokeStyle = 'rgba(243,230,196,.5)'; ctx.lineWidth = 2; rr(x0, y0, w, h, 16); ctx.stroke();
   for (const kk of LOCK) drawLocLabel(kk, locPos(kk));
+  if (!seen.map){ const q = locPos('bar'), by = q.y - 104*q.k + Math.sin(tTotal*5)*6;
+    ctx.fillStyle = C.gold; ctx.strokeStyle = '#3a2a1e'; ctx.lineWidth = 2; ctx.beginPath(); ctx.moveTo(q.x - 12, by - 14); ctx.lineTo(q.x + 12, by - 14); ctx.lineTo(q.x, by + 4); ctx.closePath(); ctx.fill(); ctx.stroke(); }
 }
 
 function checkPromo(){
@@ -3034,8 +3082,37 @@ async function sendScore(){
 for (const b of document.querySelectorAll('[data-board]')) b.addEventListener('click', () => openBoard(b.closest('.overlay').id));
 $('boardClose').onclick = closeBoard;
 $('shopClose').onclick = () => { $('shop').hidden = true; openCareer(); };
-function openCareer(){ updateMenu(); showRecords(); updateEcoBar(); $('start').hidden = true; if (ECO.report){ showReport(); return; } $('career').hidden = false; mapInfo(); $('careerTitle').focus?.({ preventScroll: true }); }
-$('startBtn').onclick = openCareer;
+let tipNext = null;
+function showTip(brand, title, nodes, next){
+  $('tipBrand').textContent = brand; $('tipTitle').textContent = title; $('tipBody').replaceChildren(...nodes);
+  tipNext = next || null; $('career').hidden = true; $('start').hidden = true; $('tip').hidden = false; $('tipOk').focus();
+}
+function ecoIntro(){
+  const p = t => { const e = document.createElement('p'); e.style.margin = '0'; e.textContent = t; return e; };
+  const ch = document.createElement('div'); ch.className = 'tipchain';
+  [['🌾 🌿', 'Sudhaus', '🛢 Fass'], ['🛢 Fass', 'Abfüllhalle', '📦 Kisten'], ['📦 Kisten', 'Bar', '🪙 Taler']].forEach(r => {
+    const d = document.createElement('div'); r.forEach((t, i) => { const sp = document.createElement('span'); sp.textContent = i === 1 ? `→ ${t} →` : t; d.append(sp); }); ch.append(d); });
+  showTip('Neu für Mitarbeiter', 'Maxi führt jetzt die Brauerei mit', [
+    p('Ab jetzt verkauft die Bar nur, was im Lager liegt. So hängt alles zusammen:'), ch,
+    p('Bis das Sudhaus offen ist (ab Produktionsmitarbeiter), kaufst du Fässer unter „Lager & Einkauf“ zu. Drei Runden sind ein Arbeitstag, danach kommt die Abrechnung.'),
+    p('An der Bar stellst du den Bierpreis ein: billig bringt mehr Gäste, teuer mehr Geld pro Kiste.')
+  ]);
+}
+const ecoOn = () => rank >= 1;
+function openCareer(){
+  updateMenu(); showRecords(); updateEcoBar(); $('start').hidden = true;
+  if (ecoOn() && !ECO.introSeen){ ECO.introSeen = true; saveEco(); ecoIntro(); return; }
+  if (ECO.report){ showReport(); return; }
+  $('ecoBar').hidden = !ecoOn();
+  $('career').hidden = false; mapInfo(); $('rankMini').focus?.({ preventScroll: true });
+}
+$('startBtn').onclick = () => {
+  // ganz neu: direkt los in Level 1, die Brauerei kommt nach der ersten Runde
+  if (!best && !best2 && !best3 && rank === 0 && !seen.map){ start(); return; }
+  openCareer();
+};
+$('rankMini').onclick = () => { const m = $('rankMore'), open = m.hidden; m.hidden = !open; $('rankMini').setAttribute('aria-expanded', open ? 'true' : 'false'); };
+$('tipOk').onclick = () => { $('tip').hidden = true; const f = tipNext; tipNext = null; if (f) f(); else openCareer(); };
 $('ecoBtn').onclick = () => { renderStore(); $('career').hidden = true; $('store').hidden = false; $('storeClose').focus(); };
 $('storeClose').onclick = () => { $('store').hidden = true; openCareer(); };
 $('repNext').onclick = () => { $('dayRep').hidden = true; openCareer(); };
