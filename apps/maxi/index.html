@@ -149,6 +149,10 @@ html,body{height:100%;margin:0;background:var(--night);color:var(--cream);overfl
 .ranks li.cur .nm{color:var(--hop)}
 .ranks .pt{font:500 11px var(--f-ui);color:var(--ink);opacity:.65}
 .ranknote{font:600 12px var(--f-ui);color:var(--crate)}
+.nextrank{margin:2px 0 0;font:600 14px var(--f-ui);color:var(--ink)}
+.nextrank:empty,.records:empty{display:none}
+.records{margin:0;font:600 13px var(--f-ui);color:var(--hop)}
+#career h2{font-size:30px}
 .ranknote:empty{display:none}
 .promorank{font:400 27px/1.1 var(--f-display);color:var(--hop);overflow-wrap:anywhere;hyphens:auto}
 .promocard p{font-size:16px}
@@ -221,8 +225,22 @@ html,body{height:100%;margin:0;background:var(--night);color:var(--cream);overfl
     <div class="brand">Freetown Brewery präsentiert</div>
     <h1>Maxis Bierkiste</h1>
     <div class="who">mit Maximilian Weichl</div>
+  </div>
+  <div class="startbox">
+    <button class="btn" id="startBtn" type="button">Start</button>
+    <button class="btn ghost" id="boardBtn" type="button" data-board hidden>Bestenliste</button>
+    <nav class="legal" aria-label="Rechtliches"><button type="button" data-legal="imp">Impressum</button><button type="button" data-legal="priv">Datenschutz</button></nav>
+  </div>
+</div>
+
+<div class="overlay titlescreen" id="career" hidden>
+  <div class="label titlecard">
+    <div class="brand">Freetown Brewery</div>
+    <h2 id="careerTitle">Maxis Laufbahn</h2>
     <div class="rule"></div>
     <ol class="ranks" id="rankSteps" aria-label="Maxis Beförderungsstufen"></ol>
+    <p class="nextrank" id="nextRank"></p>
+    <p class="records" id="bestStart"></p>
     <div class="ranknote" id="rankLine"></div>
   </div>
   <div class="startbox">
@@ -233,9 +251,7 @@ html,body{height:100%;margin:0;background:var(--night);color:var(--cream);overfl
     </div>
     <p class="hint lvlhint" id="lvlHint" aria-live="polite"></p>
     <button class="btn ghost" id="shopBtn" type="button">Brauerei-Shop</button>
-    <button class="btn ghost" id="boardBtn" type="button" data-board hidden>Bestenliste</button>
-    <p class="hint" id="bestStart"></p>
-    <nav class="legal" aria-label="Rechtliches"><button type="button" data-legal="imp">Impressum</button><button type="button" data-legal="priv">Datenschutz</button></nav>
+    <button class="btn ghost" id="careerBack" type="button">Zurück zum Hauptmenü</button>
   </div>
 </div>
 
@@ -1503,7 +1519,7 @@ async function start(keep){
   stage = 1; P.noCrate = false; P.slim = false; reset(); calibrating = false;
   if (typeof keep === 'number'){ score = keep; updateHud(); }
   $('cratesLbl').textContent = 'Kisten'; $('livesLbl').textContent = 'Bruch'; $('bar').hidden = false; $('fillTxt').hidden = false;
-  ['start','over','paused','promo'].forEach(id => $(id).hidden = true); $('hud').hidden = false;
+  ['start','career','over','paused','promo'].forEach(id => $(id).hidden = true); $('hud').hidden = false;
   state = 'play'; keepAwake();
   if (!seen.move) unlock('move');
 }
@@ -1569,7 +1585,7 @@ async function start2(keep){
   try { ac = ac || new (window.AudioContext || window.webkitAudioContext)(); ac.resume(); } catch(e) {}
   stage = 2; reset2(); calibrating = false;
   if (typeof keep === 'number'){ score = keep; updateHud(); }
-  ['start','over','paused','board','legalBox','promo'].forEach(id => $(id).hidden = true); $('hud').hidden = false;
+  ['start','career','over','paused','board','legalBox','promo'].forEach(id => $(id).hidden = true); $('hud').hidden = false;
   $('cratesLbl').textContent = 'Sortiert'; $('livesLbl').textContent = 'Fehler';
   $('bar').hidden = true; $('fillTxt').hidden = true;
   state = 'play'; keepAwake();
@@ -1933,11 +1949,12 @@ function updateMenu(){
   };
   set('play2Btn', 2, 'Fließband', 1); set('play3Btn', 3, 'Sudhaus', 2);
   $('lvlHint').textContent = '';
+  $('nextRank').textContent = rank < RANKS.length - 1 ? `Nächste Beförderung: ${RANKS[rank + 1].t} ab ${RANKS[rank + 1].pts.toLocaleString('de-DE')} Punkten in einer Runde` : 'Maxi ist Brauer, die höchste Stufe. Prost!';
 }
 function tryLevel(lv){
   const all = typeof UNLOCK_ALL !== 'undefined' && UNLOCK_ALL, need = lv - 1;
   if (!all && rank < need){
-    $('lvlHint').textContent = `Level ${lv} gibt es ab ${RANKS[need].t}: ${RANKS[need].pts} Punkte in einer Runde.`;
+    $('lvlHint').textContent = `Level ${lv} gibt es ab ${RANKS[need].t}: ${RANKS[need].pts.toLocaleString('de-DE')} Punkte in einer Runde.`;
     beep(220, .12, 'square', .05); return;
   }
   if (lv === 3) start3(); else start2();
@@ -1994,11 +2011,11 @@ function quitToTitle(){
 function showRecords(){
   // Rekorde je Level; die Steuerung erklärt jedes Level beim ersten Spielen selbst
   const r = [best, best2, best3].map((v, i) => v ? `L${i + 1}: ${v.toLocaleString('de-DE')}` : '').filter(Boolean);
-  $('bestStart').textContent = r.length ? 'Deine Rekorde · ' + r.join(' · ') : '';
+  $('bestStart').textContent = r.length ? 'Rekorde · ' + r.join(' · ') : '';
 }
 function toTitle(){
   stage = 1; P.noCrate = false; P.slim = false; state = 'menu';
-  ['over','paused','hud','board','legalBox','promo','toast','shop'].forEach(id => $(id).hidden = true); $('intro').hidden = true;
+  ['over','paused','hud','board','legalBox','promo','toast','shop','career'].forEach(id => $(id).hidden = true); $('intro').hidden = true;
   $('start').hidden = false; updateMenu(); updateShopBtn(); showRecords();
 }
 /* ================= Level 3: Im Sudhaus =================
@@ -2070,7 +2087,7 @@ async function start3(keep){
   try { ac = ac || new (window.AudioContext || window.webkitAudioContext)(); ac.resume(); } catch(e) {}
   stage = 3; reset3(); calibrating = false;
   if (typeof keep === 'number'){ score = keep; updateHud(); }
-  ['start','over','paused','board','legalBox','promo'].forEach(id => $(id).hidden = true); $('hud').hidden = false;
+  ['start','career','over','paused','board','legalBox','promo'].forEach(id => $(id).hidden = true); $('hud').hidden = false;
   $('cratesLbl').textContent = 'Sude'; $('livesLbl').textContent = 'Fehler';
   $('bar').hidden = true; $('fillTxt').hidden = true;
   state = 'play'; keepAwake();
@@ -2542,8 +2559,11 @@ async function sendScore(){
 }
 for (const b of document.querySelectorAll('[data-board]')) b.addEventListener('click', () => openBoard(b.closest('.overlay').id));
 $('boardClose').onclick = closeBoard;
-$('shopBtn').onclick = () => { renderShop(); $('start').hidden = true; $('shop').hidden = false; $('shopClose').focus(); };
-$('shopClose').onclick = () => { $('shop').hidden = true; $('start').hidden = false; updateShopBtn(); };
+$('shopBtn').onclick = () => { renderShop(); $('career').hidden = true; $('shop').hidden = false; $('shopClose').focus(); };
+$('shopClose').onclick = () => { $('shop').hidden = true; openCareer(); };
+function openCareer(){ updateMenu(); updateShopBtn(); showRecords(); $('start').hidden = true; $('career').hidden = false; $('playBtn').focus({ preventScroll: true }); }
+$('startBtn').onclick = openCareer;
+$('careerBack').onclick = () => { $('career').hidden = true; $('start').hidden = false; $('startBtn').focus({ preventScroll: true }); };
 updateShopBtn();
 $('hsSend').onclick = sendScore;
 $('hsName').addEventListener('keydown', e => { e.stopPropagation(); if (e.key === 'Enter') sendScore(); });
