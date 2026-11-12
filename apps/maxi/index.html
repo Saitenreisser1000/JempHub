@@ -152,7 +152,19 @@ html,body{height:100%;margin:0;background:var(--night);color:var(--cream);overfl
 .nextrank{margin:2px 0 0;font:600 14px var(--f-ui);color:var(--ink)}
 .nextrank:empty,.records:empty{display:none}
 .records{margin:0;font:600 13px var(--f-ui);color:var(--hop)}
-#career h2{font-size:30px}
+#career h2{font-size:28px;margin:0}
+#career{pointer-events:none;background:linear-gradient(rgba(15,20,30,.4),rgba(15,20,30,0) 30%)}
+#career .label,#career .startbox{pointer-events:auto}
+#career .titlecard{gap:6px;padding:12px 14px}
+#career .startbox{gap:6px}
+#careerBack{font-weight:700!important;opacity:1!important}
+@media (max-height:740px){#career .nextrank,#career .records{display:none}#career h2{font-size:24px}.mapcard{padding:8px 12px}.mapcard .btn{padding:8px;font-size:19px}}
+.mapcard{gap:4px;padding:10px 14px;text-align:center}
+.mapname{font:400 21px var(--f-display);color:var(--crate)}
+.mapdesc{font:600 14px/1.25 var(--f-ui);color:var(--ink);min-height:2.5em}
+.mapcard .btn{margin-top:4px;padding:10px;font-size:22px}
+.maplinks{display:flex;justify-content:center;gap:4px;flex-wrap:wrap}
+.maplinks button{font:600 13px var(--f-ui);color:var(--cream);background:none;border:0;padding:4px 6px;text-decoration:underline;text-underline-offset:3px;cursor:pointer;opacity:.8}
 .ranknote:empty{display:none}
 .promorank{font:400 27px/1.1 var(--f-display);color:var(--hop);overflow-wrap:anywhere;hyphens:auto}
 .promocard p{font-size:16px}
@@ -235,23 +247,21 @@ html,body{height:100%;margin:0;background:var(--night);color:var(--cream);overfl
 
 <div class="overlay titlescreen" id="career" hidden>
   <div class="label titlecard">
-    <div class="brand">Freetown Brewery</div>
     <h2 id="careerTitle">Maxis Laufbahn</h2>
-    <div class="rule"></div>
     <ol class="ranks" id="rankSteps" aria-label="Maxis Beförderungsstufen"></ol>
     <p class="nextrank" id="nextRank"></p>
     <p class="records" id="bestStart"></p>
     <div class="ranknote" id="rankLine"></div>
   </div>
   <div class="startbox">
-    <button class="btn" id="playBtn" type="button">Level 1: Vor der Brauerei</button>
-    <div class="levels" role="group" aria-label="Weitere Level">
-      <button class="lvl" id="play2Btn" type="button"><span class="k">Level 2</span><span class="n">Fließband</span></button>
-      <button class="lvl" id="play3Btn" type="button"><span class="k">Level 3</span><span class="n">Sudhaus</span></button>
+    <div class="label mapcard" id="mapCard" aria-live="polite">
+      <div class="mapname" id="mapName"></div>
+      <div class="mapdesc" id="mapDesc"></div>
+      <button class="btn" id="mapGo" type="button" style="visibility:hidden">Spielen</button>
     </div>
-    <p class="hint lvlhint" id="lvlHint" aria-live="polite"></p>
-    <button class="btn ghost" id="shopBtn" type="button">Brauerei-Shop</button>
-    <button class="btn ghost" id="careerBack" type="button">Zurück zum Hauptmenü</button>
+    <div class="maplinks" role="group" aria-label="Orte auf der Karte">
+      <button type="button" id="careerBack">‹ Hauptmenü</button><button type="button" data-loc="bar">Bar</button><button type="button" data-loc="halle">Abfüllhalle</button><button type="button" data-loc="sud">Sudhaus</button><button type="button" data-loc="laden">Laden</button>
+    </div>
   </div>
 </div>
 
@@ -376,11 +386,10 @@ function renderShop(){
 function buy(it){
   const have = U[it.k] || 0, price = it.p[have];
   if (price == null || taler < price) return;
-  taler -= price; U[it.k] = have + 1; saveShop(); renderShop(); updateShopBtn();
+  taler -= price; U[it.k] = have + 1; saveShop(); renderShop();
   try { ac = ac || new (window.AudioContext || window.webkitAudioContext)(); ac.resume(); } catch(e) {}
   [660, 880, 1320].forEach((f, i) => setTimeout(() => beep(f, .1, 'triangle', .08), i*80));
 }
-function updateShopBtn(){ $('shopBtn').textContent = `Brauerei-Shop · ${taler} 🪙`; }
 const C = {
   skyTop:'#24314a', skyBot:'#c98a52', wall:'#6e3f2c', wallDark:'#56301f', brick:'#7c4733', roof:'#2a2a33',
   stone:'#5d5f66', stoneLight:'#73757d', jacket:'#3f7f3c', jacketDark:'#2e5f2c', pants:'#262b36', beard:'#c8944c',
@@ -495,7 +504,7 @@ function updateHearts(dt, crateTop){
     if (h.y > groundY - 10){ h.fade -= dt*2; if (h.fade <= 0) hearts.splice(i,1); }
   }
 }
-cv.addEventListener('pointerdown', e => { if (stage === 3 && state === 'play'){ tap3(e); return; } if (stage === 3 && state !== 'intro') return; if (stage === 2 && state === 'play'){ tap2(e); return; } if (stage === 2 && state !== 'intro') return; if (startRub(e)) return; if (state === 'play' && nearZone(toLogical(e.clientX), e.clientY / S)) { startForklift(); return; } if (state === 'intro'){ if (introT > (INTRO_TAP[introKind] ?? 1.2)) endIntro(); return; } if (tryFlick(e.clientX, e.clientY)) { flickIds.add(e.pointerId); return; } touchX = toLogical(e.clientX); });
+cv.addEventListener('pointerdown', e => { if (stage === 3 && state === 'play'){ tap3(e); return; } if (stage === 3 && state !== 'intro') return; if (stage === 2 && state === 'play'){ tap2(e); return; } if (stage === 2 && state !== 'intro') return; if (state === 'menu'){ if (!$('career').hidden) mapPointer(e); return; } if (startRub(e)) return; if (state === 'play' && nearZone(toLogical(e.clientX), e.clientY / S)) { startForklift(); return; } if (state === 'intro'){ if (introT > (INTRO_TAP[introKind] ?? 1.2)) endIntro(); return; } if (tryFlick(e.clientX, e.clientY)) { flickIds.add(e.pointerId); return; } touchX = toLogical(e.clientX); });
 cv.addEventListener('pointermove', e => { if (stage === 3){ if (state === 'play') stirMove(e); return; } if (stage === 2){ if (state === 'play' && down2.has(e.pointerId)) move2(e); return; } if (RUB.has(e.pointerId)) { moveRub(e); return; } if (flickIds.has(e.pointerId)) { tryFlick(e.clientX, e.clientY); return; } if (touchX !== null || e.pointerType === 'mouse') touchX = toLogical(e.clientX); });
 cv.addEventListener('pointerup', e => { down2.delete(e.pointerId); L3.heat = false; if (L3.stirId === e.pointerId){ L3.stirId = null; L3.paddle = null; } if (RUB.delete(e.pointerId)) return; if (flickIds.delete(e.pointerId)) return; touchX = null; });
 cv.addEventListener('pointercancel', e => { L3.heat = false; L3.stirId = null; L3.paddle = null; RUB.delete(e.pointerId); flickIds.delete(e.pointerId); touchX = null; });
@@ -1461,6 +1470,7 @@ function render(){
   ctx.drawImage(bg, 0, 0);
   const sx = shake ? (Math.random()-.5)*8*shake/.25 : 0;
   ctx.setTransform(dpr*S,0,0,dpr*S, dpr*(OX + sx*S), 0);
+  if (state === 'menu' && !$('career').hidden){ renderMap(); return; }
   if (state === 'menu'){
     for (const v of visitors) drawVisitor(v);
     // Titelbild: Maxi groß im Vordergrund, Flaschen fliegen um ihn herum
@@ -1947,18 +1957,159 @@ function updateMenu(){
     k.className = 'k'; k.textContent = `Level ${lv}`; n.className = 'n'; n.textContent = (locked ? '🔒 ' : '') + name;
     b.replaceChildren(k, n);
   };
-  set('play2Btn', 2, 'Fließband', 1); set('play3Btn', 3, 'Sudhaus', 2);
-  $('lvlHint').textContent = '';
-  $('nextRank').textContent = rank < RANKS.length - 1 ? `Nächste Beförderung: ${RANKS[rank + 1].t} ab ${RANKS[rank + 1].pts.toLocaleString('de-DE')} Punkten in einer Runde` : 'Maxi ist Brauer, die höchste Stufe. Prost!';
+  $('nextRank').textContent = rank < RANKS.length - 1 ? `Nächste Stufe: ${RANKS[rank + 1].t} ab ${RANKS[rank + 1].pts.toLocaleString('de-DE')} Punkten` : 'Maxi ist Brauer, die höchste Stufe. Prost!';
 }
-function tryLevel(lv){
-  const all = typeof UNLOCK_ALL !== 'undefined' && UNLOCK_ALL, need = lv - 1;
-  if (!all && rank < need){
-    $('lvlHint').textContent = `Level ${lv} gibt es ab ${RANKS[need].t}: ${RANKS[need].pts.toLocaleString('de-DE')} Punkte in einer Runde.`;
-    beep(220, .12, 'square', .05); return;
+/* ---------- Karte: Maxi geht über das Brauereigelände ---------- */
+const LOCS = {
+  plaza: { u: .5,  v: .56 },
+  sud:   { u: .27, v: .18, name: 'Sudhaus', sub: 'Level 3', lv: 3, need: 2, desc: 'Zutaten in den Sudkessel, Temperatur halten, umrühren.' },
+  halle: { u: .75, v: .3,  name: 'Abfüllhalle', sub: 'Level 2', lv: 2, need: 1, desc: 'Flaschen am Fließband in die richtige Kiste lenken.' },
+  bar:   { u: .26, v: .8,  name: 'Bar vor der Brauerei', sub: 'Level 1', lv: 1, need: 0, desc: 'Die Gäste werfen Flaschen, Maxi fängt sie mit der Kiste.' },
+  laden: { u: .76, v: .84, name: 'Brauerei-Laden', sub: 'Shop', shop: true, desc: 'Brauereitaler gegen Verbesserungen tauschen.' }
+};
+const MAP = { at: 'plaza', x: 0, y: 0, path: [], placed: false, top: 0, bot: 0 };
+function mapArea(){
+  const c = $('career').querySelector('.titlecard').getBoundingClientRect(), p = $('career').querySelector('.startbox').getBoundingClientRect();
+  return { top: c.bottom / S + 10, bot: p.top / S - 6 };
+}
+function locPos(k){
+  const a = mapArea(), mh = a.bot - a.top, L = LOCS[k];
+  return { x: 30 + L.u*(W - 60), y: a.top + 64 + L.v*Math.max(110, mh - 110), k: Math.max(.62, Math.min(1, mh/400)) };
+}
+function locked(k){ const L = LOCS[k], all = typeof UNLOCK_ALL !== 'undefined' && UNLOCK_ALL; return !all && L.need != null && rank < L.need; }
+function mapInfo(){
+  const L = LOCS[MAP.at], go = $('mapGo');
+  if (MAP.at === 'plaza' || MAP.path.length){
+    $('mapName').textContent = MAP.path.length ? 'Maxi ist unterwegs …' : 'Brauereigelände';
+    $('mapDesc').textContent = 'Tipp auf ein Gebäude, dann geht Maxi hin.'; go.style.visibility = 'hidden'; return;
   }
-  if (lv === 3) start3(); else start2();
+  $('mapName').textContent = `${L.name}`;
+  if (locked(MAP.at)){
+    $('mapDesc').textContent = `🔒 Noch zu: ab ${RANKS[L.need].t} (${RANKS[L.need].pts.toLocaleString('de-DE')} Punkte in einer Runde).`; go.style.visibility = 'hidden'; return;
+  }
+  $('mapDesc').textContent = L.shop ? `${L.desc} Du hast ${taler} 🪙.` : `${L.sub}: ${L.desc}`;
+  go.textContent = L.shop ? 'Laden betreten' : `${L.sub} spielen`; go.style.visibility = 'visible';
 }
+function mapTap(k){
+  if (!LOCS[k]) return;
+  if (MAP.at === k && !MAP.path.length){ if (!locked(k)) enterLoc(k); else beep(220, .12, 'square', .05); return; }
+  const dest = MAP.path.length ? MAP.path[MAP.path.length - 1].k : MAP.at;
+  if (dest === k) return;
+  const pts = [];
+  if (MAP.at !== 'plaza' || MAP.path.length) pts.push('plaza');
+  if (k !== 'plaza') pts.push(k);
+  MAP.path = pts.map(p => ({ k: p })); MAP.at = null;
+  beep(660, .05, 'triangle', .06); mapInfo();
+}
+function mapPointer(e){
+  const fx = toLogical(e.clientX), fy = e.clientY / S;
+  let best = null, bd = 70;
+  for (const k of Object.keys(LOCS)){ if (k === 'plaza') continue; const p = locPos(k), d = Math.hypot(fx - p.x, (fy - (p.y - 30*p.k)) * .8); if (d < bd*p.k + 10){ bd = d; best = k; } }
+  if (best) mapTap(best);
+  else { const p = locPos('plaza'); if (Math.hypot(fx - p.x, fy - p.y) < 50) mapTap('plaza'); }
+}
+function enterLoc(k){
+  if (!k || k === 'plaza' || locked(k)) return;
+  const L = LOCS[k];
+  if (L.shop){ renderShop(); $('career').hidden = true; $('shop').hidden = false; $('shopClose').focus(); return; }
+  if (L.lv === 3) start3(); else if (L.lv === 2) start2(); else start();
+}
+function updateMap(dt){
+  if (!MAP.placed){ const p = locPos(MAP.at || 'plaza'); MAP.x = p.x; MAP.y = p.y; MAP.placed = true; }
+  if (!MAP.path.length){ if (MAP.at){ const p = locPos(MAP.at); MAP.x = p.x; MAP.y = p.y; } P.vx = 0; return; }
+  const t = locPos(MAP.path[0].k), dx = t.x - MAP.x, dy = t.y - MAP.y, d = Math.hypot(dx, dy), sp = 150*dt;
+  P.vx = dx / Math.max(.001, d) * 150; P.walk += dt*7;
+  if (d <= sp){ MAP.x = t.x; MAP.y = t.y; const k = MAP.path.shift().k;
+    if (!MAP.path.length){ MAP.at = k; if (k !== 'plaza') beep(990, .08, 'triangle', .07); mapInfo(); } }
+  else { MAP.x += dx/d*sp; MAP.y += dy/d*sp; }
+}
+function drawLoc(k, p){
+  const L = LOCS[k], lk = locked(k), sel = MAP.at === k || (MAP.path.length && MAP.path[MAP.path.length - 1].k === k);
+  ctx.save(); ctx.translate(p.x, p.y); ctx.scale(p.k, p.k);
+  if (sel){ ctx.strokeStyle = `rgba(230,184,74,${.55 + Math.sin(tTotal*5)*.35})`; ctx.lineWidth = 4; ctx.beginPath(); ctx.ellipse(0, 2, 66, 16, 0, 0, Math.PI*2); ctx.stroke(); }
+  ctx.fillStyle = 'rgba(0,0,0,.25)'; ctx.beginPath(); ctx.ellipse(0, 2, 60, 11, 0, 0, Math.PI*2); ctx.fill();
+  const sign = (t, y, w) => { ctx.fillStyle = '#f3e6c4'; rr(-w/2, y, w, 15, 3); ctx.fill(); ctx.fillStyle = '#2f5d3a'; ctx.font = '700 11px "Barlow Condensed", sans-serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillText(t, 0, y + 8); };
+  if (k === 'bar'){
+    ctx.fillStyle = '#a0583a'; ctx.fillRect(-48, -56, 96, 56);
+    ctx.fillStyle = 'rgba(0,0,0,.12)'; for (let r=0;r<7;r++) for (let c=0;c<6;c++) ctx.fillRect(-48 + c*16 + (r%2)*8, -54 + r*8, 7, 1.5);
+    ctx.fillStyle = '#5a2e22'; ctx.beginPath(); ctx.moveTo(-56, -56); ctx.lineTo(56, -56); ctx.lineTo(44, -74); ctx.lineTo(-44, -74); ctx.fill();
+    for (let i=0;i<8;i++){ ctx.fillStyle = i%2 ? '#f3e6c4' : '#2f5d3a'; ctx.beginPath(); ctx.moveTo(-52 + i*13, -38); ctx.lineTo(-39 + i*13, -38); ctx.lineTo(-39 + i*13, -28); ctx.arc(-45.5 + i*13, -28, 6.5, 0, Math.PI); ctx.fill(); }
+    ctx.fillStyle = '#2a1a12'; ctx.fillRect(-9, -24, 18, 24); ctx.fillStyle = '#e6b84a'; ctx.fillRect(-36, -22, 16, 12); ctx.fillRect(20, -22, 16, 12);
+    sign('BAR', -71, 40);
+    for (const tx of [-66, 66]){ ctx.fillStyle = '#6b4a2e'; ctx.fillRect(tx - 1.5, -22, 3, 20); ctx.fillStyle = tx < 0 ? '#c22a22' : '#2f5d3a'; ctx.beginPath(); ctx.moveTo(tx - 14, -20); ctx.lineTo(tx, -30); ctx.lineTo(tx + 14, -20); ctx.fill(); }
+  } else if (k === 'halle'){
+    ctx.fillStyle = '#8c939a'; ctx.fillRect(-58, -54, 116, 54);
+    ctx.fillStyle = '#5d646b'; for (let i=0;i<4;i++){ ctx.beginPath(); ctx.moveTo(-58 + i*29, -54); ctx.lineTo(-58 + i*29, -72); ctx.lineTo(-29 + i*29, -54); ctx.fill(); }
+    ctx.fillStyle = '#9fc4d8'; for (let i=0;i<4;i++) ctx.fillRect(-56 + i*29, -68, 4, 12);
+    ctx.fillStyle = '#4b5258'; ctx.fillRect(-20, -34, 40, 34); ctx.strokeStyle = '#6d757c'; ctx.lineWidth = 1.5; for (let y=-30;y<0;y+=5){ ctx.beginPath(); ctx.moveTo(-20, y); ctx.lineTo(20, y); ctx.stroke(); }
+    sign('ABFÜLLUNG', -50, 64);
+    for (const [cx, cy] of [[-48, -10], [-36, -10], [-42, -20], [44, -10]]){ ctx.fillStyle = '#2f5d3a'; ctx.fillRect(cx - 5, cy, 11, 9); ctx.fillStyle = '#1f3f28'; ctx.fillRect(cx - 5, cy, 11, 2); }
+  } else if (k === 'sud'){
+    ctx.fillStyle = '#7a3b2a'; ctx.fillRect(30, -112, 14, 70);
+    for (let i=0;i<3;i++){ const ph = (tTotal*.5 + i/3) % 1; ctx.fillStyle = `rgba(230,230,230,${.5*(1 - ph)})`; ctx.beginPath(); ctx.arc(37 + ph*14, -116 - ph*34, 5 + ph*9, 0, Math.PI*2); ctx.fill(); }
+    ctx.fillStyle = '#e8dcc0'; ctx.fillRect(-46, -60, 92, 60);
+    ctx.fillStyle = '#c47a3a'; ctx.beginPath(); ctx.arc(-6, -60, 30, Math.PI, 0); ctx.fill(); ctx.fillStyle = '#e0a060'; ctx.beginPath(); ctx.arc(-14, -70, 8, 0, Math.PI*2); ctx.fill();
+    ctx.fillStyle = '#8a4c20'; ctx.fillRect(-8, -94, 4, 6);
+    ctx.fillStyle = '#5b7f9a'; for (const wx of [-34, 22]){ ctx.beginPath(); ctx.moveTo(wx, -16); ctx.lineTo(wx, -36); ctx.arc(wx + 6, -36, 6, Math.PI, 0); ctx.lineTo(wx + 12, -16); ctx.fill(); }
+    ctx.fillStyle = '#5a3a24'; ctx.fillRect(-9, -26, 18, 26);
+    sign('SUDHAUS', -54, 52);
+  } else if (k === 'laden'){
+    ctx.fillStyle = '#d9c49a'; ctx.fillRect(-40, -46, 80, 46);
+    ctx.fillStyle = '#9a2a20'; ctx.beginPath(); ctx.moveTo(-48, -46); ctx.lineTo(0, -76); ctx.lineTo(48, -46); ctx.fill();
+    ctx.fillStyle = '#9fc4d8'; ctx.fillRect(-32, -32, 20, 16); ctx.fillStyle = '#5a3a24'; ctx.fillRect(4, -30, 16, 30);
+    ctx.strokeStyle = '#3a2a1a'; ctx.lineWidth = 2; ctx.beginPath(); ctx.moveTo(40, -40); ctx.lineTo(54, -40); ctx.stroke();
+    const sw = Math.sin(tTotal*2)*.12; ctx.save(); ctx.translate(52, -40); ctx.rotate(sw);
+    ctx.fillStyle = C.gold; ctx.beginPath(); ctx.arc(0, 12, 10, 0, Math.PI*2); ctx.fill(); ctx.fillStyle = '#8a6a1a'; ctx.font = '700 12px "Barlow Condensed", sans-serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillText('T', 0, 12.5); ctx.restore();
+    sign('LADEN', -60, 40);
+  }
+  if (lk){ ctx.fillStyle = 'rgba(40,46,54,.55)'; ctx.fillRect(-60, -80, 120, 82); ctx.font = '28px serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillText('🔒', 0, -42); }
+  ctx.restore();
+}
+function drawLocLabel(k, p){
+  const L = LOCS[k], lk = locked(k);
+  ctx.save(); ctx.translate(p.x, p.y); ctx.scale(p.k, p.k);
+  // Namensschild
+  ctx.fillStyle = 'rgba(20,26,36,.85)'; rr(-58, 8, 116, 32, 7); ctx.fill();
+  ctx.fillStyle = lk ? 'rgba(243,230,196,.6)' : C.cream; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+  ctx.font = '700 15px "Barlow Condensed", sans-serif'; ctx.fillText(k === 'bar' ? 'Bar' : L.name, 0, 19);
+  ctx.font = '600 11px "Barlow Condensed", sans-serif'; ctx.fillStyle = lk ? 'rgba(243,230,196,.6)' : C.gold;
+  ctx.fillText(lk ? `ab ${['Lakai', 'Mitarbeiter', 'Produktion', 'Brauer'][L.need]}` : L.shop ? `${taler} 🪙` : L.sub, 0, 32);
+  ctx.restore();
+}
+function renderMap(){
+  updateMap(1/60);
+  const a = mapArea();
+  ctx.fillStyle = '#26402c'; ctx.fillRect(XL, 0, XR - XL, H);
+  // Wiese mit Muster
+  ctx.fillStyle = '#3d6a42'; rr(8, a.top - 4, W - 16, a.bot - a.top + 8, 16); ctx.fill();
+  ctx.fillStyle = 'rgba(255,255,255,.05)'; for (let i=0;i<60;i++){ const x = 14 + (i*73 % (W - 28)), y = a.top + ((i*137) % Math.max(1, a.bot - a.top)); ctx.fillRect(x, y, 3, 6); }
+  const pl = locPos('plaza');
+  // Wege
+  ctx.lineCap = 'round';
+  for (const k of ['sud', 'halle', 'bar', 'laden']){ const p = locPos(k);
+    ctx.strokeStyle = '#b9a47c'; ctx.lineWidth = 26*p.k; ctx.beginPath(); ctx.moveTo(pl.x, pl.y); ctx.lineTo(p.x, p.y + 4); ctx.stroke();
+    ctx.strokeStyle = '#d6c397'; ctx.lineWidth = 18*p.k; ctx.beginPath(); ctx.moveTo(pl.x, pl.y); ctx.lineTo(p.x, p.y + 4); ctx.stroke(); }
+  ctx.lineCap = 'butt';
+  ctx.fillStyle = '#d6c397'; ctx.beginPath(); ctx.ellipse(pl.x, pl.y, 46*pl.k, 26*pl.k, 0, 0, Math.PI*2); ctx.fill();
+  ctx.strokeStyle = '#b9a47c'; ctx.lineWidth = 3; ctx.stroke();
+  // Fass in der Platzmitte
+  ctx.save(); ctx.translate(pl.x, pl.y - 4); ctx.scale(pl.k, pl.k);
+  ctx.fillStyle = '#8a5a2c'; rr(-12, -26, 24, 28, 7); ctx.fill(); ctx.fillStyle = '#4a3a2a'; ctx.fillRect(-12, -19, 24, 3); ctx.fillRect(-12, -6, 24, 3); ctx.restore();
+  // Bäume
+  for (const [u, v] of [[.06, .5], [.94, .58], [.5, .06], [.52, .97], [.08, .04], [.95, .06]]){
+    const x = 30 + u*(W - 60), y = a.top + 64 + v*Math.max(110, a.bot - a.top - 110), k = pl.k;
+    ctx.fillStyle = 'rgba(0,0,0,.2)'; ctx.beginPath(); ctx.ellipse(x, y + 4, 16*k, 5*k, 0, 0, Math.PI*2); ctx.fill();
+    ctx.fillStyle = '#5a3a24'; ctx.fillRect(x - 2.5*k, y - 12*k, 5*k, 16*k);
+    ctx.fillStyle = '#2e5a34'; ctx.beginPath(); ctx.arc(x, y - 22*k, 15*k, 0, Math.PI*2); ctx.fill(); ctx.fillStyle = '#3f7a44'; ctx.beginPath(); ctx.arc(x - 4*k, y - 26*k, 8*k, 0, Math.PI*2); ctx.fill();
+  }
+  // Gebäude und Maxi von hinten nach vorne
+  const list = ['sud', 'halle', 'bar', 'laden'].map(k => ({ y: locPos(k).y, f: () => drawLoc(k, locPos(k)) }));
+  list.push({ y: MAP.y + .5, f: () => { const k = pl.k*.42; const nc = P.noCrate, sl = P.slim; P.noCrate = true; P.slim = false;
+    ctx.save(); ctx.translate(MAP.x, MAP.y); ctx.scale(k, k); drawMan(0, 0); ctx.restore(); P.noCrate = nc; P.slim = sl; } });
+  list.sort((p, q) => p.y - q.y).forEach(d => d.f());
+  for (const k of ['sud', 'halle', 'bar', 'laden']) drawLocLabel(k, locPos(k));
+}
+
 function checkPromo(){
   if (state !== 'play' || rank >= RANKS.length - 1) return;
   if (score >= RANKS[rank + 1].pts) promote();
@@ -2016,7 +2167,7 @@ function showRecords(){
 function toTitle(){
   stage = 1; P.noCrate = false; P.slim = false; state = 'menu';
   ['over','paused','hud','board','legalBox','promo','toast','shop','career'].forEach(id => $(id).hidden = true); $('intro').hidden = true;
-  $('start').hidden = false; updateMenu(); updateShopBtn(); showRecords();
+  $('start').hidden = false; updateMenu(); showRecords();
 }
 /* ================= Level 3: Im Sudhaus =================
    Maxi unterstützt den Brauprozess: Auf der Tafel steht, was der Sudkessel im
@@ -2473,9 +2624,7 @@ function drawIntro3(g){
     finger(r.x + r.w/2, r.y + 34);
   }
 }
-$('playBtn').onclick = () => start(); $('play2Btn').onclick = () => tryLevel(2);
 $('againBtn').onclick = () => stage === 3 ? start3() : stage === 2 ? start2() : start();
-$('play3Btn').onclick = () => tryLevel(3);
 $('menuBtn').onclick = toTitle;
 $('pauseMenuBtn').onclick = quitToTitle;
 // Impressum und Datenschutz
@@ -2559,12 +2708,12 @@ async function sendScore(){
 }
 for (const b of document.querySelectorAll('[data-board]')) b.addEventListener('click', () => openBoard(b.closest('.overlay').id));
 $('boardClose').onclick = closeBoard;
-$('shopBtn').onclick = () => { renderShop(); $('career').hidden = true; $('shop').hidden = false; $('shopClose').focus(); };
 $('shopClose').onclick = () => { $('shop').hidden = true; openCareer(); };
-function openCareer(){ updateMenu(); updateShopBtn(); showRecords(); $('start').hidden = true; $('career').hidden = false; $('playBtn').focus({ preventScroll: true }); }
+function openCareer(){ updateMenu(); showRecords(); $('start').hidden = true; $('career').hidden = false; mapInfo(); $('careerTitle').focus?.({ preventScroll: true }); }
 $('startBtn').onclick = openCareer;
 $('careerBack').onclick = () => { $('career').hidden = true; $('start').hidden = false; $('startBtn').focus({ preventScroll: true }); };
-updateShopBtn();
+$('mapGo').onclick = () => enterLoc(MAP.at);
+document.querySelectorAll('[data-loc]').forEach(b => b.onclick = () => mapTap(b.dataset.loc));
 $('hsSend').onclick = sendScore;
 $('hsName').addEventListener('keydown', e => { e.stopPropagation(); if (e.key === 'Enter') sendScore(); });
 $('hsName').addEventListener('keyup', e => e.stopPropagation());
