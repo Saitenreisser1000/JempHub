@@ -133,7 +133,11 @@ test('Neue Gegner bewegen sich und bleiben im Level', () => {
       seen.add(e.type);
       const x0 = e.x, y0 = e.y;
       dz.P.x = e.spawn.x + 64; dz.P.y = e.spawn.y - 40; dz.P.vy = 0;
+      // Sam unverwundbar: sonst kann ein Treffer das Level neu laden und der Test prüft veraltete Gegner
+      dz.P.inv = 99;
       if (e.type === 'fisch') { e.state = 'leap'; e.vy = -340; }
+      // Frosch wartet sonst zufällig lange vor dem ersten Sprung: sofort losspringen lassen, damit der Test nicht vom Zufall abhängt
+      if (e.type === 'frosch') e.timer = 0;
       let moved = 0;
       for (let i = 0; i < 120; i++) { run(1); moved = Math.max(moved, Math.abs(e.x - x0) + Math.abs(e.y - y0)); }
       assert.ok(Number.isFinite(e.x) && Number.isFinite(e.y), `${e.type} hat gültige Position`);
