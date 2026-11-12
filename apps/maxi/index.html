@@ -418,8 +418,7 @@ html,body{height:100%;margin:0;background:var(--night);color:var(--cream);overfl
     <h2>Pause</h2>
     <button class="btn" id="resumeBtn" type="button">Weiter</button>
     <button class="btn sec" id="endShiftBtn" type="button">Schicht beenden</button>
-    <button class="btn sec" id="pauseMenuBtn" type="button">Karte</button>
-    <p class="hsnote">„Schicht beenden“ zeigt die Bilanz mit dem verdienten Geld. Rekord und Stufe bleiben erhalten.</p>
+    <p class="hsnote">„Schicht beenden“ zeigt die Bilanz mit dem verdienten Geld, danach geht es zur Karte.</p>
   </div>
 </div>
 
@@ -439,8 +438,7 @@ html,body{height:100%;margin:0;background:var(--night);color:var(--cream);overfl
     <button class="btn" id="againBtn" type="button">Nochmal</button>
     <button class="btn sec" id="toMapBtn" type="button">Karte</button>
     <button class="btn sec" id="menuBtn" type="button">Hauptmenü</button>
-    <button class="btn sec" id="boardBtn2" type="button" data-board>Bestenliste</button>
-    <nav class="legal dark" aria-label="Rechtliches"><button type="button" data-legal="imp">Impressum</button><button type="button" data-legal="priv">Datenschutz</button></nav>
+    <nav class="legal dark" aria-label="Weiteres"><button type="button" id="boardBtn2" data-board>Bestenliste</button><button type="button" data-legal="imp">Impressum</button><button type="button" data-legal="priv">Datenschutz</button></nav>
   </div>
 </div>
 
@@ -1780,10 +1778,11 @@ async function start(keep){
 }
 function stockOut(title, why){
   if (!['play', 'forklift', 'intro'].includes(state)) return;
-  stockWhy = why; gameOver(title);
+  stockWhy = why; overStock = true; gameOver(title);
 }
-let stockWhy = '';
+let stockWhy = '', overStock = false;
 function gameOver(voluntary){
+  if (typeof voluntary !== 'string') overStock = false;
   state = 'over'; $('finalScore').textContent = score; $('paused').hidden = true;
   if (stage === 3){
     if (score > best3){ best3 = score; try { localStorage.setItem('ftb-best3', best3); } catch(e) {} }
@@ -1800,13 +1799,17 @@ function gameOver(voluntary){
   }
   if (voluntary === true) $('overTitle').textContent = 'Feierabend!';
   else if (typeof voluntary === 'string') $('overTitle').textContent = voluntary;
-  $('talerInfo').textContent = (typeof voluntary === 'string' && stockWhy ? stockWhy + ' Nachschub gibt es unter „Lager & Einkauf“. ' : '') + shiftText(endShift()); stockWhy = '';
+  $('talerInfo').textContent = (typeof voluntary === 'string' && stockWhy ? stockWhy + ' ' : '') + shiftText(endShift()); stockWhy = '';
+  // Knöpfe passend zur Lage: ohne Zutaten erst einkaufen statt „Nochmal“; zurück entweder Karte oder Hauptmenü
+  if (stage === 3 && ECO.ownSud && !L3.trial && !canBrew(brewNeed(RECIPES[0]))) overStock = true; // ohne Zutaten bringt „Nochmal“ nichts
+  $('againBtn').textContent = overStock ? 'Zum Einkauf' : 'Nochmal';
+  $('toMapBtn').hidden = ECO.story < 3; $('menuBtn').hidden = ECO.story >= 3;
   $('intro').hidden = true;
   $('over').hidden = false; try { wake?.release(); } catch(e) {}
   hsAfterGame();
 }
 function togglePause(){
-  if (state === 'play'){ state = 'pause'; $('pauseMenuBtn').textContent = ECO.story >= 3 ? 'Karte' : 'Hauptmenü'; $('paused').hidden = false; }
+  if (state === 'play'){ state = 'pause'; $('paused').hidden = false; }
   else if (state === 'pause'){ state = 'play'; $('paused').hidden = true; }
 }
 /* ================= Level 2: Am Fließband =================
@@ -3031,16 +3034,38 @@ function drawIng(ing, x, y, sc){
   }
   ctx.restore();
 }
+function drawOldRoom(g){
+  // Maxis eigenes, altes Sudhaus: dunkler, Risse und Spinnweben; jede Reparatur macht es freundlicher
+  const wear = 3 - (U.seal ? 1 : 0) - (U.thermo ? 1 : 0) - (U.copper ? 1 : 0);
+  if (!wear) return;
+  ctx.fillStyle = `rgba(25,18,10,${.13*wear})`; ctx.fillRect(XL, 0, XR - XL, g.binTop);
+  ctx.strokeStyle = 'rgba(20,12,6,.6)'; ctx.lineWidth = 1.5;
+  for (const [x0, y0, pts] of [[XL + 30, 260, [[12, 20], [-6, 46], [10, 70]]], [XR - 50, 330, [[-10, 18], [8, 40], [-4, 66], [12, 90]]], [W*.62, 210, [[8, 16], [-4, 34]]]].slice(0, wear + 1)){
+    ctx.beginPath(); ctx.moveTo(x0, y0); for (const [dx, dy] of pts) ctx.lineTo(x0 + dx, y0 + dy); ctx.stroke(); }
+  if (wear >= 2){
+    ctx.strokeStyle = 'rgba(235,235,235,.35)'; ctx.lineWidth = 1;
+    for (const [cx, dir] of [[XL, 1], [XR, -1]]){ for (let r=12;r<70;r+=14){ ctx.beginPath(); ctx.arc(cx, 112, r, dir > 0 ? 0 : Math.PI/2, dir > 0 ? Math.PI/2 : Math.PI); ctx.stroke(); }
+      for (let a=0;a<4;a++){ const an = (dir > 0 ? 0 : Math.PI/2) + a*Math.PI/6; ctx.beginPath(); ctx.moveTo(cx, 112); ctx.lineTo(cx + Math.cos(an)*70, 112 + Math.sin(an)*70); ctx.stroke(); } }
+  }
+}
 function drawKettle(g){
-  const { kx, ky } = g, r = 78;
+  const { kx, ky } = g, r = 78, old = ECO.ownSud && !L3.trial && !U.copper, leak = ECO.ownSud && !L3.trial && !U.seal;
   // Feuerung
   ctx.fillStyle = '#3a2c20'; rr(kx - r + 10, ky + 52, (r - 10)*2, 30, 6); ctx.fill();
   ctx.fillStyle = `rgba(255,${140 + Math.sin(tTotal*9)*30},40,.85)`; for (let k=-2;k<=2;k++){ ctx.beginPath(); ctx.ellipse(kx + k*20, ky + 66, 6, 7 + Math.sin(tTotal*12 + k)*2, 0, 0, Math.PI*2); ctx.fill(); }
   // Kessel
-  const kg = ctx.createLinearGradient(kx - r, 0, kx + r, 0); kg.addColorStop(0, '#7a3e1c'); kg.addColorStop(.42, '#f0aa66'); kg.addColorStop(.6, '#d98a48'); kg.addColorStop(1, '#6a3416');
+  const kg = ctx.createLinearGradient(kx - r, 0, kx + r, 0);
+  if (old){ kg.addColorStop(0, '#33402c'); kg.addColorStop(.42, '#8f9c7c'); kg.addColorStop(.6, '#6f7d60'); kg.addColorStop(1, '#2c3626'); }
+  else { kg.addColorStop(0, '#7a3e1c'); kg.addColorStop(.42, '#f0aa66'); kg.addColorStop(.6, '#d98a48'); kg.addColorStop(1, '#6a3416'); }
   ctx.fillStyle = kg; ctx.beginPath(); ctx.moveTo(kx - r, ky + 54); ctx.lineTo(kx - r, ky - 20); ctx.quadraticCurveTo(kx - r, ky - 64, kx, ky - 68); ctx.quadraticCurveTo(kx + r, ky - 64, kx + r, ky - 20); ctx.lineTo(kx + r, ky + 54); ctx.closePath(); ctx.fill();
-  ctx.fillStyle = '#5e2e12'; ctx.fillRect(kx - r - 3, ky + 50, r*2 + 6, 7); ctx.fillRect(kx - r - 3, ky - 22, r*2 + 6, 5);
-  ctx.fillStyle = '#b8743c'; rr(kx - 14, ky - 92, 28, 26, 4); ctx.fill();
+  ctx.fillStyle = old ? '#2a2a24' : '#5e2e12'; ctx.fillRect(kx - r - 3, ky + 50, r*2 + 6, 7); ctx.fillRect(kx - r - 3, ky - 22, r*2 + 6, 5);
+  ctx.fillStyle = old ? '#6f7d60' : '#b8743c'; rr(kx - 14, ky - 92, 28, 26, 4); ctx.fill();
+  if (old){
+    // Grünspan, Beulen und Rost am alten Kessel
+    ctx.fillStyle = 'rgba(120,190,150,.35)'; for (const [dx, dy, rr2] of [[-50, -30, 12], [-36, 30, 9], [44, -8, 14], [58, 34, 8], [-60, 6, 7], [20, -46, 9]]){ ctx.beginPath(); ctx.arc(kx + dx, ky + dy, rr2, 0, Math.PI*2); ctx.fill(); }
+    ctx.fillStyle = 'rgba(0,0,0,.22)'; for (const [dx, dy] of [[34, 22], [-22, -42], [-56, 40]]){ ctx.beginPath(); ctx.ellipse(kx + dx, ky + dy, 8, 5, .4, 0, Math.PI*2); ctx.fill(); }
+    ctx.fillStyle = 'rgba(140,70,30,.55)'; ctx.fillRect(kx - r - 3, ky + 46, 22, 4); ctx.fillRect(kx + r - 30, ky - 18, 26, 4);
+  }
   // Schauglas mit Würze
   ctx.fillStyle = '#3a2416'; ctx.beginPath(); ctx.arc(kx, ky + 16, 25, 0, Math.PI*2); ctx.fill();
   ctx.save(); ctx.beginPath(); ctx.arc(kx, ky + 16, 20, 0, Math.PI*2); ctx.clip();
@@ -3049,8 +3074,13 @@ function drawKettle(g){
   ctx.fillStyle = L3.liquid; ctx.fillRect(kx - 22, lv, 44, 40);
   ctx.fillStyle = 'rgba(255,255,255,.35)'; for (let k=0;k<4;k++){ ctx.beginPath(); ctx.arc(kx - 10 + k*7, lv + 8 + ((tTotal*20 + k*9) % 20), 1.6, 0, Math.PI*2); ctx.fill(); }
   ctx.restore();
-  ctx.fillStyle = 'rgba(255,255,255,.3)'; ctx.fillRect(kx - r*.52, ky - 40, 6, 80);
-  ctx.fillStyle = C.cream; ctx.font = '12px "Alfa Slab One", Georgia, serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillText('SUDKESSEL', kx, ky - 34);
+  ctx.fillStyle = old ? 'rgba(255,255,255,.1)' : 'rgba(255,255,255,.3)'; ctx.fillRect(kx - r*.52, ky - 40, 6, 80);
+  ctx.fillStyle = C.cream; ctx.font = '12px "Alfa Slab One", Georgia, serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillText(old ? 'ALTER KESSEL' : 'SUDKESSEL', kx, ky - 34);
+  if (leak){
+    // undichter Kessel: es tropft aus der Naht, unten eine Pfütze
+    ctx.fillStyle = 'rgba(200,150,60,.45)'; ctx.beginPath(); ctx.ellipse(kx + 40, ky + 92, 26, 5, 0, 0, Math.PI*2); ctx.fill();
+    for (let i=0;i<3;i++){ const ph = (tTotal*1.2 + i/3) % 1; ctx.fillStyle = `rgba(220,170,70,${.9 - ph*.5})`; ctx.beginPath(); ctx.ellipse(kx + 34 + i*8, ky + 56 + ph*34, 2.2, 3.4, 0, 0, Math.PI*2); ctx.fill(); }
+  }
   // Dampf
   for (const p of L3.puffs){ ctx.fillStyle = `rgba(255,255,255,${Math.max(0, p.life/1.6)*.35})`; ctx.beginPath(); ctx.arc(p.x, p.y, p.r, 0, Math.PI*2); ctx.fill(); }
   // Überkochen: Schaum quillt über den Rand
@@ -3130,6 +3160,7 @@ function render3(){
   const sx = shake && state === 'play' ? (Math.random()-.5)*8*shake/.25 : 0;
   ctx.setTransform(dpr*S,0,0,dpr*S, dpr*(OX + sx*S), 0);
   const g = geo3();
+  if (ECO.ownSud && !L3.trial) drawOldRoom(g);
   drawBoard(g, state === 'intro' && (introKind === 'l3brew' || introKind === 'l3rast'));
   drawKettle(g);
   if (curStep() && curStep().rast){
@@ -3190,12 +3221,13 @@ function drawIntro3(g){
     finger(r.x + r.w/2, r.y + 34);
   }
 }
-$('againBtn').onclick = () => stage === 3 ? start3() : stage === 2 ? start2() : start();
-$('menuBtn').onclick = toTitle;
-$('pauseMenuBtn').onclick = quitToTitle;
+$('againBtn').onclick = () => {
+  if (overStock){ overStock = false; toTitle(); openCareer(); renderStore(); $('career').hidden = true; $('store').hidden = false; $('storeClose').focus(); return; }
+  stage === 3 ? start3() : stage === 2 ? start2() : start();
+};
+$('menuBtn').onclick = () => { overStock = false; toTitle(); };
 $('endShiftBtn').onclick = () => { if (state === 'pause') gameOver(true); };
-$('toMapBtn').onclick = () => { toTitle(); openCareer(); };
-new MutationObserver(() => { $('toMapBtn').hidden = ECO.story < 3; }).observe($('over'), { attributes: true, attributeFilter: ['hidden'] });
+$('toMapBtn').onclick = () => { overStock = false; toTitle(); openCareer(); };
 // Impressum und Datenschutz
 let legalFrom = null;
 function openLegal(which, from){ legalFrom = from; $(from).hidden = true; $('legalBox').hidden = false;
