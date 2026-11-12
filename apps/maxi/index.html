@@ -105,6 +105,8 @@ html,body{height:100%;margin:0;background:var(--night);color:var(--cream);overfl
 .hslist li::before{content:counter(r) ".";font-weight:700;color:var(--hop)}
 .hslist li:nth-child(-n+3)::before{color:var(--crate)}
 .hslist li.me{background:var(--gold)}
+.hslist.local li{grid-template-columns:1fr auto}
+.hslist.local li::before{display:none}
 .shopcard{max-height:calc(100% - 16px);overflow-y:auto}
 .taler{font:700 18px var(--f-ui);margin:0 0 10px}
 .shoplist{list-style:none;margin:0 0 12px;padding:0;display:grid;gap:8px;text-align:left}
@@ -255,7 +257,7 @@ html,body{height:100%;margin:0;background:var(--night);color:var(--cream);overfl
   </div>
   <div class="startbox">
     <button class="btn" id="startBtn" type="button">Start</button>
-    <button class="btn ghost" id="boardBtn" type="button" data-board hidden>Bestenliste</button>
+    <button class="btn ghost" id="boardBtn" type="button" data-board>Bestenliste</button>
     <nav class="legal" aria-label="Rechtliches"><button type="button" data-legal="imp">Impressum</button><button type="button" data-legal="priv">Datenschutz</button></nav>
   </div>
 </div>
@@ -376,7 +378,7 @@ html,body{height:100%;margin:0;background:var(--night);color:var(--cream);overfl
     <p class="hsnote" id="hsInfo" hidden></p>
     <button class="btn" id="againBtn" type="button">Nochmal</button>
     <button class="btn sec" id="menuBtn" type="button">Zum Titel</button>
-    <button class="btn sec" id="boardBtn2" type="button" data-board hidden>Bestenliste</button>
+    <button class="btn sec" id="boardBtn2" type="button" data-board>Bestenliste</button>
     <nav class="legal dark" aria-label="Rechtliches"><button type="button" data-legal="imp">Impressum</button><button type="button" data-legal="priv">Datenschutz</button></nav>
   </div>
 </div>
@@ -1664,7 +1666,7 @@ function gameOver(){
     $('finalInfo').textContent = `${crates} ${crates === 1 ? 'volle Kiste' : 'volle Kisten'} abgegeben · Rekord ${best}`;
   }
   $('talerInfo').textContent = shiftText(endShift());
-  $('boardBtn2').hidden = !HS; $('intro').hidden = true;
+  $('intro').hidden = true;
   $('over').hidden = false; try { wake?.release(); } catch(e) {}
   hsAfterGame();
 }
@@ -2924,7 +2926,7 @@ async function hsSubmit(name, pts, cr){
   return +(await r.json());
 }
 function renderBoard(highlightName, highlightScore){
-  const ol = $('hsList'); ol.textContent = '';
+  const ol = $('hsList'); ol.textContent = ''; ol.classList.remove('local');
   let marked = false;
   for (const e of hsTop){
     const li = document.createElement('li'), n = document.createElement('span'), s = document.createElement('span');
@@ -2938,9 +2940,20 @@ function renderBoard(highlightName, highlightScore){
 async function openBoard(from, hlName, hlScore){
   boardFrom = from; $(from).hidden = true; $('board').hidden = false;
   $('hsList').textContent = ''; $('hsMsg').textContent = 'Bestenliste wird geladen …';
+  if (!HS){ renderLocal('Die Online-Bestenliste gibt es auf maxi.jemphub.com.'); $('boardClose').focus(); return; }
   try { await hsLoad(); renderBoard(hlName, hlScore); }
-  catch(e) { $('hsMsg').textContent = 'Die Bestenliste ist gerade nicht erreichbar. Versuch es später noch einmal.'; }
+  catch(e) { renderLocal('Die Online-Bestenliste ist gerade nicht erreichbar. Hier deine Rekorde auf diesem Gerät.'); }
   $('boardClose').focus();
+}
+function renderLocal(msg){
+  // ohne Online-Bestenliste: eigene Rekorde je Level
+  const ol = $('hsList'); ol.textContent = ''; ol.classList.add('local');
+  [['Vor der Brauerei', best], ['Am Fließband', best2], ['Im Sudhaus', best3]].forEach(([nm, v], i) => {
+    const li = document.createElement('li'), n = document.createElement('span'), s = document.createElement('span'), sub = document.createElement('small');
+    n.className = 'n'; n.textContent = 'Dein Rekord'; sub.textContent = `Level ${i + 1} · ${nm}`; n.append(sub);
+    s.className = 's'; s.textContent = v ? v.toLocaleString('de-DE') : '–'; li.append(n, s); ol.append(li);
+  });
+  $('hsMsg').textContent = msg;
 }
 function closeBoard(){ $('board').hidden = true; if (boardFrom) $(boardFrom).hidden = false; boardFrom = null; }
 async function hsAfterGame(){
