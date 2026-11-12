@@ -10,13 +10,13 @@ Handyspiel im Hochformat für die Freetown Brewery: Maximilian Weichl steht vor 
 
 ## Beförderungen
 
-Maxi beginnt als **Brauereilakai**. Erreicht eine Runde 3000 Punkte, wird er **Mitarbeiter** (Level 2 frei, Angebot für den alten Sudkessel), bei 12 000 Punkten **Produktionsmitarbeiter**, bei 25 000 **Vorarbeiter**; jede Stufe erhöht den Lohn. Die Stufe merkt sich das Gerät (`localStorage`), Maxi trägt pro Beförderung einen goldenen Stern auf der Jacke. Braumeister wird er über sein eigenes Sudhaus (siehe Spielbogen).
+Maxi beginnt als **Brauereilakai**. Erreicht eine Runde 3000 Punkte, wird er **Mitarbeiter** (Förderband frei, Angebot für den alten Sudkessel), bei 12 000 Punkten **Produktionsmitarbeiter**, bei 25 000 **Vorarbeiter**; jede Stufe erhöht den Lohn. Die Stufe merkt sich das Gerät (`localStorage`), Maxi trägt pro Beförderung einen goldenen Stern auf der Jacke. Braumeister wird er über sein eigenes Sudhaus (siehe Spielbogen).
 
-## Level 2: Am Fließband
+## Förderband (Abfüllhalle)
 
-In der Brauerei kommen Flaschen von der Verschließmaschine aufs Hauptband. Maxi stellt am Hebel die Weiche (Tipp unten auf ◀ ▼ ▶ oder Pfeiltasten): Freetown nach links, Krone nach unten, ab der 10. sortierten Flasche auch Radler nach rechts. Jede Kiste am Bandende fasst 10 Flaschen und füllt sich sichtbar; eine volle Kiste blinkt und wird per Tipp gegen eine leere getauscht (50 × Multiplikator Bonus), eine Flasche in eine volle Kiste ist ein Fehler. Ab der 25. sortierten Flasche kommen kaputte Flaschen mit Sprung im Glas, die man antippt, damit sie im Ausschuss landen. Ab der 40. liegen lose Kronkorken auf dem Band, die man wegschnippt; erreicht einer die Weiche, verklemmt sie kurz. Falsches Band, kaputte Flasche in der Kiste, volle Kiste oder verklemmte Weiche zählen als Fehler, fünf Fehler beenden das Spiel. Punkte: 20 × Tempostufe × Multiplikator pro richtig sortierter Flasche, das Band wird stetig schneller. Eigener lokaler Rekord; die Bestenliste gilt bisher nur für Level 1.
+In der Brauerei kommen Flaschen von der Verschließmaschine aufs Hauptband. Maxi stellt am Hebel die Weiche (Tipp unten auf ◀ ▼ ▶ oder Pfeiltasten): Freetown nach links, Krone nach unten, ab der 10. sortierten Flasche auch Radler nach rechts. Jede Kiste am Bandende fasst 10 Flaschen und füllt sich sichtbar; eine volle Kiste blinkt und wird per Tipp gegen eine leere getauscht (50 × Multiplikator Bonus), eine Flasche in eine volle Kiste ist ein Fehler. Ab der 25. sortierten Flasche kommen kaputte Flaschen mit Sprung im Glas, die man antippt, damit sie im Ausschuss landen. Ab der 40. liegen lose Kronkorken auf dem Band, die man wegschnippt; erreicht einer die Weiche, verklemmt sie kurz. Falsches Band, kaputte Flasche in der Kiste, volle Kiste oder verklemmte Weiche zählen als Fehler, fünf Fehler beenden das Spiel. Punkte: 20 × Tempostufe × Multiplikator pro richtig sortierter Flasche, das Band wird stetig schneller. Eigener lokaler Rekord; die Bestenliste führt alle Spielorte.
 
-## Level 3: Im Sudhaus
+## Sudhaus
 
 Maxis eigenes Sudhaus, nach dem Kauf des alten Sudkessels. Jeder Sud ist eine Biersorte mit eigenem Rezept; anfangs nur Märzen, mit Läuterbottich Pils und Zwickl, mit Gärkeller Festbier und Dunkles. Die Tafel zeigt, was der Sudkessel im aktuellen Schritt braucht (Einmaischen: Wasser und Malz, Würzekochen: Hopfen, Anstellen: Hefe). Ab dem 2. Sud folgt nach dem Einmaischen die Maischrast: Finger auf dem Bildschirm halten heizt, loslassen kühlt; die Temperatur muss im grünen Bereich bleiben, bis die Rastzeit voll ist (zu heiß ist ein Fehler). Ein Tipp auf die Zutat unten (oder Taste 1–5) lässt Maxi sie in den Kessel werfen. Falsche oder zu viele Zutaten und abgelaufene Zeit zählen als Fehler, fünf Fehler beenden das Spiel. Jeder fertige Sud bringt einen Bonus, die Mengen steigen und die Zeit wird knapper. Ab dem 3. Sud kann der Kessel beim Würzekochen überkochen (schnell zweimal mit dem Finger im Kreis um den Kessel rühren), für Dunkles braucht es Karamellmalz. Eigener lokaler Rekord.
 
@@ -57,12 +57,12 @@ Einmalig auf dem Server:
 
 ## Spielbogen
 
-**Einstieg der Reihe nach:** „Start“ führt bis zum Angebot immer zum nächsten Schritt: Bar → bei der Beförderung zum Mitarbeiter direkt ans Förderband → nach 30 sortierten Flaschen ruft der Braumeister (Bilderszene) → Schnuppertag im schönen Sudhaus des Braumeisters (2 Sude, kein Fehlerlimit, keine Wirtschaft) → Bilderszene im alten Sudhaus mit dem Angebot für den alten Sudkessel → erst dann ist die Karte offen (`ftb-eco` → `story` 0 bis 3). Wer schon weiter war, startet direkt mit der Karte.
+**Einstieg der Reihe nach:** „Start“ führt bis zum Angebot immer zum nächsten Schritt: Braustüberl → bei der Beförderung zum Mitarbeiter direkt ans Förderband → nach 30 sortierten Flaschen ruft der Braumeister (Bilderszene) → Schnuppertag im schönen Sudhaus des Braumeisters (2 Sude, kein Fehlerlimit, keine Wirtschaft) → Bilderszene im alten Sudhaus mit dem Angebot für den alten Sudkessel → erst dann ist die Karte offen (`ftb-eco` → `story` 0 bis 3). Wer schon weiter war, startet direkt mit der Karte.
 
-1. **Brauereilakai (Level 1, Bar):** Maxi fängt Flaschen und bekommt Lohn je voller Kiste (6 Taler, +2 je Stufe).
-2. **Mitarbeiter (ab 3.000 Punkten, Level 2, Förderband):** Lohn je voller Kiste am Band (8 Taler, +2 je weiterer Stufe). Der Braumeister bietet Maxi den alten Sudkessel für 250 Taler an; Maxi spart seinen Lohn.
-3. **Eigenes Sudhaus (Level 3):** Gekauft wird direkt am alten Sudhaus auf der Karte (verbretterte Fenster, „Zu verkaufen“). Danach braut Maxi selbst: Malz und Hopfen kaufen („Lager & Einkauf“), brauen, die Wirte kaufen am Ende jedes Tages bis zu 3 Fässer (+1 mit Läuterbottich, +1 mit Gärkeller, +1 je Kesselstufe). Preis je Fass nach Sorte (Märzen 26 bis Festbier 36) und Qualität.
-4. **Anfangs schlecht:** Der alte Kessel ist undicht, Bier hat höchstens 2 Sterne, nur Märzen. Betriebskosten 10 Taler pro Tag (+2 je Ausbau). Die Einnahmen reichen anfangs nicht, Maxi arbeitet weiter an Bar und Band.
+1. **Brauereilakai (Braustüberl):** Maxi fängt Flaschen und bekommt Lohn je voller Kiste (6 Taler, +2 je Stufe).
+2. **Mitarbeiter (ab 3.000 Punkten, Förderband):** Lohn je voller Kiste am Band (8 Taler, +2 je weiterer Stufe). Der Braumeister bietet Maxi den alten Sudkessel für 250 Taler an; Maxi spart seinen Lohn.
+3. **Eigenes Sudhaus:** Gekauft wird direkt am alten Sudhaus auf der Karte (verbretterte Fenster, „Zu verkaufen“). Danach braut Maxi selbst: Malz und Hopfen kaufen („Lager & Einkauf“), brauen, die Wirte kaufen am Ende jedes Tages bis zu 3 Fässer (+1 mit Läuterbottich, +1 mit Gärkeller, +1 je Kesselstufe). Preis je Fass nach Sorte (Märzen 26 bis Festbier 36) und Qualität.
+4. **Anfangs schlecht:** Der alte Kessel ist undicht, Bier hat höchstens 2 Sterne, nur Märzen. Betriebskosten 10 Taler pro Tag (+2 je Ausbau). Die Einnahmen reichen anfangs nicht, Maxi arbeitet weiter im Braustüberl und am Band.
 5. **Reparieren und erweitern** (Knopf „Reparieren“/„Ausbau“ am Sudhaus): Kessel abdichten (bis 3 Sterne), Neues Thermometer (Rast leichter, bis 4 Sterne, Premium-Zutaten lohnen sich), Kupfer aufpolieren (bis 5 Sterne, Kuppel glänzt), Läuterbottich (Pils, Zwickl), Gärkeller (Festbier, Dunkles mit Karamellmalz), Größerer Sudkessel, Routinierter Brauer.
 6. **Braumeister:** Sind Abdichtung, Thermometer, Kupfer, Läuterbottich und Gärkeller fertig, wird Maxi Braumeister.
 
@@ -70,12 +70,12 @@ Die Stufen Produktionsmitarbeiter (12.000) und Vorarbeiter (25.000) erhöhen den
 
 ## Brauerei-Laden und Ausbauten
 
-Allgemeine Verbesserungen im Brauerei-Laden: Ersatzbier (ein Fehler mehr), Eingespielt (höherer Startmultiplikator). An der Bar: Breite Kiste, Stammgäste (+2 Taler Lohn je Kiste). Am Förderband: Ruhiges Band, Akkordprämie (+2 Taler Lohn je Kiste). Alles wird lokal gespeichert (`ftb-taler`, `ftb-upg`, `ftb-eco`).
+Allgemeine Verbesserungen im Brauerei-Laden: Ersatzbier (ein Fehler mehr), Eingespielt (höherer Startmultiplikator). Im Braustüberl: Breite Kiste, Stammgäste (+2 Taler Lohn je Kiste). Am Förderband: Ruhiges Band, Akkordprämie (+2 Taler Lohn je Kiste). Alles wird lokal gespeichert (`ftb-taler`, `ftb-upg`, `ftb-eco`).
 
-## Eilaufträge (Level 3)
+## Eilaufträge (Sudhaus)
 
 Ab dem 4. Sud einer Runde bietet der Wirt manchmal einen Eilauftrag an, etwa „2 × Märzen in 45 Sekunden“. Annehmen bringt Bonuspunkte, verpasst kostet es einen Fehler.
 
 ## Menü und Karte
 
-„Start“ führt Neulinge direkt in Level 1; danach zeigt „Maxis Laufbahn“ oben die Stufe mit Fortschrittsbalken (antippen klappt alle Stufen und Rekorde auf), die Taler bzw. das Sparziel und darunter die Karte des Brauereigeländes. Maxi geht zu einem Gebäude, unten erscheinen Infos und Knöpfe. In der Pause beendet „Schicht beenden“ die Runde mit Bilanz.
+„Start“ führt Neulinge direkt ins Braustüberl; danach zeigt „Maxis Laufbahn“ oben die Stufe mit Fortschrittsbalken (antippen klappt alle Stufen und Rekorde auf), die Taler bzw. das Sparziel und darunter die Karte des Brauereigeländes. Maxi geht zu einem Gebäude, unten erscheinen Infos und Knöpfe. In der Pause beendet „Schicht beenden“ die Runde mit Bilanz.
