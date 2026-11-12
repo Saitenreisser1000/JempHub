@@ -139,7 +139,9 @@ test('Neue Gegner bewegen sich und bleiben im Level', () => {
       // Frosch wartet sonst zufällig lange vor dem ersten Sprung: sofort losspringen lassen, damit der Test nicht vom Zufall abhängt
       if (e.type === 'frosch') e.timer = 0;
       let moved = 0;
-      for (let i = 0; i < 120; i++) { run(1); moved = Math.max(moved, Math.abs(e.x - x0) + Math.abs(e.y - y0)); }
+      // Sam schwebt fest über dem Gegner: fiele er z. B. ins Wasser, würde der Neustart alle Gegner auf ihren Startplatz zurücksetzen
+      const px = dz.P.x, py = dz.P.y;
+      for (let i = 0; i < 120; i++) { dz.P.x = px; dz.P.y = py; dz.P.vy = 0; run(1); moved = Math.max(moved, Math.abs(e.x - x0) + Math.abs(e.y - y0)); }
       assert.ok(Number.isFinite(e.x) && Number.isFinite(e.y), `${e.type} hat gültige Position`);
       assert.ok(e.y < dz.L.h * 16, `${e.type} ist nicht aus dem Level gefallen`);
       assert.ok(moved > 1 || !e.alive, `${e.type} bewegt sich`);
