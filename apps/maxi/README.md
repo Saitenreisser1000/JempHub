@@ -62,3 +62,8 @@ Am Ende jeder Runde (auch beim Abbruch über „Zum Titel“) gibt es 1 Brauerei
 ## Eilaufträge (Level 3)
 
 Ab dem 4. Sud bietet der Wirt manchmal einen Eilauftrag an, etwa „2 × Pils in 45 Sekunden“. Während der Entscheidung steht die Zeit. Annehmen: Die nächsten Sude sind diese Sorte, eine Uhr läuft; geschafft gibt es 250 + 60 × Sude Punkte mal Multiplikator, verpasst kostet es einen Fehler. Ablehnen: weiter wie bisher.
+
+## Menü und Karte
+
+Das Hauptmenü zeigt nur Start und Bestenliste. Start öffnet „Maxis Laufbahn“: oben die Beförderungsstufen mit dem nächsten Ziel und den Rekorden, darunter eine Karte des Brauereigeländes. Tippt man auf ein Gebäude (Bar = Level 1, Abfüllhalle = Level 2, Sudhaus = Level 3, Brauerei-Laden = Shop), geht Maxi über die Wege dorthin; dann startet man das Level über den Knopf oder durch erneutes Tippen. Gesperrte Gebäude sind grau mit Schloss und nennen die nötige Stufe.
+
