@@ -418,7 +418,7 @@ html,body{height:100%;margin:0;background:var(--night);color:var(--cream);overfl
     <h2>Pause</h2>
     <button class="btn" id="resumeBtn" type="button">Weiter</button>
     <button class="btn sec" id="endShiftBtn" type="button">Schicht beenden</button>
-    <button class="btn sec" id="pauseMenuBtn" type="button">Zum Titel</button>
+    <button class="btn sec" id="pauseMenuBtn" type="button">Karte</button>
     <p class="hsnote">„Schicht beenden“ zeigt die Bilanz mit dem verdienten Geld. Rekord und Stufe bleiben erhalten.</p>
   </div>
 </div>
@@ -437,7 +437,7 @@ html,body{height:100%;margin:0;background:var(--night);color:var(--cream);overfl
     </div>
     <p class="hsnote" id="hsInfo" hidden></p>
     <button class="btn" id="againBtn" type="button">Nochmal</button>
-    <button class="btn sec" id="toMapBtn" type="button">Zur Brauerei</button>
+    <button class="btn sec" id="toMapBtn" type="button">Karte</button>
     <button class="btn sec" id="menuBtn" type="button">Hauptmenü</button>
     <button class="btn sec" id="boardBtn2" type="button" data-board>Bestenliste</button>
     <nav class="legal dark" aria-label="Rechtliches"><button type="button" data-legal="imp">Impressum</button><button type="button" data-legal="priv">Datenschutz</button></nav>
@@ -1713,9 +1713,9 @@ function render(){
   if (stage === 2 && state !== 'menu'){ render2(); return; }
   ctx.setTransform(1,0,0,1,0,0);
   ctx.drawImage(bg, 0, 0);
-  const sx = shake ? (Math.random()-.5)*8*shake/.25 : 0;
+  const sx = shake && state === 'play' ? (Math.random()-.5)*8*shake/.25 : 0;
   ctx.setTransform(dpr*S,0,0,dpr*S, dpr*(OX + sx*S), 0);
-  if (state === 'menu' && !$('career').hidden){ renderMap(); return; }
+  if (state === 'menu' && !$('career').hidden){ shake = 0; ctx.setTransform(dpr*S,0,0,dpr*S, dpr*OX, 0); renderMap(); return; } // Karte nie wackeln lassen
   if (state === 'menu'){
     for (const v of visitors) drawVisitor(v);
     // Titelbild: Maxi groß im Vordergrund, Flaschen fliegen um ihn herum
@@ -1806,7 +1806,7 @@ function gameOver(voluntary){
   hsAfterGame();
 }
 function togglePause(){
-  if (state === 'play'){ state = 'pause'; $('paused').hidden = false; }
+  if (state === 'play'){ state = 'pause'; $('pauseMenuBtn').textContent = ECO.story >= 3 ? 'Karte' : 'Hauptmenü'; $('paused').hidden = false; }
   else if (state === 'pause'){ state = 'play'; $('paused').hidden = true; }
 }
 /* ================= Level 2: Am Fließband =================
@@ -2101,7 +2101,7 @@ function drawSwitchBar(g, highlight){
 function render2(){
   ctx.setTransform(1,0,0,1,0,0);
   ctx.drawImage(bg2, 0, 0);
-  const sx = shake ? (Math.random()-.5)*8*shake/.25 : 0;
+  const sx = shake && state === 'play' ? (Math.random()-.5)*8*shake/.25 : 0;
   ctx.setTransform(dpr*S,0,0,dpr*S, dpr*(OX + sx*S), 0);
   const g = geo2(), bw = 44, off = L2.belt;
   // Bänder mit Rahmen
@@ -2712,7 +2712,7 @@ function quitToTitle(){
   try { localStorage.setItem(key, [0, best, best2, best3][stage]); } catch(e) {}
   try { wake?.release(); } catch(e) {}
   endShift();
-  toTitle();
+  toTitle(); if (ECO.story >= 3) openCareer();
 }
 function showRecords(){
   // Rekorde je Level; die Steuerung erklärt jedes Level beim ersten Spielen selbst
@@ -3127,7 +3127,7 @@ function drawBins(g, hlIng){
 function render3(){
   ctx.setTransform(1,0,0,1,0,0);
   ctx.drawImage(bg3, 0, 0);
-  const sx = shake ? (Math.random()-.5)*8*shake/.25 : 0;
+  const sx = shake && state === 'play' ? (Math.random()-.5)*8*shake/.25 : 0;
   ctx.setTransform(dpr*S,0,0,dpr*S, dpr*(OX + sx*S), 0);
   const g = geo3();
   drawBoard(g, state === 'intro' && (introKind === 'l3brew' || introKind === 'l3rast'));
