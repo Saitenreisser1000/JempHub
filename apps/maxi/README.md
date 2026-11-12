@@ -73,3 +73,9 @@ Die drei Level hängen als Warenkette zusammen. Das Sudhaus (Level 3) verbraucht
 
 Malz und Hopfen kauft man unter „Lager & Einkauf“ im Laufbahn-Screen; die Preise ändern sich jeden Tag. Jede gespielte Runde ist eine Schicht, drei Schichten sind ein Tag. Danach zeigt die Abrechnung Verkäufe, Produktion, Einnahmen, Einkauf, 10 Taler Strom und Miete und den Gewinn mit Verlauf der letzten 7 Tage. Gespeichert lokal unter `ftb-eco`.
 
+## Bierpreis und Ausbauten
+
+An der Bar stellt man den Bierpreis ein (8 bis 18 Taler je Kiste, Start 12). Billiges Bier bringt mehr Andrang: In Level 1 fliegen deutlich mehr Flaschen, dafür bringt jede Kiste weniger. Teures Bier macht die Bar ruhiger.
+
+Ausbauten kauft man direkt an den Gebäuden auf der Karte (Knopf „Ausbauen“), je zwei mit drei Stufen: Bar (Breite Kiste, Mehr Tische: +2 Taler je Kiste), Abfüllhalle (Ruhiges Band, Besserer Füller: +1 Kiste je Fass), Sudhaus (Routinierter Brauer, Größerer Sudkessel: +½ Fass je Sud). Der Brauerei-Laden führt die allgemeinen Verbesserungen (Ersatzbier, Eingespielt). Ausbauten sieht man auf der Karte: Sterne am Namensschild, zusätzliche Tische, Kupfer- und Edelstahltanks.
+
