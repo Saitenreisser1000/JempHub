@@ -512,7 +512,7 @@ function brewNeed(r){ const m = r.mash || {}; return { malz: (m.malz || 0) + (m.
 const usePre = () => ECO.recipe === 'pre' && qCap() >= 4;
 function canBrew(need){ const pre = usePre(); return ECO[pre ? 'malzP' : 'malz'] >= need.malz && ECO[pre ? 'hopfenP' : 'hopfen'] >= need.hopfen; }
 function chargeBrew(need){
-  if (!ECO.ownSud) { L3.charged = { need, pre: false }; return true; }
+  if (!ECO.ownSud || L3.trial) { L3.charged = { need, pre: false }; return true; }
   if (!canBrew(need)) return false;
   const pre = usePre(); ECO[pre ? 'malzP' : 'malz'] -= need.malz; ECO[pre ? 'hopfenP' : 'hopfen'] -= need.hopfen;
   L3.charged = { need, pre }; saveEco(); return true;
@@ -522,7 +522,7 @@ function refundBrew(){
   ECO[c.pre ? 'malzP' : 'malz'] += c.need.malz; ECO[c.pre ? 'hopfenP' : 'hopfen'] += c.need.hopfen; saveEco();
 }
 function ecoBrew(perf){
-  const c = L3.charged; L3.charged = null; if (!c) return 0;
+  const c = L3.charged; L3.charged = null; if (!c || L3.trial || !ECO.ownSud) return 0;
   const pre = c.pre, add = 1 + .5*(U.kettle || 0), q = Math.min(qCap(), pre ? Math.min(5, 3.5 + perf*1.5) : Math.min(3.4, 2 + perf*1.4));
   ECO.fassV = ((ECO.fassV || 26)*Math.max(0, ECO.fass) + (L3.beer ? L3.beer.v : 26)*add) / (Math.max(0, ECO.fass) + add);
   ECO.fassQ = mixQ(ECO.fass, ECO.fassQ, add, q); ECO.fass += add; ECO.round.q = q; ECO.round.fass = (ECO.round.fass || 0) + add; updateEarn(); ECO.today.brewed++; ECO.round.brewed++; saveEco(); return q;
@@ -733,11 +733,11 @@ function updateHearts(dt, crateTop){
     if (h.y > groundY - 10){ h.fade -= dt*2; if (h.fade <= 0) hearts.splice(i,1); }
   }
 }
-cv.addEventListener('pointerdown', e => { if (stage === 3 && state === 'play'){ tap3(e); return; } if (stage === 3 && state !== 'intro') return; if (stage === 2 && state === 'play'){ tap2(e); return; } if (stage === 2 && state !== 'intro') return; if (state === 'menu'){ if (!$('career').hidden) mapPointer(e); return; } if (startRub(e)) return; if (state === 'play' && nearZone(toLogical(e.clientX), e.clientY / S)) { startForklift(); return; } if (state === 'intro'){ if (introT > (INTRO_TAP[introKind] ?? 1.2)) endIntro(); return; } if (tryFlick(e.clientX, e.clientY)) { flickIds.add(e.pointerId); return; } touchX = toLogical(e.clientX); });
+cv.addEventListener('pointerdown', e => { if (state === 'scene'){ sceneTap(); return; } if (stage === 3 && state === 'play'){ tap3(e); return; } if (stage === 3 && state !== 'intro') return; if (stage === 2 && state === 'play'){ tap2(e); return; } if (stage === 2 && state !== 'intro') return; if (state === 'menu'){ if (!$('career').hidden) mapPointer(e); return; } if (startRub(e)) return; if (state === 'play' && nearZone(toLogical(e.clientX), e.clientY / S)) { startForklift(); return; } if (state === 'intro'){ if (introT > (INTRO_TAP[introKind] ?? 1.2)) endIntro(); return; } if (tryFlick(e.clientX, e.clientY)) { flickIds.add(e.pointerId); return; } touchX = toLogical(e.clientX); });
 cv.addEventListener('pointermove', e => { if (stage === 3){ if (state === 'play') stirMove(e); return; } if (stage === 2){ if (state === 'play' && down2.has(e.pointerId)) move2(e); return; } if (RUB.has(e.pointerId)) { moveRub(e); return; } if (flickIds.has(e.pointerId)) { tryFlick(e.clientX, e.clientY); return; } if (touchX !== null || e.pointerType === 'mouse') touchX = toLogical(e.clientX); });
 cv.addEventListener('pointerup', e => { down2.delete(e.pointerId); L3.heat = false; if (L3.stirId === e.pointerId){ L3.stirId = null; L3.paddle = null; } if (RUB.delete(e.pointerId)) return; if (flickIds.delete(e.pointerId)) return; touchX = null; });
 cv.addEventListener('pointercancel', e => { L3.heat = false; L3.stirId = null; L3.paddle = null; RUB.delete(e.pointerId); flickIds.delete(e.pointerId); touchX = null; });
-addEventListener('keydown', e => { keys[e.key] = true; if (stage === 3 && state === 'play'){ const n = +e.key; if (n >= 1 && n <= bins3().length) throwIng(n - 1); if (e.key === ' ' && L3.boilOn) stir3(); } if (stage === 2 && state === 'play'){ const k = { ArrowLeft: 0, ArrowDown: 1, ArrowRight: 2 }[e.key]; if (k !== undefined) setSwitch(k); } if (e.key === 'Enter' || e.key === ' ') startForklift(); if (e.key === 'p' || e.key === 'Escape') togglePause(); });
+addEventListener('keydown', e => { keys[e.key] = true; if (state === 'scene' && (e.key === 'Enter' || e.key === ' ')){ sceneTap(); return; } if (stage === 3 && state === 'play'){ const n = +e.key; if (n >= 1 && n <= bins3().length) throwIng(n - 1); if (e.key === ' ' && L3.boilOn) stir3(); } if (stage === 2 && state === 'play'){ const k = { ArrowLeft: 0, ArrowDown: 1, ArrowRight: 2 }[e.key]; if (k !== undefined) setSwitch(k); } if (e.key === 'Enter' || e.key === ' ') startForklift(); if (e.key === 'p' || e.key === 'Escape') togglePause(); });
 addEventListener('keyup', e => { keys[e.key] = false; });
 
 /* ---------- audio ---------- */
@@ -1611,7 +1611,7 @@ function breakStreak(){
 }
 function updateHud(){
   $('score').textContent = score; $('crates').textContent = crates;
-  $('lives').textContent = '🍺'.repeat(Math.max(0, MAXMISS-missed)) + '💥'.repeat(Math.min(MAXMISS, missed));
+  $('lives').textContent = MAXMISS > 20 ? `${Math.min(2, crates)} von 2 Suden` : '🍺'.repeat(Math.max(0, MAXMISS-missed)) + '💥'.repeat(Math.min(MAXMISS, missed));
   updateEarn();
 }
 function updateEarn(){
@@ -1701,6 +1701,7 @@ function update(dt){
 }
 
 function render(){
+  if (state === 'scene' && scene){ ctx.setTransform(1,0,0,1,0,0); ctx.fillStyle = '#1e2430'; ctx.fillRect(0, 0, cv.width, cv.height); renderScene(); return; }
   if (stage === 3 && state !== 'menu'){ render3(); return; }
   if (stage === 2 && state !== 'menu'){ render2(); return; }
   ctx.setTransform(1,0,0,1,0,0);
@@ -1890,6 +1891,7 @@ function deliver2(it, bin, g){
   if (it.t !== L2BIN[bin]) return fail('Falsches Band!');
   if (L2.fill[bin] >= L2CAP) return fail('Kiste voll!');
   L2.sorted++; crates = L2.sorted; L2.fill[bin]++;
+  if (ECO.story === 1 && L2.sorted >= 30){ setTimeout(() => { if (stage === 2 && state === 'play' && ECO.story === 1) storyInvite(); }, 600); }
   const pts = 20 * (1 + Math.floor(L2.sorted/15)) * mult; score += pts;
   beep(1700 + Math.random()*300, .07, 'triangle', .1); setMood('happy', .45);
   floatText(bx, by - 40, `+${pts}`, C.gold); cleanCatch(); updateHud();
@@ -2561,7 +2563,7 @@ function promote(){
   rank++; saveRank(); state = 'promo'; touchX = null; down2.clear(); setMood('proud', 99);
   const r = RANKS[rank];
   $('promoRank').textContent = r.t;
-  $('promoText').textContent = rank === 1 ? 'Maxi hat sich bewährt und darf drinnen ans Förderband: Level 2 ist freigeschaltet. Und der Braumeister hat ein Angebot für ihn …'
+  $('promoText').textContent = rank === 1 ? 'Maxi hat sich bewährt und darf drinnen ans Förderband: Level 2 ist freigeschaltet.'
     : rank === RANKS.length - 1 ? 'Maxi ist Vorarbeiter: der beste Lohn, den die Freetown Brewery zahlt.'
     : 'Maxi ist Produktionsmitarbeiter: mehr Lohn an der Bar und am Band.';
   $('promoNext').textContent = rank < RANKS.length - 1 ? `Nächste Stufe: ${RANKS[rank + 1].t} ab ${RANKS[rank + 1].pts} Punkten` : '';
@@ -2569,13 +2571,138 @@ function promote(){
   $('promoStay').textContent = ['', 'Vor der Brauerei weiterspielen', 'Am Fließband weiterspielen', 'Im Sudhaus weiterspielen'][stage];
   $('promoGo').textContent = promoTarget === 2 ? 'Ab ans Förderband (Level 2)' : 'Zur Bar (Level 1)';
   $('promoGo').hidden = promoTarget === stage;
+  $('promoStay').hidden = ECO.story === 0 && stage === 1;
   $('promo').hidden = false;
   // Fanfare und Konfetti
   [523, 659, 784, 1047].forEach((f, i) => setTimeout(() => beep(f, i === 3 ? .4 : .14, 'square', .08), i*120));
   for (let k=0;k<60;k++) parts.push({ x: W/2 + (Math.random()-.5)*60, y: H*.3, vx: (Math.random()-.5)*420, vy: -200 - Math.random()*320, life: 1.6, c: ['#e6b84a','#2f5d3a','#c22a22','#f3e6c4'][k%4], s: 2 + Math.random()*3, rot: Math.random()*6 });
 }
+
+/* ---------- Geschichte: Schnuppertag und Angebot des Braumeisters ----------
+   ECO.story: 0 Bar, 1 Förderband, 2 Schnuppertag im Sudhaus, 3 Karte offen */
+const SCENES = {
+  invite: [
+    { bg: 'nice', who: 'bm', text: 'Maxi! Du sortierst wie ein Weltmeister. Komm mit ins Sudhaus, heute darfst du mitbrauen.' },
+    { bg: 'nice', who: 'maxi', text: 'Echt? Ins Sudhaus? Da sag ich nicht nein!' },
+    { bg: 'nice', who: 'bm', text: 'Zwei Sude, ganz in Ruhe. Ich zeig dir, welche Zutat wann in den Kessel kommt.' }
+  ],
+  offer: [
+    { bg: 'nice', who: 'bm', text: 'Nicht schlecht für den ersten Tag! Du hast ein Händchen fürs Brauen.' },
+    { bg: 'old', who: 'bm', text: 'Komm, ich zeig dir was. Das ist mein alter Sudkessel. Ich brauche ihn nicht mehr.' },
+    { bg: 'old', who: 'bm', text: `Für ${KESSEL} Taler gehört er dir, samt dem alten Sudhaus. Er ist undicht und verstaubt, aber er braut.` },
+    { bg: 'old', who: 'maxi', text: 'Abgemacht! Ich spar meinen Lohn von der Bar und vom Band.' },
+    { bg: 'old', who: 'bm', text: 'So gefällt mir das. Ab jetzt steht dir das ganze Brauereigelände offen.' }
+  ]
+};
+let scene = null;
+if (ECO.story === undefined) ECO.story = (ECO.ownSud || ECO.offerSeen || seen.map || rank >= 1) ? 3 : 0;
+function playScene(name, done){
+  ['hud', 'over', 'career', 'start', 'promo', 'paused', 'intro'].forEach(id => $(id).hidden = true);
+  scene = { panels: SCENES[name], i: 0, t0: tTotal, done }; state = 'scene'; touchX = null;
+  beep(660, .08, 'triangle', .07);
+}
+function sceneTap(){
+  if (!scene || tTotal - scene.t0 < .45) return;
+  scene.i++; scene.t0 = tTotal; beep(880, .05, 'triangle', .05);
+  if (scene.i >= scene.panels.length){ const d = scene.done; scene = null; state = 'menu'; if (d) d(); }
+}
+function wrapLines(t, maxW){
+  const words = t.split(' '), out = []; let line = '';
+  for (const w of words){ const tryL = line ? line + ' ' + w : w; if (ctx.measureText(tryL).width > maxW && line){ out.push(line); line = w; } else line = tryL; }
+  if (line) out.push(line); return out;
+}
+function drawBraumeister(x, base, sc, talk){
+  ctx.save(); ctx.translate(x, base); ctx.scale(sc, sc);
+  const b = talk ? Math.abs(Math.sin(tTotal*6))*1.5 : 0, arm = talk ? Math.sin(tTotal*3)*.25 - .6 : -.15;
+  ctx.fillStyle = 'rgba(0,0,0,.3)'; ctx.beginPath(); ctx.ellipse(0, 2, 40, 7, 0, 0, Math.PI*2); ctx.fill();
+  ctx.translate(0, -b);
+  ctx.fillStyle = '#2a2f3a'; rr(-18, -36, 14, 34, 4); ctx.fill(); rr(4, -36, 14, 34, 4); ctx.fill();
+  ctx.fillStyle = '#1a1310'; ctx.beginPath(); ctx.ellipse(-11, -2, 10, 5, 0, 0, Math.PI*2); ctx.ellipse(11, -2, 10, 5, 0, 0, Math.PI*2); ctx.fill();
+  // Bauch mit blauem Hemd und weißer Schürze
+  ctx.fillStyle = '#3d6fa8'; ctx.beginPath(); ctx.ellipse(0, -66, 34, 36, 0, 0, Math.PI*2); ctx.fill();
+  ctx.fillStyle = '#f5f1e6'; ctx.beginPath(); ctx.moveTo(-24, -86); ctx.lineTo(24, -86); ctx.lineTo(28, -34); ctx.quadraticCurveTo(0, -26, -28, -34); ctx.closePath(); ctx.fill();
+  ctx.strokeStyle = '#c9c2b0'; ctx.lineWidth = 2; ctx.beginPath(); ctx.moveTo(-14, -86); ctx.lineTo(-20, -100); ctx.moveTo(14, -86); ctx.lineTo(20, -100); ctx.stroke();
+  ctx.fillStyle = '#2f5d3a'; ctx.font = '700 9px "Barlow Condensed", sans-serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillText('FREETOWN', 0, -62);
+  // Arme, der rechte zeigt beim Reden
+  ctx.fillStyle = '#3d6fa8'; ctx.save(); ctx.translate(-32, -88); ctx.rotate(.25); rr(-6, 0, 12, 34, 6); ctx.fill(); ctx.fillStyle = '#f0c39b'; ctx.beginPath(); ctx.arc(0, 36, 6, 0, Math.PI*2); ctx.fill(); ctx.restore();
+  ctx.fillStyle = '#3d6fa8'; ctx.save(); ctx.translate(32, -88); ctx.rotate(arm); rr(-6, 0, 12, 34, 6); ctx.fill(); ctx.fillStyle = '#f0c39b'; ctx.beginPath(); ctx.arc(0, 36, 6, 0, Math.PI*2); ctx.fill(); ctx.restore();
+  // Kopf mit weißem Haar und Schnauzbart
+  ctx.fillStyle = '#f0c39b'; ctx.beginPath(); ctx.arc(0, -118, 20, 0, Math.PI*2); ctx.fill();
+  ctx.fillStyle = '#e8e8e8'; ctx.beginPath(); ctx.ellipse(-17, -116, 6, 10, 0, 0, Math.PI*2); ctx.ellipse(17, -116, 6, 10, 0, 0, Math.PI*2); ctx.fill();
+  ctx.fillStyle = '#2a2a2a'; ctx.beginPath(); ctx.arc(-7, -121, 2.2, 0, Math.PI*2); ctx.arc(7, -121, 2.2, 0, Math.PI*2); ctx.fill();
+  ctx.fillStyle = '#d98a7a'; ctx.beginPath(); ctx.ellipse(0, -114, 4, 3.5, 0, 0, Math.PI*2); ctx.fill();
+  ctx.fillStyle = '#f2f2f2'; ctx.beginPath(); ctx.moveTo(-16, -106); ctx.quadraticCurveTo(-8, -114, 0, -109); ctx.quadraticCurveTo(8, -114, 16, -106); ctx.quadraticCurveTo(8, -104, 0, -106); ctx.quadraticCurveTo(-8, -104, -16, -106); ctx.fill();
+  if (talk){ ctx.fillStyle = '#7a3a2a'; ctx.beginPath(); ctx.ellipse(0, -102, 4, 1.5 + Math.abs(Math.sin(tTotal*12))*2, 0, 0, Math.PI*2); ctx.fill(); }
+  // Brauerkappe
+  ctx.fillStyle = '#2f5d3a'; ctx.beginPath(); ctx.ellipse(0, -134, 22, 9, 0, Math.PI, 0); ctx.fill(); ctx.fillRect(-22, -136, 44, 5); ctx.fillStyle = '#244a2e'; ctx.beginPath(); ctx.ellipse(10, -131, 16, 4, 0, 0, Math.PI*2); ctx.fill();
+  ctx.restore();
+}
+function sceneKettle(x, y, s, shiny){
+  const g = ctx.createRadialGradient(x - 20*s, y - 40*s, 6*s, x, y - 20*s, 70*s);
+  if (shiny){ g.addColorStop(0, '#ffd8a8'); g.addColorStop(.5, '#d8843c'); g.addColorStop(1, '#7a4420'); } else { g.addColorStop(0, '#a3ab92'); g.addColorStop(.5, '#6f7a62'); g.addColorStop(1, '#3f4838'); }
+  ctx.fillStyle = g; ctx.beginPath(); ctx.ellipse(x, y, 62*s, 20*s, 0, 0, Math.PI*2); ctx.fill();
+  rr(x - 62*s, y - 70*s, 124*s, 70*s, 10*s); ctx.fill();
+  ctx.beginPath(); ctx.arc(x, y - 70*s, 62*s, Math.PI, 0); ctx.fill();
+  ctx.fillStyle = shiny ? '#8a4c20' : '#3a4234'; ctx.fillRect(x - 4*s, y - 150*s, 8*s, 20*s);
+  ctx.fillStyle = shiny ? 'rgba(255,255,255,.35)' : 'rgba(255,255,255,.08)'; ctx.beginPath(); ctx.ellipse(x - 30*s, y - 90*s, 8*s, 24*s, -.3, 0, Math.PI*2); ctx.fill();
+  if (!shiny){ ctx.fillStyle = 'rgba(160,190,150,.35)'; for (let i=0;i<6;i++){ ctx.beginPath(); ctx.arc(x - 40*s + i*16*s, y - 30*s + Math.sin(i)*14*s, 7*s, 0, Math.PI*2); ctx.fill(); } }
+  if (shiny) for (let i=0;i<3;i++){ const ph = (tTotal*.5 + i/3) % 1; ctx.fillStyle = `rgba(255,255,255,${.5*(1 - ph)})`; ctx.beginPath(); ctx.arc(x + Math.sin(ph*5)*8*s, y - 155*s - ph*60*s, (6 + ph*14)*s, 0, Math.PI*2); ctx.fill(); }
+}
+function renderScene(){
+  ctx.setTransform(dpr*S, 0, 0, dpr*S, dpr*OX, 0);
+  const p = scene.panels[scene.i], nice = p.bg === 'nice', floor = H*.74;
+  // Hintergrund
+  ctx.fillStyle = nice ? '#efe3c8' : '#3a2c22'; ctx.fillRect(XL, 0, XR - XL, floor);
+  if (nice){ ctx.fillStyle = 'rgba(160,130,90,.18)'; for (let y=0;y<floor;y+=22) for (let x=Math.floor(XL/22)*22;x<XR;x+=22) ctx.fillRect(x + ((y/22)%2)*11, y, 21, 1); for (let x=Math.floor(XL/22)*22;x<XR;x+=22) ctx.fillRect(x, 0, 1, floor); }
+  else { ctx.fillStyle = 'rgba(0,0,0,.25)'; for (let y=0;y<floor;y+=16) for (let x=Math.floor(XL/34)*34;x<XR;x+=34) ctx.fillRect(x + ((y/16)%2)*17, y, 33, 1); }
+  // Fenster: hell oder vernagelt mit Lichtstrahl
+  const wx = W*.5, wy = H*.12;
+  ctx.fillStyle = nice ? '#bfe0f0' : '#d8c08a'; rr(wx - 46, wy, 92, 70, 6); ctx.fill();
+  if (nice){ ctx.fillStyle = '#7a5a3a'; ctx.fillRect(wx - 2, wy, 4, 70); ctx.fillRect(wx - 46, wy + 33, 92, 4); }
+  else { ctx.fillStyle = '#6b4a2e'; for (let b=0;b<3;b++){ ctx.save(); ctx.translate(wx, wy + 14 + b*22); ctx.rotate(b%2 ? .12 : -.12); ctx.fillRect(-52, -5, 104, 10); ctx.restore(); }
+    ctx.fillStyle = 'rgba(255,230,160,.12)'; ctx.beginPath(); ctx.moveTo(wx - 40, wy + 70); ctx.lineTo(wx + 40, wy + 70); ctx.lineTo(wx + 120, floor); ctx.lineTo(wx - 60, floor); ctx.closePath(); ctx.fill(); }
+  ctx.fillStyle = nice ? '#b9a07a' : '#2a1f18'; ctx.fillRect(XL, floor, XR - XL, H - floor);
+  ctx.fillStyle = 'rgba(0,0,0,.12)'; for (let x=Math.floor(XL/40)*40;x<XR;x+=40) ctx.fillRect(x, floor, 1, H - floor);
+  // Kessel
+  if (nice){ sceneKettle(W*.82, floor - 6, .7, true); sceneKettle(W*.12, floor - 6, .55, true);
+    ctx.strokeStyle = '#a8642c'; ctx.lineWidth = 6; ctx.beginPath(); ctx.moveTo(XL, H*.32); ctx.lineTo(XR, H*.32); ctx.stroke(); }
+  else { sceneKettle(W*.5, floor - 4, .85, false);
+    ctx.strokeStyle = 'rgba(230,230,230,.35)'; ctx.lineWidth = 1; for (const cx of [XL + 10, XR - 10]){ for (let r=10;r<60;r+=12){ ctx.beginPath(); ctx.arc(cx, 0, r, 0, Math.PI); ctx.stroke(); } }
+    for (let i=0;i<24;i++){ const x = wx - 60 + ((i*53 + tTotal*8) % 180), y = wy + 80 + ((i*97 + tTotal*12) % (floor - wy - 80)); ctx.fillStyle = 'rgba(255,240,200,.5)'; ctx.fillRect(x, y, 1.5, 1.5); } }
+  // Figuren
+  const talkBM = p.who === 'bm', bmX = nice ? W*.36 : W*.22, mxX = nice ? W*.64 : W*.8;
+  drawBraumeister(bmX, floor + 30, 1.15, talkBM);
+  const nc = P.noCrate, sl = P.slim; P.noCrate = true; P.slim = true; P.vx = 0;
+  ctx.save(); ctx.translate(mxX, floor + 30 - (!talkBM ? Math.abs(Math.sin(tTotal*6))*2 : 0)); ctx.scale(1.05, 1.05); drawMan(0, 0); ctx.restore(); P.noCrate = nc; P.slim = sl;
+  // Sprechblase
+  const a = Math.min(1, (tTotal - scene.t0)/.3); ctx.globalAlpha = a;
+  ctx.font = '600 17px "Barlow Condensed", sans-serif';
+  const bw = Math.min(W - 24, 360), lines = wrapLines(p.text, bw - 28), bh = 40 + lines.length*22, bx = W/2 - bw/2, by = H*.34;
+  const tx = talkBM ? bmX : mxX;
+  ctx.fillStyle = '#fffaf0'; rr(bx, by, bw, bh, 12); ctx.fill();
+  ctx.beginPath(); ctx.moveTo(tx - 12, by + bh - 1); ctx.lineTo(tx + 12, by + bh - 1); ctx.lineTo(tx, by + bh + 22); ctx.closePath(); ctx.fill();
+  ctx.strokeStyle = '#2f5d3a'; ctx.lineWidth = 2.5; rr(bx, by, bw, bh, 12); ctx.stroke();
+  ctx.fillStyle = '#9a2a20'; ctx.font = '15px "Alfa Slab One", Georgia, serif'; ctx.textAlign = 'left'; ctx.textBaseline = 'top';
+  ctx.fillText(talkBM ? 'Braumeister' : 'Maxi', bx + 14, by + 10);
+  ctx.fillStyle = '#20232a'; ctx.font = '600 17px "Barlow Condensed", sans-serif';
+  lines.forEach((l, i) => ctx.fillText(l, bx + 14, by + 32 + i*22));
+  ctx.globalAlpha = 1;
+  // Fortschritt und Hinweis
+  for (let i=0;i<scene.panels.length;i++){ ctx.fillStyle = i === scene.i ? C.gold : 'rgba(243,230,196,.45)'; ctx.beginPath(); ctx.arc(W/2 + (i - (scene.panels.length - 1)/2)*16, H - 54, 5, 0, Math.PI*2); ctx.fill(); }
+  if (tTotal - scene.t0 > .45){ ctx.globalAlpha = .6 + Math.sin(tTotal*4)*.4; ctx.fillStyle = C.cream; ctx.font = '700 15px "Barlow Condensed", sans-serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillText('Tippen zum Weiter', W/2, H - 30); ctx.globalAlpha = 1; }
+}
+function storyInvite(){
+  // vom Förderband zum Schnuppertag ins schöne Sudhaus
+  endShift(); try { wake?.release(); } catch(e) {}
+  playScene('invite', () => { ECO.story = 2; saveEco(); start3(); });
+}
+function storyOffer(){
+  endShift(); try { wake?.release(); } catch(e) {}
+  playScene('offer', () => { ECO.story = 3; ECO.offerSeen = true; saveEco(); MAP.at = 'sud'; MAP.placed = false; seen.map = true; saveSeen(); toTitle(); openCareer(); });
+}
 function promoContinue(goOther){
-  $('promo').hidden = true; setMood('happy', 1);
+  $('promo').hidden = true; setMood('happy', 1); $('promoStay').hidden = false;
+  if (ECO.story === 0 && rank >= 1){ ECO.story = 1; saveEco(); }
   if (!goOther){ state = 'play'; return; }
   const keep = score;
   if (promoTarget === 1) start(keep); else start2(keep);
@@ -2643,7 +2770,7 @@ function geo3(){
 function binRect(k, g){ return { x: 8 + k*(g.bw + g.gap), y: g.binTop, w: g.bw, h: 84 }; }
 function newBrew(){
   const d = L3.brews;
-  const av = availRecipes();
+  const av = L3.trial ? RECIPES.slice(0, 2) : availRecipes();
   const r = L3.rush ? L3.rush.beer : d < av.length ? av[d] : av[Math.floor(Math.random()*av.length)];
   const extra = d >= 5 ? Math.min(2, Math.floor((d - 5)/3) + 1) : 0;
   const mash = { ...r.mash }; if (extra) mash.malz += extra;
@@ -2675,9 +2802,9 @@ function startStep(){
   L3.timerMax *= 1 + .15*(U.time || 0); L3.timer = L3.timerMax;
 }
 function reset3(){
-  L3.brews = 0; L3.flying = []; L3.maxiX = 200; L3.heat = false; L3.hold = 0; L3.offer = null; L3.rush = null; L3.offerCool = 0; L3.boilUnlocked = false; L3.karamell = !!U.cellar; L3.liquid = '#cfe3f0'; L3.puffs = []; L3.doneT = 0;
+  L3.brews = 0; L3.flying = []; L3.maxiX = 200; L3.heat = false; L3.hold = 0; L3.offer = null; L3.rush = null; L3.offerCool = 0; L3.boilUnlocked = false; L3.karamell = !!U.cellar; L3.trial = ECO.story === 2; L3.liquid = '#cfe3f0'; L3.puffs = []; L3.doneT = 0;
   parts = []; texts = []; score = 0; crates = 0; missed = 0; shake = 0;
-  applyUpg(); setMood('idle', 0);
+  applyUpg(); setMood('idle', 0); if (L3.trial) MAXMISS = 99;
   P.trip = 0; P.count = 0; P.extra = 0; P.vx = 0; P.noCrate = true; P.slim = true;
   newBrew(); updateHud();
 }
@@ -2686,7 +2813,7 @@ async function start3(keep){
   stage = 3; reset3(); calibrating = false;
   if (typeof keep === 'number'){ score = keep; updateHud(); }
   ['start','career','over','paused','board','legalBox','promo'].forEach(id => $(id).hidden = true); $('hud').hidden = false;
-  $('cratesLbl').textContent = 'Sude'; $('livesLbl').textContent = 'Fehler';
+  $('cratesLbl').textContent = 'Sude'; $('livesLbl').textContent = L3.trial ? 'Schnuppertag' : 'Fehler';
   $('bar').hidden = true; $('fillTxt').hidden = true;
   state = 'play'; keepAwake();
   if (!seen.l3brew) unlock('l3brew');
@@ -2768,6 +2895,7 @@ function stepDone(){
   if (L3.stepI < L3.steps.length - 1){ L3.stepI++; startStep(); return; }
   // ganzer Sud fertig: verbraucht Malz und Hopfen aus dem Lager und ergibt ein Fass
   L3.brews++; crates = L3.brews;
+  if (L3.trial && L3.brews >= 2){ const bonus = 150*mult; score += bonus; floatText(W/2, geo3().ky - 140, `Schnuppertag geschafft! +${bonus}`, C.gold); sCash(); setMood('proud', 2); updateHud(); state = 'promo'; setTimeout(storyOffer, 1600); return; }
   { const perf = Math.max(0, 1 - (L3.sudFaults || 0)*.35) * .65 + Math.min(1, (L3.tSum || 0) / Math.max(1, L3.tN || 1) * 1.6) * .35;
     const q = ecoBrew(perf);
     if (q) setTimeout(() => { if (stage === 3) floatText(W/2, geo3().ky + 80, `+Fass ${stars(q)}`, '#9fe0a8'); }, 350); }
@@ -3029,6 +3157,7 @@ function render3(){
   P.noCrate = true; P.slim = true;
   const tx = L3.maxiX, cur = P.x3 ?? 200; P.x3 = cur + (tx - cur) * .18; P.vx = (tx - cur) * 8; P.walk += Math.abs(tx - cur) * .05;
   ctx.save(); ctx.translate(P.x3, g.binTop - 6); ctx.scale(.72, .72); drawMan(0, 0); ctx.restore();
+  if (L3.trial) drawBraumeister(XL + 34, g.binTop - 8, .55, false);
   drawBins(g, state === 'intro' && introKind === 'l3karamell' ? 'karamell' : null);
   // fliegende Zutaten
   for (const f of L3.flying){
@@ -3081,6 +3210,7 @@ $('menuBtn').onclick = toTitle;
 $('pauseMenuBtn').onclick = quitToTitle;
 $('endShiftBtn').onclick = () => { if (state === 'pause') gameOver(true); };
 $('toMapBtn').onclick = () => { toTitle(); openCareer(); };
+new MutationObserver(() => { $('toMapBtn').hidden = ECO.story < 3; }).observe($('over'), { attributes: true, attributeFilter: ['hidden'] });
 // Impressum und Datenschutz
 let legalFrom = null;
 function openLegal(which, from){ legalFrom = from; $(from).hidden = true; $('legalBox').hidden = false;
@@ -3208,15 +3338,17 @@ function masterIntro(){
 }
 function openCareer(){
   updateMenu(); showRecords(); updateEcoBar(); $('start').hidden = true;
-  if (rank >= 1 && !ECO.ownSud && !ECO.offerSeen){ ECO.offerSeen = true; saveEco(); ecoIntro(); return; }
+  if (rank >= 1 && !ECO.ownSud && !ECO.offerSeen && ECO.story >= 3){ ECO.offerSeen = true; saveEco(); ecoIntro(); return; }
   if (ECO.ownSud && !ECO.master && ['seal', 'thermo', 'copper', 'lauter', 'cellar'].every(k => U[k])){ ECO.master = true; saveEco(); masterIntro(); return; }
   if (ECO.report){ showReport(); return; }
   $('ecoBar').hidden = false;
   $('career').hidden = false; mapInfo(); $('rankMini').focus?.({ preventScroll: true });
 }
 $('startBtn').onclick = () => {
-  // ganz neu: direkt los in Level 1, die Brauerei kommt nach der ersten Runde
-  if (!best && !best2 && !best3 && rank === 0 && !seen.map){ start(); return; }
+  // bis zum Angebot des Braumeisters geht es der Reihe nach: Bar, Förderband, Schnuppertag
+  if (ECO.story === 0){ start(); return; }
+  if (ECO.story === 1){ start2(); return; }
+  if (ECO.story === 2){ start3(); return; }
   openCareer();
 };
 $('rankMini').onclick = () => { const m = $('rankMore'), open = m.hidden; m.hidden = !open; $('rankMini').setAttribute('aria-expanded', open ? 'true' : 'false'); };

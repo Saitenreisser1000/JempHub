@@ -57,6 +57,8 @@ Einmalig auf dem Server:
 
 ## Spielbogen
 
+**Einstieg der Reihe nach:** „Start“ führt bis zum Angebot immer zum nächsten Schritt: Bar → bei der Beförderung zum Mitarbeiter direkt ans Förderband → nach 30 sortierten Flaschen ruft der Braumeister (Bilderszene) → Schnuppertag im schönen Sudhaus des Braumeisters (2 Sude, kein Fehlerlimit, keine Wirtschaft) → Bilderszene im alten Sudhaus mit dem Angebot für den alten Sudkessel → erst dann ist die Karte offen (`ftb-eco` → `story` 0 bis 3). Wer schon weiter war, startet direkt mit der Karte.
+
 1. **Brauereilakai (Level 1, Bar):** Maxi fängt Flaschen und bekommt Lohn je voller Kiste (6 Taler, +2 je Stufe).
 2. **Mitarbeiter (ab 3.000 Punkten, Level 2, Förderband):** Lohn je voller Kiste am Band (8 Taler, +2 je weiterer Stufe). Der Braumeister bietet Maxi den alten Sudkessel für 250 Taler an; Maxi spart seinen Lohn.
 3. **Eigenes Sudhaus (Level 3):** Gekauft wird direkt am alten Sudhaus auf der Karte (verbretterte Fenster, „Zu verkaufen“). Danach braut Maxi selbst: Malz und Hopfen kaufen („Lager & Einkauf“), brauen, die Wirte kaufen am Ende jedes Tages bis zu 3 Fässer (+1 mit Läuterbottich, +1 mit Gärkeller, +1 je Kesselstufe). Preis je Fass nach Sorte (Märzen 26 bis Festbier 36) und Qualität.
