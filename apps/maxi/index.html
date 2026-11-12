@@ -114,6 +114,20 @@ html,body{height:100%;margin:0;background:var(--night);color:var(--cream);overfl
 .shoplist small{grid-column:1;font:500 13px var(--f-ui);opacity:.8}
 .shoplist button{grid-column:2;grid-row:1 / span 2;font:700 15px var(--f-ui);padding:9px 12px;border-radius:8px;border:0;background:var(--hop);color:#fff;min-width:86px;cursor:pointer}
 .shoplist button:disabled{opacity:.45;cursor:default}
+.ecobar{display:grid;gap:4px;font:600 13px var(--f-ui);color:var(--ink);margin-top:2px}
+.ecorow{font-variant-numeric:tabular-nums;line-height:1.3}
+.ecometa{display:flex;justify-content:center;align-items:center;gap:10px;color:var(--crate);font-weight:700}
+.ecometa button{font:700 13px var(--f-ui);padding:6px 10px;border-radius:8px;border:0;background:var(--hop);color:#fff;cursor:pointer}
+.repgrid{display:grid;grid-template-columns:1fr auto;gap:4px 14px;text-align:left;font:600 16px var(--f-ui);font-variant-numeric:tabular-nums}
+.repgrid span:nth-child(even){text-align:right}
+.repgrid .tot{border-top:2px solid var(--hop);padding-top:5px;font-weight:800;color:var(--hop)}
+.repgrid .tot.neg{color:#9a2a20}
+.chart{display:flex;align-items:flex-end;gap:6px;height:66px;margin:4px 6px 18px;border-bottom:2px solid rgba(47,93,58,.4)}
+.chart:empty{display:none}
+.chart{justify-content:center}
+.chart div{flex:1;max-width:34px;background:var(--hop);border-radius:3px 3px 0 0;position:relative}
+.chart div.neg{background:#b8352a}
+.chart span{position:absolute;top:100%;left:0;right:0;margin-top:3px;font:600 10px var(--f-ui);text-align:center}
 .hslist .n{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .hslist .n small{display:block;font:500 12px var(--f-ui);opacity:.7;overflow:hidden;text-overflow:ellipsis}
 .hslist .s{font:400 17px var(--f-display)}
@@ -158,6 +172,7 @@ html,body{height:100%;margin:0;background:var(--night);color:var(--cream);overfl
 #career .titlecard{gap:6px;padding:12px 14px}
 #career .startbox{gap:6px}
 #careerBack{font-weight:700!important;opacity:1!important}
+@media (max-height:880px){#career .records{display:none}}
 @media (max-height:740px){#career .nextrank,#career .records{display:none}#career h2{font-size:24px}.mapcard{padding:8px 12px}.mapcard .btn{padding:8px;font-size:19px}}
 .mapcard{gap:4px;padding:10px 14px;text-align:center}
 .mapname{font:400 21px var(--f-display);color:var(--crate)}
@@ -251,6 +266,7 @@ html,body{height:100%;margin:0;background:var(--night);color:var(--cream);overfl
     <ol class="ranks" id="rankSteps" aria-label="Maxis Beförderungsstufen"></ol>
     <p class="nextrank" id="nextRank"></p>
     <p class="records" id="bestStart"></p>
+    <div class="ecobar"><div class="ecorow" id="ecoStock"></div><div class="ecometa"><span id="ecoDay"></span><button type="button" id="ecoBtn">Lager &amp; Einkauf</button></div></div>
     <div class="ranknote" id="rankLine"></div>
   </div>
   <div class="startbox">
@@ -275,7 +291,7 @@ html,body{height:100%;margin:0;background:var(--night);color:var(--cream);overfl
       <dt>Grundlegende Richtung</dt><dd>Unterhaltung, ohne Inhalte zur Beeinflussung der öffentlichen Meinung</dd>
     </dl>
     <h3 id="privTitle">Datenschutz</h3>
-    <p>Das Spiel läuft vollständig in deinem Browser. Es gibt kein Konto, keine Cookies und keine Statistik- oder Werbedienste. Rekord, Stufe, Brauereitaler und Shop-Käufe werden nur lokal auf deinem Gerät gespeichert.</p>
+    <p>Das Spiel läuft vollständig in deinem Browser. Es gibt kein Konto, keine Cookies und keine Statistik- oder Werbedienste. Rekord, Stufe, Brauereitaler, Lager, Spieltage und Shop-Käufe werden nur lokal auf deinem Gerät gespeichert.</p>
     <p>Trägst du dich in die Bestenliste ein, werden der gewählte Name, Punkte, Kisten, Level, Stufe und der Zeitpunkt auf unserem eigenen Server gespeichert und öffentlich in der Bestenliste gezeigt. Nimm deshalb lieber einen Spitznamen. Einträge löschen wir auf Anfrage an office@jemphub.com.</p>
     <p>Beim Aufruf verarbeitet der Webserver technisch notwendige Daten wie die IP-Adresse. Die Schriften werden von Google Fonts geladen; dabei wird deine IP-Adresse an Google übertragen.</p>
     <button class="btn" id="legalClose" type="button">Zurück</button>
@@ -298,8 +314,29 @@ html,body{height:100%;margin:0;background:var(--night);color:var(--cream);overfl
     <h2 id="shopTitle">Brauerei-Shop</h2>
     <p class="taler" id="shopTaler"></p>
     <ul class="shoplist" id="shopList"></ul>
-    <p class="hsnote">Brauereitaler gibt es am Ende jeder Runde: 1 Taler je 100 Punkte.</p>
+    <p class="hsnote">Brauereitaler verdienst du, wenn die Bar Kisten aus dem Lager verkauft.</p>
     <button class="btn" id="shopClose" type="button">Zurück</button>
+  </div>
+</div>
+
+<div class="overlay" id="store" hidden>
+  <div class="label shopcard" role="dialog" aria-modal="true" aria-labelledby="storeTitle">
+    <div class="brand">Freetown Brewery</div>
+    <h2 id="storeTitle">Lager &amp; Einkauf</h2>
+    <p class="taler" id="storeTaler"></p>
+    <ul class="shoplist" id="storeList"></ul>
+    <p class="hsnote">Sudhaus: Malz + Hopfen → Fass · Abfüllhalle: Fass → 4 Kisten · Bar: Kiste → 12 🪙. Rohstoffpreise ändern sich jeden Tag.</p>
+    <button class="btn" id="storeClose" type="button">Zurück</button>
+  </div>
+</div>
+
+<div class="overlay" id="dayRep" hidden>
+  <div class="label" role="dialog" aria-modal="true" aria-labelledby="repTitle">
+    <div class="brand">Freetown Brewery</div>
+    <h2 id="repTitle">Abrechnung</h2>
+    <div class="repgrid" id="repBody"></div>
+    <div class="chart" id="repChart" aria-label="Gewinn der letzten Tage"></div>
+    <button class="btn" id="repNext" type="button">Weiter</button>
   </div>
 </div>
 
@@ -365,12 +402,89 @@ function saveShop(){ try { localStorage.setItem('ftb-taler', taler); localStorag
 function applyUpg(){
   // zu Beginn jeder Runde: gekaufte Verbesserungen wirken
   MAXMISS = 5 + (U.life || 0); baseMult = 1 + (U.mult || 0); mult = baseMult; streak = 0; roundPaid = false; setMultUI(null);
+  if (typeof ECO !== 'undefined') ECO.round = ecoRound0();
 }
 function catchW(){ return 38 + 6*(U.catch || 0); }
-function earnTaler(){
-  if (roundPaid) return 0; roundPaid = true;
-  const n = Math.floor(score / 100); taler += n; saveShop(); return n;
+
+/* ---------- Wirtschaft: Lager, Warenfluss und Spieltage ----------
+   Sudhaus braut aus Malz und Hopfen Fässer, die Abfüllhalle füllt Fässer in Kisten (4 je Fass),
+   die Bar verkauft Kisten. Drei Schichten (Runden) sind ein Tag, danach kommt die Abrechnung. */
+const ECO_PRICE = 12, ECO_FIX = 10, ECO_PER_FASS = 4;
+const ECO = { day: 1, shift: 0, malz: 15, hopfen: 10, fass: 1, kisten: 6, price: null, prev: null, log: [], today: null, report: false, round: null };
+function ecoDay0(){ return { sales: 0, buy: 0, brewed: 0, filled: 0, sold: 0 }; }
+function ecoRound0(){ return { brewed: 0, filled: 0, sold: 0, earned: 0, short: 0 }; }
+function rollPrices(){ ECO.prev = ECO.price; ECO.price = { malz: 2 + Math.floor(Math.random()*3), hopfen: 3 + Math.floor(Math.random()*4) }; }
+try { Object.assign(ECO, JSON.parse(localStorage.getItem('ftb-eco') || '{}')); } catch(e) {}
+if (!ECO.price) rollPrices();
+if (!ECO.today) ECO.today = ecoDay0();
+ECO.round = ecoRound0();
+function saveEco(){ try { const { round, ...keep } = ECO; localStorage.setItem('ftb-eco', JSON.stringify(keep)); } catch(e) {} }
+const fmtF = v => (+v).toLocaleString('de-DE', { maximumFractionDigits: 2 });
+const kis = n => `${n} ${n === 1 ? 'Kiste' : 'Kisten'}`;
+function ecoBrew(need){
+  if (ECO.malz < need.malz || ECO.hopfen < need.hopfen){ ECO.round.short++; return false; }
+  ECO.malz -= need.malz; ECO.hopfen -= need.hopfen; ECO.fass += 1; ECO.today.brewed++; ECO.round.brewed++; saveEco(); return true;
 }
+function ecoFill(){
+  if (ECO.fass < 1/ECO_PER_FASS - 1e-6){ ECO.round.short++; return false; }
+  ECO.fass = Math.round((ECO.fass - 1/ECO_PER_FASS)*100)/100; ECO.kisten++; ECO.today.filled++; ECO.round.filled++; saveEco(); return true;
+}
+function ecoSell(){
+  if (ECO.kisten < 1){ taler += 1; ECO.today.sales += 1; ECO.round.earned += 1; ECO.round.short++; saveShop(); saveEco(); return 0; }
+  ECO.kisten--; taler += ECO_PRICE; ECO.today.sales += ECO_PRICE; ECO.today.sold++; ECO.round.sold++; ECO.round.earned += ECO_PRICE; saveShop(); saveEco(); return ECO_PRICE;
+}
+function endShift(){
+  // einmal pro Runde: Schicht zählen, nach drei Schichten ist Abrechnung
+  if (roundPaid) return null; roundPaid = true;
+  const r = ECO.round;
+  if (score <= 0 && !r.brewed && !r.filled && !r.sold && !r.earned) return null;
+  ECO.shift++; if (ECO.shift >= 3) ECO.report = true; saveEco(); saveShop(); return r;
+}
+function shiftText(r){
+  if (!r) return '';
+  const p = [];
+  if (r.brewed) p.push(`${r.brewed} Fass gebraut`); if (r.filled) p.push(`${kis(r.filled)} abgefüllt`); if (r.sold) p.push(`${kis(r.sold)} verkauft`);
+  let t = `Schicht ${Math.min(3, ECO.shift)}/3 von Tag ${ECO.day}` + (p.length ? ': ' + p.join(', ') : '') + (r.earned ? ` · +${r.earned} 🪙` : '') + '.';
+  if (r.short) t += ' Es fehlte Ware im Lager, schau bei „Lager & Einkauf“ vorbei.';
+  return t;
+}
+function updateEcoBar(){
+  $('ecoStock').textContent = `🌾 ${ECO.malz} Malz · 🌿 ${ECO.hopfen} Hopfen · 🛢 ${fmtF(ECO.fass)} Fass · 📦 ${ECO.kisten} Kisten · 🪙 ${taler}`;
+  $('ecoDay').textContent = `Tag ${ECO.day} · Schicht ${Math.min(3, ECO.shift + 1)}/3`;
+}
+const STORE = [
+  { k: 'malz', n: 'Malz', ic: '🌾', d: 'Fürs Sudhaus, 2 bis 4 Säcke je Sud', n5: 5 },
+  { k: 'hopfen', n: 'Hopfen', ic: '🌿', d: 'Fürs Sudhaus, 1 bis 4 je Sud', n5: 5 }
+];
+function renderStore(){
+  $('storeTaler').textContent = `🪙 ${taler} Brauereitaler · Tag ${ECO.day}`;
+  const items = STORE.map(it => {
+    const li = document.createElement('li'), b = document.createElement('b'), sm = document.createElement('small'), bt = document.createElement('button');
+    const pr = ECO.price[it.k], pv = ECO.prev ? ECO.prev[it.k] : pr, tr = pr > pv ? ' ▲' : pr < pv ? ' ▼' : '';
+    b.textContent = `${it.ic} ${it.n}: ${ECO[it.k]}`; sm.textContent = `${it.d}. Heute ${pr} 🪙 je Sack${tr}`;
+    const cost = pr*it.n5; bt.type = 'button'; bt.textContent = `+${it.n5} für ${cost} 🪙`; bt.disabled = taler < cost;
+    bt.onclick = () => { if (taler < cost) return; taler -= cost; ECO[it.k] += it.n5; ECO.today.buy += cost; saveShop(); saveEco(); beep(880, .07, 'triangle', .07); renderStore(); updateEcoBar(); };
+    li.append(b, sm, bt); return li;
+  });
+  const info = (ic, n, v, d) => { const li = document.createElement('li'), b = document.createElement('b'), sm = document.createElement('small'); b.textContent = `${ic} ${n}: ${v}`; sm.textContent = d; li.append(b, sm); return li; };
+  items.push(info('🛢', 'Fässer', fmtF(ECO.fass), `Jeder fertige Sud im Sudhaus ergibt 1 Fass. Ein Fass reicht für ${ECO_PER_FASS} Kisten.`));
+  items.push(info('📦', 'Kisten', ECO.kisten, `Volle Kisten aus der Abfüllhalle. Die Bar verkauft jede Kiste für ${ECO_PRICE} 🪙.`));
+  $('storeList').replaceChildren(...items);
+}
+function showReport(){
+  const t = ECO.today, cost = t.buy + ECO_FIX, profit = t.sales - cost, fix = Math.min(taler, ECO_FIX);
+  taler -= fix;
+  ECO.log.push({ d: ECO.day, p: profit }); ECO.log = ECO.log.slice(-7);
+  $('repTitle').textContent = `Tag ${ECO.day}: Abrechnung`;
+  const rows = [['Verkauft', kis(t.sold)], ['Gebraut', `${t.brewed} Fass`], ['Abgefüllt', kis(t.filled)], ['Einnahmen', `+${t.sales} 🪙`], ['Einkauf', t.buy ? `−${t.buy} 🪙` : '0 🪙'], ['Strom und Miete', `−${ECO_FIX} 🪙`], ['Gewinn', `${profit >= 0 ? '+' : '−'}${Math.abs(profit)} 🪙`]];
+  $('repBody').replaceChildren(...rows.flatMap(([a, b], i) => { const x = document.createElement('span'), y = document.createElement('span'); x.textContent = a; y.textContent = b; if (i === rows.length - 1){ x.className = y.className = 'tot' + (profit < 0 ? ' neg' : ''); } return [x, y]; }));
+  const mx = Math.max(10, ...ECO.log.map(l => Math.abs(l.p)));
+  $('repChart').replaceChildren(...ECO.log.map(l => { const d = document.createElement('div'), s = document.createElement('span'); d.style.height = Math.max(4, Math.abs(l.p)/mx*60) + 'px'; if (l.p < 0) d.className = 'neg'; d.title = `Tag ${l.d}: ${l.p} 🪙`; s.textContent = `T${l.d}`; d.append(s); return d; }));
+  ECO.day++; ECO.shift = 0; ECO.today = ecoDay0(); ECO.report = false; rollPrices(); saveEco(); saveShop();
+  $('repNext').textContent = `Weiter zu Tag ${ECO.day}`;
+  $('career').hidden = true; $('dayRep').hidden = false; sCash();
+}
+
 function renderShop(){
   $('shopTaler').textContent = `🪙 ${taler} Brauereitaler`;
   $('shopList').replaceChildren(...SHOP.map(it => {
@@ -1049,6 +1163,7 @@ function updateForklift(dt){
       streak = 0; mult = baseMult; setMultUI(null);
       if (missed > 0){ missed = 0; floatText(W/2, groundY - 260, 'Bruch zurückgesetzt', '#9fe0a8'); }
       floatText(zoneX(), groundY - 130, used > 1 ? `+${pts} (×${used})` : `+${pts}`, C.gold); sCash();
+      { const sold = ecoSell(); floatText(W/2, groundY - 310, sold ? `Kiste verkauft +${sold} 🪙` : 'Lager leer: nur Trinkgeld +1 🪙', sold ? C.gold : '#ff9a6a'); }
       if (used > 1) floatText(W/2, groundY - 285, `Multiplikator ×${used} eingelöst!`, C.gold);
       if (crates % 2 === 0) floatText(W/2, groundY - 220, `Stufe ${level()}`, C.cream);
       updateHud(); FL.phase = 3; FL.t = 0;
@@ -1548,7 +1663,7 @@ function gameOver(){
     $('overTitle').textContent = 'Zu viel Bruch!';
     $('finalInfo').textContent = `${crates} ${crates === 1 ? 'volle Kiste' : 'volle Kisten'} abgegeben · Rekord ${best}`;
   }
-  const tn = earnTaler(); $('talerInfo').textContent = tn ? `+${tn} Brauereitaler, jetzt ${taler}. Einlösen im Shop auf dem Titelbild.` : '';
+  $('talerInfo').textContent = shiftText(endShift());
   $('boardBtn2').hidden = !HS; $('intro').hidden = true;
   $('over').hidden = false; try { wake?.release(); } catch(e) {}
   hsAfterGame();
@@ -1673,6 +1788,7 @@ function swapCrate(b, g){
   const c = crate2(b, g); L2.fill[b] = 0;
   const pts = 50 * mult; score += pts; updateHud(); sCash(); setMood('proud', .8);
   floatText(Math.max(XL + 80, Math.min(XR - 80, c.x)), c.y - 40, `Neue Kiste! +${pts}`, C.gold);
+  const okF = ecoFill(); floatText(Math.max(XL + 90, Math.min(XR - 90, c.x)), c.y - 66, okF ? '+1 Kiste ins Lager' : 'Kein Bier im Tank', okF ? '#9fe0a8' : '#ff9a6a');
   for (let k=0;k<12;k++) parts.push({ x: c.x + (Math.random()-.5)*50, y: c.y + 10, vx: (Math.random()-.5)*160, vy: -60 - Math.random()*140, life: .7, c: k%2 ? C.gold : C.cream, s: 2 + Math.random()*2, round: true });
 }
 function jam2(c, g){
@@ -1962,9 +2078,9 @@ function updateMenu(){
 /* ---------- Karte: Maxi geht über das Brauereigelände ---------- */
 const LOCS = {
   plaza: { u: .5,  v: .55 },
-  sud:   { u: .3,  v: .2,  c: [.36, .42], name: 'Sudhaus', sub: 'Level 3', lv: 3, need: 2, desc: 'Zutaten in den Sudkessel, Temperatur halten, umrühren.' },
-  halle: { u: .74, v: .3,  c: [.68, .5],  name: 'Abfüllhalle', sub: 'Level 2', lv: 2, need: 1, desc: 'Flaschen am Fließband in die richtige Kiste lenken.' },
-  bar:   { u: .25, v: .79, c: [.3, .6],   name: 'Bar vor der Brauerei', sub: 'Level 1', lv: 1, need: 0, desc: 'Die Gäste werfen Flaschen, Maxi fängt sie mit der Kiste.' },
+  sud:   { u: .3,  v: .2,  c: [.36, .42], name: 'Sudhaus', sub: 'Level 3', lv: 3, need: 2, desc: 'Jeder Sud braucht Malz und Hopfen aus dem Lager und ergibt 1 Fass.' },
+  halle: { u: .74, v: .3,  c: [.68, .5],  name: 'Abfüllhalle', sub: 'Level 2', lv: 2, need: 1, desc: 'Jede volle Kiste füllt Bier aus dem Fass ab: 4 Kisten je Fass.' },
+  bar:   { u: .25, v: .79, c: [.3, .6],   name: 'Bar vor der Brauerei', sub: 'Level 1', lv: 1, need: 0, desc: 'Jede gelieferte Kiste verkauft 1 Kiste aus dem Lager für 12 🪙.' },
   laden: { u: .76, v: .82, c: [.7, .7],   name: 'Brauerei-Laden', sub: 'Shop', shop: true, desc: 'Brauereitaler gegen Verbesserungen tauschen.' }
 };
 const LOCK = ['sud', 'halle', 'bar', 'laden'];
@@ -1995,7 +2111,8 @@ function mapInfo(){
   if (locked(MAP.at)){
     $('mapDesc').textContent = `🔒 Noch zu: ab ${RANKS[L.need].t} (${RANKS[L.need].pts.toLocaleString('de-DE')} Punkte in einer Runde).`; go.style.visibility = 'hidden'; return;
   }
-  $('mapDesc').textContent = L.shop ? `${L.desc} Du hast ${taler} 🪙.` : `${L.sub}: ${L.desc}`;
+  const st = MAP.at === 'sud' ? ` (Lager: ${ECO.malz} Malz, ${ECO.hopfen} Hopfen)` : MAP.at === 'halle' ? ` (Lager: ${fmtF(ECO.fass)} Fass)` : MAP.at === 'bar' ? ` (Lager: ${ECO.kisten} Kisten)` : '';
+  $('mapDesc').textContent = L.shop ? `${L.desc} Du hast ${taler} 🪙.` : `${L.sub}: ${L.desc}${st}`;
   go.textContent = L.shop ? 'Laden betreten' : `${L.sub} spielen`; go.style.visibility = 'visible';
 }
 function mapTap(k){
@@ -2298,7 +2415,7 @@ function quitToTitle(){
   if (stage === 3 && score > best3) best3 = score;
   try { localStorage.setItem(key, [0, best, best2, best3][stage]); } catch(e) {}
   try { wake?.release(); } catch(e) {}
-  earnTaler();
+  endShift();
   toTitle();
 }
 function showRecords(){
@@ -2308,7 +2425,7 @@ function showRecords(){
 }
 function toTitle(){
   stage = 1; P.noCrate = false; P.slim = false; state = 'menu';
-  ['over','paused','hud','board','legalBox','promo','toast','shop','career'].forEach(id => $(id).hidden = true); $('intro').hidden = true;
+  ['over','paused','hud','board','legalBox','promo','toast','shop','career','store','dayRep'].forEach(id => $(id).hidden = true); $('intro').hidden = true;
   $('start').hidden = false; updateMenu(); showRecords();
 }
 /* ================= Level 3: Im Sudhaus =================
@@ -2458,8 +2575,10 @@ function stepDone(){
   if (L3.stepI < L3.steps.length - 1) floatText(g.kx, g.ky - 110, `${st.rast ? 'Rast' : st.name} fertig! +${pts}`, C.gold); setMood('happy', .7);
   beep(660, .1, 'square', .07); setTimeout(() => beep(990, .16, 'square', .07), 110);
   if (L3.stepI < L3.steps.length - 1){ L3.stepI++; startStep(); return; }
-  // ganzer Sud fertig
+  // ganzer Sud fertig: verbraucht Malz und Hopfen aus dem Lager und ergibt ein Fass
   L3.brews++; crates = L3.brews;
+  { const need = { malz: 0, hopfen: 0 }; for (const s of L3.steps){ need.malz += (s.need.malz || 0) + (s.need.karamell || 0); need.hopfen += s.need.hopfen || 0; }
+    const ok = ecoBrew(need); setTimeout(() => { if (stage === 3) floatText(W/2, geo3().ky + 80, ok ? '+1 Fass ins Lager' : 'Zutaten fehlen: kein Fass', ok ? '#9fe0a8' : '#ff9a6a'); }, 350); }
   const bonus = (100 + 50 * L3.brews) * mult; score += bonus; L3.doneT = 1.6; L3.liquid = '#cfe3f0';
   floatText(W/2, g.ky - 140, `${L3.beer ? L3.beer.n : 'Sud'} fertig! +${bonus}`, C.gold); sCash(); setMood('proud', 1.6); updateHud();
   if (!L3.boilUnlocked && L3.brews >= 2) L3.boilUnlocked = true;
@@ -2851,8 +2970,11 @@ async function sendScore(){
 for (const b of document.querySelectorAll('[data-board]')) b.addEventListener('click', () => openBoard(b.closest('.overlay').id));
 $('boardClose').onclick = closeBoard;
 $('shopClose').onclick = () => { $('shop').hidden = true; openCareer(); };
-function openCareer(){ updateMenu(); showRecords(); $('start').hidden = true; $('career').hidden = false; mapInfo(); $('careerTitle').focus?.({ preventScroll: true }); }
+function openCareer(){ updateMenu(); showRecords(); updateEcoBar(); $('start').hidden = true; if (ECO.report){ showReport(); return; } $('career').hidden = false; mapInfo(); $('careerTitle').focus?.({ preventScroll: true }); }
 $('startBtn').onclick = openCareer;
+$('ecoBtn').onclick = () => { renderStore(); $('career').hidden = true; $('store').hidden = false; $('storeClose').focus(); };
+$('storeClose').onclick = () => { $('store').hidden = true; openCareer(); };
+$('repNext').onclick = () => { $('dayRep').hidden = true; openCareer(); };
 $('careerBack').onclick = () => { $('career').hidden = true; $('start').hidden = false; $('startBtn').focus({ preventScroll: true }); };
 $('mapGo').onclick = () => enterLoc(MAP.at);
 document.querySelectorAll('[data-loc]').forEach(b => b.onclick = () => mapTap(b.dataset.loc));
