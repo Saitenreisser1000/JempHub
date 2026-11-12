@@ -80,3 +80,8 @@ An der Bar stellt man den Bierpreis ein (8 bis 18 Taler je Kiste, Start 12). Bil
 Ausbauten kauft man direkt an den Gebäuden auf der Karte (Knopf „Ausbauen“), je zwei mit drei Stufen: Bar (Breite Kiste, Mehr Tische: +2 Taler je Kiste), Abfüllhalle (Ruhiges Band, Besserer Füller: +1 Kiste je Fass), Sudhaus (Routinierter Brauer, Größerer Sudkessel: +½ Fass je Sud). Der Brauerei-Laden führt die allgemeinen Verbesserungen (Ersatzbier, Eingespielt). Ausbauten sieht man auf der Karte: Sterne am Namensschild, zusätzliche Tische, Kupfer- und Edelstahltanks.
 
 Während einer Runde zeigt die Anzeige oben den Ertrag der Schicht (Bar: Taler, Abfüllhalle: Kisten, Sudhaus: Fässer). In der Pause beendet „Schicht beenden“ die Runde mit Bilanz und Talerstand; von der Spielende-Karte führt „Zur Brauerei“ direkt zurück auf die Karte.
+
+## Einstieg Schritt für Schritt
+
+Neue Spieler starten über „Start“ direkt in Level 1; die Karte kommt erst nach der ersten Runde („Zur Brauerei“) mit einer Begrüßung und einem Pfeil zur Bar. Der Laufbahn-Screen zeigt oben nur die aktuelle Stufe mit Fortschrittsbalken; antippen klappt alle Stufen und Rekorde auf. Die Wirtschaft (Lager, Tage, Abrechnung, Bierpreis) beginnt erst mit der Beförderung zum Mitarbeiter und wird dann einmal erklärt; davor verkauft die Bar jede volle Kiste für 12 Taler ohne Lager. Fässer kann man zukaufen (Lohnbrauerei), Malz und Hopfen erscheinen im Einkauf erst mit dem Sudhaus. „Ausbauen“ zeigt sich, sobald man sich einen Ausbau leisten kann.
+
