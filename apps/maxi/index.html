@@ -186,6 +186,11 @@ html,body{height:100%;margin:0;background:var(--night);color:var(--cream);overfl
 .mapprice{display:flex;justify-content:center;align-items:center;gap:8px;font:700 15px var(--f-ui);color:var(--ink)}
 .mapprice button{width:34px;height:34px;border-radius:50%;border:0;background:var(--hop);color:#fff;font:700 20px var(--f-ui);cursor:pointer;line-height:1}
 .mapprice b{min-width:52px;font-size:18px}
+.mapslot{display:grid;min-height:36px}
+.mapslot > *{grid-area:1 / 1}
+.mapprice .seg{width:auto;height:34px;border-radius:17px;padding:0 14px;font:700 14px var(--f-ui);background:rgba(47,93,58,.15);color:var(--hop)}
+.mapprice .seg[aria-pressed="true"]{background:var(--hop);color:#fff}
+#mapRecipe[hidden]{display:none}
 .mapprice #priceRush{font:600 13px var(--f-ui);color:var(--crate)}
 .mapbtns{display:flex;gap:8px}
 .mapbtns .btn{flex:1;min-width:0}
@@ -309,7 +314,10 @@ html,body{height:100%;margin:0;background:var(--night);color:var(--cream);overfl
     <div class="label mapcard" id="mapCard" aria-live="polite">
       <div class="mapname" id="mapName"></div>
       <div class="mapdesc" id="mapDesc"></div>
+      <div class="mapslot">
+      <div class="mapprice" id="mapRecipe" hidden><span>Zutaten</span><button type="button" class="seg" id="recStd" aria-pressed="true">Standard</button><button type="button" class="seg" id="recPre" aria-pressed="false">Premium</button></div>
       <div class="mapprice" id="mapPrice" style="visibility:hidden"><span>Bierpreis</span><button type="button" id="priceDown" aria-label="Preis senken">−</button><b id="priceVal">12 🪙</b><button type="button" id="priceUp" aria-label="Preis erhöhen">+</button><span id="priceRush"></span></div>
+      </div>
       <div class="mapbtns"><button class="btn" id="mapGo" type="button" style="visibility:hidden">Spielen</button><button class="btn sec" id="mapUp" type="button" hidden>Ausbauen</button></div>
     </div>
     <div class="maplinks" role="group" aria-label="Orte auf der Karte">
@@ -466,26 +474,45 @@ const ECO_FIX = 10;
 const perFass = () => 4 + (U.filler || 0);
 const salePrice = () => (rank < 1 ? 12 : ECO.barPrice) + 2*(U.tables || 0);
 // Bierpreis: billig = volle Bar und viel los, teuer = wenige Gäste
-const barRush = () => rank < 1 ? 1 : 1 + (12 - ECO.barPrice)*.06;
-function rushText(){ const p = ECO.barPrice; return p <= 9 ? 'Andrang: riesig' : p <= 11 ? 'Andrang: groß' : p <= 14 ? 'Andrang: normal' : p <= 16 ? 'Andrang: wenig' : 'Andrang: kaum'; }
-const ECO = { barPrice: 12, day: 1, shift: 0, malz: 15, hopfen: 10, fass: 1, kisten: 6, price: null, prev: null, log: [], today: null, report: false, round: null };
+const barRush = () => rank < 1 ? 1 : Math.max(.55, Math.min(1.4, 1 + (fairPrice() - ECO.barPrice)*.06));
+function rushText(){ const r = barRush(); return r > 1.25 ? 'Andrang: riesig' : r > 1.08 ? 'Andrang: groß' : r > .92 ? 'Andrang: normal' : r > .75 ? 'Andrang: wenig' : 'Andrang: kaum'; }
+/* Bierqualität 1–5 Sterne: Zutaten (Standard/Premium) plus wie sauber gebraut wurde.
+   Gutes Bier verträgt einen höheren Preis, ohne dass die Gäste ausbleiben. */
+const stars = q => { const n = Math.max(1, Math.min(5, Math.round(q))); return '★'.repeat(n) + '☆'.repeat(5 - n); };
+const fairPrice = () => Math.round(12 + ((ECO.kistenQ ?? 2.5) - 2.5)*2.4);
+function mixQ(oldAmt, oldQ, addAmt, addQ){ const t = oldAmt + addAmt; return t > 0 ? (Math.max(0, oldAmt)*(oldQ ?? 2.5) + addAmt*addQ) / t : addQ; }
+const ECO = { recipe: 'std', malzP: 0, hopfenP: 0, fassQ: 2.5, kistenQ: 2.5, barPrice: 12, day: 1, shift: 0, malz: 15, hopfen: 10, fass: 1, kisten: 6, price: null, prev: null, log: [], today: null, report: false, round: null };
 function ecoDay0(){ return { sales: 0, buy: 0, brewed: 0, filled: 0, sold: 0 }; }
 function ecoRound0(){ return { brewed: 0, filled: 0, sold: 0, earned: 0, short: 0 }; }
-function rollPrices(){ ECO.prev = ECO.price; ECO.price = { malz: 2 + Math.floor(Math.random()*3), hopfen: 3 + Math.floor(Math.random()*4), fass: 26 + Math.floor(Math.random()*9) }; }
+function rollPrices(){ ECO.prev = ECO.price; ECO.price = { malz: 2 + Math.floor(Math.random()*3), hopfen: 3 + Math.floor(Math.random()*4), fass: 26 + Math.floor(Math.random()*9) }; ECO.price.malzP = ECO.price.malz*2 + Math.floor(Math.random()*2); ECO.price.hopfenP = ECO.price.hopfen*2 + Math.floor(Math.random()*3); }
 try { Object.assign(ECO, JSON.parse(localStorage.getItem('ftb-eco') || '{}')); } catch(e) {}
-if (!ECO.price || !ECO.price.fass) rollPrices();
+if (!ECO.price || !ECO.price.fass || !ECO.price.malzP) rollPrices();
 if (!ECO.today) ECO.today = ecoDay0();
 ECO.round = ecoRound0();
 function saveEco(){ try { const { round, ...keep } = ECO; localStorage.setItem('ftb-eco', JSON.stringify(keep)); } catch(e) {} }
 const fmtF = v => (+v).toLocaleString('de-DE', { maximumFractionDigits: 2 });
 const kis = n => `${n} ${n === 1 ? 'Kiste' : 'Kisten'}`;
-function ecoBrew(need){
-  if (ECO.malz < need.malz || ECO.hopfen < need.hopfen){ ECO.round.short++; return false; }
-  const add = 1 + .5*(U.kettle || 0); ECO.malz -= need.malz; ECO.hopfen -= need.hopfen; ECO.fass += add; ECO.round.fass = (ECO.round.fass || 0) + add; updateEarn(); ECO.today.brewed++; ECO.round.brewed++; saveEco(); return true;
+/* Zutaten werden beim Anfang eines Suds abgebucht; ohne Zutaten endet die Schicht */
+function brewNeed(r){ const m = r.mash || {}; return { malz: (m.malz || 0) + (m.karamell || 0), hopfen: r.hop || 0 }; }
+function canBrew(need){ const pre = ECO.recipe === 'pre'; return ECO[pre ? 'malzP' : 'malz'] >= need.malz && ECO[pre ? 'hopfenP' : 'hopfen'] >= need.hopfen; }
+function chargeBrew(need){
+  if (!ecoOn()) { L3.charged = { need, pre: false }; return true; }
+  if (!canBrew(need)) return false;
+  const pre = ECO.recipe === 'pre'; ECO[pre ? 'malzP' : 'malz'] -= need.malz; ECO[pre ? 'hopfenP' : 'hopfen'] -= need.hopfen;
+  L3.charged = { need, pre }; saveEco(); return true;
+}
+function refundBrew(){
+  const c = L3.charged; L3.charged = null; if (!c || !ecoOn()) return;
+  ECO[c.pre ? 'malzP' : 'malz'] += c.need.malz; ECO[c.pre ? 'hopfenP' : 'hopfen'] += c.need.hopfen; saveEco();
+}
+function ecoBrew(perf){
+  const c = L3.charged; L3.charged = null; if (!c) return 0;
+  const pre = c.pre, add = 1 + .5*(U.kettle || 0), q = pre ? Math.min(5, 3.5 + perf*1.5) : Math.min(3.4, 2 + perf*1.4);
+  ECO.fassQ = mixQ(ECO.fass, ECO.fassQ, add, q); ECO.fass += add; ECO.round.q = q; ECO.round.fass = (ECO.round.fass || 0) + add; updateEarn(); ECO.today.brewed++; ECO.round.brewed++; saveEco(); return q;
 }
 function ecoFill(){
   if (ECO.fass < 1/perFass() - 1e-6){ ECO.round.short++; return false; }
-  ECO.fass = Math.max(0, Math.round((ECO.fass - 1/perFass())*1000)/1000); ECO.kisten++; ECO.today.filled++; ECO.round.filled++; saveEco(); updateEarn(); return true;
+  ECO.fass = Math.max(0, Math.round((ECO.fass - 1/perFass())*1000)/1000); ECO.kistenQ = mixQ(ECO.kisten, ECO.kistenQ, 1, ECO.fassQ ?? 2.5); ECO.kisten++; ECO.today.filled++; ECO.round.filled++; saveEco(); updateEarn(); return true;
 }
 function ecoSell(){
   if (rank < 1){ const pr = salePrice(); taler += pr; ECO.round.earned += pr; ECO.round.sold++; saveShop(); updateEarn(); return pr; } // Lakai: Bar verkauft noch ohne Lager
@@ -495,6 +522,8 @@ function ecoSell(){
 function endShift(){
   // einmal pro Runde: Schicht zählen, nach drei Schichten ist Abrechnung
   if (roundPaid) return null; roundPaid = true;
+  // angefangener Sud ohne einzige Zutat im Kessel: Zutaten zurück ins Lager
+  if (stage === 3 && L3.charged && L3.stepI === 0 && !Object.keys(L3.have || {}).length) refundBrew();
   const r = ECO.round;
   if (score <= 0 && !r.brewed && !r.filled && !r.sold && !r.earned) return null;
   if (rank < 1){ saveShop(); return r; }
@@ -504,19 +533,21 @@ function shiftText(r){
   if (!r) return '';
   if (rank < 1) return r.earned ? `${kis(r.sold)} verkauft: +${r.earned} 🪙. Talerstand: ${taler} 🪙.` : '';
   const p = [];
-  if (r.brewed) p.push(`${fmtF(r.fass || r.brewed)} Fass gebraut`); if (r.filled) p.push(`${kis(r.filled)} abgefüllt`); if (r.sold) p.push(`${kis(r.sold)} verkauft`);
+  if (r.brewed) p.push(`${fmtF(r.fass || r.brewed)} Fass gebraut${r.q ? " " + stars(r.q) : ""}`); if (r.filled) p.push(`${kis(r.filled)} abgefüllt`); if (r.sold) p.push(`${kis(r.sold)} verkauft`);
   let t = `Schicht ${Math.min(3, ECO.shift)}/3 von Tag ${ECO.day}` + (p.length ? ': ' + p.join(', ') : '') + (r.earned ? ` · +${r.earned} 🪙` : '') + '.';
   if (r.short) t += ' Es fehlte Ware im Lager, schau bei „Lager & Einkauf“ vorbei.';
   return t + ` Talerstand: ${taler} 🪙.`;
 }
 function updateEcoBar(){
-  $('ecoStock').textContent = `🌾 ${ECO.malz} Malz · 🌿 ${ECO.hopfen} Hopfen · 🛢 ${fmtF(ECO.fass)} Fass · 📦 ${ECO.kisten} Kisten · 🪙 ${taler}`;
+  $('ecoStock').textContent = `🛢 ${fmtF(ECO.fass)} Fass · 📦 ${ECO.kisten} Kisten ${stars(ECO.kistenQ ?? 2.5)} · 🪙 ${taler}`;
   $('ecoDay').textContent = `Tag ${ECO.day} · Schicht ${Math.min(3, ECO.shift + 1)}/3`;
 }
 const STORE = [
   { k: 'fass', n: 'Fass Bier', ic: '🛢', d: 'Fertig gebraut von der Lohnbrauerei, teurer als selbst brauen', n5: 1, unit: 'Fass' },
-  { k: 'malz', n: 'Malz', ic: '🌾', d: 'Fürs Sudhaus, 2 bis 4 Säcke je Sud', n5: 5, unit: 'Sack', sud: true },
-  { k: 'hopfen', n: 'Hopfen', ic: '🌿', d: 'Fürs Sudhaus, 1 bis 4 je Sud', n5: 5, unit: 'Sack', sud: true }
+  { k: 'malz', n: 'Malz', ic: '🌾', d: 'Standard, 2 bis 4 Säcke je Sud', n5: 5, unit: 'Sack', sud: true },
+  { k: 'hopfen', n: 'Hopfen', ic: '🌿', d: 'Standard, 1 bis 4 je Sud', n5: 5, unit: 'Sack', sud: true },
+  { k: 'malzP', n: 'Premium-Malz', ic: '🌾', d: 'Aus der Region, für ★★★★ und mehr', n5: 5, unit: 'Sack', sud: true },
+  { k: 'hopfenP', n: 'Aroma-Hopfen', ic: '🌿', d: 'Für ★★★★ und mehr', n5: 5, unit: 'Sack', sud: true }
 ];
 function renderStore(){
   $('storeTaler').textContent = `🪙 ${taler} Brauereitaler · Tag ${ECO.day}`;
@@ -525,11 +556,12 @@ function renderStore(){
     const pr = ECO.price[it.k], pv = ECO.prev ? ECO.prev[it.k] : pr, tr = pr > pv ? ' ▲' : pr < pv ? ' ▼' : '';
     b.textContent = `${it.ic} ${it.n}: ${fmtF(ECO[it.k])}`; sm.textContent = `${it.d}. Heute ${pr} 🪙 je ${it.unit}${tr}`;
     const cost = pr*it.n5; bt.type = 'button'; bt.textContent = `+${it.n5} für ${cost} 🪙`; bt.disabled = taler < cost;
-    bt.onclick = () => { if (taler < cost) return; taler -= cost; ECO[it.k] += it.n5; ECO.today.buy += cost; saveShop(); saveEco(); beep(880, .07, 'triangle', .07); renderStore(); updateEcoBar(); };
+    if (it.k === 'fass') b.textContent += ` ${stars(ECO.fassQ ?? 2.5)}`;
+    bt.onclick = () => { if (taler < cost) return; taler -= cost; if (it.k === 'fass') ECO.fassQ = mixQ(ECO.fass, ECO.fassQ, it.n5, 2.5); ECO[it.k] += it.n5; ECO.today.buy += cost; saveShop(); saveEco(); beep(880, .07, 'triangle', .07); renderStore(); updateEcoBar(); };
     li.append(b, sm, bt); return li;
   });
   const info = (ic, n, v, d) => { const li = document.createElement('li'), b = document.createElement('b'), sm = document.createElement('small'); b.textContent = `${ic} ${n}: ${v}`; sm.textContent = d; li.append(b, sm); return li; };
-  items.push(info('📦', 'Kisten', ECO.kisten, `Volle Kisten aus der Abfüllhalle. Die Bar verkauft jede Kiste für ${salePrice()} 🪙 (Preis an der Bar einstellen).`));
+  items.push(info('📦', 'Kisten', `${ECO.kisten} ${stars(ECO.kistenQ ?? 2.5)}`, `Volle Kisten aus der Abfüllhalle. Die Bar verkauft jede Kiste für ${salePrice()} 🪙 (Preis an der Bar einstellen).`));
   $('storeList').replaceChildren(...items);
   $('storeNote').textContent = `Sudhaus: Malz + Hopfen → ${fmtF(1 + .5*(U.kettle || 0))} Fass · Abfüllhalle: Fass → ${perFass()} Kisten · Bar: Kiste → ${salePrice()} 🪙. Rohstoffpreise ändern sich jeden Tag.`;
 }
@@ -538,7 +570,7 @@ function showReport(){
   taler -= fix;
   ECO.log.push({ d: ECO.day, p: profit }); ECO.log = ECO.log.slice(-7);
   $('repTitle').textContent = `Tag ${ECO.day}: Abrechnung`;
-  const rows = [['Verkauft', kis(t.sold)], ['Gebraut', `${t.brewed} Fass`], ['Abgefüllt', kis(t.filled)], ['Einnahmen', `+${t.sales} 🪙`], ['Einkauf', t.buy ? `−${t.buy} 🪙` : '0 🪙'], ['Strom und Miete', `−${ECO_FIX} 🪙`], ['Gewinn', `${profit >= 0 ? '+' : '−'}${Math.abs(profit)} 🪙`]];
+  const rows = [['Verkauft', kis(t.sold)], ['Gebraut', `${t.brewed} Fass`], ['Abgefüllt', kis(t.filled)], ['Bier im Lager', stars(ECO.kistenQ ?? 2.5)], ['Einnahmen', `+${t.sales} 🪙`], ['Einkauf', t.buy ? `−${t.buy} 🪙` : '0 🪙'], ['Strom und Miete', `−${ECO_FIX} 🪙`], ['Gewinn', `${profit >= 0 ? '+' : '−'}${Math.abs(profit)} 🪙`]];
   $('repBody').replaceChildren(...rows.flatMap(([a, b], i) => { const x = document.createElement('span'), y = document.createElement('span'); x.textContent = a; y.textContent = b; if (i === rows.length - 1){ x.className = y.className = 'tot' + (profit < 0 ? ' neg' : ''); } return [x, y]; }));
   const mx = Math.max(10, ...ECO.log.map(l => Math.abs(l.p)));
   $('repChart').replaceChildren(...ECO.log.map(l => { const d = document.createElement('div'), s = document.createElement('span'); d.style.height = Math.max(4, Math.abs(l.p)/mx*60) + 'px'; if (l.p < 0) d.className = 'neg'; d.title = `Tag ${l.d}: ${l.p} 🪙`; s.textContent = `T${l.d}`; d.append(s); return d; }));
@@ -1228,7 +1260,8 @@ function updateForklift(dt){
       streak = 0; mult = baseMult; setMultUI(null);
       if (missed > 0){ missed = 0; floatText(W/2, groundY - 260, 'Bruch zurückgesetzt', '#9fe0a8'); }
       floatText(zoneX(), groundY - 130, used > 1 ? `+${pts} (×${used})` : `+${pts}`, C.gold); sCash();
-      { const sold = ecoSell(); floatText(W/2, groundY - 310, sold ? `Kiste verkauft +${sold} 🪙` : 'Lager leer: nur Trinkgeld +1 🪙', sold ? C.gold : '#ff9a6a'); }
+      { const sold = ecoSell(); floatText(W/2, groundY - 310, sold ? `Kiste verkauft +${sold} 🪙` : 'Lager leer: nur Trinkgeld +1 🪙', sold ? C.gold : '#ff9a6a');
+        if (rank >= 1 && ECO.kisten < 1) setTimeout(() => stockOut('Ausverkauft!', 'Alle Kisten aus dem Lager sind verkauft.'), 900); }
       if (used > 1) floatText(W/2, groundY - 285, `Multiplikator ×${used} eingelöst!`, C.gold);
       if (crates % 2 === 0) floatText(W/2, groundY - 220, `Stufe ${level()}`, C.cream);
       updateHud(); FL.phase = 3; FL.t = 0;
@@ -1719,6 +1752,11 @@ async function start(keep){
   state = 'play'; keepAwake();
   if (!seen.move) unlock('move');
 }
+function stockOut(title, why){
+  if (!['play', 'forklift', 'intro'].includes(state)) return;
+  stockWhy = why; gameOver(title);
+}
+let stockWhy = '';
 function gameOver(voluntary){
   state = 'over'; $('finalScore').textContent = score; $('paused').hidden = true;
   if (stage === 3){
@@ -1735,7 +1773,8 @@ function gameOver(voluntary){
     $('finalInfo').textContent = `${crates} ${crates === 1 ? 'volle Kiste' : 'volle Kisten'} abgegeben · Rekord ${best}`;
   }
   if (voluntary === true) $('overTitle').textContent = 'Feierabend!';
-  $('talerInfo').textContent = shiftText(endShift());
+  else if (typeof voluntary === 'string') $('overTitle').textContent = voluntary;
+  $('talerInfo').textContent = (typeof voluntary === 'string' && stockWhy ? stockWhy + ' Nachschub gibt es unter „Lager & Einkauf“. ' : '') + shiftText(endShift()); stockWhy = '';
   $('intro').hidden = true;
   $('over').hidden = false; try { wake?.release(); } catch(e) {}
   hsAfterGame();
@@ -1861,6 +1900,7 @@ function swapCrate(b, g){
   const pts = 50 * mult; score += pts; updateHud(); sCash(); setMood('proud', .8);
   floatText(Math.max(XL + 80, Math.min(XR - 80, c.x)), c.y - 40, `Neue Kiste! +${pts}`, C.gold);
   const okF = ecoFill(); floatText(Math.max(XL + 90, Math.min(XR - 90, c.x)), c.y - 66, okF ? '+1 Kiste ins Lager' : 'Kein Bier im Tank', okF ? '#9fe0a8' : '#ff9a6a');
+  if (ecoOn() && (!okF || ECO.fass < 1/perFass() - 1e-6)) setTimeout(() => stockOut('Tank leer!', 'Das Bier im Lager ist abgefüllt.'), 700);
   for (let k=0;k<12;k++) parts.push({ x: c.x + (Math.random()-.5)*50, y: c.y + 10, vx: (Math.random()-.5)*160, vy: -60 - Math.random()*140, life: .7, c: k%2 ? C.gold : C.cream, s: 2 + Math.random()*2, round: true });
 }
 function jam2(c, g){
@@ -2154,9 +2194,9 @@ function updateMenu(){
 /* ---------- Karte: Maxi geht über das Brauereigelände ---------- */
 const LOCS = {
   plaza: { u: .5,  v: .55 },
-  sud:   { u: .3,  v: .2,  c: [.36, .42], name: 'Sudhaus', sub: 'Level 3', lv: 3, need: 2, desc: () => `Jeder Sud braucht Malz und Hopfen aus dem Lager und ergibt ${fmtF(1 + .5*(U.kettle || 0))} Fass.` },
+  sud:   { u: .3,  v: .2,  c: [.36, .42], name: 'Sudhaus', sub: 'Level 3', lv: 3, need: 2, desc: () => `Jeder Sud ergibt ${fmtF(1 + .5*(U.kettle || 0))} Fass, sauber brauen gibt mehr Sterne.` },
   halle: { u: .74, v: .3,  c: [.68, .5],  name: 'Abfüllhalle', sub: 'Level 2', lv: 2, need: 1, desc: () => `Jede volle Kiste füllt Bier aus dem Fass ab: ${perFass()} Kisten je Fass.` },
-  bar:   { u: .25, v: .79, c: [.3, .6],   name: 'Bar vor der Brauerei', sub: 'Level 1', lv: 1, need: 0, desc: () => rank < 1 ? `Fang die Flaschen der Gäste. Jede volle Kiste bringt ${salePrice()} 🪙.` : `Jede gelieferte Kiste verkauft 1 Kiste aus dem Lager für ${salePrice()} 🪙.` },
+  bar:   { u: .25, v: .79, c: [.3, .6],   name: 'Bar vor der Brauerei', sub: 'Level 1', lv: 1, need: 0, desc: () => rank < 1 ? `Fang die Flaschen der Gäste. Jede volle Kiste bringt ${salePrice()} 🪙.` : `Jede Lieferung verkauft 1 Kiste für ${salePrice()} 🪙.` },
   laden: { u: .76, v: .82, c: [.7, .7],   name: 'Brauerei-Laden', sub: 'Shop', shop: true, desc: 'Allgemeine Verbesserungen für alle Level.' }
 };
 const LOCK = ['sud', 'halle', 'bar', 'laden'];
@@ -2183,6 +2223,8 @@ function locked(k){ const L = LOCS[k], all = typeof UNLOCK_ALL !== 'undefined' &
 function mapInfo(){
   const L = LOCS[MAP.at], go = $('mapGo');
   $('mapPrice').style.visibility = ecoOn() && MAP.at === 'bar' && !MAP.pts.length ? 'visible' : 'hidden';
+  $('mapRecipe').hidden = !(MAP.at === 'sud' && !MAP.pts.length && !locked('sud'));
+  $('recStd').setAttribute('aria-pressed', ECO.recipe !== 'pre' ? 'true' : 'false'); $('recPre').setAttribute('aria-pressed', ECO.recipe === 'pre' ? 'true' : 'false');
   $('priceVal').textContent = `${ECO.barPrice} 🪙` + (U.tables ? ` +${2*U.tables}` : ''); $('priceRush').textContent = rushText();
   $('priceDown').disabled = ECO.barPrice <= 8; $('priceUp').disabled = ECO.barPrice >= 18;
   $('mapUp').hidden = !MAP.at || MAP.at === 'plaza' || MAP.at === 'laden' || !!MAP.pts.length || locked(MAP.at) || (taler < 30 && !bldLevel(MAP.at));
@@ -2195,10 +2237,13 @@ function mapInfo(){
   if (locked(MAP.at)){
     $('mapDesc').textContent = `🔒 Noch zu: ab ${RANKS[L.need].t} (${RANKS[L.need].pts.toLocaleString('de-DE')} Punkte in einer Runde).`; go.style.visibility = 'hidden'; return;
   }
-  const st = !ecoOn() ? '' : MAP.at === 'sud' ? ` (Lager: ${ECO.malz} Malz, ${ECO.hopfen} Hopfen)` : MAP.at === 'halle' ? ` (Lager: ${fmtF(ECO.fass)} Fass)` : MAP.at === 'bar' ? ` (Lager: ${ECO.kisten} Kisten)` : '';
+  const pre = ECO.recipe === 'pre';
+  const st = !ecoOn() ? '' : MAP.at === 'sud' ? `Im Lager: ${pre ? ECO.malzP : ECO.malz} ${pre ? 'Premium-Malz' : 'Malz'}, ${pre ? ECO.hopfenP : ECO.hopfen} ${pre ? 'Aroma-Hopfen' : 'Hopfen'}. ${pre ? 'Premium: 4 bis 5' : 'Standard: 2 bis 3'} Sterne, sauber brauen gibt die oberen.` : MAP.at === 'halle' ? `Füllt Fässer in Kisten, ${perFass()} je Fass. Im Lager: ${fmtF(ECO.fass)} Fass ${stars(ECO.fassQ ?? 2.5)}.` : MAP.at === 'bar' ? `Jede Lieferung verkauft 1 Kiste. Im Lager: ${ECO.kisten} Kisten ${stars(ECO.kistenQ ?? 2.5)}, fairer Preis ${fairPrice()} 🪙.` : '';
   const ds = typeof L.desc === 'function' ? L.desc() : L.desc;
-  $('mapDesc').textContent = L.shop ? `${ds} Du hast ${taler} 🪙.` : `${L.sub}: ${ds}${st}`;
+  $('mapDesc').textContent = L.shop ? `${ds} Du hast ${taler} 🪙.` : st ? `${L.sub}: ${st}` : `${L.sub}: ${ds}`;
   go.textContent = L.shop ? 'Laden betreten' : `${L.sub} spielen`; go.style.visibility = 'visible';
+  const sm = stockMsg(MAP.at);
+  if (sm){ $('mapDesc').textContent = '⚠ ' + sm; go.textContent = MAP.at === 'bar' && ECO.fass >= 1/perFass() - 1e-6 && !locked('halle') ? 'Zur Abfüllhalle' : 'Lager & Einkauf'; }
 }
 function mapTap(k){
   if (!LOCS[k]) return;
@@ -2224,8 +2269,16 @@ function mapPointer(e){
   else { const p = locPos('plaza'); if (Math.hypot(fx - p.x, fy - p.y) < 50) mapTap('plaza'); }
 }
 function openShop(b){ renderShop(b); $('career').hidden = true; $('shop').hidden = false; $('shopClose').focus(); }
+function stockMsg(k){
+  if (!ecoOn()) return '';
+  if (k === 'sud' && !canBrew(brewNeed(RECIPES[0]))) return `Zu wenig ${ECO.recipe === 'pre' ? 'Premium-Zutaten' : 'Zutaten'} für einen Sud (mindestens ${brewNeed(RECIPES[0]).malz} Malz und ${brewNeed(RECIPES[0]).hopfen} Hopfen).`;
+  if (k === 'halle' && ECO.fass < 1/perFass() - 1e-6) return 'Kein Bier im Tank. Brau im Sudhaus oder kauf ein Fass zu.';
+  if (k === 'bar' && ECO.kisten < 1) return 'Keine Kisten im Lager. Füll zuerst in der Abfüllhalle ab.';
+  return '';
+}
 function enterLoc(k){
   if (!k || k === 'plaza' || locked(k)) return;
+  if (stockMsg(k)){ if (k === 'bar' && ECO.fass >= 1/perFass() - 1e-6 && !locked('halle')) mapTap('halle'); else { renderStore(); $('career').hidden = true; $('store').hidden = false; $('storeClose').focus(); } return; }
   const L = LOCS[k];
   if (L.shop){ openShop('laden'); return; }
   if (L.lv === 3) start3(); else if (L.lv === 2) start2(); else start();
@@ -2562,11 +2615,14 @@ function newBrew(){
   const extra = d >= RECIPES.length ? Math.min(2, Math.floor((d - RECIPES.length)/3) + 1) : 0;
   const mash = { ...r.mash }; if (extra) mash.malz += extra;
   L3.beer = r;
+  // Zutaten für diesen Sud aus dem Lager nehmen
+  { const need = brewNeed({ mash, hop: r.hop + (extra > 1 ? 1 : 0) }); L3.charged = null;
+    if (!chargeBrew(need)) setTimeout(() => stockOut('Zutaten aufgebraucht!', 'Für den nächsten Sud fehlen Malz oder Hopfen.'), 500); }
   L3.steps = [{ name: 'Einmaischen', need: mash, liquid: r.dark ? '#9a5a28' : '#e8c47a' }];
   if (d >= 1) L3.steps.push({ name: 'Maischrast', need: {}, rast: true, liquid: r.dark ? '#8a4c20' : '#e2b866' });
   L3.steps.push({ name: 'Würzekochen', need: { hopfen: r.hop + (extra > 1 ? 1 : 0) }, liquid: r.dark ? '#6a3414' : '#c98a2e', boil: L3.boilUnlocked });
   L3.steps.push({ name: 'Anstellen', need: { hefe: r.hefe }, liquid: r.col });
-  L3.stepI = 0; startStep();
+  L3.stepI = 0; L3.sudFaults = 0; L3.tSum = 0; L3.tN = 0; startStep();
 }
 function curStep(){ return L3.steps[L3.stepI]; }
 function startStep(){
@@ -2651,6 +2707,7 @@ function stirDone(){
   }
 }
 function fault3(msg, x, y){
+  L3.sudFaults = (L3.sudFaults || 0) + 1;
   missed++; breakStreak(); setMood('shock', .9); shake = .2; sBreak();
   floatText(x, y, msg, '#ff8a6a'); updateHud();
   if (missed >= MAXMISS){ gameOver(); return true; }
@@ -2670,14 +2727,16 @@ function arrive3(f){
 }
 function stepDone(){
   const g = geo3(), st = curStep(); L3.liquid = st.liquid;
+  L3.tSum = (L3.tSum || 0) + Math.max(0, L3.timer / L3.timerMax); L3.tN = (L3.tN || 0) + 1;
   const pts = Math.round(L3.timer / L3.timerMax * 40) * mult + 20 * mult; score += pts;
   if (L3.stepI < L3.steps.length - 1) floatText(g.kx, g.ky - 110, `${st.rast ? 'Rast' : st.name} fertig! +${pts}`, C.gold); setMood('happy', .7);
   beep(660, .1, 'square', .07); setTimeout(() => beep(990, .16, 'square', .07), 110);
   if (L3.stepI < L3.steps.length - 1){ L3.stepI++; startStep(); return; }
   // ganzer Sud fertig: verbraucht Malz und Hopfen aus dem Lager und ergibt ein Fass
   L3.brews++; crates = L3.brews;
-  { const need = { malz: 0, hopfen: 0 }; for (const s of L3.steps){ need.malz += (s.need.malz || 0) + (s.need.karamell || 0); need.hopfen += s.need.hopfen || 0; }
-    const ok = ecoBrew(need); setTimeout(() => { if (stage === 3) floatText(W/2, geo3().ky + 80, ok ? '+1 Fass ins Lager' : 'Zutaten fehlen: kein Fass', ok ? '#9fe0a8' : '#ff9a6a'); }, 350); }
+  { const perf = Math.max(0, 1 - (L3.sudFaults || 0)*.35) * .65 + Math.min(1, (L3.tSum || 0) / Math.max(1, L3.tN || 1) * 1.6) * .35;
+    const q = ecoBrew(perf);
+    if (q) setTimeout(() => { if (stage === 3) floatText(W/2, geo3().ky + 80, `+Fass ${stars(q)}`, '#9fe0a8'); }, 350); }
   const bonus = (100 + 50 * L3.brews) * mult; score += bonus; L3.doneT = 1.6; L3.liquid = '#cfe3f0';
   floatText(W/2, g.ky - 140, `${L3.beer ? L3.beer.n : 'Sud'} fertig! +${bonus}`, C.gold); sCash(); setMood('proud', 1.6); updateHud();
   if (!L3.boilUnlocked && L3.brews >= 2) L3.boilUnlocked = true;
@@ -2712,7 +2771,7 @@ function answerOffer(yes){
   const o = L3.offer; L3.offer = null;
   if (!yes){ L3.offerCool = 1; beep(330, .08, 'square', .05); return; }
   L3.rush = { beer: o.beer, n: o.n, done: 0, t: o.t, tMax: o.t, reward: o.reward };
-  newBrew(); setMood('proud', .8); beep(880, .1, 'square', .07);
+  refundBrew(); newBrew(); setMood('proud', .8); beep(880, .1, 'square', .07);
   floatText(W/2, geo3().ky - 130, `Los: ${o.n} × ${o.beer.n}!`, C.gold);
 }
 function drawOffer(g, hl){
@@ -3099,9 +3158,18 @@ function ecoIntro(){
   ]);
 }
 const ecoOn = () => rank >= 1;
+function qualIntro(){
+  const p = t => { const e = document.createElement('p'); e.style.margin = '0'; e.textContent = t; return e; };
+  showTip('Neu für Produktionsmitarbeiter', 'Gutes Bier, gutes Geld', [
+    p('Im Sudhaus braust du jetzt selbst. Malz und Hopfen kaufst du unter „Lager & Einkauf“, am Sudhaus wählst du Standard- oder Premium-Zutaten.'),
+    p('Standard ergibt ★★ bis ★★★, Premium ★★★★ bis ★★★★★. Wer sauber braut (keine Fehler, zügig), bekommt die oberen Sterne.'),
+    p('Je besser das Bier, desto höher der faire Preis an der Bar: Gutes Bier kannst du teurer verkaufen, ohne dass die Gäste ausbleiben.')
+  ]);
+}
 function openCareer(){
   updateMenu(); showRecords(); updateEcoBar(); $('start').hidden = true;
   if (ecoOn() && !ECO.introSeen){ ECO.introSeen = true; saveEco(); ecoIntro(); return; }
+  if (rank >= 2 && !ECO.qualSeen){ ECO.qualSeen = true; saveEco(); qualIntro(); return; }
   if (ECO.report){ showReport(); return; }
   $('ecoBar').hidden = !ecoOn();
   $('career').hidden = false; mapInfo(); $('rankMini').focus?.({ preventScroll: true });
@@ -3120,6 +3188,8 @@ $('careerBack').onclick = () => { $('career').hidden = true; $('start').hidden =
 $('mapGo').onclick = () => enterLoc(MAP.at);
 $('mapUp').onclick = () => { if (MAP.at && LOCS[MAP.at] && !locked(MAP.at)) openShop(MAP.at); };
 const setPrice = d => { ECO.barPrice = Math.max(8, Math.min(18, ECO.barPrice + d)); saveEco(); beep(d > 0 ? 880 : 660, .05, 'triangle', .06); mapInfo(); };
+const setRecipe = r => { ECO.recipe = r; saveEco(); beep(r === 'pre' ? 990 : 660, .05, 'triangle', .06); mapInfo(); };
+$('recStd').onclick = () => setRecipe('std'); $('recPre').onclick = () => setRecipe('pre');
 $('priceDown').onclick = () => setPrice(-1); $('priceUp').onclick = () => setPrice(1);
 document.querySelectorAll('[data-loc]').forEach(b => b.onclick = () => mapTap(b.dataset.loc));
 $('hsSend').onclick = sendScore;
