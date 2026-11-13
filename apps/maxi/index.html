@@ -126,6 +126,18 @@ html,body{height:100%;margin:0;background:var(--night);color:var(--cream);overfl
 .hslist.local li{grid-template-columns:1fr auto}
 .hslist.local li::before{display:none}
 .shopcard{max-height:calc(100% - 16px);overflow-y:auto}
+.ladenui{position:fixed;inset:0;pointer-events:none;font-family:var(--f-ui)}
+.ladenui[hidden]{display:none}
+.ladentop{position:absolute;left:0;right:0;top:0;display:flex;justify-content:space-between;align-items:center;padding:calc(env(safe-area-inset-top,0px) + 10px) max(14px,env(safe-area-inset-left,0px)) 6px}
+.ladentop .btn{pointer-events:auto;padding:8px 14px;font-size:18px;background:rgba(20,26,36,.75);color:var(--cream);border:2px solid var(--cream)}
+.ladentaler{font:400 24px var(--f-display);color:var(--gold);text-shadow:0 2px 0 rgba(0,0,0,.5)}
+.ladenbuy{position:absolute;left:50%;transform:translateX(-50%);bottom:calc(env(safe-area-inset-bottom,0px) + 16px);width:min(340px,calc(100% - 32px));box-sizing:border-box;pointer-events:auto;
+  display:grid;grid-template-columns:1fr auto;gap:2px 12px;align-items:center;background:var(--cream);color:var(--ink);border-radius:14px;padding:12px 14px;box-shadow:0 10px 26px rgba(0,0,0,.45)}
+.ladenbuy[hidden]{display:none}
+.ladenbuy b{font:400 26px var(--f-display);color:var(--hop)}
+.ladenbuy span{grid-column:1;font:600 15px var(--f-ui);opacity:.8}
+.ladenbuy .btn{grid-column:2;grid-row:1 / span 2;font-size:20px;padding:12px 14px;min-width:110px}
+.ladenbuy .btn:disabled{opacity:.45}
 .taler{font:700 18px var(--f-ui);margin:0 0 10px}
 .shoplist{list-style:none;margin:0 0 12px;padding:0;display:grid;gap:8px;text-align:left}
 .shoplist li{display:grid;grid-template-columns:1fr auto;gap:2px 10px;align-items:center;padding:8px 10px;border-radius:8px;background:rgba(47,93,58,.1)}
@@ -339,7 +351,7 @@ html,body{height:100%;margin:0;background:var(--night);color:var(--cream);overfl
       <div class="mapdesc" id="mapDesc"></div>
       <div class="mapprice" id="mapRecipe" hidden><span>Zutaten</span><button type="button" class="seg" id="recStd" aria-pressed="true">Standard</button><button type="button" class="seg" id="recPre" aria-pressed="false">Premium</button></div>
       <div class="mapprice" id="mapPrice" hidden><span>Bierpreis</span><button type="button" id="priceDown" aria-label="Preis senken">−</button><b id="priceVal">12 🪙</b><button type="button" id="priceUp" aria-label="Preis erhöhen">+</button><span id="priceRush"></span></div>
-      <div class="mapbtns"><button class="btn" id="mapGo" type="button" style="visibility:hidden">Spielen</button><button class="btn sec" id="mapUp" type="button" hidden>Ausbauen</button><button class="btn sec" id="ecoBtn" type="button" hidden>Einkauf</button></div>
+      <div class="mapbtns"><button class="btn" id="mapGo" type="button" style="visibility:hidden">Spielen</button></div>
     </div>
     <div class="maplinks" role="group" aria-label="Orte auf der Karte">
       <button type="button" id="careerBack">‹ Hauptmenü</button><button type="button" class="sr" data-loc="bar">Braustüberl</button><button type="button" class="sr" data-loc="halle">Abfüllhalle</button><button type="button" class="sr" data-loc="sud">Sudhaus</button><button type="button" class="sr" data-loc="laden">Laden</button>
@@ -374,26 +386,9 @@ html,body{height:100%;margin:0;background:var(--night);color:var(--cream);overfl
   </div>
 </div>
 
-<div class="overlay" id="shop" hidden>
-  <div class="label shopcard" role="dialog" aria-modal="true" aria-labelledby="shopTitle">
-    <div class="brand">Freetown Brewery</div>
-    <h2 id="shopTitle">Brauerei-Shop</h2>
-    <p class="taler" id="shopTaler"></p>
-    <ul class="shoplist" id="shopList"></ul>
-    <p class="hsnote">Brauereitaler verdienst du mit Lohn im Braustüberl und am Förderband und mit deinem eigenen Bier. Ausbauten gibt es direkt an den Gebäuden auf der Karte.</p>
-    <button class="btn" id="shopClose" type="button">Zurück</button>
-  </div>
-</div>
-
-<div class="overlay" id="store" hidden>
-  <div class="label shopcard" role="dialog" aria-modal="true" aria-labelledby="storeTitle">
-    <div class="brand">Freetown Brewery</div>
-    <h2 id="storeTitle">Lager &amp; Einkauf</h2>
-    <p class="taler" id="storeTaler"></p>
-    <ul class="shoplist" id="storeList"></ul>
-    <p class="hsnote" id="storeNote"></p>
-    <button class="btn" id="storeClose" type="button">Zurück</button>
-  </div>
+<div class="ladenui" id="ladenUi" hidden>
+  <div class="ladentop" id="ladenTop"><button class="btn" id="ladenOut" type="button">‹ Raus</button><span class="ladentaler" id="ladenTaler"></span></div>
+  <div class="ladenbuy" id="ladenBuy" role="group" aria-live="polite" hidden><b id="buyName"></b><span id="buyFx"></span><button class="btn" id="buyBtn" type="button"></button></div>
 </div>
 
 <div class="overlay" id="tip" hidden>
@@ -586,21 +581,6 @@ const STORE = [
   { k: 'malzP', n: 'Premium-Malz', ic: '🌾', d: 'Aus der Region, für ★★★★ und mehr', n5: 5, unit: 'Sack', sud: true },
   { k: 'hopfenP', n: 'Aroma-Hopfen', ic: '🌿', d: 'Für ★★★★ und mehr', n5: 5, unit: 'Sack', sud: true }
 ];
-function renderStore(){
-  $('storeTaler').textContent = `🪙 ${taler} Brauereitaler · Tag ${ECO.day}`;
-  const items = STORE.filter(it => ECO.ownSud && (!it.k.endsWith('P') || qCap() >= 4)).map(it => {
-    const li = document.createElement('li'), b = document.createElement('b'), sm = document.createElement('small'), bt = document.createElement('button');
-    const pr = ECO.price[it.k], pv = ECO.prev ? ECO.prev[it.k] : pr, tr = pr > pv ? ' ▲' : pr < pv ? ' ▼' : '';
-    b.textContent = `${it.ic} ${it.n}: ${fmtF(ECO[it.k])}`; sm.textContent = `${it.d}. Heute ${pr} 🪙 je ${it.unit}${tr}`;
-    const cost = pr*it.n5; bt.type = 'button'; bt.textContent = `+${it.n5} für ${cost} 🪙`; bt.disabled = taler < cost;
-    bt.onclick = () => { if (taler < cost) return; taler -= cost; if (it.k === 'fass') ECO.fassQ = mixQ(ECO.fass, ECO.fassQ, it.n5, 2.5); ECO[it.k] += it.n5; ECO.today.buy += cost; saveShop(); saveEco(); beep(880, .07, 'triangle', .07); renderStore(); updateEcoBar(); };
-    li.append(b, sm, bt); return li;
-  });
-  const info = (ic, n, v, d) => { const li = document.createElement('li'), b = document.createElement('b'), sm = document.createElement('small'); b.textContent = `${ic} ${n}: ${v}`; sm.textContent = d; li.append(b, sm); return li; };
-  items.push(info('🛢', 'Fässer', `${fmtF(ECO.fass)} ${stars(ECO.fassQ ?? 2)}`, `Die Wirte kaufen am Tagesende bis zu ${demand()} Fass, derzeit rund ${fassPrice()} 🪙 je Fass. Besseres Bier und edlere Sorten bringen mehr.`));
-  $('storeList').replaceChildren(...items);
-  $('storeNote').textContent = `Sudhaus: Malz + Hopfen → ${fmtF(1 + .5*(U.kettle || 0))} Fass · Wirte kaufen am Tagesende · Betriebskosten ${runCost()} 🪙 pro Tag. Rohstoffpreise ändern sich jeden Tag.`;
-}
 function showReport(){
   // Tagesende: Wirte kaufen Maxis Fässer, dann Betriebskosten
   const t = ECO.today, n = Math.min(Math.floor(ECO.fass + 1e-6), demand()), pf = fassPrice(), beer = n*pf, run = runCost();
@@ -618,24 +598,10 @@ function showReport(){
   $('career').hidden = true; $('dayRep').hidden = false; sCash();
 }
 
-function renderShop(bld){
-  if (bld) shopBld = bld;
-  $('shopTitle').textContent = shopBld === 'laden' ? 'Brauerei-Laden' : `Ausbau: ${LOCS[shopBld].name}`;
-  $('shopTaler').textContent = `🪙 ${taler} Brauereitaler`;
-  $('shopList').replaceChildren(...SHOP.filter(it => it.b === shopBld).map(it => {
-    const li = document.createElement('li'), b = document.createElement('b'), lv = document.createElement('span'), sm = document.createElement('small'), bt = document.createElement('button');
-    const have = U[it.k] || 0, max = it.p.length, price = it.p[have];
-    b.textContent = it.n; lv.className = 'lv'; lv.textContent = '●'.repeat(have) + '○'.repeat(max - have); b.append(lv);
-    sm.textContent = it.d; bt.type = 'button';
-    if (have >= max){ bt.textContent = 'Max.'; bt.disabled = true; }
-    else { bt.textContent = `${price} 🪙`; bt.disabled = taler < price; bt.onclick = () => buy(it); }
-    li.append(b, sm, bt); return li;
-  }));
-}
 function buy(it){
   const have = U[it.k] || 0, price = it.p[have];
   if (price == null || taler < price) return;
-  taler -= price; U[it.k] = have + 1; if (ECO.ownSud){ ECO.today.build = (ECO.today.build || 0) + price; saveEco(); } saveShop(); renderShop();
+  taler -= price; U[it.k] = have + 1; if (ECO.ownSud){ ECO.today.build = (ECO.today.build || 0) + price; saveEco(); } saveShop(); ladenSync(); updateEcoBar();
   try { ac = ac || new (window.AudioContext || window.webkitAudioContext)(); ac.resume(); } catch(e) {}
   [660, 880, 1320].forEach((f, i) => setTimeout(() => beep(f, .1, 'triangle', .08), i*80));
 }
@@ -753,7 +719,7 @@ function updateHearts(dt, crateTop){
     if (h.y > groundY - 10){ h.fade -= dt*2; if (h.fade <= 0) hearts.splice(i,1); }
   }
 }
-cv.addEventListener('pointerdown', e => { if (state === 'scene'){ sceneTap(); return; } if (stage === 3 && state === 'play'){ tap3(e); return; } if (stage === 3 && state !== 'intro') return; if (stage === 2 && state === 'play'){ tap2(e); return; } if (stage === 2 && state !== 'intro') return; if (state === 'menu'){ if (!$('career').hidden) mapPointer(e); return; } if (startRub(e)) return; if (state === 'play' && nearZone(toLogical(e.clientX), e.clientY / S)) { startForklift(); return; } if (state === 'intro'){ if (introT > (INTRO_TAP[introKind] ?? 1.2)) endIntro(); return; } if (tryFlick(e.clientX, e.clientY)) { flickIds.add(e.pointerId); return; } touchX = toLogical(e.clientX); });
+cv.addEventListener('pointerdown', e => { if (state === 'shop'){ ladenPointer(e); return; } if (state === 'scene'){ sceneTap(); return; } if (stage === 3 && state === 'play'){ tap3(e); return; } if (stage === 3 && state !== 'intro') return; if (stage === 2 && state === 'play'){ tap2(e); return; } if (stage === 2 && state !== 'intro') return; if (state === 'menu'){ if (!$('career').hidden) mapPointer(e); return; } if (startRub(e)) return; if (state === 'play' && nearZone(toLogical(e.clientX), e.clientY / S)) { startForklift(); return; } if (state === 'intro'){ if (introT > (INTRO_TAP[introKind] ?? 1.2)) endIntro(); return; } if (tryFlick(e.clientX, e.clientY)) { flickIds.add(e.pointerId); return; } touchX = toLogical(e.clientX); });
 cv.addEventListener('pointermove', e => { if (stage === 3){ if (state === 'play') stirMove(e); return; } if (stage === 2){ if (state === 'play' && down2.has(e.pointerId)) move2(e); return; } if (RUB.has(e.pointerId)) { moveRub(e); return; } if (flickIds.has(e.pointerId)) { tryFlick(e.clientX, e.clientY); return; } if (touchX !== null || e.pointerType === 'mouse') touchX = toLogical(e.clientX); });
 cv.addEventListener('pointerup', e => { down2.delete(e.pointerId); L3.heat = false; if (L3.stirId === e.pointerId){ L3.stirId = null; L3.paddle = null; } if (RUB.delete(e.pointerId)) return; if (flickIds.delete(e.pointerId)) return; touchX = null; });
 cv.addEventListener('pointercancel', e => { L3.heat = false; L3.stirId = null; L3.paddle = null; RUB.delete(e.pointerId); flickIds.delete(e.pointerId); touchX = null; });
@@ -1740,6 +1706,7 @@ function update(dt){
 }
 
 function render(){
+  if (state === 'shop'){ ctx.setTransform(dpr*S,0,0,dpr*S, dpr*OX, 0); renderLaden(); return; }
   if (state === 'scene' && scene){ ctx.setTransform(1,0,0,1,0,0); ctx.fillStyle = '#1e2430'; ctx.fillRect(0, 0, cv.width, cv.height); renderScene(); return; }
   if (stage === 3 && state !== 'menu'){ render3(); return; }
   if (stage === 2 && state !== 'menu'){ render2(); return; }
@@ -1837,7 +1804,7 @@ function gameOver(voluntary){
   $('talerInfo').textContent = (typeof voluntary === 'string' && stockWhy ? stockWhy + ' ' : '') + shiftText(endShift()); stockWhy = '';
   // Knöpfe passend zur Lage: ohne Zutaten erst einkaufen statt „Nochmal“; zurück entweder Karte oder Hauptmenü
   if (stage === 3 && ECO.ownSud && !L3.trial && !canBrew(brewNeed(RECIPES[0]))) overStock = true; // ohne Zutaten bringt „Nochmal“ nichts
-  $('againBtn').textContent = overStock ? 'Zum Einkauf' : 'Nochmal';
+  $('againBtn').textContent = overStock ? 'Zum Laden' : 'Nochmal';
   $('toMapBtn').hidden = ECO.story < 3; $('menuBtn').hidden = ECO.story >= 3;
   $('intro').hidden = true;
   $('over').hidden = false; try { wake?.release(); } catch(e) {}
@@ -2261,7 +2228,7 @@ const LOCS = {
   sud:   { u: .3,  v: .2,  c: [.36, .42], name: 'Maxis Sudhaus', sub: 'Sudhaus', lv: 3, need: 1, desc: () => `Jeder Sud ergibt ${fmtF(1 + .5*(U.kettle || 0))} Fass. Die Wirte kaufen am Tagesende.` },
   halle: { u: .74, v: .3,  c: [.68, .5],  name: 'Abfüllhalle', sub: 'Förderband', lv: 2, need: 1, desc: () => `Flaschen sortieren: ${lohn2()} 🪙 Lohn je voller Kiste.` },
   bar:   { u: .25, v: .79, c: [.3, .6],   name: 'Braustüberl', sub: 'Braustüberl', lv: 1, need: 0, desc: () => `Flaschen fangen: ${lohn1()} 🪙 Lohn je voller Kiste.` },
-  laden: { u: .76, v: .82, c: [.7, .7],   name: 'Brauerei-Laden', sub: 'Shop', shop: true, desc: 'Verbesserungen, die überall helfen.' }
+  laden: { u: .76, v: .82, c: [.7, .7],   name: 'Brauerei-Laden', sub: 'Laden', shop: true, desc: () => ECO.ownSud ? 'Zutaten, Ersatzteile und Ausbauten: alles gibt es nur hier.' : 'Ausbauten für Braustüberl und Abfüllhalle und Hilfen für alle Spiele.' }
 };
 const LOCK = ['sud', 'halle', 'bar', 'laden'];
 const MAP = { at: 'plaza', x: 0, y: 0, pts: [], dest: null, placed: false, dust: [], last: 0 };
@@ -2287,13 +2254,10 @@ function locked(k){ const L = LOCS[k], all = typeof UNLOCK_ALL !== 'undefined' &
 function mapInfo(){
   const L = LOCS[MAP.at], go = $('mapGo'); go.disabled = false;
   $('mapPrice').style.visibility = 'hidden';
-  $('ecoBtn').hidden = !(MAP.at === 'sud' && ECO.ownSud && !MAP.pts.length);
   $('mapRecipe').hidden = !(MAP.at === 'sud' && !MAP.pts.length && !locked('sud') && qCap() >= 4);
   $('recStd').setAttribute('aria-pressed', ECO.recipe !== 'pre' ? 'true' : 'false'); $('recPre').setAttribute('aria-pressed', ECO.recipe === 'pre' ? 'true' : 'false');
   $('priceVal').textContent = `${ECO.barPrice} 🪙` + (U.tables ? ` +${2*U.tables}` : ''); $('priceRush').textContent = rushText();
   $('priceDown').disabled = ECO.barPrice <= 8; $('priceUp').disabled = ECO.barPrice >= 18;
-  $('mapUp').hidden = !MAP.at || MAP.at === 'plaza' || MAP.at === 'laden' || !!MAP.pts.length || locked(MAP.at) || (MAP.at !== 'sud' && taler < 30 && !bldLevel(MAP.at));
-  if (!$('mapUp').hidden){ const lv = Math.min(5, bldLevel(MAP.at)); $('mapUp').textContent = MAP.at === 'sud' ? (lv ? 'Ausbau' : 'Reparieren') : lv ? `Ausbau ${'★'.repeat(lv)}` : 'Ausbauen'; }
   if (!MAP.at || MAP.at === 'plaza' || MAP.pts.length){
     $('mapName').textContent = MAP.pts.length ? 'Maxi ist unterwegs …' : seen.map ? 'Brauereigelände' : 'Willkommen in der Brauerei';
     $('mapDesc').textContent = 'Tipp auf ein Gebäude, dann geht Maxi hin.'; go.style.visibility = 'hidden'; return;
@@ -2313,7 +2277,7 @@ function mapInfo(){
   $('mapDesc').textContent = L.shop ? ds : st ? st : ds;
   go.textContent = L.shop ? 'Laden betreten' : 'Spielen'; go.style.visibility = 'visible';
   const sm = stockMsg(MAP.at);
-  if (sm){ $('mapDesc').textContent = '⚠ ' + sm; go.textContent = 'Lager & Einkauf'; }
+  if (sm){ $('mapDesc').textContent = '⚠ ' + sm; go.textContent = 'Zum Laden: Zutaten kaufen'; }
 }
 function mapTap(k){
   if (!LOCS[k]) return;
@@ -2338,7 +2302,229 @@ function mapPointer(e){
   if (best) mapTap(best);
   else { const p = locPos('plaza'); if (Math.hypot(fx - p.x, fy - p.y) < 50) mapTap('plaza'); }
 }
-function openShop(b){ renderShop(b); $('career').hidden = true; $('shop').hidden = false; $('shopClose').focus(); }
+function openShop(focus){
+  // der Laden ist ein Raum: Maxi kommt zur Tür herein und geht zu den Waren
+  state = 'shop'; $('career').hidden = true; $('ladenUi').hidden = false;
+  LADEN.room = focus === 'zutaten' && ECO.ownSud ? 'zut' : 'rest';
+  LADEN.items = ladenWares(); ladenLayout();
+  const d = LADEN.room === 'zut' ? ladenPass() : ladenDoor(); LADEN.x = d.x; LADEN.y = d.y; LADEN.pts = []; LADEN.at = null; LADEN.dest = null; LADEN.tPrev = 0;
+  ladenSync(); $('ladenOut').focus({ preventScroll: true });
+  if (focus === 'zutaten' && LADEN.items.some(w => w.id === 'malz')) ladenGo('malz');
+}
+function leaveShop(){ state = 'menu'; $('ladenUi').hidden = true; P.vx = 0; openCareer(); }
+const LADEN = { items: [], x: 0, y: 0, pts: [], at: null, dest: null, tPrev: 0, rows: [], room: 'rest' };
+// zwei Räume: vorne die Ausrüstung, hinten die Zutatenkammer (erst mit eigenem Sudhaus)
+function ladenPass(){ const d = ladenDoor(); return { x: LADEN.room === 'zut' ? 50 : W - 50, y: d.y }; }
+function ladenSwitch(){
+  LADEN.room = LADEN.room === 'zut' ? 'rest' : 'zut'; LADEN.items = ladenWares(); ladenLayout();
+  const p = ladenPass(); LADEN.x = p.x; LADEN.y = p.y; LADEN.at = null; LADEN.dest = null; LADEN.pts = []; ladenSync(); beep(520, .08, 'triangle', .07);
+}
+// Waren: ein Wort als Name, ein kurzes Zeichen als Wirkung
+const WARES = [
+  { id: 'malz', w: 'Malz', ing: 1 }, { id: 'hopfen', w: 'Hopfen', ing: 1 }, { id: 'malzP', w: 'Edelmalz', ing: 1, pre: 1 }, { id: 'hopfenP', w: 'Aromahopfen', ing: 1, pre: 1 },
+  { id: 'seal', w: 'Dichtung', fx: 'bis ★★★' }, { id: 'thermo', w: 'Thermometer', fx: 'bis ★★★★' }, { id: 'copper', w: 'Politur', fx: 'bis ★★★★★' }, { id: 'kettle', w: 'Kessel', fx: '+½ Fass' },
+  { id: 'lauter', w: 'Läuterbottich', fx: 'Pils · Zwickl' }, { id: 'cellar', w: 'Gärtank', fx: 'Festbier · Dunkles' }, { id: 'time', w: 'Sanduhr', fx: '+15 % Zeit' },
+  { id: 'catch', w: 'Großkiste', fx: 'Braustüberl' }, { id: 'tables', w: 'Stammtisch', fx: '+2 🪙 je Kiste' }, { id: 'belt', w: 'Bandbremse', fx: 'Band −10 %' }, { id: 'filler', w: 'Prämie', fx: '+2 🪙 je Kiste' },
+  { id: 'life', w: 'Ersatzbier', fx: '+1 🍺' }, { id: 'mult', w: 'Training', fx: 'Start ×+1' }
+];
+function ladenWares(){
+  return WARES.filter(w => {
+    if (!!w.ing !== (LADEN.room === 'zut')) return false;
+    if (w.ing) return ECO.ownSud && (!w.pre || qCap() >= 4);
+    const it = SHOP.find(s => s.k === w.id); if (!it) return false;
+    if (it.b === 'sud') return ECO.ownSud;
+    if (it.b === 'halle') return !locked('halle');
+    return true;
+  }).map(w => Object.assign({}, w, { it: SHOP.find(s => s.k === w.id), st: STORE.find(s => s.k === w.id) }));
+}
+function ladenBox(){ const top = ($('ladenTop').getBoundingClientRect().bottom || 60)/S + 40, bot = H - 150; return { top, bot }; }
+function ladenLayout(){
+  const b = ladenBox(), n = LADEN.items.length, cols = LADEN.room === 'zut' ? 2 : 4, rows = Math.max(1, Math.ceil(n/cols)), rh = Math.min(LADEN.room === 'zut' ? 190 : 150, (b.bot - b.top - 30)/rows);
+  LADEN.rh = rh; LADEN.rows = []; LADEN.sc = LADEN.room === 'zut' ? 1.7 : 1.15;
+  LADEN.items.forEach((w, i) => {
+    const r = Math.floor(i/cols), c = i % cols, inRow = Math.min(cols, n - r*cols), cw = (W - 24)/cols;
+    w.x = W/2 + (c - (inRow - 1)/2)*cw*(LADEN.room === 'zut' ? .8 : 1); w.y = b.top + r*rh + rh*.56; w.r = r;
+    LADEN.rows[r] = w.y;
+  });
+}
+function ladenDoor(){ const b = ladenBox(); return { x: W/2, y: Math.min(H - 60, b.bot + 50) }; }
+function ladenSpot(w){ const z = LADEN.room === 'zut'; return { x: w.x + (z ? 52 : 36), y: w.y + 36 }; }
+function ladenGo(id){
+  const w = LADEN.items.find(v => v.id === id); if (!w) return;
+  if (LADEN.at === id && !LADEN.pts.length) return;
+  // erst den Gang entlang, dann zwischen den Waren hinauf oder hinunter
+  const sp = ladenSpot(w), pts = [{ x: sp.x, y: LADEN.y }, sp];
+  LADEN.pts = pts.filter((p, i) => i || Math.hypot(p.x - LADEN.x, p.y - LADEN.y) > 1); LADEN.dest = id; LADEN.at = null; ladenSync();
+  beep(660, .05, 'triangle', .06);
+}
+function ladenPointer(e){
+  const fx = toLogical(e.clientX), fy = e.clientY / S; let best = null, bd = 1e9;
+  if (ECO.ownSud){ const p = ladenPass(); if (Math.abs(fx - p.x) < 44 && fy > p.y - 120 && fy < p.y + 30){ LADEN.pts = [{ x: p.x, y: LADEN.y }, { x: p.x, y: p.y }]; LADEN.dest = '@pass'; LADEN.at = null; ladenSync(); beep(660, .05, 'triangle', .06); return; } }
+  for (const w of LADEN.items){ const dx = Math.abs(fx - w.x), dy = fy - (w.y - 10); if (dx < 46 && Math.abs(dy) < LADEN.rh*.55){ const d = dx + Math.abs(dy); if (d < bd){ bd = d; best = w; } } }
+  if (best) ladenGo(best.id);
+}
+function updateLaden(dt){
+  if (!LADEN.pts.length){ P.vx = 0; return; }
+  let sp = 300*dt;
+  while (sp > 0 && LADEN.pts.length){
+    const t = LADEN.pts[0], dx = t.x - LADEN.x, dy = t.y - LADEN.y, d = Math.hypot(dx, dy);
+    if (d > .01) P.vx = dx/d*300;
+    if (d <= sp){ LADEN.x = t.x; LADEN.y = t.y; sp -= d; LADEN.pts.shift(); } else { LADEN.x += dx/d*sp; LADEN.y += dy/d*sp; sp = 0; }
+  }
+  P.walk += dt*8;
+  if (!LADEN.pts.length){ if (LADEN.dest === '@pass'){ ladenSwitch(); return; } LADEN.at = LADEN.dest; LADEN.dest = null; beep(990, .08, 'triangle', .07); ladenSync(); }
+}
+function wareState(w){
+  if (w.ing){ const cost = ECO.price[w.id]*w.st.n5; return { cost, can: taler >= cost, label: `+${w.st.n5} für ${cost} 🪙`, have: ECO[w.id] }; }
+  const have = U[w.id] || 0, max = w.it.p.length, price = w.it.p[have];
+  return { cost: price, can: have < max && taler >= price, max: have >= max, have, n: max, label: have >= max ? '✓ Gekauft' : `${price} 🪙` };
+}
+function ladenSync(){
+  $('ladenTaler').textContent = `🪙 ${taler}`;
+  const w = LADEN.items.find(v => v.id === LADEN.at), box = $('ladenBuy');
+  if (!w){ box.hidden = true; return; }
+  const s = wareState(w); box.hidden = false;
+  $('buyName').textContent = w.w;
+  $('buyFx').textContent = w.ing ? `${fmtF(s.have)} im Lager` : (s.n > 1 ? '●'.repeat(s.have) + '○'.repeat(s.n - s.have) + '  ' : '') + w.fx;
+  const bt = $('buyBtn'); bt.textContent = s.label; bt.disabled = !s.can;
+}
+function ladenBuy(){
+  const w = LADEN.items.find(v => v.id === LADEN.at); if (!w) return;
+  const s = wareState(w); if (!s.can) return;
+  if (w.ing){ taler -= s.cost; ECO[w.id] += w.st.n5; ECO.today.buy += s.cost; saveShop(); saveEco(); beep(880, .07, 'triangle', .07); ladenSync(); updateEcoBar(); }
+  else buy(w.it);
+  LADEN.items = ladenWares(); ladenLayout(); ladenPop = { id: w.id, t: 0 };
+}
+let ladenPop = null;
+function drawWare(id, sc){
+  // jede Ware als eigenes, gut erkennbares Bild; Fußpunkt (0,0) auf dem Regal
+  ctx.save(); ctx.scale(sc, sc); ctx.lineJoin = 'round'; ctx.lineCap = 'round';
+  const sack = (c, d) => { ctx.fillStyle = c; ctx.beginPath(); ctx.moveTo(-17, 0); ctx.quadraticCurveTo(-22, -26, -10, -36); ctx.lineTo(10, -36); ctx.quadraticCurveTo(22, -26, 17, 0); ctx.closePath(); ctx.fill();
+    ctx.fillStyle = d; ctx.fillRect(-10, -39, 20, 5); ctx.beginPath(); ctx.moveTo(-8, -39); ctx.lineTo(-12, -46); ctx.lineTo(0, -40); ctx.lineTo(12, -46); ctx.lineTo(8, -39); ctx.fill(); };
+  const steel = (x, y, w, h) => { const g = ctx.createLinearGradient(x, 0, x + w, 0); g.addColorStop(0, '#8d949b'); g.addColorStop(.45, '#e4e8ec'); g.addColorStop(1, '#7a8188'); ctx.fillStyle = g; ctx.fillRect(x, y, w, h); };
+  const copperG = (x, w) => { const g = ctx.createLinearGradient(x, 0, x + w, 0); g.addColorStop(0, '#9a4f22'); g.addColorStop(.45, '#f0a868'); g.addColorStop(1, '#8a4520'); return g; };
+  if (id === 'malz' || id === 'malzP'){
+    sack(id === 'malz' ? '#e3c58a' : '#d9a83e', id === 'malz' ? '#b89456' : '#9a7020');
+    ctx.fillStyle = '#f6e7c4'; for (const [gx, gy] of [[-6, -14], [0, -10], [6, -14], [-3, -5], [3, -5], [0, -19]]){ ctx.beginPath(); ctx.ellipse(gx, gy, 2.6, 4, .3, 0, Math.PI*2); ctx.fill(); }
+    if (id === 'malzP'){ ctx.fillStyle = '#c22a22'; ctx.fillRect(-17, -26, 34, 5); ctx.fillStyle = C.gold; ctx.font = '700 14px sans-serif'; ctx.textAlign = 'center'; ctx.fillText('★', 0, -28); }
+  } else if (id === 'hopfen'){
+    sack('#5e9a48', '#3f6f30'); ctx.restore(); ctx.save(); ctx.scale(sc, sc); drawIng('hopfen', 0, -17, 1.05);
+  } else if (id === 'hopfenP'){
+    // Korb voller Hopfendolden
+    ctx.restore(); ctx.save(); ctx.scale(sc, sc);
+    for (const [hx, hy] of [[-10, -20], [10, -20], [0, -27], [-4, -16], [6, -15]]) drawIng('hopfen', hx, hy, .8);
+    ctx.fillStyle = '#a8763c'; ctx.beginPath(); ctx.moveTo(-20, -16); ctx.lineTo(20, -16); ctx.lineTo(15, 0); ctx.lineTo(-15, 0); ctx.closePath(); ctx.fill();
+    ctx.strokeStyle = '#7a5226'; ctx.lineWidth = 1.5; for (let i = -12; i <= 12; i += 6){ ctx.beginPath(); ctx.moveTo(i, -16); ctx.lineTo(i*.78, 0); ctx.stroke(); } ctx.beginPath(); ctx.moveTo(-18, -8); ctx.lineTo(18, -8); ctx.stroke();
+  } else if (id === 'seal'){
+    ctx.strokeStyle = '#26292e'; ctx.lineWidth = 6; ctx.beginPath(); ctx.ellipse(-6, -12, 12, 11, 0, 0, Math.PI*2); ctx.stroke();
+    ctx.strokeStyle = '#4a4f57'; ctx.lineWidth = 1.5; ctx.beginPath(); ctx.ellipse(-6, -12, 12, 11, 0, Math.PI*1.1, Math.PI*1.6); ctx.stroke();
+    ctx.fillStyle = '#d0d4d8'; rr(8, -30, 9, 30, 2); ctx.fill(); ctx.fillStyle = '#c22a22'; ctx.fillRect(8, -20, 9, 9); ctx.fillStyle = '#7a8188'; ctx.beginPath(); ctx.moveTo(10, -30); ctx.lineTo(12.5, -38); ctx.lineTo(15, -30); ctx.fill();
+  } else if (id === 'thermo'){
+    ctx.fillStyle = '#8a5a34'; rr(-8, -50, 16, 50, 4); ctx.fill();
+    ctx.fillStyle = '#f4f2ea'; rr(-3.5, -46, 7, 36, 3.5); ctx.fill();
+    ctx.fillStyle = '#d23a2e'; ctx.fillRect(-1.5, -30, 3, 22); ctx.beginPath(); ctx.arc(0, -7, 5, 0, Math.PI*2); ctx.fill();
+    ctx.strokeStyle = '#3a2a1a'; ctx.lineWidth = 1; for (let i = 0; i < 6; i++){ ctx.beginPath(); ctx.moveTo(3.5, -42 + i*6); ctx.lineTo(6, -42 + i*6); ctx.stroke(); }
+  } else if (id === 'copper'){
+    ctx.fillStyle = '#c9ced3'; rr(-18, -22, 18, 22, 3); ctx.fill(); ctx.fillStyle = '#e6b84a'; ctx.fillRect(-18, -16, 18, 9); ctx.fillStyle = '#9aa0a6'; ctx.fillRect(-19, -24, 20, 3);
+    ctx.fillStyle = '#f3e6c4'; ctx.beginPath(); ctx.moveTo(2, 0); ctx.quadraticCurveTo(4, -18, 12, -20); ctx.quadraticCurveTo(22, -14, 18, 0); ctx.closePath(); ctx.fill();
+    ctx.strokeStyle = '#d9cfae'; ctx.lineWidth = 1; ctx.beginPath(); ctx.moveTo(8, -3); ctx.quadraticCurveTo(9, -12, 13, -15); ctx.stroke();
+    ctx.fillStyle = '#fff6c8'; const tw = (x, y, r) => { ctx.beginPath(); ctx.moveTo(x, y - r); ctx.lineTo(x + r*.3, y - r*.3); ctx.lineTo(x + r, y); ctx.lineTo(x + r*.3, y + r*.3); ctx.lineTo(x, y + r); ctx.lineTo(x - r*.3, y + r*.3); ctx.lineTo(x - r, y); ctx.lineTo(x - r*.3, y - r*.3); ctx.fill(); };
+    tw(-12, -32, 5); tw(8, -30, 3.5);
+  } else if (id === 'kettle'){
+    ctx.fillStyle = copperG(-20, 40); ctx.beginPath(); ctx.moveTo(-20, -4); ctx.lineTo(-20, -22); ctx.quadraticCurveTo(-20, -40, 0, -40); ctx.quadraticCurveTo(20, -40, 20, -22); ctx.lineTo(20, -4); ctx.closePath(); ctx.fill();
+    ctx.fillStyle = '#7a3a18'; ctx.fillRect(-21, -24, 42, 3); ctx.fillStyle = copperG(-3, 6); ctx.fillRect(-3, -48, 6, 9);
+    ctx.fillStyle = '#3a3a40'; ctx.fillRect(-16, -4, 4, 4); ctx.fillRect(12, -4, 4, 4);
+    ctx.fillStyle = 'rgba(255,240,210,.5)'; ctx.fillRect(-13, -34, 3, 14);
+  } else if (id === 'lauter'){
+    ctx.fillStyle = '#9a6a3c'; ctx.beginPath(); ctx.moveTo(-22, -28); ctx.lineTo(22, -28); ctx.lineTo(19, 0); ctx.lineTo(-19, 0); ctx.closePath(); ctx.fill();
+    ctx.strokeStyle = '#6b4325'; ctx.lineWidth = 1.2; for (let i = -14; i <= 14; i += 7){ ctx.beginPath(); ctx.moveTo(i, -28); ctx.lineTo(i*.88, 0); ctx.stroke(); }
+    ctx.fillStyle = '#3a3a40'; ctx.fillRect(-22.5, -24, 45, 3); ctx.fillRect(-20, -7, 40, 3);
+    ctx.fillStyle = '#d8b25a'; ctx.beginPath(); ctx.ellipse(0, -28, 22, 5, 0, 0, Math.PI*2); ctx.fill();
+    ctx.strokeStyle = '#8a7a50'; ctx.lineWidth = 1; for (let i = -16; i <= 16; i += 4){ ctx.beginPath(); ctx.moveTo(i, -31); ctx.lineTo(i, -25); ctx.stroke(); }
+    ctx.fillStyle = copperG(18, 8); ctx.fillRect(18, -10, 9, 3);
+  } else if (id === 'cellar'){
+    steel(-13, -52, 26, 36); ctx.fillStyle = '#9aa1a8'; ctx.beginPath(); ctx.moveTo(-13, -16); ctx.lineTo(13, -16); ctx.lineTo(2, -6); ctx.lineTo(-2, -6); ctx.closePath(); ctx.fill();
+    ctx.beginPath(); ctx.ellipse(0, -52, 13, 4, 0, 0, Math.PI*2); ctx.fillStyle = '#cfd4d9'; ctx.fill();
+    ctx.strokeStyle = '#6b7178'; ctx.lineWidth = 2.5; ctx.beginPath(); ctx.moveTo(-11, -16); ctx.lineTo(-14, 0); ctx.moveTo(11, -16); ctx.lineTo(14, 0); ctx.stroke();
+    ctx.fillStyle = '#e6b84a'; ctx.beginPath(); ctx.arc(0, -36, 4, 0, Math.PI*2); ctx.fill(); ctx.fillStyle = '#3a3a40'; ctx.fillRect(-1, -39, 2, 3);
+  } else if (id === 'time'){
+    ctx.fillStyle = '#8a5a34'; ctx.fillRect(-14, -44, 28, 4); ctx.fillRect(-14, -4, 28, 4); ctx.fillRect(-12, -40, 2.5, 36); ctx.fillRect(9.5, -40, 2.5, 36);
+    ctx.fillStyle = 'rgba(210,235,245,.75)'; ctx.beginPath(); ctx.moveTo(-8, -40); ctx.lineTo(8, -40); ctx.lineTo(1.5, -22); ctx.lineTo(8, -4); ctx.lineTo(-8, -4); ctx.lineTo(-1.5, -22); ctx.closePath(); ctx.fill();
+    ctx.fillStyle = '#e3c58a'; ctx.beginPath(); ctx.moveTo(-5, -33); ctx.lineTo(5, -33); ctx.lineTo(1, -24); ctx.lineTo(-1, -24); ctx.fill(); ctx.beginPath(); ctx.moveTo(-7, -4); ctx.lineTo(0, -12); ctx.lineTo(7, -4); ctx.fill(); ctx.fillRect(-.5, -22, 1, 10);
+  } else if (id === 'catch'){
+    ctx.restore(); ctx.save(); ctx.scale(sc, sc); drawCrate(0, -24, 10, 54, 24);
+  } else if (id === 'tables'){
+    ctx.fillStyle = '#7a5a3a'; ctx.fillRect(-22, -20, 44, 5); ctx.fillRect(-18, -15, 4, 15); ctx.fillRect(14, -15, 4, 15);
+    for (const mx of [-11, 9]){ ctx.fillStyle = 'rgba(230,184,74,.95)'; rr(mx - 5, -36, 10, 16, 2); ctx.fill(); ctx.fillStyle = '#fffaf0'; rr(mx - 5.5, -40, 11, 5, 2.5); ctx.fill(); ctx.strokeStyle = 'rgba(230,184,74,.95)'; ctx.lineWidth = 2; ctx.beginPath(); ctx.arc(mx + 6, -28, 4, -1.2, 1.2); ctx.stroke(); }
+  } else if (id === 'belt'){
+    ctx.fillStyle = '#3a3e45'; rr(-24, -16, 48, 9, 4.5); ctx.fill(); ctx.fillStyle = '#9aa1a8'; for (let i = -18; i <= 18; i += 9){ ctx.beginPath(); ctx.arc(i, -11.5, 3, 0, Math.PI*2); ctx.fill(); }
+    ctx.fillStyle = '#6b7178'; ctx.fillRect(-20, -7, 3, 7); ctx.fillRect(17, -7, 3, 7);
+    ctx.strokeStyle = '#555b62'; ctx.lineWidth = 3; ctx.beginPath(); ctx.moveTo(10, -16); ctx.lineTo(18, -38); ctx.stroke();
+    ctx.fillStyle = '#d23a2e'; ctx.beginPath(); ctx.arc(18, -40, 5.5, 0, Math.PI*2); ctx.fill();
+  } else if (id === 'filler'){
+    ctx.fillStyle = '#b08848'; ctx.beginPath(); ctx.moveTo(-16, 0); ctx.quadraticCurveTo(-22, -22, -7, -30); ctx.lineTo(7, -30); ctx.quadraticCurveTo(22, -22, 16, 0); ctx.closePath(); ctx.fill();
+    ctx.fillStyle = '#7a5a2a'; ctx.fillRect(-8, -33, 16, 4); ctx.beginPath(); ctx.moveTo(-6, -33); ctx.lineTo(-10, -40); ctx.lineTo(0, -34); ctx.lineTo(10, -40); ctx.lineTo(6, -33); ctx.fill();
+    ctx.fillStyle = '#e6b84a'; ctx.beginPath(); ctx.arc(0, -13, 8, 0, Math.PI*2); ctx.fill(); ctx.strokeStyle = '#a8801c'; ctx.lineWidth = 1.5; ctx.stroke();
+    ctx.fillStyle = '#a8801c'; ctx.font = '700 10px sans-serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillText('T', 0, -12.5);
+    for (const [cx, cy] of [[-20, -3], [21, -2]]){ ctx.fillStyle = '#e6b84a'; ctx.beginPath(); ctx.ellipse(cx, cy, 5, 2.5, 0, 0, Math.PI*2); ctx.fill(); }
+  } else if (id === 'life'){
+    ctx.restore(); ctx.save(); ctx.scale(sc, sc); drawBottle(-8, -20, -.08, false); drawBottle(8, -20, .08, false);
+    ctx.fillStyle = '#2f5d3a'; ctx.beginPath(); ctx.arc(14, -40, 7, 0, Math.PI*2); ctx.fill(); ctx.fillStyle = '#fff'; ctx.fillRect(10.5, -41, 7, 2); ctx.fillRect(13, -43.5, 2, 7);
+  } else if (id === 'mult'){
+    // Hantel
+    ctx.fillStyle = '#9aa1a8'; ctx.fillRect(-16, -15, 32, 4);
+    for (const s of [-1, 1]){ ctx.fillStyle = '#2a2d33'; rr(s*16 - (s > 0 ? 0 : 7), -24, 7, 22, 2); ctx.fill(); rr(s*23 - (s > 0 ? 0 : 5), -20, 5, 14, 2); ctx.fill(); }
+  }
+  ctx.restore();
+}
+function renderLaden(){
+  const now = performance.now(), dt = Math.min(.05, (now - (LADEN.tPrev || now))/1000); LADEN.tPrev = now;
+  ladenLayout(); updateLaden(dt); if (ladenPop) { ladenPop.t += dt; if (ladenPop.t > .6) ladenPop = null; }
+  const b = ladenBox(), door = ladenDoor();
+  // Wand und Boden
+  const zut = LADEN.room === 'zut', wg = ctx.createLinearGradient(0, 0, 0, H);
+  wg.addColorStop(0, zut ? '#5b5248' : '#5a3524'); wg.addColorStop(1, zut ? '#3f3832' : '#43271a');
+  ctx.fillStyle = wg; ctx.fillRect(XL, 0, XR - XL, H);
+  if (zut){ ctx.fillStyle = 'rgba(0,0,0,.16)'; for (let y = 0, r = 0; y < H; y += 26, r++) { ctx.fillRect(XL, y, XR - XL, 2); for (let x = Math.floor(XL/52)*52 + (r % 2)*26; x < XR; x += 52) ctx.fillRect(x, y, 2, 26); } }
+  else { ctx.fillStyle = 'rgba(0,0,0,.14)'; for (let x = Math.floor(XL/34)*34; x < XR; x += 34) ctx.fillRect(x, 0, 2, H); }
+  // Schild mit dem Namen des Raums
+  { const sy = b.top - 30, t = zut ? 'Zutaten' : 'Ausrüstung'; ctx.font = '400 20px "Lilita One", sans-serif'; const tw = ctx.measureText(t).width + 30;
+    ctx.fillStyle = '#2f5d3a'; rr(W/2 - tw/2, sy - 16, tw, 30, 6); ctx.fill(); ctx.strokeStyle = C.gold; ctx.lineWidth = 2; ctx.stroke();
+    ctx.fillStyle = C.cream; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillText(t, W/2, sy); }
+  const fy = door.y - 30;
+  ctx.fillStyle = '#7a5434'; ctx.fillRect(XL, fy, XR - XL, H - fy); ctx.fillStyle = 'rgba(0,0,0,.15)'; for (let y = fy + 14; y < H; y += 14) ctx.fillRect(XL, y, XR - XL, 1.5);
+  // Lampen
+  for (const lx of [W*.25, W*.75]){ ctx.fillStyle = 'rgba(255,214,120,.07)'; ctx.beginPath(); ctx.moveTo(lx, 0); ctx.lineTo(lx - 90, H); ctx.lineTo(lx + 90, H); ctx.fill(); ctx.fillStyle = '#2a2a33'; ctx.fillRect(lx - 1, 0, 2, b.top - 2); ctx.fillStyle = '#e6b84a'; ctx.beginPath(); ctx.arc(lx, b.top - 2, 5, 0, Math.PI*2); ctx.fill(); }
+  // Regale mit Waren
+  LADEN.rows.forEach(y => { ctx.fillStyle = '#8a5a34'; ctx.fillRect(10, y, W - 20, 8); ctx.fillStyle = '#6b4325'; ctx.fillRect(10, y + 8, W - 20, 4); ctx.fillStyle = '#5a3a24'; ctx.fillRect(18, y + 12, 5, 10); ctx.fillRect(W - 23, y + 12, 5, 10); });
+  for (const w of LADEN.items){
+    const s = wareState(w), sel = LADEN.at === w.id || LADEN.dest === w.id, pop = ladenPop && ladenPop.id === w.id ? 1 + Math.sin(ladenPop.t/.6*Math.PI)*.18 : 1;
+    if (sel){ ctx.fillStyle = 'rgba(230,184,74,.22)'; ctx.beginPath(); ctx.ellipse(w.x, w.y - 22, 42, 34, 0, 0, Math.PI*2); ctx.fill(); }
+    ctx.save(); ctx.translate(w.x, w.y); ctx.globalAlpha = s.max ? .45 : 1; drawWare(w.id, LADEN.sc*pop); ctx.restore();
+    ctx.font = '700 13px "Barlow Condensed", sans-serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'top';
+    ctx.fillStyle = sel ? C.gold : C.cream; if (zut) ctx.font = '700 17px "Barlow Condensed", sans-serif';
+    ctx.fillText((s.max ? '✓ ' : '') + w.w, w.x, w.y + 15);
+    if (w.ing){ ctx.fillStyle = 'rgba(20,26,36,.75)'; rr(w.x + 20, w.y - 78, 30, 22, 11); ctx.fill(); ctx.fillStyle = C.cream; ctx.font = '700 16px "Barlow Condensed", sans-serif'; ctx.textBaseline = 'middle'; ctx.fillText(fmtF(s.have), w.x + 35, w.y - 67); }
+  }
+  // Eingangstür vorne, Durchgang zum anderen Raum an der Seite
+  if (!zut){
+    ctx.fillStyle = '#3d2318'; rr(door.x - 34, fy - 70, 68, 70, 6); ctx.fill(); ctx.fillStyle = '#6b4325'; rr(door.x - 30, fy - 66, 60, 66, 4); ctx.fill();
+    ctx.fillStyle = 'rgba(255,230,160,.35)'; rr(door.x - 22, fy - 58, 44, 26, 3); ctx.fill(); ctx.fillStyle = C.gold; ctx.beginPath(); ctx.arc(door.x + 20, fy - 30, 3, 0, Math.PI*2); ctx.fill();
+    ctx.fillStyle = '#9a2a20'; ctx.beginPath(); ctx.ellipse(door.x, fy + 14, 40, 8, 0, 0, Math.PI*2); ctx.fill();
+  }
+  if (ECO.ownSud){
+    const p = ladenPass(), sel = LADEN.dest === '@pass';
+    ctx.fillStyle = '#2a1810'; ctx.beginPath(); ctx.moveTo(p.x - 30, fy); ctx.lineTo(p.x - 30, fy - 62); ctx.arc(p.x, fy - 62, 30, Math.PI, 0); ctx.lineTo(p.x + 30, fy); ctx.closePath(); ctx.fill();
+    ctx.strokeStyle = sel ? C.gold : '#8a5a34'; ctx.lineWidth = 5; ctx.stroke();
+    ctx.save(); ctx.translate(p.x, fy - 34); drawWare(zut ? 'kettle' : 'malz', .75); ctx.restore();
+    ctx.font = '700 14px "Barlow Condensed", sans-serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'bottom';
+    ctx.fillStyle = 'rgba(20,26,36,.75)'; const lt = zut ? '‹ Ausrüstung' : 'Zutaten ›', lw = ctx.measureText(lt).width + 14; rr(p.x - lw/2, fy - 120, lw, 20, 10); ctx.fill();
+    ctx.fillStyle = sel ? C.gold : C.cream; ctx.fillText(lt, p.x, fy - 103);
+  }
+  // Maxi
+  const nc = P.noCrate, sl = P.slim; P.noCrate = true; P.slim = false;
+  ctx.save(); ctx.translate(LADEN.x, LADEN.y); ctx.scale(.5, .5); drawMan(0, 0); ctx.restore(); P.noCrate = nc; P.slim = sl;
+}
 function stockMsg(k){
   if (!ECO.ownSud || k !== 'sud') return '';
   if (k === 'sud' && !canBrew(brewNeed(RECIPES[0]))) return `Zu wenig ${usePre() ? 'Premium-Zutaten' : 'Zutaten'} für einen Sud (mindestens ${brewNeed(RECIPES[0]).malz} Malz und ${brewNeed(RECIPES[0]).hopfen} Hopfen).`;
@@ -2356,9 +2542,9 @@ function buySud(){
 function enterLoc(k){
   if (k === 'sud' && !ECO.ownSud && rank >= 1){ buySud(); return; }
   if (!k || k === 'plaza' || locked(k)) return;
-  if (stockMsg(k)){ renderStore(); $('career').hidden = true; $('store').hidden = false; $('storeClose').focus(); return; }
+  if (stockMsg(k)){ mapTap('laden'); return; }
   const L = LOCS[k];
-  if (L.shop){ openShop('laden'); return; }
+  if (L.shop){ openShop(); return; }
   if (L.lv === 3) start3(); else if (L.lv === 2) start2(); else start();
 }
 function updateMap(dt){
@@ -2759,7 +2945,7 @@ function showRecords(){
 }
 function toTitle(){
   stage = 1; P.noCrate = false; P.slim = false; state = 'menu';
-  ['over','paused','hud','board','legalBox','promo','toast','shop','career','store','dayRep','goalBanner'].forEach(id => $(id).hidden = true); $('intro').hidden = true;
+  ['over','paused','hud','board','legalBox','promo','toast','ladenUi','career','dayRep','goalBanner'].forEach(id => $(id).hidden = true); $('intro').hidden = true;
   $('start').hidden = false; updateMenu(); showRecords();
 }
 /* ================= Level 3: Im Sudhaus =================
@@ -3314,7 +3500,7 @@ function drawIntro3(g){
   }
 }
 $('againBtn').onclick = () => {
-  if (overStock){ overStock = false; toTitle(); openCareer(); renderStore(); $('career').hidden = true; $('store').hidden = false; $('storeClose').focus(); return; }
+  if (overStock){ overStock = false; toTitle(); openCareer(); MAP.at = 'laden'; MAP.pts = []; MAP.dest = null; MAP.placed = false; openShop('zutaten'); return; }
   stage === 3 ? start3() : stage === 2 ? start2() : start();
 };
 $('menuBtn').onclick = () => { overStock = false; toTitle(); };
@@ -3412,7 +3598,8 @@ async function sendScore(){
 }
 for (const b of document.querySelectorAll('[data-board]')) b.addEventListener('click', () => openBoard(b.closest('.overlay').id));
 $('boardClose').onclick = closeBoard;
-$('shopClose').onclick = () => { $('shop').hidden = true; openCareer(); };
+$('ladenOut').onclick = leaveShop;
+$('buyBtn').onclick = ladenBuy;
 let tipNext = null;
 function showTip(brand, title, nodes, next){
   $('tipBrand').textContent = brand; $('tipTitle').textContent = title; $('tipBody').replaceChildren(...nodes);
@@ -3434,7 +3621,7 @@ function sudIntro(){
     const d = document.createElement('div'); r.forEach((t, i) => { const sp = document.createElement('span'); sp.textContent = i === 1 ? `→ ${t} →` : t; d.append(sp); }); ch.append(d); });
   showTip('Geschafft', 'Maxis eigenes Sudhaus', [
     p('Der Kessel gehört dir. So verdienst du mit deinem Bier:'), ch,
-    p('Der alte Kessel ist undicht, dein Bier hat erst einmal höchstens ★★. Über „Reparieren“ am Sudhaus machst du es besser und bekommst neue Sorten.'),
+    p('Der alte Kessel ist undicht, dein Bier hat erst einmal höchstens ★★. Im Brauerei-Laden gibt es Ersatzteile, damit machst du es besser und bekommst neue Sorten.'),
     p(`Jeden Tag kosten Strom und Miete mindestens ${runCost()} 🪙. Bis sich die Brauerei trägt, verdienst du weiter Lohn im Braustüberl und am Band.`)
   ], () => { MAP.at = 'sud'; openCareer(); });
 }
@@ -3462,12 +3649,9 @@ $('startBtn').onclick = () => {
 };
 $('rankMini').onclick = () => { const m = $('rankMore'), open = m.hidden; m.hidden = !open; $('rankMini').setAttribute('aria-expanded', open ? 'true' : 'false'); };
 $('tipOk').onclick = () => { $('tip').hidden = true; const f = tipNext; tipNext = null; if (f) f(); else openCareer(); };
-$('ecoBtn').onclick = () => { renderStore(); $('career').hidden = true; $('store').hidden = false; $('storeClose').focus(); };
-$('storeClose').onclick = () => { $('store').hidden = true; openCareer(); };
 $('repNext').onclick = () => { $('dayRep').hidden = true; openCareer(); };
 $('careerBack').onclick = () => { $('career').hidden = true; $('start').hidden = false; $('startBtn').focus({ preventScroll: true }); };
 $('mapGo').onclick = () => enterLoc(MAP.at);
-$('mapUp').onclick = () => { if (MAP.at && LOCS[MAP.at] && !locked(MAP.at)) openShop(MAP.at); };
 const setPrice = d => { ECO.barPrice = Math.max(8, Math.min(18, ECO.barPrice + d)); saveEco(); beep(d > 0 ? 880 : 660, .05, 'triangle', .06); mapInfo(); };
 const setRecipe = r => { ECO.recipe = r; saveEco(); beep(r === 'pre' ? 990 : 660, .05, 'triangle', .06); mapInfo(); };
 $('recStd').onclick = () => setRecipe('std'); $('recPre').onclick = () => setRecipe('pre');

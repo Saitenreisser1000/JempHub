@@ -61,16 +61,16 @@ Einmalig auf dem Server:
 
 1. **Brauereilakai (Braustüberl):** Maxi fängt Flaschen und bekommt Lohn je voller Kiste (6 Taler, +2 je Stufe).
 2. **Mitarbeiter (ab 1.500 Punkten, Förderband):** Lohn je voller Kiste am Band (8 Taler, +2 je weiterer Stufe). Der Braumeister bietet Maxi den alten Sudkessel für 250 Taler an; Maxi spart seinen Lohn.
-3. **Eigenes Sudhaus:** Gekauft wird direkt am alten Sudhaus auf der Karte (verbretterte Fenster, „Zu verkaufen“). Danach braut Maxi selbst: Malz und Hopfen kaufen („Lager & Einkauf“), brauen, die Wirte kaufen am Ende jedes Tages bis zu 3 Fässer (+1 mit Läuterbottich, +1 mit Gärkeller, +1 je Kesselstufe). Preis je Fass nach Sorte (Märzen 26 bis Festbier 36) und Qualität.
+3. **Eigenes Sudhaus:** Gekauft wird direkt am alten Sudhaus auf der Karte (verbretterte Fenster, „Zu verkaufen“). Danach braut Maxi selbst: Malz und Hopfen im Brauerei-Laden kaufen, brauen, die Wirte kaufen am Ende jedes Tages bis zu 3 Fässer (+1 mit Läuterbottich, +1 mit Gärkeller, +1 je Kesselstufe). Preis je Fass nach Sorte (Märzen 26 bis Festbier 36) und Qualität.
 4. **Anfangs schlecht:** Der alte Kessel ist undicht, Bier hat höchstens 2 Sterne, nur Märzen. Betriebskosten 10 Taler pro Tag (+2 je Ausbau). Die Einnahmen reichen anfangs nicht, Maxi arbeitet weiter im Braustüberl und am Band.
-5. **Reparieren und erweitern** (Knopf „Reparieren“/„Ausbau“ am Sudhaus): Kessel abdichten (bis 3 Sterne), Neues Thermometer (Rast leichter, bis 4 Sterne, Premium-Zutaten lohnen sich), Kupfer aufpolieren (bis 5 Sterne, Kuppel glänzt), Läuterbottich (Pils, Zwickl), Gärkeller (Festbier, Dunkles mit Karamellmalz), Größerer Sudkessel, Routinierter Brauer.
+5. **Reparieren und erweitern** (Regal „Sudhaus“ im Brauerei-Laden): Kessel abdichten (bis 3 Sterne), Neues Thermometer (Rast leichter, bis 4 Sterne, Premium-Zutaten lohnen sich), Kupfer aufpolieren (bis 5 Sterne, Kuppel glänzt), Läuterbottich (Pils, Zwickl), Gärkeller (Festbier, Dunkles mit Karamellmalz), Größerer Sudkessel, Routinierter Brauer.
 6. **Braumeister:** Sind Abdichtung, Thermometer, Kupfer, Läuterbottich und Gärkeller fertig, wird Maxi Braumeister.
 
 Die Stufen Produktionsmitarbeiter (12.000) und Vorarbeiter (25.000) erhöhen den Lohn. Spieltage und Abrechnung (Lohn, Bierverkauf, Zutaten, Ausbau, Betriebskosten, Ergebnis) gibt es, sobald Maxi das Sudhaus besitzt; drei Runden sind ein Tag. Das Sudhaus bucht die Zutaten am Anfang jedes Suds ab; reichen sie nicht, endet die Schicht („Zutaten aufgebraucht!“). Wer vor dieser Version schon im Sudhaus gespielt hat, besitzt es bereits.
 
 ## Brauerei-Laden und Ausbauten
 
-Allgemeine Verbesserungen im Brauerei-Laden: Ersatzbier (ein Fehler mehr), Eingespielt (höherer Startmultiplikator). Im Braustüberl: Breite Kiste, Stammgäste (+2 Taler Lohn je Kiste). Am Förderband: Ruhiges Band, Akkordprämie (+2 Taler Lohn je Kiste). Alles wird lokal gespeichert (`ftb-taler`, `ftb-upg`, `ftb-eco`).
+Gekauft wird nur im Brauerei-Laden auf der Karte. Der Laden hat zwei begehbare Räume, vorne die Ausrüstung und hinten die Zutatenkammer (Durchgang an der Seite, erst mit eigenem Sudhaus): Maxi kommt zur Tür herein, ein Tipp auf eine Ware schickt ihn hin, unten erscheinen Name, Wirkung und Preis. Jede Ware ist gezeichnet und hat einen Ein-Wort-Namen (Malz, Hopfen, Edelmalz, Aromahopfen, Dichtung, Thermometer, Politur, Kessel, Läuterbottich, Gärtank, Sanduhr, Großkiste, Stammtisch, Bandbremse, Prämie, Ersatzbier, Training). Zutaten und Sudhaus-Teile stehen erst im Regal, wenn Maxi das Sudhaus besitzt, die Halle-Waren ab Mitarbeiter. Fehlen Zutaten, schickt der Sudhaus-Knopf Maxi direkt zum Laden. Allgemein: Ersatzbier (ein Fehler mehr), Eingespielt (höherer Startmultiplikator). Im Braustüberl: Breite Kiste, Stammgäste (+2 Taler Lohn je Kiste). Am Förderband: Ruhiges Band, Akkordprämie (+2 Taler Lohn je Kiste). Alles wird lokal gespeichert (`ftb-taler`, `ftb-upg`, `ftb-eco`).
 
 ## Eilaufträge (Sudhaus)
 
