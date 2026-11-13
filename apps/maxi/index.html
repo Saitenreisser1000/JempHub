@@ -1828,7 +1828,7 @@ function reset4(){
   const sorts = Object.keys(ECO.keller || {}).filter(n => kegLeft(n) >= 1/GLAS - 1e-6).sort((a, b) => kegLeft(b) - kegLeft(a)).slice(0, 4);
   sorts.sort((a, b) => RECIPES.findIndex(r => r.n === a) - RECIPES.findIndex(r => r.n === b));
   L4.taps = sorts.map(n => ({ n, lvl: 0, st: 'empty', t: 0, extra: 0 }));
-  L4.guests = []; L4.fly = []; L4.t = 0; L4.spawnT = .5; L4.served = 0; L4.pour = null; L4.hbT = 0;
+  L4.guests = []; L4.fly = []; L4.t = 0; L4.spawnT = .5; L4.served = 0; L4.pour = null; L4.hbT = 0; L4.count = 0;
   updateHud();
 }
 function start4(){
@@ -1839,13 +1839,27 @@ function start4(){
   $('bar').hidden = true; $('fillTxt').hidden = true;
   state = 'play'; keepAwake();
 }
+// Gäste mit Sonderwünschen: eigener Eichstrich, Preis, Trinkgeld und Geduld
+const GTYPE = {
+  normal: { tgt: .86 },
+  stamm:  { tgt: .95, tip: 2, label: 'viel Schaum', col: '#2f5d3a', look: { shirt: '#2f5d3a', hair: '#e8e2d4', sty: 3, beard: true } },
+  pfiff:  { tgt: .5, pay: .5, tip: 1, label: 'nur ein Pfiff', col: '#3d6fa8', look: { shirt: '#e0473a', hair: '#e6c46a', sty: 1, flowers: true, shades: true } },
+  vip:    { tgt: .86, pay: 2, win: .06, pat: .8, label: 'genau zapfen!', col: '#9a6a10', look: { shirt: '#20232a', hair: '#3a3a3a', sty: 4, chain: true } },
+  durst:  { tgt: .86, pat: .55, tip: 1, label: 'Durst!', col: '#c2501a', look: { shirt: '#e8792a', hair: '#5a3a24', sty: 5, vest: true } }
+};
+const gTgt = gu => GTYPE[gu.ty || 'normal'].tgt;
+function tapGuest(tp){ return tp.gu && tp.gu.st === 'wait' ? tp.gu : L4.guests.filter(q => q.st === 'wait' && q.n === tp.n && !L4.taps.some(o => o !== tp && o.gu === q)).sort((a, b) => a.pat - b.pat)[0]; }
 const PATRONS = [['#3d6fa8', '#5a3a24', 0], ['#9a2a20', '#2a2a2a', 1], ['#c9a640', '#8a5a2c', 2], ['#2f5d3a', '#d8c8a8', 3], ['#7a4a8a', '#3a2418', 1], ['#d9763a', '#6b4325', 0]];
 function spawnGuest(){
   const used = new Set(L4.guests.map(gu => gu.slot)), free = [0, 1, 2].filter(s => !used.has(s));
   const want = L4.taps.filter(tp => kegLeft(tp.n) >= 1/GLAS - 1e-6);
   if (!free.length || !want.length) return;
-  const lk = PATRONS[Math.floor(Math.random()*PATRONS.length)], pm = Math.max(6, 11.5 - L4.t*.05);
-  L4.guests.push({ slot: free[Math.floor(Math.random()*free.length)], n: want[Math.floor(Math.random()*want.length)].n, pat: pm, pm, st: 'in', t: 0, shirt: lk[0], hair: lk[1], sty: lk[2], skin: Math.random() < .5 ? '#f0c39b' : '#d9a074' });
+  const lk = PATRONS[Math.floor(Math.random()*PATRONS.length)];
+  // die ersten Gäste sind gewöhnlich, danach kommen Sonderwünsche dazu
+  L4.count = (L4.count || 0) + 1;
+  let ty = 'normal'; if (L4.count > 2 && Math.random() < .6) ty = ['stamm', 'pfiff', 'vip', 'durst'][Math.floor(Math.random()*4)];
+  const T = GTYPE[ty], pm = Math.max(6, 11.5 - L4.t*.05)*(T.pat || 1);
+  L4.guests.push(Object.assign({ slot: free[Math.floor(Math.random()*free.length)], n: want[Math.floor(Math.random()*want.length)].n, pat: pm, pm, st: 'in', t: 0, ty, shirt: lk[0], hair: lk[1], sty: lk[2], skin: Math.random() < .5 ? '#f0c39b' : '#d9a074' }, T.look || {}));
 }
 function miss4(msg, x, y){
   missed++; breakStreak(); shake = .18; beep(150, .18, 'sawtooth', .07);
@@ -1858,7 +1872,7 @@ function down4(e){
   const i = Math.max(0, Math.min(L4.taps.length - 1, Math.floor((fx - 12)/g.cw))), tp = L4.taps[i]; if (!tp) return;
   if (tp.st !== 'empty') return;
   if (kegLeft(tp.n) < 1/GLAS - 1e-6){ floatText(tapX(i, g), g.tapY - 60, 'Fass leer', '#ff8a6a'); return; }
-  tp.st = 'pour'; tp.lvl = 0; L4.pour = { i, id: e.pointerId };
+  tp.st = 'pour'; tp.lvl = 0; tp.gu = tapGuest(tp) || null; L4.pour = { i, id: e.pointerId };
   if (!seen.l4){ seen.l4 = true; saveSeen(); }
 }
 function up4(e){
@@ -1872,18 +1886,20 @@ function pourDone(i){
   const k = ECO.keller[n]; if (k){ k.f = Math.max(0, Math.round((k.f - 1/GLAS)*10000)/10000); syncFass(); saveEco(); }
   ECO.round.sold += 1/GLAS;
   tp.st = 'back'; tp.t = 0;
+  const gu = tapGuest(tp); tp.gu = null;
   if (tp.lvl > 1){ miss4('Übergelaufen!', x, y); return; }
-  if (tp.lvl < L4_T - .12){ miss4('Zu wenig!', x, y); return; }
-  const gu = L4.guests.filter(q => q.st === 'wait' && q.n === n).sort((a, b) => a.pat - b.pat)[0];
   if (!gu){ miss4(`Keiner will ${n}`, x, y); return; }
-  const perfect = Math.abs(tp.lvl - L4_T) <= .035;
+  const T = GTYPE[gu.ty || 'normal'], tg = T.tgt, win = T.win || .12;
+  if (tp.lvl < tg - win){ miss4(gu.ty === 'stamm' ? 'Zu wenig Schaum!' : 'Zu wenig!', x, y); return; }
+  if (tp.lvl > tg + win){ miss4(gu.ty === 'pfiff' ? 'Kein Pfiff!' : 'Zu voll!', x, y); return; }
+  const perfect = Math.abs(tp.lvl - tg) <= .035;
   gu.st = 'getting';
   L4.fly.push({ n, lvl: tp.lvl, x0: x, y0: g.gb, x1: g.slots[gu.slot], y1: g.cy - 2, t: 0, gu, perfect });
   tp.lvl = 0; tp.st = 'empty';
   floatText(x, y, perfect ? 'Perfekt!' : 'Passt', perfect ? C.gold : C.cream);
 }
 function serve4(f){
-  const gu = f.gu, price = glassPrice(f.n) + (f.perfect ? 1 + (U.tables || 0) : 0), pts = (f.perfect ? 60 : 30)*mult;
+  const gu = f.gu, T = GTYPE[gu.ty || 'normal'], price = Math.max(1, Math.round(glassPrice(f.n)*(T.pay || 1))) + (f.perfect ? 1 + (U.tables || 0) + (T.tip || 0) : 0), pts = (f.perfect ? 60 : 30)*mult*(T.pay > 1 ? 2 : 1);
   taler += price; ECO.round.earned += price; ECO.round.beer = (ECO.round.beer || 0) + price; ECO.today.sales += price;
   score += pts; L4.served++; saveShop(); saveEco(); updateHud(); sCash();
   if (f.perfect){ streak++; if (mult < MULT_MAX && streak % 3 === 0){ mult++; setMultUI('pop'); floatText(W/2, geo4().cy - 190, `×${mult}`, C.gold); } }
@@ -1939,9 +1955,15 @@ function drawPatron(x, y, gu){
   if (gu.sty === 0){ ctx.beginPath(); ctx.arc(0, -92, 21, Math.PI, 0); ctx.fill(); ctx.fillRect(-21, -94, 30, 5); ctx.fillRect(0, -96, 30, 5); }
   else if (gu.sty === 1){ ctx.beginPath(); ctx.arc(0, -92, 20.5, Math.PI*1.05, Math.PI*1.95); ctx.fill(); }
   else if (gu.sty === 2){ ctx.beginPath(); ctx.moveTo(-17, -82); ctx.quadraticCurveTo(0, -56, 17, -82); ctx.quadraticCurveTo(0, -72, -17, -82); ctx.fill(); }
-  else { ctx.fillRect(-26, -104, 52, 5); rr(-15, -122, 30, 20, 5); ctx.fill(); ctx.fillStyle = '#9a2a20'; ctx.fillRect(-15, -108, 30, 4); }
+  else if (gu.sty === 3){ ctx.fillRect(-26, -104, 52, 5); rr(-15, -122, 30, 20, 5); ctx.fill(); ctx.fillStyle = '#9a2a20'; ctx.fillRect(-15, -108, 30, 4); ctx.fillStyle = '#e8e2d4'; ctx.beginPath(); ctx.moveTo(15, -110); ctx.lineTo(22, -126); ctx.lineTo(18, -108); ctx.fill(); }
+  else if (gu.sty === 4){ ctx.fillStyle = '#141414'; ctx.fillRect(-22, -103, 44, 5); ctx.fillRect(-14, -132, 28, 31); ctx.fillStyle = '#9a2a20'; ctx.fillRect(-14, -108, 28, 4); }
+  else { ctx.fillStyle = '#f2c230'; ctx.beginPath(); ctx.arc(0, -96, 22, Math.PI, 0); ctx.fill(); ctx.fillRect(-26, -98, 52, 5); ctx.fillStyle = '#d9a820'; ctx.fillRect(-3, -117, 6, 18); }
+  if (gu.beard){ ctx.fillStyle = gu.hair; ctx.beginPath(); ctx.moveTo(-18, -86); ctx.quadraticCurveTo(0, -50, 18, -86); ctx.quadraticCurveTo(0, -76, -18, -86); ctx.fill(); }
+  if (gu.flowers){ ctx.fillStyle = '#ffd34a'; for (const [fx2, fy2] of [[-16, -50], [10, -40], [-6, -24], [16, -18], [-18, -12]]){ ctx.beginPath(); ctx.arc(fx2, fy2, 3.5, 0, Math.PI*2); ctx.fill(); } }
+  if (gu.chain){ ctx.fillStyle = '#fff'; ctx.beginPath(); ctx.moveTo(-8, -64); ctx.lineTo(0, -46); ctx.lineTo(8, -64); ctx.fill(); ctx.fillStyle = C.gold; for (let i = 0; i <= 8; i++){ const a = Math.PI*(.15 + .7*i/8); ctx.beginPath(); ctx.arc(Math.cos(a)*22, -64 + Math.sin(a)*24, 2.6, 0, Math.PI*2); ctx.fill(); } ctx.beginPath(); ctx.arc(0, -38, 6, 0, Math.PI*2); ctx.fill(); }
+  if (gu.vest){ ctx.fillStyle = '#f2f2e8'; ctx.fillRect(-28, -36, 56, 5); ctx.fillRect(-28, -22, 56, 5); }
   const mood = gu.st === 'happy' || gu.st === 'getting' ? 1 : gu.st === 'angry' || gu.pat < gu.pm*.3 ? -1 : 0;
-  ctx.fillStyle = '#20232a'; ctx.beginPath(); ctx.arc(-7, -90, 2.4, 0, Math.PI*2); ctx.arc(7, -90, 2.4, 0, Math.PI*2); ctx.fill();
+  ctx.fillStyle = '#20232a'; if (gu.shades){ rr(-15, -94, 13, 8, 3); ctx.fill(); rr(2, -94, 13, 8, 3); ctx.fill(); ctx.fillRect(-2, -92, 4, 2); } else { ctx.beginPath(); ctx.arc(-7, -90, 2.4, 0, Math.PI*2); ctx.arc(7, -90, 2.4, 0, Math.PI*2); ctx.fill(); }
   ctx.strokeStyle = '#5a2a1a'; ctx.lineWidth = 2.2; ctx.beginPath();
   if (mood > 0) ctx.arc(0, -82, 7, .2, Math.PI - .2); else if (mood < 0) ctx.arc(0, -73, 7, Math.PI + .3, -.3); else { ctx.moveTo(-5, -79); ctx.lineTo(5, -79); }
   ctx.stroke();
@@ -1949,8 +1971,9 @@ function drawPatron(x, y, gu){
   ctx.restore();
   // Sprechblase: die gewünschte Sorte, darunter die Geduld
   if (gu.st === 'in' && rise < 1) return;
-  const by = y - 160; ctx.save(); ctx.globalAlpha = fade;
-  ctx.fillStyle = '#fbf3df'; rr(x - 46, by - 24, 92, 44, 12); ctx.fill(); ctx.beginPath(); ctx.moveTo(x - 6, by + 20); ctx.lineTo(x + 6, by + 20); ctx.lineTo(x, by + 30); ctx.fill();
+  const T = GTYPE[gu.ty || 'normal'], sp = T.label && gu.st !== 'happy' && gu.st !== 'getting' && gu.st !== 'angry', by = y - (gu.sty === 4 ? 172 : 160) - (sp ? 14 : 0); ctx.save(); ctx.globalAlpha = fade;
+  ctx.fillStyle = '#fbf3df'; rr(x - 50, by - 24, 100, sp ? 60 : 44, 12); ctx.fill(); const tb = by + (sp ? 36 : 20); ctx.beginPath(); ctx.moveTo(x - 6, tb); ctx.lineTo(x + 6, tb); ctx.lineTo(x, tb + 10); ctx.fill();
+  if (sp){ ctx.font = '700 13px "Barlow Condensed", sans-serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillStyle = T.col; ctx.fillText(T.label, x, by + 25); }
   ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillStyle = C.ink;
   if (gu.st === 'happy' || gu.st === 'getting'){ ctx.font = '400 20px "Lilita One", sans-serif'; ctx.fillStyle = '#2f5d3a'; ctx.fillText('Prost!', x, by - 2); }
   else if (gu.st === 'angry'){ ctx.font = '400 20px "Lilita One", sans-serif'; ctx.fillStyle = '#9a2a20'; ctx.fillText('Pff!', x, by - 2); }
@@ -1996,7 +2019,7 @@ function render4(){
     if (act && tp.lvl < 1.1){ ctx.fillStyle = r.col; ctx.fillRect(x - 2, py + 24, 4, Math.max(0, g.gb - g.gh*Math.min(1, tp.lvl) - py - 24)); }
     drawGlass(x, g.gb, g.gw, g.gh, tp.st === 'empty' ? 0 : tp.lvl, r.col);
     // Eichstrich
-    const ly = g.gb - g.gh*L4_T; ctx.strokeStyle = C.gold; ctx.lineWidth = 2; ctx.setLineDash([5, 4]); ctx.beginPath(); ctx.moveTo(x - g.gw/2 - 8, ly); ctx.lineTo(x + g.gw/2 + 2, ly); ctx.stroke(); ctx.setLineDash([]);
+    const tgu = tp.st === 'pour' || tp.st === 'settle' ? tp.gu : tapGuest(tp), ly = g.gb - g.gh*(tgu ? gTgt(tgu) : L4_T); ctx.strokeStyle = tgu && tgu.ty !== 'normal' ? GTYPE[tgu.ty].col === '#2f5d3a' ? '#9fe0a8' : '#fff' : C.gold; ctx.lineWidth = 2; ctx.setLineDash([5, 4]); ctx.beginPath(); ctx.moveTo(x - g.gw/2 - 8, ly); ctx.lineTo(x + g.gw/2 + 2, ly); ctx.stroke(); ctx.setLineDash([]);
     // Fass und Preis
     ctx.font = '700 13px "Barlow Condensed", sans-serif'; ctx.fillStyle = 'rgba(243,230,196,.85)';
     ctx.fillText(`🛢 ${fmtF(Math.round(left*GLAS))} Gl. · ${glassPrice(tp.n)} 🪙`, x, g.gb + 24);
