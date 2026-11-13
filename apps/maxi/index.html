@@ -84,8 +84,13 @@ html,body{height:100%;margin:0;background:var(--night);color:var(--cream);overfl
 #pauseBtn{pointer-events:auto;width:32px;height:32px;flex:0 0 auto;display:grid;place-items:center;background:rgba(20,26,36,.55);color:var(--cream);border:1px solid rgba(243,230,196,.35);
   border-radius:50%;font:700 11px var(--f-ui);letter-spacing:-1px;padding:0}
 .liverow{display:flex;align-items:center;gap:8px;justify-content:flex-end}
-.hud.s1 #cratesLbl,.hud.s1 #crates{display:none}
-.hud.s1 .earn{margin-top:14px;font-size:16px;padding:6px 10px}
+.hud .mid .earn{margin-top:14px;font-size:16px;padding:6px 10px}
+.hud:not(.s1) .fillrow{display:none}
+.scorerow{display:flex;align-items:center;gap:7px}
+.scorerow .mult{font-size:14px;min-width:0;padding:3px 6px 2px}
+.scorerow .mult:not(.on){display:none}
+.hud .lbl:empty{display:none}
+#lives{white-space:nowrap}
 .overlay{position:fixed;inset:0;display:grid;place-items:center;background:rgba(15,20,30,.62);
   padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:24px}
 .label{box-sizing:border-box;width:min(360px,100%);background:var(--cream);color:var(--ink);border-radius:14px;padding:22px 20px 20px;text-align:center;
@@ -286,10 +291,10 @@ html,body{height:100%;margin:0;background:var(--night);color:var(--cream);overfl
 </div>
 
 <div class="hud" id="hud" hidden>
-  <div><div class="lbl">Punkte</div><div class="val" id="score">0</div><div class="goal" id="goal"></div></div>
-  <div class="mid"><div class="lbl" id="cratesLbl">Kisten</div><div class="val" id="crates">0</div><div class="earn" id="earn" title="Ertrag dieser Schicht"></div></div>
+  <div><div class="lbl">Punkte</div><div class="scorerow"><div class="val" id="score">0</div><span class="mult" id="mult" title="Punktemultiplikator">×1</span></div><div class="goal" id="goal"></div></div>
+  <div class="mid"><div class="earn" id="earn" title="Ertrag dieser Schicht"></div></div>
   <div class="right"><div class="lbl" id="livesLbl">Bruch</div><div class="liverow"><div id="lives"></div><button id="pauseBtn" type="button" aria-label="Pause">❚❚</button></div></div>
-  <div class="fillrow"><div class="bar" id="bar"></div><span id="fillTxt">0 / 20</span><span class="mult" id="mult" title="Punktemultiplikator">×1</span></div>
+  <div class="fillrow"><div class="bar" id="bar"></div><span id="fillTxt">0 / 20</span></div>
 </div>
 
 <div class="toast" id="toast" role="status" hidden></div>
@@ -1629,12 +1634,12 @@ let goalShown = false;
 function goalInfo(){
   // aktuelles Ziel der Runde: zuerst die Geschichte, sonst die nächste Beförderung
   if (stage === 2 && ECO.story === 1) return { hud: `Ziel ${Math.min(L2.sorted, STORY_SORT)} / ${STORY_SORT} sortiert`, head: `${STORY_SORT} Flaschen sortieren`, sub: 'Dann holt dich der Braumeister ins Sudhaus.' };
-  if (stage === 3 && L3.trial) return null;
+  if (stage === 3 && L3.trial) return { hud: `Probe ${Math.min(2, L3.brews)} / 2 Sude` };
   const nx = RANKS[rank + 1]; if (!nx) return null;
   return { hud: `Ziel ${nx.pts.toLocaleString('de-DE')}`, head: `${nx.pts.toLocaleString('de-DE')} Punkte`, sub: rank === 0 ? 'Schaffst du das in einer Runde, wirst du Mitarbeiter und darfst ans Förderband.' : `Dann wirst du ${nx.t}.` };
 }
 function showGoal(){
-  const g = goalInfo(); if (!g) return;
+  const g = goalInfo(); if (!g || !g.head) return;
   const el = $('goalBanner'); el.replaceChildren();
   const k = document.createElement('small'), b = document.createElement('b'), s = document.createElement('small');
   k.textContent = 'Dein Ziel'; b.textContent = g.head; s.textContent = g.sub; el.append(k, b, s);
@@ -1643,8 +1648,9 @@ function showGoal(){
 }
 function updateHud(){
   { const g = goalInfo(); $('goal').textContent = g ? g.hud : ''; }
-  $('score').textContent = score; $('crates').textContent = crates;
-  $('lives').textContent = MAXMISS > 20 ? `${Math.min(2, crates)} von 2 Suden` : '🍺'.repeat(Math.max(0, MAXMISS-missed)) + '💥'.repeat(Math.min(MAXMISS, missed));
+  $('score').textContent = score;
+  const left = Math.max(0, MAXMISS-missed);
+  $('lives').textContent = MAXMISS > 20 ? '' : MAXMISS > 5 ? `🍺 ${left}` + (missed ? `  💥 ${Math.min(MAXMISS, missed)}` : '') : '🍺'.repeat(left) + '💥'.repeat(Math.min(MAXMISS, missed));
   updateEarn();
 }
 function updateEarn(){
@@ -1800,7 +1806,7 @@ async function start(keep){
   try { ac = ac || new (window.AudioContext || window.webkitAudioContext)(); ac.resume(); } catch(e) {}
   stage = 1; P.noCrate = false; P.slim = false; reset(); calibrating = false;
   if (typeof keep === 'number'){ score = keep; updateHud(); }
-  $('cratesLbl').textContent = 'Kisten'; $('livesLbl').textContent = 'Bruch'; $('hud').classList.add('s1'); $('bar').hidden = false; $('fillTxt').hidden = false;
+  $('livesLbl').textContent = 'Bruch'; $('hud').classList.add('s1'); $('bar').hidden = false; $('fillTxt').hidden = false;
   ['start','career','over','paused','promo'].forEach(id => $(id).hidden = true); $('hud').hidden = false;
   state = 'play'; keepAwake();
   if (!seen.move) unlock('move');
@@ -1880,7 +1886,7 @@ async function start2(keep){
   stage = 2; reset2(); calibrating = false;
   if (typeof keep === 'number'){ score = keep; updateHud(); }
   ['start','career','over','paused','board','legalBox','promo'].forEach(id => $(id).hidden = true); $('hud').hidden = false;
-  $('cratesLbl').textContent = 'Sortiert'; $('livesLbl').textContent = 'Fehler'; $('hud').classList.remove('s1');
+  $('livesLbl').textContent = 'Fehler'; $('hud').classList.remove('s1');
   $('bar').hidden = true; $('fillTxt').hidden = true;
   state = 'play'; keepAwake();
   if (!seen.l2switch) unlock('l2switch');
@@ -2830,7 +2836,7 @@ async function start3(keep){
   stage = 3; reset3(); calibrating = false;
   if (typeof keep === 'number'){ score = keep; updateHud(); }
   ['start','career','over','paused','board','legalBox','promo'].forEach(id => $(id).hidden = true); $('hud').hidden = false;
-  $('cratesLbl').textContent = 'Sude'; $('livesLbl').textContent = L3.trial ? 'Schnuppertag' : 'Fehler'; $('hud').classList.remove('s1');
+  $('livesLbl').textContent = L3.trial ? '' : 'Fehler'; $('hud').classList.remove('s1');
   $('bar').hidden = true; $('fillTxt').hidden = true;
   state = 'play'; keepAwake();
   if (!seen.l3brew) unlock('l3brew');
