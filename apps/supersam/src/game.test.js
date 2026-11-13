@@ -123,6 +123,23 @@ test('Kamera schlägt beim Landen auf einer höheren Plattform nicht nach unten 
   assert.ok(maxY <= before + 0.5, `Kamera ging um ${(maxY - before).toFixed(1)} px nach unten`);
 });
 
+test('Bröckelblöcke: von unten durchspringen, oben tragen sie und zerfallen', () => {
+  const { dz, listeners, run } = boot();
+  dz.setState('play'); dz.loadLevel('uebung'); dz.L.enemies.length = 0; dz.L.shoesItem.got = true;
+  const G = dz.L.grid, set = (r, c, ch) => { G[r][c] = ch; };
+  for (let r = 10; r <= 16; r++) for (let c = 16; c <= 26; c++) set(r, c, r === 14 ? 'B' : ' ');
+  for (let c = 16; c <= 26; c++) set(17, c, '#');
+  dz.P.x = 21 * 16; dz.P.y = 17 * 16 - 14; run(30);
+  listeners.keydown({ key: ' ', preventDefault() {} });
+  let top = 1e9; for (let i = 0; i < 40; i++) { run(1); top = Math.min(top, dz.P.y + 14); }
+  listeners.keyup({ key: ' ' });
+  assert.ok(top < 14 * 16, 'Sam springt durch die Bröckelreihe nach oben');
+  run(20);
+  assert.ok(dz.P.ground && Math.abs(dz.P.y + 14 - 14 * 16) < 1, `Sam steht oben auf den Bröckelblöcken (Füße bei ${((dz.P.y + 14) / 16).toFixed(2)})`);
+  run(80);
+  assert.ok(dz.P.y + 14 > 16 * 16, 'Blöcke sind zerfallen, Sam ist hinuntergefallen');
+});
+
 test('Neue Gegner bewegen sich und bleiben im Level', () => {
   const { dz, run } = boot();
   const seen = new Set();

@@ -1201,9 +1201,11 @@ const inner=(c,r)=>SLOPES[tileAt(c,r-1)]!==undefined; // Erde unter einer Schrä
 function slopeSurface(x,y){ const c=Math.floor(x/TS), r=Math.floor(y/TS);
   for(const rr of [r,r+1,r-1]){ const f=SLOPES[tileAt(c,rr)]; if(f) return rr*TS+f(Math.min(TS-.01,Math.max(0,x-c*TS))); }
   return null; }
-const solid=(c,r)=>{ if(c<0||c>=L.w||r<0) return true; if(r>=L.h) return false; const t=L.grid[r][c]; return t==='#'||t==='='||t==='B'||t==='X'||t==='K'; };
+const solid=(c,r)=>{ if(c<0||c>=L.w||r<0) return true; if(r>=L.h) return false; const t=L.grid[r][c]; return t==='#'||t==='='||t==='X'||t==='K'; };
 // Steg '-': von unten und seitlich durchspringbar, trägt nur von oben (wer darauf steht oder von oben kommt)
-const ledge=(c,r)=>r>=0&&r<L.h&&c>=0&&c<L.w&&L.grid[r][c]==='-';
+// Stege und Bröckelblöcke trägt man nur von oben: von unten und seitlich springt man durch (Bröckelblöcke, die
+// wieder auftauchen, können einen so nicht einsperren)
+const ledge=(c,r)=>{ if(r<0||r>=L.h||c<0||c>=L.w) return false; const t=L.grid[r][c]; return t==='-'||t==='B'; };
 const floorAt=(c,r)=>solid(c,r)||ledge(c,r);
 const tier=()=>flow>=99?3:flow>=66?2:flow>=33?1:0;
 function addFlow(v){ flow=Math.max(0,Math.min(100,flow+v)); }
@@ -3548,7 +3550,7 @@ function frameAhead(dir){
   if(gap) down=Math.max(down,Math.min(TS*6,L.h*TS-base));
   return {up,down};
 }
-const standTile=(c,r)=>{ const t=tileAt(c,r), above=tileAt(c,r-1); return (solid(c,r)||t==='~'||t==='-')&&!solid(c,r-1)&&above!=='~'&&above!=='-'&&t!=='^'; };
+const standTile=(c,r)=>{ const t=tileAt(c,r), above=tileAt(c,r-1); return (solid(c,r)||t==='~'||ledge(c,r))&&!solid(c,r-1)&&above!=='~'&&above!=='-'&&t!=='^'; };
 // Wo landet Sam? Flugbahn mit Schwerkraft und gleichbleibendem Seitentempo vorausrechnen (bis 1,6 s), erste Standfläche darunter.
 function landingAhead(){
   let x=P.x+P.w/2, y=P.y+P.h, vy=P.vy; const dt=1/30, cap=P.glide?PH.glideFall:PH.fall;
