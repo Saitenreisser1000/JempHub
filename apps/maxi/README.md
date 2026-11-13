@@ -10,7 +10,7 @@ Handyspiel im Hochformat für die Freetown Brewery: Maximilian Weichl steht vor 
 
 ## Beförderungen
 
-Maxi beginnt als **Brauereilakai**. Erreicht eine Runde 3000 Punkte, wird er **Mitarbeiter** (Förderband frei, Angebot für den alten Sudkessel), bei 12 000 Punkten **Produktionsmitarbeiter**, bei 25 000 **Vorarbeiter**; jede Stufe erhöht den Lohn. Die Stufe merkt sich das Gerät (`localStorage`), Maxi trägt pro Beförderung einen goldenen Stern auf der Jacke. Braumeister wird er über sein eigenes Sudhaus (siehe Spielbogen).
+Maxi beginnt als **Brauereilakai**. Erreicht eine Runde 1500 Punkte, wird er **Mitarbeiter** (Förderband frei, Angebot für den alten Sudkessel), bei 12 000 Punkten **Produktionsmitarbeiter**, bei 25 000 **Vorarbeiter**; jede Stufe erhöht den Lohn. Die Stufe merkt sich das Gerät (`localStorage`), Maxi trägt pro Beförderung einen goldenen Stern auf der Jacke. Braumeister wird er über sein eigenes Sudhaus (siehe Spielbogen).
 
 ## Förderband (Abfüllhalle)
 
@@ -57,10 +57,10 @@ Einmalig auf dem Server:
 
 ## Spielbogen
 
-**Einstieg der Reihe nach:** „Start“ führt bis zum Angebot immer zum nächsten Schritt: Braustüberl → bei der Beförderung zum Mitarbeiter direkt ans Förderband → nach 30 sortierten Flaschen ruft der Braumeister (Bilderszene) → Schnuppertag im schönen Sudhaus des Braumeisters (2 Sude, kein Fehlerlimit, keine Wirtschaft) → Bilderszene im alten Sudhaus mit dem Angebot für den alten Sudkessel → erst dann ist die Karte offen (`ftb-eco` → `story` 0 bis 3). Wer schon weiter war, startet direkt mit der Karte.
+**Einstieg der Reihe nach:** „Start“ führt bis zum Angebot immer zum nächsten Schritt: Braustüberl → bei der Beförderung zum Mitarbeiter direkt ans Förderband → nach 20 sortierten Flaschen ruft der Braumeister (Bilderszene) → Schnuppertag im schönen Sudhaus des Braumeisters (2 Sude, kein Fehlerlimit, keine Wirtschaft) → Bilderszene im alten Sudhaus mit dem Angebot für den alten Sudkessel → erst dann ist die Karte offen (`ftb-eco` → `story` 0 bis 3). Wer schon weiter war, startet direkt mit der Karte.
 
 1. **Brauereilakai (Braustüberl):** Maxi fängt Flaschen und bekommt Lohn je voller Kiste (6 Taler, +2 je Stufe).
-2. **Mitarbeiter (ab 3.000 Punkten, Förderband):** Lohn je voller Kiste am Band (8 Taler, +2 je weiterer Stufe). Der Braumeister bietet Maxi den alten Sudkessel für 250 Taler an; Maxi spart seinen Lohn.
+2. **Mitarbeiter (ab 1.500 Punkten, Förderband):** Lohn je voller Kiste am Band (8 Taler, +2 je weiterer Stufe). Der Braumeister bietet Maxi den alten Sudkessel für 250 Taler an; Maxi spart seinen Lohn.
 3. **Eigenes Sudhaus:** Gekauft wird direkt am alten Sudhaus auf der Karte (verbretterte Fenster, „Zu verkaufen“). Danach braut Maxi selbst: Malz und Hopfen kaufen („Lager & Einkauf“), brauen, die Wirte kaufen am Ende jedes Tages bis zu 3 Fässer (+1 mit Läuterbottich, +1 mit Gärkeller, +1 je Kesselstufe). Preis je Fass nach Sorte (Märzen 26 bis Festbier 36) und Qualität.
 4. **Anfangs schlecht:** Der alte Kessel ist undicht, Bier hat höchstens 2 Sterne, nur Märzen. Betriebskosten 10 Taler pro Tag (+2 je Ausbau). Die Einnahmen reichen anfangs nicht, Maxi arbeitet weiter im Braustüberl und am Band.
 5. **Reparieren und erweitern** (Knopf „Reparieren“/„Ausbau“ am Sudhaus): Kessel abdichten (bis 3 Sterne), Neues Thermometer (Rast leichter, bis 4 Sterne, Premium-Zutaten lohnen sich), Kupfer aufpolieren (bis 5 Sterne, Kuppel glänzt), Läuterbottich (Pils, Zwickl), Gärkeller (Festbier, Dunkles mit Karamellmalz), Größerer Sudkessel, Routinierter Brauer.
@@ -79,3 +79,5 @@ Ab dem 4. Sud einer Runde bietet der Wirt manchmal einen Eilauftrag an, etwa „
 ## Menü und Karte
 
 „Start“ führt Neulinge direkt ins Braustüberl; danach zeigt „Maxis Laufbahn“ oben die Stufe mit Fortschrittsbalken (antippen klappt alle Stufen und Rekorde auf), die Taler bzw. das Sparziel und darunter die Karte des Brauereigeländes. Maxi geht zu einem Gebäude, unten erscheinen Infos und Knöpfe. In der Pause beendet „Schicht beenden“ die Runde mit Bilanz.
+
+Zu Beginn jeder Runde zeigt eine Karte das aktuelle Ziel (bis zum Produktionsmitarbeiter bzw. am Band bis zum Schnuppertag), und unter den Punkten steht es dauerhaft, z. B. „Ziel 1.500“ oder „Ziel 12 / 20 sortiert“.
