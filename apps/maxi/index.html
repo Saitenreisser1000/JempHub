@@ -104,7 +104,8 @@ html,body{height:100%;margin:0;background:var(--night);color:var(--cream);overfl
 .who{font:700 18px var(--f-ui);letter-spacing:.08em;text-transform:uppercase;color:var(--hop)}
 .startbox{width:min(360px,100%);display:grid;gap:8px;text-align:center}
 .startbox .btn{box-shadow:0 0 0 3px var(--cream),0 10px 26px rgba(0,0,0,.5)}
-.legal{display:flex;justify-content:center;gap:18px}
+.legal{display:flex;flex-wrap:wrap;justify-content:center;gap:4px 18px}
+#resetBtn.warn{color:#ff8a6a!important}
 .legalcard{text-align:left;max-height:calc(100% - 16px);overflow-y:auto;gap:10px}
 .legalcard h2,.legalcard h3{text-align:center}
 .legalcard h3{margin:4px 0 0;font:400 22px var(--f-display);color:var(--crate)}
@@ -322,7 +323,7 @@ html,body{height:100%;margin:0;background:var(--night);color:var(--cream);overfl
   <div class="startbox">
     <button class="btn" id="startBtn" type="button">Start</button>
     <button class="btn ghost" id="boardBtn" type="button" data-board>Bestenliste</button>
-    <nav class="legal" aria-label="Rechtliches"><button type="button" data-legal="imp">Impressum</button><button type="button" data-legal="priv">Datenschutz</button></nav>
+    <nav class="legal" aria-label="Rechtliches"><button type="button" data-legal="imp">Impressum</button><button type="button" data-legal="priv">Datenschutz</button><button type="button" id="resetBtn">Spielstand zurücksetzen</button></nav>
   </div>
 </div>
 
@@ -3736,6 +3737,13 @@ function openLegal(which, from){ legalFrom = from; $(from).hidden = true; $('leg
 function closeLegal(){ $('legalBox').hidden = true; if (legalFrom) $(legalFrom).hidden = false; legalFrom = null; }
 for (const el of document.querySelectorAll('[data-legal]')) el.addEventListener('click', () => openLegal(el.dataset.legal, el.closest('.overlay').id));
 $('legalClose').onclick = closeLegal;
+// Spielstand zurücksetzen: erster Tipp fragt nach, zweiter löscht alles außer dem Namen für die Bestenliste
+$('resetBtn').onclick = () => {
+  const b = $('resetBtn');
+  if (!b.classList.contains('warn')){ b.classList.add('warn'); b.textContent = 'Wirklich alles löschen? Nochmal tippen'; clearTimeout(b.h); b.h = setTimeout(() => { b.classList.remove('warn'); b.textContent = 'Spielstand zurücksetzen'; }, 4000); return; }
+  try { Object.keys(localStorage).filter(k => k.startsWith('ftb-') && k !== 'ftb-name').forEach(k => localStorage.removeItem(k)); } catch(e) {}
+  location.reload();
+};
 /* Bestenliste über Supabase. Zugang steht in config.json neben index.html (nicht im Repo);
    ohne config.json bleibt die Bestenliste einfach ausgeblendet. */
 let HS = null, hsTop = [], boardFrom = null, myRank = 0, sentScore = false;
