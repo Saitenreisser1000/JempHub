@@ -126,13 +126,18 @@ html,body{height:100%;margin:0;background:var(--night);color:var(--cream);overfl
 .hslist.local li{grid-template-columns:1fr auto}
 .hslist.local li::before{display:none}
 .shopcard{max-height:calc(100% - 16px);overflow-y:auto}
-.ladencard{padding-top:0}
-#ladenArt{display:block;width:calc(100% + 40px);height:auto;aspect-ratio:640/230;margin:0 -20px 8px;border-radius:14px 14px 0 0}
-.ladencard h2{margin:0 0 2px}
-.ladentabs{display:flex;flex-wrap:wrap;gap:6px;justify-content:center;margin:0 0 10px}
-.ladentabs[hidden]{display:none}
-.ladentabs button{font:700 13px var(--f-ui);padding:6px 9px;border-radius:999px;border:2px solid var(--hop);background:transparent;color:var(--hop);cursor:pointer}
-.ladentabs button[aria-selected="true"]{background:var(--hop);color:#fff}
+.ladenui{position:fixed;inset:0;pointer-events:none;font-family:var(--f-ui)}
+.ladenui[hidden]{display:none}
+.ladentop{position:absolute;left:0;right:0;top:0;display:flex;justify-content:space-between;align-items:center;padding:calc(env(safe-area-inset-top,0px) + 10px) max(14px,env(safe-area-inset-left,0px)) 6px}
+.ladentop .btn{pointer-events:auto;padding:8px 14px;font-size:18px;background:rgba(20,26,36,.75);color:var(--cream);border:2px solid var(--cream)}
+.ladentaler{font:400 24px var(--f-display);color:var(--gold);text-shadow:0 2px 0 rgba(0,0,0,.5)}
+.ladenbuy{position:absolute;left:50%;transform:translateX(-50%);bottom:calc(env(safe-area-inset-bottom,0px) + 16px);width:min(340px,calc(100% - 32px));box-sizing:border-box;pointer-events:auto;
+  display:grid;grid-template-columns:1fr auto;gap:2px 12px;align-items:center;background:var(--cream);color:var(--ink);border-radius:14px;padding:12px 14px;box-shadow:0 10px 26px rgba(0,0,0,.45)}
+.ladenbuy[hidden]{display:none}
+.ladenbuy b{font:400 26px var(--f-display);color:var(--hop)}
+.ladenbuy span{grid-column:1;font:600 15px var(--f-ui);opacity:.8}
+.ladenbuy .btn{grid-column:2;grid-row:1 / span 2;font-size:20px;padding:12px 14px;min-width:110px}
+.ladenbuy .btn:disabled{opacity:.45}
 .taler{font:700 18px var(--f-ui);margin:0 0 10px}
 .shoplist{list-style:none;margin:0 0 12px;padding:0;display:grid;gap:8px;text-align:left}
 .shoplist li{display:grid;grid-template-columns:1fr auto;gap:2px 10px;align-items:center;padding:8px 10px;border-radius:8px;background:rgba(47,93,58,.1)}
@@ -381,16 +386,9 @@ html,body{height:100%;margin:0;background:var(--night);color:var(--cream);overfl
   </div>
 </div>
 
-<div class="overlay" id="shop" hidden>
-  <div class="label shopcard ladencard" role="dialog" aria-modal="true" aria-labelledby="shopTitle">
-    <canvas id="ladenArt" width="640" height="230" aria-hidden="true"></canvas>
-    <h2 id="shopTitle">Brauerei-Laden</h2>
-    <p class="taler" id="shopTaler"></p>
-    <div class="ladentabs" id="ladenTabs" role="tablist" aria-label="Regale"></div>
-    <ul class="shoplist" id="shopList"></ul>
-    <p class="hsnote" id="storeNote"></p>
-    <button class="btn" id="shopClose" type="button">Laden verlassen</button>
-  </div>
+<div class="ladenui" id="ladenUi" hidden>
+  <div class="ladentop" id="ladenTop"><button class="btn" id="ladenOut" type="button">‹ Raus</button><span class="ladentaler" id="ladenTaler"></span></div>
+  <div class="ladenbuy" id="ladenBuy" role="group" aria-live="polite" hidden><b id="buyName"></b><span id="buyFx"></span><button class="btn" id="buyBtn" type="button"></button></div>
 </div>
 
 <div class="overlay" id="tip" hidden>
@@ -583,22 +581,6 @@ const STORE = [
   { k: 'malzP', n: 'Premium-Malz', ic: '🌾', d: 'Aus der Region, für ★★★★ und mehr', n5: 5, unit: 'Sack', sud: true },
   { k: 'hopfenP', n: 'Aroma-Hopfen', ic: '🌿', d: 'Für ★★★★ und mehr', n5: 5, unit: 'Sack', sud: true }
 ];
-function renderStore(){
-  $('shopTaler').textContent = `🪙 ${taler} Brauereitaler · Tag ${ECO.day}`;
-  const items = STORE.filter(it => ECO.ownSud && (!it.k.endsWith('P') || qCap() >= 4)).map(it => {
-    const li = document.createElement('li'), b = document.createElement('b'), sm = document.createElement('small'), bt = document.createElement('button');
-    const pr = ECO.price[it.k], pv = ECO.prev ? ECO.prev[it.k] : pr, tr = pr > pv ? ' ▲' : pr < pv ? ' ▼' : '';
-    b.textContent = `${it.ic} ${it.n}: ${fmtF(ECO[it.k])}`; sm.textContent = `${it.d}. Heute ${pr} 🪙 je ${it.unit}${tr}`;
-    const cost = pr*it.n5; bt.type = 'button'; bt.textContent = `+${it.n5} für ${cost} 🪙`; bt.disabled = taler < cost;
-    bt.onclick = () => { if (taler < cost) return; taler -= cost; if (it.k === 'fass') ECO.fassQ = mixQ(ECO.fass, ECO.fassQ, it.n5, 2.5); ECO[it.k] += it.n5; ECO.today.buy += cost; saveShop(); saveEco(); beep(880, .07, 'triangle', .07); renderStore(); updateEcoBar(); };
-    li.append(b, sm, bt); return li;
-  });
-  const info = (ic, n, v, d) => { const li = document.createElement('li'), b = document.createElement('b'), sm = document.createElement('small'); b.textContent = `${ic} ${n}: ${v}`; sm.textContent = d; li.append(b, sm); return li; };
-  items.push(info('🛢', 'Fässer', `${fmtF(ECO.fass)} ${stars(ECO.fassQ ?? 2)}`, `Die Wirte kaufen am Tagesende bis zu ${demand()} Fass, derzeit rund ${fassPrice()} 🪙 je Fass. Besseres Bier und edlere Sorten bringen mehr.`));
-  $('shopList').replaceChildren(...items);
-  drawLaden();
-  $('storeNote').textContent = `Sudhaus: Malz + Hopfen → ${fmtF(1 + .5*(U.kettle || 0))} Fass · Wirte kaufen am Tagesende · Betriebskosten ${runCost()} 🪙 pro Tag. Rohstoffpreise ändern sich jeden Tag.`;
-}
 function showReport(){
   // Tagesende: Wirte kaufen Maxis Fässer, dann Betriebskosten
   const t = ECO.today, n = Math.min(Math.floor(ECO.fass + 1e-6), demand()), pf = fassPrice(), beer = n*pf, run = runCost();
@@ -616,32 +598,10 @@ function showReport(){
   $('career').hidden = true; $('dayRep').hidden = false; sCash();
 }
 
-// der Laden: das einzige Geschäft auf dem Gelände, je Regal ein Reiter
-const LADEN_TABS = [['zutaten', '🌾 Zutaten'], ['sud', '🔥 Sudhaus'], ['bar', '🍺 Stüberl'], ['halle', '📦 Halle'], ['laden', '⭐ Allgemein']];
-const LADEN_NOTE = { sud: 'Ersatzteile und Ausbauten für dein eigenes Sudhaus.', bar: 'Wirkt im Braustüberl.', halle: 'Wirkt in der Abfüllhalle am Förderband.', laden: 'Hilft in allen Spielen.' };
-function ladenTabs(){ return LADEN_TABS.filter(([k]) => k === 'zutaten' || k === 'sud' ? ECO.ownSud : k === 'laden' || !locked(k)); }
-function renderShop(bld){
-  if (bld) shopBld = bld;
-  const tabs = ladenTabs(); if (!tabs.some(([k]) => k === shopBld)) shopBld = tabs[0][0];
-  $('ladenTabs').replaceChildren(...tabs.map(([k, t]) => { const b = document.createElement('button'); b.type = 'button'; b.setAttribute('role', 'tab'); b.textContent = t; b.setAttribute('aria-selected', k === shopBld ? 'true' : 'false'); b.onclick = () => { renderShop(k); beep(740, .04, 'triangle', .05); }; return b; }));
-  $('ladenTabs').hidden = tabs.length < 2;
-  if (shopBld === 'zutaten'){ renderStore(); return; }
-  $('storeNote').textContent = LADEN_NOTE[shopBld] + ' Brauereitaler verdienst du mit Lohn im Braustüberl und am Band und mit deinem eigenen Bier.';
-  $('shopTaler').textContent = `🪙 ${taler} Brauereitaler`; drawLaden();
-  $('shopList').replaceChildren(...SHOP.filter(it => it.b === shopBld).map(it => {
-    const li = document.createElement('li'), b = document.createElement('b'), lv = document.createElement('span'), sm = document.createElement('small'), bt = document.createElement('button');
-    const have = U[it.k] || 0, max = it.p.length, price = it.p[have];
-    b.textContent = it.n; lv.className = 'lv'; lv.textContent = '●'.repeat(have) + '○'.repeat(max - have); b.append(lv);
-    sm.textContent = it.d; bt.type = 'button';
-    if (have >= max){ bt.textContent = 'Max.'; bt.disabled = true; }
-    else { bt.textContent = `${price} 🪙`; bt.disabled = taler < price; bt.onclick = () => buy(it); }
-    li.append(b, sm, bt); return li;
-  }));
-}
 function buy(it){
   const have = U[it.k] || 0, price = it.p[have];
   if (price == null || taler < price) return;
-  taler -= price; U[it.k] = have + 1; if (ECO.ownSud){ ECO.today.build = (ECO.today.build || 0) + price; saveEco(); } saveShop(); renderShop(); updateEcoBar();
+  taler -= price; U[it.k] = have + 1; if (ECO.ownSud){ ECO.today.build = (ECO.today.build || 0) + price; saveEco(); } saveShop(); ladenSync(); updateEcoBar();
   try { ac = ac || new (window.AudioContext || window.webkitAudioContext)(); ac.resume(); } catch(e) {}
   [660, 880, 1320].forEach((f, i) => setTimeout(() => beep(f, .1, 'triangle', .08), i*80));
 }
@@ -759,7 +719,7 @@ function updateHearts(dt, crateTop){
     if (h.y > groundY - 10){ h.fade -= dt*2; if (h.fade <= 0) hearts.splice(i,1); }
   }
 }
-cv.addEventListener('pointerdown', e => { if (state === 'scene'){ sceneTap(); return; } if (stage === 3 && state === 'play'){ tap3(e); return; } if (stage === 3 && state !== 'intro') return; if (stage === 2 && state === 'play'){ tap2(e); return; } if (stage === 2 && state !== 'intro') return; if (state === 'menu'){ if (!$('career').hidden) mapPointer(e); return; } if (startRub(e)) return; if (state === 'play' && nearZone(toLogical(e.clientX), e.clientY / S)) { startForklift(); return; } if (state === 'intro'){ if (introT > (INTRO_TAP[introKind] ?? 1.2)) endIntro(); return; } if (tryFlick(e.clientX, e.clientY)) { flickIds.add(e.pointerId); return; } touchX = toLogical(e.clientX); });
+cv.addEventListener('pointerdown', e => { if (state === 'shop'){ ladenPointer(e); return; } if (state === 'scene'){ sceneTap(); return; } if (stage === 3 && state === 'play'){ tap3(e); return; } if (stage === 3 && state !== 'intro') return; if (stage === 2 && state === 'play'){ tap2(e); return; } if (stage === 2 && state !== 'intro') return; if (state === 'menu'){ if (!$('career').hidden) mapPointer(e); return; } if (startRub(e)) return; if (state === 'play' && nearZone(toLogical(e.clientX), e.clientY / S)) { startForklift(); return; } if (state === 'intro'){ if (introT > (INTRO_TAP[introKind] ?? 1.2)) endIntro(); return; } if (tryFlick(e.clientX, e.clientY)) { flickIds.add(e.pointerId); return; } touchX = toLogical(e.clientX); });
 cv.addEventListener('pointermove', e => { if (stage === 3){ if (state === 'play') stirMove(e); return; } if (stage === 2){ if (state === 'play' && down2.has(e.pointerId)) move2(e); return; } if (RUB.has(e.pointerId)) { moveRub(e); return; } if (flickIds.has(e.pointerId)) { tryFlick(e.clientX, e.clientY); return; } if (touchX !== null || e.pointerType === 'mouse') touchX = toLogical(e.clientX); });
 cv.addEventListener('pointerup', e => { down2.delete(e.pointerId); L3.heat = false; if (L3.stirId === e.pointerId){ L3.stirId = null; L3.paddle = null; } if (RUB.delete(e.pointerId)) return; if (flickIds.delete(e.pointerId)) return; touchX = null; });
 cv.addEventListener('pointercancel', e => { L3.heat = false; L3.stirId = null; L3.paddle = null; RUB.delete(e.pointerId); flickIds.delete(e.pointerId); touchX = null; });
@@ -1746,6 +1706,7 @@ function update(dt){
 }
 
 function render(){
+  if (state === 'shop'){ ctx.setTransform(dpr*S,0,0,dpr*S, dpr*OX, 0); renderLaden(); return; }
   if (state === 'scene' && scene){ ctx.setTransform(1,0,0,1,0,0); ctx.fillStyle = '#1e2430'; ctx.fillRect(0, 0, cv.width, cv.height); renderScene(); return; }
   if (stage === 3 && state !== 'menu'){ render3(); return; }
   if (stage === 2 && state !== 'menu'){ render2(); return; }
@@ -2341,39 +2302,201 @@ function mapPointer(e){
   if (best) mapTap(best);
   else { const p = locPos('plaza'); if (Math.hypot(fx - p.x, fy - p.y) < 50) mapTap('plaza'); }
 }
-function openShop(b){ renderShop(b || (ECO.ownSud ? 'zutaten' : 'bar')); $('career').hidden = true; $('shop').hidden = false; $('shop').querySelector('.shopcard').scrollTop = 0; $('shopClose').focus(); }
-function drawLaden(){
-  // Blick in den Brauerei-Laden: Regale, Säcke, Ersatzteile, Ladner hinter der Theke
-  const cv = $('ladenArt'), g = cv.getContext('2d'), w = cv.width, h = cv.height;
-  const sky = g.createLinearGradient(0, 0, 0, h); sky.addColorStop(0, '#5a3524'); sky.addColorStop(1, '#3d2318'); g.fillStyle = sky; g.fillRect(0, 0, w, h);
-  g.fillStyle = 'rgba(0,0,0,.18)'; for (let x = 0; x < w; x += 46) g.fillRect(x, 0, 3, h);
-  const shelf = y => { g.fillStyle = '#8a5a34'; g.fillRect(16, y, w - 32, 9); g.fillStyle = '#6b4325'; g.fillRect(16, y + 9, w - 32, 4); };
-  const sack = (x, y, c, t) => { g.fillStyle = c; g.beginPath(); g.moveTo(x - 17, y); g.quadraticCurveTo(x - 22, y - 26, x - 9, y - 34); g.lineTo(x + 9, y - 34); g.quadraticCurveTo(x + 22, y - 26, x + 17, y); g.closePath(); g.fill(); g.fillStyle = 'rgba(0,0,0,.25)'; g.fillRect(x - 9, y - 38, 18, 5); g.fillStyle = '#f3e6c4'; g.font = '700 12px sans-serif'; g.textAlign = 'center'; g.fillText(t, x, y - 11); };
-  const bottle = (x, y, c) => { g.fillStyle = c; g.fillRect(x - 5, y - 24, 10, 24); g.fillRect(x - 2, y - 33, 4, 10); g.fillStyle = '#f3e6c4'; g.fillRect(x - 5, y - 16, 10, 7); };
-  shelf(62); shelf(122);
-  [[60, '#d8b25a', 'M'], [100, '#d8b25a', 'M'], [140, '#c79a3e', 'M+'], [196, '#4f8a4a', 'H'], [236, '#4f8a4a', 'H'], [276, '#3b6f3a', 'H+']].forEach(([x, c, t]) => sack(x, 62, c, t));
-  for (let i = 0; i < 7; i++) bottle(372 + i*17, 62, i % 3 === 1 ? '#2f6b34' : '#5a3010');
-  g.fillStyle = '#c8763a'; g.beginPath(); g.arc(540, 44, 18, Math.PI, 0); g.lineTo(558, 62); g.lineTo(522, 62); g.fill(); g.fillStyle = 'rgba(255,230,180,.45)'; g.fillRect(528, 34, 5, 20);
-  g.strokeStyle = '#b26a33'; g.lineWidth = 7; g.beginPath(); g.moveTo(52, 118); g.lineTo(52, 96); g.lineTo(100, 96); g.stroke();
-  g.fillStyle = '#d9d2bf'; g.beginPath(); g.arc(150, 104, 13, 0, Math.PI*2); g.fill(); g.strokeStyle = '#555'; g.lineWidth = 2; g.stroke(); g.beginPath(); g.moveTo(150, 104); g.lineTo(158, 98); g.stroke();
-  g.fillStyle = '#7a5032'; g.fillRect(186, 96, 46, 26); g.fillStyle = '#5b3a24'; g.fillRect(186, 104, 46, 3); g.fillRect(186, 114, 46, 3);
-  g.fillStyle = '#9aa0a6'; g.fillRect(420, 100, 54, 22); g.fillStyle = '#c9ced3'; g.fillRect(426, 104, 42, 4);
-  g.fillStyle = '#c8763a'; for (let i = 0; i < 3; i++){ g.beginPath(); g.ellipse(520 + i*28, 112, 11, 10, 0, 0, Math.PI*2); g.fill(); }
-  g.fillStyle = 'rgba(255,214,120,.18)'; g.beginPath(); g.moveTo(320, 0); g.lineTo(220, h); g.lineTo(420, h); g.fill();
-  g.fillStyle = '#e6b84a'; g.beginPath(); g.arc(320, 14, 9, 0, Math.PI*2); g.fill(); g.fillStyle = '#2a2a33'; g.fillRect(318, 0, 4, 6);
-  // Ladner
-  const mx = 320, my = 176;
-  g.fillStyle = '#3f7f3c'; g.fillRect(mx - 26, my - 34, 52, 40);
-  g.fillStyle = '#f3e6c4'; g.fillRect(mx - 16, my - 30, 32, 36);
-  g.fillStyle = '#f0c39b'; g.beginPath(); g.arc(mx, my - 50, 16, 0, Math.PI*2); g.fill();
-  g.fillStyle = '#8a5a34'; g.fillRect(mx - 17, my - 70, 34, 9); g.fillRect(mx - 22, my - 63, 44, 4);
-  g.fillStyle = '#6b4325'; g.beginPath(); g.ellipse(mx - 6, my - 42, 7, 3, .2, 0, Math.PI*2); g.ellipse(mx + 6, my - 42, 7, 3, -.2, 0, Math.PI*2); g.fill();
-  g.fillStyle = '#141a24'; g.fillRect(mx - 7, my - 54, 3, 3); g.fillRect(mx + 4, my - 54, 3, 3);
-  // Theke
-  g.fillStyle = '#7a4a2a'; g.fillRect(0, 176, w, 54); g.fillStyle = '#9b6438'; g.fillRect(0, 172, w, 10);
-  g.fillStyle = 'rgba(0,0,0,.2)'; for (let x = 30; x < w; x += 80) g.fillRect(x, 186, 3, 44);
-  g.fillStyle = '#2f5d3a'; g.fillRect(474, 146, 58, 28); g.fillStyle = '#e6b84a'; g.fillRect(480, 152, 46, 8); g.fillStyle = '#1f3d27'; g.fillRect(468, 166, 70, 8);
-  sack(110, 174, '#d8b25a', 'Malz'); sack(160, 174, '#4f8a4a', 'Hopfen');
+function openShop(focus){
+  // der Laden ist ein Raum: Maxi kommt zur Tür herein und geht zu den Waren
+  state = 'shop'; $('career').hidden = true; $('ladenUi').hidden = false;
+  LADEN.items = ladenWares(); ladenLayout();
+  const d = ladenDoor(); LADEN.x = d.x; LADEN.y = d.y; LADEN.pts = []; LADEN.at = null; LADEN.dest = null; LADEN.tPrev = 0;
+  ladenSync(); $('ladenOut').focus({ preventScroll: true });
+  if (focus === 'zutaten' && LADEN.items.some(w => w.id === 'malz')) ladenGo('malz');
+}
+function leaveShop(){ state = 'menu'; $('ladenUi').hidden = true; P.vx = 0; openCareer(); }
+const LADEN = { items: [], x: 0, y: 0, pts: [], at: null, dest: null, tPrev: 0, rows: [] };
+// Waren: ein Wort als Name, ein kurzes Zeichen als Wirkung
+const WARES = [
+  { id: 'malz', w: 'Malz', ing: 1 }, { id: 'hopfen', w: 'Hopfen', ing: 1 }, { id: 'malzP', w: 'Edelmalz', ing: 1, pre: 1 }, { id: 'hopfenP', w: 'Aromahopfen', ing: 1, pre: 1 },
+  { id: 'seal', w: 'Dichtung', fx: 'bis ★★★' }, { id: 'thermo', w: 'Thermometer', fx: 'bis ★★★★' }, { id: 'copper', w: 'Politur', fx: 'bis ★★★★★' }, { id: 'kettle', w: 'Kessel', fx: '+½ Fass' },
+  { id: 'lauter', w: 'Läuterbottich', fx: 'Pils · Zwickl' }, { id: 'cellar', w: 'Gärtank', fx: 'Festbier · Dunkles' }, { id: 'time', w: 'Sanduhr', fx: '+15 % Zeit' },
+  { id: 'catch', w: 'Großkiste', fx: 'Braustüberl' }, { id: 'tables', w: 'Stammtisch', fx: '+2 🪙 je Kiste' }, { id: 'belt', w: 'Bandbremse', fx: 'Band −10 %' }, { id: 'filler', w: 'Prämie', fx: '+2 🪙 je Kiste' },
+  { id: 'life', w: 'Ersatzbier', fx: '+1 🍺' }, { id: 'mult', w: 'Training', fx: 'Start ×+1' }
+];
+function ladenWares(){
+  return WARES.filter(w => {
+    if (w.ing) return ECO.ownSud && (!w.pre || qCap() >= 4);
+    const it = SHOP.find(s => s.k === w.id); if (!it) return false;
+    if (it.b === 'sud') return ECO.ownSud;
+    if (it.b === 'halle') return !locked('halle');
+    return true;
+  }).map(w => Object.assign({}, w, { it: SHOP.find(s => s.k === w.id), st: STORE.find(s => s.k === w.id) }));
+}
+function ladenBox(){ const top = ($('ladenTop').getBoundingClientRect().bottom || 60)/S + 8, bot = H - 150; return { top, bot }; }
+function ladenLayout(){
+  const b = ladenBox(), n = LADEN.items.length, cols = 4, rows = Math.max(1, Math.ceil(n/cols)), rh = Math.min(150, (b.bot - b.top - 30)/rows);
+  LADEN.rh = rh; LADEN.rows = [];
+  LADEN.items.forEach((w, i) => {
+    const r = Math.floor(i/cols), c = i % cols, inRow = Math.min(cols, n - r*cols), cw = (W - 24)/cols;
+    w.x = W/2 + (c - (inRow - 1)/2)*cw; w.y = b.top + r*rh + rh*.56; w.r = r;
+    LADEN.rows[r] = w.y;
+  });
+}
+function ladenDoor(){ const b = ladenBox(); return { x: W/2, y: Math.min(H - 60, b.bot + 50) }; }
+function ladenSpot(w){ return { x: w.x + 36, y: w.y + 36 }; }
+function ladenGo(id){
+  const w = LADEN.items.find(v => v.id === id); if (!w) return;
+  if (LADEN.at === id && !LADEN.pts.length) return;
+  // erst den Gang entlang, dann zwischen den Waren hinauf oder hinunter
+  const sp = ladenSpot(w), pts = [{ x: sp.x, y: LADEN.y }, sp];
+  LADEN.pts = pts.filter((p, i) => i || Math.hypot(p.x - LADEN.x, p.y - LADEN.y) > 1); LADEN.dest = id; LADEN.at = null; ladenSync();
+  beep(660, .05, 'triangle', .06);
+}
+function ladenPointer(e){
+  const fx = toLogical(e.clientX), fy = e.clientY / S; let best = null, bd = 1e9;
+  for (const w of LADEN.items){ const dx = Math.abs(fx - w.x), dy = fy - (w.y - 10); if (dx < 46 && Math.abs(dy) < LADEN.rh*.55){ const d = dx + Math.abs(dy); if (d < bd){ bd = d; best = w; } } }
+  if (best) ladenGo(best.id);
+}
+function updateLaden(dt){
+  if (!LADEN.pts.length){ P.vx = 0; return; }
+  let sp = 300*dt;
+  while (sp > 0 && LADEN.pts.length){
+    const t = LADEN.pts[0], dx = t.x - LADEN.x, dy = t.y - LADEN.y, d = Math.hypot(dx, dy);
+    if (d > .01) P.vx = dx/d*300;
+    if (d <= sp){ LADEN.x = t.x; LADEN.y = t.y; sp -= d; LADEN.pts.shift(); } else { LADEN.x += dx/d*sp; LADEN.y += dy/d*sp; sp = 0; }
+  }
+  P.walk += dt*8;
+  if (!LADEN.pts.length){ LADEN.at = LADEN.dest; LADEN.dest = null; beep(990, .08, 'triangle', .07); ladenSync(); }
+}
+function wareState(w){
+  if (w.ing){ const cost = ECO.price[w.id]*w.st.n5; return { cost, can: taler >= cost, label: `+${w.st.n5} für ${cost} 🪙`, have: ECO[w.id] }; }
+  const have = U[w.id] || 0, max = w.it.p.length, price = w.it.p[have];
+  return { cost: price, can: have < max && taler >= price, max: have >= max, have, n: max, label: have >= max ? '✓ Gekauft' : `${price} 🪙` };
+}
+function ladenSync(){
+  $('ladenTaler').textContent = `🪙 ${taler}`;
+  const w = LADEN.items.find(v => v.id === LADEN.at), box = $('ladenBuy');
+  if (!w){ box.hidden = true; return; }
+  const s = wareState(w); box.hidden = false;
+  $('buyName').textContent = w.w;
+  $('buyFx').textContent = w.ing ? `${fmtF(s.have)} im Lager` : (s.n > 1 ? '●'.repeat(s.have) + '○'.repeat(s.n - s.have) + '  ' : '') + w.fx;
+  const bt = $('buyBtn'); bt.textContent = s.label; bt.disabled = !s.can;
+}
+function ladenBuy(){
+  const w = LADEN.items.find(v => v.id === LADEN.at); if (!w) return;
+  const s = wareState(w); if (!s.can) return;
+  if (w.ing){ taler -= s.cost; ECO[w.id] += w.st.n5; ECO.today.buy += s.cost; saveShop(); saveEco(); beep(880, .07, 'triangle', .07); ladenSync(); updateEcoBar(); }
+  else buy(w.it);
+  LADEN.items = ladenWares(); ladenLayout(); ladenPop = { id: w.id, t: 0 };
+}
+let ladenPop = null;
+function drawWare(id, sc){
+  // jede Ware als eigenes, gut erkennbares Bild; Fußpunkt (0,0) auf dem Regal
+  ctx.save(); ctx.scale(sc, sc); ctx.lineJoin = 'round'; ctx.lineCap = 'round';
+  const sack = (c, d) => { ctx.fillStyle = c; ctx.beginPath(); ctx.moveTo(-17, 0); ctx.quadraticCurveTo(-22, -26, -10, -36); ctx.lineTo(10, -36); ctx.quadraticCurveTo(22, -26, 17, 0); ctx.closePath(); ctx.fill();
+    ctx.fillStyle = d; ctx.fillRect(-10, -39, 20, 5); ctx.beginPath(); ctx.moveTo(-8, -39); ctx.lineTo(-12, -46); ctx.lineTo(0, -40); ctx.lineTo(12, -46); ctx.lineTo(8, -39); ctx.fill(); };
+  const steel = (x, y, w, h) => { const g = ctx.createLinearGradient(x, 0, x + w, 0); g.addColorStop(0, '#8d949b'); g.addColorStop(.45, '#e4e8ec'); g.addColorStop(1, '#7a8188'); ctx.fillStyle = g; ctx.fillRect(x, y, w, h); };
+  const copperG = (x, w) => { const g = ctx.createLinearGradient(x, 0, x + w, 0); g.addColorStop(0, '#9a4f22'); g.addColorStop(.45, '#f0a868'); g.addColorStop(1, '#8a4520'); return g; };
+  if (id === 'malz' || id === 'malzP'){
+    sack(id === 'malz' ? '#e3c58a' : '#d9a83e', id === 'malz' ? '#b89456' : '#9a7020');
+    ctx.fillStyle = '#f6e7c4'; for (const [gx, gy] of [[-6, -14], [0, -10], [6, -14], [-3, -5], [3, -5], [0, -19]]){ ctx.beginPath(); ctx.ellipse(gx, gy, 2.6, 4, .3, 0, Math.PI*2); ctx.fill(); }
+    if (id === 'malzP'){ ctx.fillStyle = '#c22a22'; ctx.fillRect(-17, -26, 34, 5); ctx.fillStyle = C.gold; ctx.font = '700 14px sans-serif'; ctx.textAlign = 'center'; ctx.fillText('★', 0, -28); }
+  } else if (id === 'hopfen'){
+    sack('#5e9a48', '#3f6f30'); ctx.restore(); ctx.save(); ctx.scale(sc, sc); drawIng('hopfen', 0, -17, 1.05);
+  } else if (id === 'hopfenP'){
+    // Korb voller Hopfendolden
+    ctx.restore(); ctx.save(); ctx.scale(sc, sc);
+    for (const [hx, hy] of [[-10, -20], [10, -20], [0, -27], [-4, -16], [6, -15]]) drawIng('hopfen', hx, hy, .8);
+    ctx.fillStyle = '#a8763c'; ctx.beginPath(); ctx.moveTo(-20, -16); ctx.lineTo(20, -16); ctx.lineTo(15, 0); ctx.lineTo(-15, 0); ctx.closePath(); ctx.fill();
+    ctx.strokeStyle = '#7a5226'; ctx.lineWidth = 1.5; for (let i = -12; i <= 12; i += 6){ ctx.beginPath(); ctx.moveTo(i, -16); ctx.lineTo(i*.78, 0); ctx.stroke(); } ctx.beginPath(); ctx.moveTo(-18, -8); ctx.lineTo(18, -8); ctx.stroke();
+  } else if (id === 'seal'){
+    ctx.strokeStyle = '#26292e'; ctx.lineWidth = 6; ctx.beginPath(); ctx.ellipse(-6, -12, 12, 11, 0, 0, Math.PI*2); ctx.stroke();
+    ctx.strokeStyle = '#4a4f57'; ctx.lineWidth = 1.5; ctx.beginPath(); ctx.ellipse(-6, -12, 12, 11, 0, Math.PI*1.1, Math.PI*1.6); ctx.stroke();
+    ctx.fillStyle = '#d0d4d8'; rr(8, -30, 9, 30, 2); ctx.fill(); ctx.fillStyle = '#c22a22'; ctx.fillRect(8, -20, 9, 9); ctx.fillStyle = '#7a8188'; ctx.beginPath(); ctx.moveTo(10, -30); ctx.lineTo(12.5, -38); ctx.lineTo(15, -30); ctx.fill();
+  } else if (id === 'thermo'){
+    ctx.fillStyle = '#8a5a34'; rr(-8, -50, 16, 50, 4); ctx.fill();
+    ctx.fillStyle = '#f4f2ea'; rr(-3.5, -46, 7, 36, 3.5); ctx.fill();
+    ctx.fillStyle = '#d23a2e'; ctx.fillRect(-1.5, -30, 3, 22); ctx.beginPath(); ctx.arc(0, -7, 5, 0, Math.PI*2); ctx.fill();
+    ctx.strokeStyle = '#3a2a1a'; ctx.lineWidth = 1; for (let i = 0; i < 6; i++){ ctx.beginPath(); ctx.moveTo(3.5, -42 + i*6); ctx.lineTo(6, -42 + i*6); ctx.stroke(); }
+  } else if (id === 'copper'){
+    ctx.fillStyle = '#c9ced3'; rr(-18, -22, 18, 22, 3); ctx.fill(); ctx.fillStyle = '#e6b84a'; ctx.fillRect(-18, -16, 18, 9); ctx.fillStyle = '#9aa0a6'; ctx.fillRect(-19, -24, 20, 3);
+    ctx.fillStyle = '#f3e6c4'; ctx.beginPath(); ctx.moveTo(2, 0); ctx.quadraticCurveTo(4, -18, 12, -20); ctx.quadraticCurveTo(22, -14, 18, 0); ctx.closePath(); ctx.fill();
+    ctx.strokeStyle = '#d9cfae'; ctx.lineWidth = 1; ctx.beginPath(); ctx.moveTo(8, -3); ctx.quadraticCurveTo(9, -12, 13, -15); ctx.stroke();
+    ctx.fillStyle = '#fff6c8'; const tw = (x, y, r) => { ctx.beginPath(); ctx.moveTo(x, y - r); ctx.lineTo(x + r*.3, y - r*.3); ctx.lineTo(x + r, y); ctx.lineTo(x + r*.3, y + r*.3); ctx.lineTo(x, y + r); ctx.lineTo(x - r*.3, y + r*.3); ctx.lineTo(x - r, y); ctx.lineTo(x - r*.3, y - r*.3); ctx.fill(); };
+    tw(-12, -32, 5); tw(8, -30, 3.5);
+  } else if (id === 'kettle'){
+    ctx.fillStyle = copperG(-20, 40); ctx.beginPath(); ctx.moveTo(-20, -4); ctx.lineTo(-20, -22); ctx.quadraticCurveTo(-20, -40, 0, -40); ctx.quadraticCurveTo(20, -40, 20, -22); ctx.lineTo(20, -4); ctx.closePath(); ctx.fill();
+    ctx.fillStyle = '#7a3a18'; ctx.fillRect(-21, -24, 42, 3); ctx.fillStyle = copperG(-3, 6); ctx.fillRect(-3, -48, 6, 9);
+    ctx.fillStyle = '#3a3a40'; ctx.fillRect(-16, -4, 4, 4); ctx.fillRect(12, -4, 4, 4);
+    ctx.fillStyle = 'rgba(255,240,210,.5)'; ctx.fillRect(-13, -34, 3, 14);
+  } else if (id === 'lauter'){
+    ctx.fillStyle = '#9a6a3c'; ctx.beginPath(); ctx.moveTo(-22, -28); ctx.lineTo(22, -28); ctx.lineTo(19, 0); ctx.lineTo(-19, 0); ctx.closePath(); ctx.fill();
+    ctx.strokeStyle = '#6b4325'; ctx.lineWidth = 1.2; for (let i = -14; i <= 14; i += 7){ ctx.beginPath(); ctx.moveTo(i, -28); ctx.lineTo(i*.88, 0); ctx.stroke(); }
+    ctx.fillStyle = '#3a3a40'; ctx.fillRect(-22.5, -24, 45, 3); ctx.fillRect(-20, -7, 40, 3);
+    ctx.fillStyle = '#d8b25a'; ctx.beginPath(); ctx.ellipse(0, -28, 22, 5, 0, 0, Math.PI*2); ctx.fill();
+    ctx.strokeStyle = '#8a7a50'; ctx.lineWidth = 1; for (let i = -16; i <= 16; i += 4){ ctx.beginPath(); ctx.moveTo(i, -31); ctx.lineTo(i, -25); ctx.stroke(); }
+    ctx.fillStyle = copperG(18, 8); ctx.fillRect(18, -10, 9, 3);
+  } else if (id === 'cellar'){
+    steel(-13, -52, 26, 36); ctx.fillStyle = '#9aa1a8'; ctx.beginPath(); ctx.moveTo(-13, -16); ctx.lineTo(13, -16); ctx.lineTo(2, -6); ctx.lineTo(-2, -6); ctx.closePath(); ctx.fill();
+    ctx.beginPath(); ctx.ellipse(0, -52, 13, 4, 0, 0, Math.PI*2); ctx.fillStyle = '#cfd4d9'; ctx.fill();
+    ctx.strokeStyle = '#6b7178'; ctx.lineWidth = 2.5; ctx.beginPath(); ctx.moveTo(-11, -16); ctx.lineTo(-14, 0); ctx.moveTo(11, -16); ctx.lineTo(14, 0); ctx.stroke();
+    ctx.fillStyle = '#e6b84a'; ctx.beginPath(); ctx.arc(0, -36, 4, 0, Math.PI*2); ctx.fill(); ctx.fillStyle = '#3a3a40'; ctx.fillRect(-1, -39, 2, 3);
+  } else if (id === 'time'){
+    ctx.fillStyle = '#8a5a34'; ctx.fillRect(-14, -44, 28, 4); ctx.fillRect(-14, -4, 28, 4); ctx.fillRect(-12, -40, 2.5, 36); ctx.fillRect(9.5, -40, 2.5, 36);
+    ctx.fillStyle = 'rgba(210,235,245,.75)'; ctx.beginPath(); ctx.moveTo(-8, -40); ctx.lineTo(8, -40); ctx.lineTo(1.5, -22); ctx.lineTo(8, -4); ctx.lineTo(-8, -4); ctx.lineTo(-1.5, -22); ctx.closePath(); ctx.fill();
+    ctx.fillStyle = '#e3c58a'; ctx.beginPath(); ctx.moveTo(-5, -33); ctx.lineTo(5, -33); ctx.lineTo(1, -24); ctx.lineTo(-1, -24); ctx.fill(); ctx.beginPath(); ctx.moveTo(-7, -4); ctx.lineTo(0, -12); ctx.lineTo(7, -4); ctx.fill(); ctx.fillRect(-.5, -22, 1, 10);
+  } else if (id === 'catch'){
+    ctx.restore(); ctx.save(); ctx.scale(sc, sc); drawCrate(0, -24, 10, 54, 24);
+  } else if (id === 'tables'){
+    ctx.fillStyle = '#7a5a3a'; ctx.fillRect(-22, -20, 44, 5); ctx.fillRect(-18, -15, 4, 15); ctx.fillRect(14, -15, 4, 15);
+    for (const mx of [-11, 9]){ ctx.fillStyle = 'rgba(230,184,74,.95)'; rr(mx - 5, -36, 10, 16, 2); ctx.fill(); ctx.fillStyle = '#fffaf0'; rr(mx - 5.5, -40, 11, 5, 2.5); ctx.fill(); ctx.strokeStyle = 'rgba(230,184,74,.95)'; ctx.lineWidth = 2; ctx.beginPath(); ctx.arc(mx + 6, -28, 4, -1.2, 1.2); ctx.stroke(); }
+  } else if (id === 'belt'){
+    ctx.fillStyle = '#3a3e45'; rr(-24, -16, 48, 9, 4.5); ctx.fill(); ctx.fillStyle = '#9aa1a8'; for (let i = -18; i <= 18; i += 9){ ctx.beginPath(); ctx.arc(i, -11.5, 3, 0, Math.PI*2); ctx.fill(); }
+    ctx.fillStyle = '#6b7178'; ctx.fillRect(-20, -7, 3, 7); ctx.fillRect(17, -7, 3, 7);
+    ctx.strokeStyle = '#555b62'; ctx.lineWidth = 3; ctx.beginPath(); ctx.moveTo(10, -16); ctx.lineTo(18, -38); ctx.stroke();
+    ctx.fillStyle = '#d23a2e'; ctx.beginPath(); ctx.arc(18, -40, 5.5, 0, Math.PI*2); ctx.fill();
+  } else if (id === 'filler'){
+    ctx.fillStyle = '#b08848'; ctx.beginPath(); ctx.moveTo(-16, 0); ctx.quadraticCurveTo(-22, -22, -7, -30); ctx.lineTo(7, -30); ctx.quadraticCurveTo(22, -22, 16, 0); ctx.closePath(); ctx.fill();
+    ctx.fillStyle = '#7a5a2a'; ctx.fillRect(-8, -33, 16, 4); ctx.beginPath(); ctx.moveTo(-6, -33); ctx.lineTo(-10, -40); ctx.lineTo(0, -34); ctx.lineTo(10, -40); ctx.lineTo(6, -33); ctx.fill();
+    ctx.fillStyle = '#e6b84a'; ctx.beginPath(); ctx.arc(0, -13, 8, 0, Math.PI*2); ctx.fill(); ctx.strokeStyle = '#a8801c'; ctx.lineWidth = 1.5; ctx.stroke();
+    ctx.fillStyle = '#a8801c'; ctx.font = '700 10px sans-serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillText('T', 0, -12.5);
+    for (const [cx, cy] of [[-20, -3], [21, -2]]){ ctx.fillStyle = '#e6b84a'; ctx.beginPath(); ctx.ellipse(cx, cy, 5, 2.5, 0, 0, Math.PI*2); ctx.fill(); }
+  } else if (id === 'life'){
+    ctx.restore(); ctx.save(); ctx.scale(sc, sc); drawBottle(-8, -20, -.08, false); drawBottle(8, -20, .08, false);
+    ctx.fillStyle = '#2f5d3a'; ctx.beginPath(); ctx.arc(14, -40, 7, 0, Math.PI*2); ctx.fill(); ctx.fillStyle = '#fff'; ctx.fillRect(10.5, -41, 7, 2); ctx.fillRect(13, -43.5, 2, 7);
+  } else if (id === 'mult'){
+    // Hantel
+    ctx.fillStyle = '#9aa1a8'; ctx.fillRect(-16, -15, 32, 4);
+    for (const s of [-1, 1]){ ctx.fillStyle = '#2a2d33'; rr(s*16 - (s > 0 ? 0 : 7), -24, 7, 22, 2); ctx.fill(); rr(s*23 - (s > 0 ? 0 : 5), -20, 5, 14, 2); ctx.fill(); }
+  }
+  ctx.restore();
+}
+function renderLaden(){
+  const now = performance.now(), dt = Math.min(.05, (now - (LADEN.tPrev || now))/1000); LADEN.tPrev = now;
+  ladenLayout(); updateLaden(dt); if (ladenPop) { ladenPop.t += dt; if (ladenPop.t > .6) ladenPop = null; }
+  const b = ladenBox(), door = ladenDoor();
+  // Wand und Boden
+  const wg = ctx.createLinearGradient(0, 0, 0, H); wg.addColorStop(0, '#5a3524'); wg.addColorStop(1, '#43271a');
+  ctx.fillStyle = wg; ctx.fillRect(XL, 0, XR - XL, H);
+  ctx.fillStyle = 'rgba(0,0,0,.14)'; for (let x = Math.floor(XL/34)*34; x < XR; x += 34) ctx.fillRect(x, 0, 2, H);
+  const fy = door.y - 30;
+  ctx.fillStyle = '#7a5434'; ctx.fillRect(XL, fy, XR - XL, H - fy); ctx.fillStyle = 'rgba(0,0,0,.15)'; for (let y = fy + 14; y < H; y += 14) ctx.fillRect(XL, y, XR - XL, 1.5);
+  // Lampen
+  for (const lx of [W*.25, W*.75]){ ctx.fillStyle = 'rgba(255,214,120,.07)'; ctx.beginPath(); ctx.moveTo(lx, 0); ctx.lineTo(lx - 90, H); ctx.lineTo(lx + 90, H); ctx.fill(); ctx.fillStyle = '#2a2a33'; ctx.fillRect(lx - 1, 0, 2, b.top - 2); ctx.fillStyle = '#e6b84a'; ctx.beginPath(); ctx.arc(lx, b.top - 2, 5, 0, Math.PI*2); ctx.fill(); }
+  // Regale mit Waren
+  LADEN.rows.forEach(y => { ctx.fillStyle = '#8a5a34'; ctx.fillRect(10, y, W - 20, 8); ctx.fillStyle = '#6b4325'; ctx.fillRect(10, y + 8, W - 20, 4); ctx.fillStyle = '#5a3a24'; ctx.fillRect(18, y + 12, 5, 10); ctx.fillRect(W - 23, y + 12, 5, 10); });
+  for (const w of LADEN.items){
+    const s = wareState(w), sel = LADEN.at === w.id || LADEN.dest === w.id, pop = ladenPop && ladenPop.id === w.id ? 1 + Math.sin(ladenPop.t/.6*Math.PI)*.18 : 1;
+    if (sel){ ctx.fillStyle = 'rgba(230,184,74,.22)'; ctx.beginPath(); ctx.ellipse(w.x, w.y - 22, 42, 34, 0, 0, Math.PI*2); ctx.fill(); }
+    ctx.save(); ctx.translate(w.x, w.y); ctx.globalAlpha = s.max ? .45 : 1; drawWare(w.id, 1.15*pop); ctx.restore();
+    ctx.font = '700 13px "Barlow Condensed", sans-serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'top';
+    ctx.fillStyle = sel ? C.gold : C.cream; ctx.fillText((s.max ? '✓ ' : '') + w.w, w.x, w.y + 15);
+    if (w.ing){ ctx.fillStyle = 'rgba(20,26,36,.7)'; rr(w.x + 14, w.y - 50, 22, 16, 8); ctx.fill(); ctx.fillStyle = C.cream; ctx.font = '700 12px "Barlow Condensed", sans-serif'; ctx.textBaseline = 'middle'; ctx.fillText(fmtF(s.have), w.x + 25, w.y - 42); }
+  }
+  // Tür
+  ctx.fillStyle = '#3d2318'; rr(door.x - 34, fy - 70, 68, 70, 6); ctx.fill(); ctx.fillStyle = '#6b4325'; rr(door.x - 30, fy - 66, 60, 66, 4); ctx.fill();
+  ctx.fillStyle = 'rgba(255,230,160,.35)'; rr(door.x - 22, fy - 58, 44, 26, 3); ctx.fill(); ctx.fillStyle = C.gold; ctx.beginPath(); ctx.arc(door.x + 20, fy - 30, 3, 0, Math.PI*2); ctx.fill();
+  ctx.fillStyle = '#9a2a20'; ctx.beginPath(); ctx.ellipse(door.x, fy + 14, 40, 8, 0, 0, Math.PI*2); ctx.fill();
+  // Maxi
+  const nc = P.noCrate, sl = P.slim; P.noCrate = true; P.slim = false;
+  ctx.save(); ctx.translate(LADEN.x, LADEN.y); ctx.scale(.5, .5); drawMan(0, 0); ctx.restore(); P.noCrate = nc; P.slim = sl;
 }
 function stockMsg(k){
   if (!ECO.ownSud || k !== 'sud') return '';
@@ -2795,7 +2918,7 @@ function showRecords(){
 }
 function toTitle(){
   stage = 1; P.noCrate = false; P.slim = false; state = 'menu';
-  ['over','paused','hud','board','legalBox','promo','toast','shop','career','dayRep','goalBanner'].forEach(id => $(id).hidden = true); $('intro').hidden = true;
+  ['over','paused','hud','board','legalBox','promo','toast','ladenUi','career','dayRep','goalBanner'].forEach(id => $(id).hidden = true); $('intro').hidden = true;
   $('start').hidden = false; updateMenu(); showRecords();
 }
 /* ================= Level 3: Im Sudhaus =================
@@ -3391,7 +3514,8 @@ async function sendScore(){
 }
 for (const b of document.querySelectorAll('[data-board]')) b.addEventListener('click', () => openBoard(b.closest('.overlay').id));
 $('boardClose').onclick = closeBoard;
-$('shopClose').onclick = () => { $('shop').hidden = true; openCareer(); };
+$('ladenOut').onclick = leaveShop;
+$('buyBtn').onclick = ladenBuy;
 let tipNext = null;
 function showTip(brand, title, nodes, next){
   $('tipBrand').textContent = brand; $('tipTitle').textContent = title; $('tipBody').replaceChildren(...nodes);
