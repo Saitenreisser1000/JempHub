@@ -2308,7 +2308,7 @@ function mapInfo(){
     $('mapDesc').textContent = MAP.at === 'sud' ? '🔒 Das alte Sudhaus steht leer.' : `🔒 Ab ${RANKS[L.need].t}: ${RANKS[L.need].pts.toLocaleString('de-DE')} Punkte in einer Runde.`; go.style.visibility = 'hidden'; return;
   }
   const pre = usePre();
-  const st = MAP.at === 'sud' && ECO.ownSud ? `Lager: ${pre ? ECO.malzP : ECO.malz} Malz, ${pre ? ECO.hopfenP : ECO.hopfen} Hopfen${pre ? ' (Premium)' : ''}. Kessel bis ${stars(qCap())}.` : '';
+  const st = MAP.at === 'sud' && ECO.ownSud ? `Lager: ${pre ? ECO.malzP : ECO.malz} Malz, ${pre ? ECO.hopfenP : ECO.hopfen} Hopfen${pre ? ' (Premium)' : ''}. Reicht für ${availRecipes().map(r => `${r.n} ${sudCount(r)}×`).join(', ')}.` : '';
   const ds = typeof L.desc === 'function' ? L.desc() : L.desc;
   $('mapDesc').textContent = L.shop ? ds : st ? st : ds;
   go.textContent = L.shop ? 'Laden betreten' : 'Spielen'; go.style.visibility = 'visible';
@@ -2788,7 +2788,7 @@ const RECIPES = [
 function bins3(){ return L3.karamell ? ['malz', 'karamell', 'hopfen', 'hefe', 'wasser'] : ['malz', 'hopfen', 'hefe', 'wasser']; }
 function geo3(){
   const binTop = H - 104, n = bins3().length, gap = 8, bw = (W - 16 - gap*(n-1)) / n;
-  const boardY = Math.round(Math.max(100, (L3.hudB || 64) + (ECO.ownSud && !L3.trial ? 46 : 16)));
+  const boardY = Math.round(Math.max(100, (L3.hudB || 64) + (ECO.ownSud && !L3.trial ? 92 : 16)));
   return { kx: W/2, ky: Math.round(boardY + 38 + (binTop - boardY - 38) * .52), binTop, bw, gap, boardY };
 }
 function binRect(k, g){ return { x: 8 + k*(g.bw + g.gap), y: g.binTop, w: g.bw, h: 84 }; }
@@ -3194,25 +3194,43 @@ function drawBoard(g, hl){
   ctx.fillStyle = 'rgba(255,255,255,.12)'; ctx.fillRect(x + 8, y + h - 8, w - 16, 4);
   ctx.fillStyle = k > .35 ? '#9fe0a8' : '#ff8a6a'; ctx.fillRect(x + 8, y + h - 8, (w - 16)*k, 4);
 }
+function sudCount(r){
+  // wie viele Sude dieser Sorte das Lager noch hergibt
+  const pre = usePre(), m = ECO[pre ? 'malzP' : 'malz'], h = ECO[pre ? 'hopfenP' : 'hopfen'], nd = brewNeed(r);
+  return Math.max(0, Math.floor(Math.min(nd.malz ? m/nd.malz : 99, nd.hopfen ? h/nd.hopfen : 99)));
+}
 function drawStock(g){
-  // Lager auf einen Blick: Malz, Hopfen, wie viele Sude noch gehen, Fässer
+  // Lager in der Mitte: was da ist, und was sich daraus noch brauen lässt
   if (!ECO.ownSud || L3.trial) return;
-  const pre = usePre(), m = ECO[pre ? 'malzP' : 'malz'], h = ECO[pre ? 'hopfenP' : 'hopfen'], nd = brewNeed(L3.beer || RECIPES[0]);
-  const left = Math.floor(Math.min(nd.malz ? m/nd.malz : 99, nd.hopfen ? h/nd.hopfen : 99)), y = g.boardY - 22;
-  const parts = [['malz', fmtF(m)], ['hopfen', fmtF(h)]];
-  ctx.font = '700 15px "Barlow Condensed", sans-serif'; ctx.textBaseline = 'middle'; ctx.textAlign = 'left';
-  const tSude = left <= 0 ? 'letzter Sud' : `noch ${left} ${left === 1 ? 'Sud' : 'Sude'}`, tF = fmtF(ECO.fass), gain = ECO.round ? ECO.round.fass || 0 : 0, tG = gain ? ` +${fmtF(gain)}` : '';
-  const wid = 2*(22 + 26) + ctx.measureText(tSude).width + 26 + 22 + ctx.measureText(tF + tG).width + 20 + (pre ? 19 : 0);
-  let x = W/2 - wid/2;
-  ctx.fillStyle = 'rgba(20,26,36,.72)'; rr(x - 10, y - 13, wid + 20, 26, 13); ctx.fill();
-  if (pre){ ctx.fillStyle = C.gold; ctx.fillText('★', x, y); x += 19; }
-  for (const [ing, v] of parts){ drawIng(ing, x + 8, y + 1, .62); ctx.fillStyle = C.cream; ctx.fillText(v, x + 20, y); x += 22 + Math.max(16, ctx.measureText(v).width) + 10; }
-  ctx.fillStyle = left <= 0 ? '#ff8a6a' : left <= 2 ? C.gold : '#9fe0a8'; ctx.fillText(tSude, x, y); x += ctx.measureText(tSude).width + 16;
-  ctx.fillStyle = 'rgba(243,230,196,.35)'; ctx.fillRect(x - 8, y - 8, 1.5, 16);
-  // kleines Fass
-  ctx.fillStyle = '#8a5a2c'; rr(x, y - 8, 14, 16, 4); ctx.fill(); ctx.fillStyle = '#4a3a2a'; ctx.fillRect(x, y - 4, 14, 2); ctx.fillRect(x, y + 2, 14, 2);
-  ctx.fillStyle = C.cream; ctx.fillText(tF, x + 20, y);
-  if (tG){ ctx.fillStyle = '#9fe0a8'; ctx.fillText(tG, x + 20 + ctx.measureText(tF).width, y); }
+  const pre = usePre(), m = ECO[pre ? 'malzP' : 'malz'], h = ECO[pre ? 'hopfenP' : 'hopfen'];
+  const x0 = 22, w = W - 44, y0 = g.boardY - 76, ph = 64;
+  ctx.fillStyle = '#6b4a2e'; rr(x0 - 5, y0 - 4, w + 10, ph + 8, 10); ctx.fill();
+  ctx.fillStyle = 'rgba(20,26,36,.92)'; rr(x0, y0, w, ph, 7); ctx.fill();
+  ctx.textBaseline = 'middle'; ctx.textAlign = 'left';
+  // Zeile 1: Bestand groß
+  const y1 = y0 + 19, gain = ECO.round ? ECO.round.fass || 0 : 0;
+  ctx.fillStyle = C.gold; ctx.font = '400 17px "Lilita One", sans-serif'; ctx.fillText(pre ? 'Lager ★' : 'Lager', x0 + 10, y1);
+  ctx.font = '700 20px "Barlow Condensed", sans-serif';
+  const cells = [['malz', fmtF(m)], ['hopfen', fmtF(h)], ['fass', fmtF(ECO.fass)]], cx0 = x0 + 92, cw = (w - 100)/3;
+  cells.forEach(([k, v], i) => { const cx = cx0 + i*cw;
+    if (k === 'fass'){ ctx.fillStyle = '#8a5a2c'; rr(cx, y1 - 10, 17, 20, 5); ctx.fill(); ctx.fillStyle = '#4a3a2a'; ctx.fillRect(cx, y1 - 5, 17, 2.5); ctx.fillRect(cx, y1 + 3, 17, 2.5); }
+    else drawIng(k, cx + 8, y1 + 1, .8);
+    ctx.fillStyle = k === 'fass' || +v > 0 ? C.cream : '#ff8a6a'; ctx.fillText(v, cx + 24, y1); const tw = ctx.measureText(v).width;
+    if (k === 'fass' && gain){ ctx.fillStyle = '#9fe0a8'; ctx.font = '700 15px "Barlow Condensed", sans-serif'; ctx.fillText(`+${fmtF(gain)}`, cx + 28 + tw, y1 + 1); ctx.font = '700 20px "Barlow Condensed", sans-serif'; }
+  });
+  // Zeile 2: so viele Sude gehen noch, je Sorte
+  const y2 = y0 + 47, list = availRecipes().map(r => [r, sudCount(r)]);
+  let fs = 15; const pad = list.length > 4 ? 19 : 26, chipW = () => list.reduce((a, [r, n]) => { ctx.font = `700 ${fs}px "Barlow Condensed", sans-serif`; return a + ctx.measureText(`${r.n} ${n}×`).width + pad; }, 0);
+  while (fs > 10 && chipW() > w - 12) fs--;
+  let x = x0 + w/2 - chipW()/2 + 3;
+  ctx.font = `700 ${fs}px "Barlow Condensed", sans-serif`;
+  for (const [r, n] of list){
+    const t = `${r.n} ${n}×`, tw = ctx.measureText(t).width, cur = L3.beer && L3.beer.n === r.n;
+    if (cur){ ctx.strokeStyle = C.gold; ctx.lineWidth = 1.5; rr(x - 4, y2 - 10, tw + 22, 20, 10); ctx.stroke(); }
+    ctx.fillStyle = r.col; rr(x, y2 - 7, 8, 13, 2); ctx.fill(); ctx.fillStyle = '#fffaf0'; ctx.fillRect(x, y2 - 8, 8, 3);
+    ctx.fillStyle = n ? (cur ? C.gold : C.cream) : 'rgba(255,138,106,.8)'; ctx.fillText(t, x + 12, y2 + .5);
+    x += tw + pad;
+  }
 }
 function drawBins(g, hlIng){
   const list = bins3();
