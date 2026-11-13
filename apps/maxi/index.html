@@ -2788,7 +2788,7 @@ const RECIPES = [
 function bins3(){ return L3.karamell ? ['malz', 'karamell', 'hopfen', 'hefe', 'wasser'] : ['malz', 'hopfen', 'hefe', 'wasser']; }
 function geo3(){
   const binTop = H - 104, n = bins3().length, gap = 8, bw = (W - 16 - gap*(n-1)) / n;
-  return { kx: W/2, ky: Math.round(150 + (binTop - 150) * .52), binTop, bw, gap, boardY: 122 };
+  return { kx: W/2, ky: Math.round(170 + (binTop - 170) * .52), binTop, bw, gap, boardY: 132 };
 }
 function binRect(k, g){ return { x: 8 + k*(g.bw + g.gap), y: g.binTop, w: g.bw, h: 84 }; }
 function newBrew(){
@@ -2977,7 +2977,7 @@ function drawOffer(g, hl){
 }
 function drawRush(g){
   const r = L3.rush; if (!r) return;
-  const y = g.boardY + 90, low = r.t < 10, blink = low && Math.floor(tTotal*4) % 2;
+  const y = g.boardY + 108, low = r.t < 10, blink = low && Math.floor(tTotal*4) % 2;
   ctx.fillStyle = blink ? '#c22a22' : low ? '#8f1d17' : 'rgba(20,26,36,.78)'; rr(W/2 - 168, y, 336, 28, 14); ctx.fill();
   ctx.strokeStyle = C.gold; ctx.lineWidth = 2; ctx.stroke();
   ctx.fillStyle = C.cream; ctx.font = '700 16px "Barlow Condensed", sans-serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
@@ -3158,24 +3158,59 @@ function drawThermo(x, y, w){
   ctx.fillText(`Rast ${L3.lo}–${L3.hi} °C halten: ${Math.min(L3.hold, L3.holdNeed).toFixed(1)} / ${L3.holdNeed.toFixed(1)} s`, x + w, y + 28);
 }
 function drawBoard(g, hl){
-  const st = curStep(), x = 22, y = g.boardY, w = W - 44, h = 76;
+  const st = curStep(), x = 22, y = g.boardY, w = W - 44, h = 94;
   ctx.fillStyle = '#6b4a2e'; rr(x - 5, y - 5, w + 10, h + 10, 8); ctx.fill();
   ctx.fillStyle = '#1f2a24'; rr(x, y, w, h, 5); ctx.fill();
   if (hl){ ctx.strokeStyle = C.gold; ctx.lineWidth = 3; rr(x - 5, y - 5, w + 10, h + 10, 8); ctx.stroke(); }
-  ctx.fillStyle = 'rgba(243,230,196,.92)'; ctx.font = '700 14px "Barlow Condensed", sans-serif'; ctx.textAlign = 'left'; ctx.textBaseline = 'middle';
-  ctx.fillText(`${L3.beer ? L3.beer.n + ' · ' : ''}Sud ${L3.brews + 1} · Schritt ${L3.stepI + 1}/${L3.steps.length}: ${st.name}`, x + 10, y + 13);
-  if (st.rast) drawThermo(x + 10, y + 28, w - 20);
+  // Zeile 1: welches Bier, wie gut es höchstens wird, welcher Sud
+  ctx.textAlign = 'left'; ctx.textBaseline = 'middle';
+  if (L3.beer){
+    ctx.fillStyle = L3.beer.col; rr(x + 10, y + 6, 12, 18, 3); ctx.fill(); ctx.fillStyle = '#fffaf0'; rr(x + 9, y + 3, 14, 5, 2.5); ctx.fill();
+    ctx.fillStyle = C.gold; ctx.font = '400 20px "Lilita One", sans-serif'; ctx.fillText(L3.beer.n, x + 30, y + 16);
+    if (ECO.ownSud && !L3.trial){ const nw = ctx.measureText(L3.beer.n).width, q = Math.min(qCap(), usePre() ? 5 : 3);
+      ctx.font = '700 14px sans-serif'; ctx.fillStyle = C.gold; ctx.fillText('★'.repeat(q), x + 38 + nw, y + 16); ctx.fillStyle = 'rgba(243,230,196,.3)'; ctx.fillText('★'.repeat(5 - q), x + 38 + nw + ctx.measureText('★'.repeat(q)).width, y + 16); }
+  }
+  ctx.textAlign = 'right'; ctx.fillStyle = 'rgba(243,230,196,.75)'; ctx.font = '700 14px "Barlow Condensed", sans-serif'; ctx.fillText(`Sud ${L3.brews + 1}`, x + w - 10, y + 16);
+  // Zeile 2: die Schritte, der aktuelle hervorgehoben
+  { const SH = { Einmaischen: 'Maischen', Maischrast: 'Rast', 'Würzekochen': 'Kochen', Anstellen: 'Hefe' }; let sx = x + 10;
+    ctx.textAlign = 'left'; ctx.font = '700 13px "Barlow Condensed", sans-serif';
+    L3.steps.forEach((s2, i) => { const t = (i < L3.stepI ? '✓ ' : '') + (SH[s2.name] || s2.name), tw = ctx.measureText(t).width;
+      if (i === L3.stepI){ ctx.fillStyle = C.gold; rr(sx - 5, y + 30, tw + 10, 18, 9); ctx.fill(); ctx.fillStyle = C.ink; }
+      else ctx.fillStyle = i < L3.stepI ? '#9fe0a8' : 'rgba(243,230,196,.45)';
+      ctx.fillText(t, sx, y + 39.5); sx += tw + 10;
+      if (i < L3.steps.length - 1){ ctx.fillStyle = 'rgba(243,230,196,.35)'; ctx.fillText('›', sx, y + 39.5); sx += 12; } }); }
+  ctx.textAlign = 'left';
+  if (st.rast) drawThermo(x + 10, y + 52, w - 20);
   const keys = Object.keys(st.need), cw = Math.min(86, (w - 20) / Math.max(1, keys.length));
   keys.forEach((ing, i) => {
     const cx = x + 10 + i*cw, have = L3.have[ing] || 0, need = st.need[ing], ok = have >= need;
-    drawIng(ing, cx + 14, y + 44, .95);
+    drawIng(ing, cx + 14, y + 66, .95);
     ctx.fillStyle = ok ? '#9fe0a8' : 'rgba(243,230,196,.95)'; ctx.font = '700 16px "Barlow Condensed", sans-serif'; ctx.textAlign = 'left';
-    ctx.fillText(ok ? '✓' : `${have}/${need}`, cx + 31, y + 45);
+    ctx.fillText(ok ? '✓' : `${have}/${need}`, cx + 31, y + 67);
   });
   // Zeitbalken
   const k = Math.max(0, L3.timer / L3.timerMax);
   ctx.fillStyle = 'rgba(255,255,255,.12)'; ctx.fillRect(x + 8, y + h - 8, w - 16, 4);
   ctx.fillStyle = k > .35 ? '#9fe0a8' : '#ff8a6a'; ctx.fillRect(x + 8, y + h - 8, (w - 16)*k, 4);
+}
+function drawStock(g){
+  // Lager auf einen Blick: Malz, Hopfen, wie viele Sude noch gehen, Fässer
+  if (!ECO.ownSud || L3.trial) return;
+  const pre = usePre(), m = ECO[pre ? 'malzP' : 'malz'], h = ECO[pre ? 'hopfenP' : 'hopfen'], nd = brewNeed(L3.beer || RECIPES[0]);
+  const left = Math.floor(Math.min(nd.malz ? m/nd.malz : 99, nd.hopfen ? h/nd.hopfen : 99)), y = g.boardY - 22;
+  const parts = [['malz', fmtF(m)], ['hopfen', fmtF(h)]];
+  ctx.font = '700 15px "Barlow Condensed", sans-serif'; ctx.textBaseline = 'middle'; ctx.textAlign = 'left';
+  const tSude = left <= 0 ? 'letzter Sud' : `noch ${left} ${left === 1 ? 'Sud' : 'Sude'}`, tF = fmtF(ECO.fass);
+  const wid = 2*(22 + 26) + ctx.measureText(tSude).width + 26 + 22 + ctx.measureText(tF).width + 20 + (pre ? 19 : 0);
+  let x = W/2 - wid/2;
+  ctx.fillStyle = 'rgba(20,26,36,.72)'; rr(x - 10, y - 13, wid + 20, 26, 13); ctx.fill();
+  if (pre){ ctx.fillStyle = C.gold; ctx.fillText('★', x, y); x += 19; }
+  for (const [ing, v] of parts){ drawIng(ing, x + 8, y + 1, .62); ctx.fillStyle = C.cream; ctx.fillText(v, x + 20, y); x += 22 + Math.max(16, ctx.measureText(v).width) + 10; }
+  ctx.fillStyle = left <= 0 ? '#ff8a6a' : left <= 2 ? C.gold : '#9fe0a8'; ctx.fillText(tSude, x, y); x += ctx.measureText(tSude).width + 16;
+  ctx.fillStyle = 'rgba(243,230,196,.35)'; ctx.fillRect(x - 8, y - 8, 1.5, 16);
+  // kleines Fass
+  ctx.fillStyle = '#8a5a2c'; rr(x, y - 8, 14, 16, 4); ctx.fill(); ctx.fillStyle = '#4a3a2a'; ctx.fillRect(x, y - 4, 14, 2); ctx.fillRect(x, y + 2, 14, 2);
+  ctx.fillStyle = C.cream; ctx.fillText(tF, x + 20, y);
 }
 function drawBins(g, hlIng){
   const list = bins3();
@@ -3196,7 +3231,7 @@ function render3(){
   ctx.setTransform(dpr*S,0,0,dpr*S, dpr*(OX + sx*S), 0);
   const g = geo3();
   if (ECO.ownSud && !L3.trial) drawOldRoom(g);
-  drawBoard(g, state === 'intro' && (introKind === 'l3brew' || introKind === 'l3rast'));
+  drawBoard(g, state === 'intro' && (introKind === 'l3brew' || introKind === 'l3rast')); drawStock(g);
   drawKettle(g);
   if (curStep() && curStep().rast){
     if (L3.heat){ ctx.fillStyle = `rgba(255,${120 + Math.sin(tTotal*14)*40},30,.9)`; for (let k=-3;k<=3;k++){ ctx.beginPath(); ctx.ellipse(g.kx + k*18, g.ky + 58, 7, 14 + Math.sin(tTotal*16 + k)*4, 0, 0, Math.PI*2); ctx.fill(); } }
