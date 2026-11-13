@@ -242,7 +242,7 @@ const TILES=[
 const LAYERS=[['back','Rückwand','8'],['up','Aufwind','9']];
 const OBJS=[['coin','Münze'],['crystal','Diamant'],['star','Stern'],['spring','Feder'],['cp','Kontrollpunkt'],['mover','Fahrplattform'],['start','Start'],['goal','Ziel'],['door','Tür (Hub)'],['shoes','Schnelle Schuhe']];
 const ENEMIES=[['beetle','Käfer'],['igel','Igel'],['wespe','Wespe'],['skorpion','Skorpion'],['frosch','Frosch'],['fisch','Fisch'],['geist','Geist']];
-const NAMES={'#':'Boden','=':'Holz','-':'Steg (durchspringbar)','B':'Bröckelblock','X':'Rissfels','^':'Stacheln','~':'Wasser','H':'Geheimgang',' ':'leer','/':'Schräge','\\':'Schräge','(':'sanfte Schräge',')':'sanfte Schräge','[':'sanfte Schräge',']':'sanfte Schräge','K':'Kronentor'};
+const NAMES={'#':'Boden','=':'Holz','-':'Steg (durchspringbar)','B':'Bröckelblock (durchspringbar)','X':'Rissfels','^':'Stacheln','~':'Wasser','H':'Geheimgang',' ':'leer','/':'Schräge','\\':'Schräge','(':'sanfte Schräge',')':'sanfte Schräge','[':'sanfte Schräge',']':'sanfte Schräge','K':'Kronentor'};
 const SLOPE={'/':lx=>16-lx,'\\':lx=>lx,'(':lx=>16-lx/2,')':lx=>8-lx/2,'[':lx=>lx/2,']':lx=>8+lx/2};
 const isGround=t=>t==='#'||t==='H'||SLOPE[t]!==undefined;
 
