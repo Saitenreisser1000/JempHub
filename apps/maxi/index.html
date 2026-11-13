@@ -2305,13 +2305,20 @@ function mapPointer(e){
 function openShop(focus){
   // der Laden ist ein Raum: Maxi kommt zur Tür herein und geht zu den Waren
   state = 'shop'; $('career').hidden = true; $('ladenUi').hidden = false;
+  LADEN.room = focus === 'zutaten' && ECO.ownSud ? 'zut' : 'rest';
   LADEN.items = ladenWares(); ladenLayout();
-  const d = ladenDoor(); LADEN.x = d.x; LADEN.y = d.y; LADEN.pts = []; LADEN.at = null; LADEN.dest = null; LADEN.tPrev = 0;
+  const d = LADEN.room === 'zut' ? ladenPass() : ladenDoor(); LADEN.x = d.x; LADEN.y = d.y; LADEN.pts = []; LADEN.at = null; LADEN.dest = null; LADEN.tPrev = 0;
   ladenSync(); $('ladenOut').focus({ preventScroll: true });
   if (focus === 'zutaten' && LADEN.items.some(w => w.id === 'malz')) ladenGo('malz');
 }
 function leaveShop(){ state = 'menu'; $('ladenUi').hidden = true; P.vx = 0; openCareer(); }
-const LADEN = { items: [], x: 0, y: 0, pts: [], at: null, dest: null, tPrev: 0, rows: [] };
+const LADEN = { items: [], x: 0, y: 0, pts: [], at: null, dest: null, tPrev: 0, rows: [], room: 'rest' };
+// zwei Räume: vorne die Ausrüstung, hinten die Zutatenkammer (erst mit eigenem Sudhaus)
+function ladenPass(){ const d = ladenDoor(); return { x: LADEN.room === 'zut' ? 50 : W - 50, y: d.y }; }
+function ladenSwitch(){
+  LADEN.room = LADEN.room === 'zut' ? 'rest' : 'zut'; LADEN.items = ladenWares(); ladenLayout();
+  const p = ladenPass(); LADEN.x = p.x; LADEN.y = p.y; LADEN.at = null; LADEN.dest = null; LADEN.pts = []; ladenSync(); beep(520, .08, 'triangle', .07);
+}
 // Waren: ein Wort als Name, ein kurzes Zeichen als Wirkung
 const WARES = [
   { id: 'malz', w: 'Malz', ing: 1 }, { id: 'hopfen', w: 'Hopfen', ing: 1 }, { id: 'malzP', w: 'Edelmalz', ing: 1, pre: 1 }, { id: 'hopfenP', w: 'Aromahopfen', ing: 1, pre: 1 },
@@ -2322,6 +2329,7 @@ const WARES = [
 ];
 function ladenWares(){
   return WARES.filter(w => {
+    if (!!w.ing !== (LADEN.room === 'zut')) return false;
     if (w.ing) return ECO.ownSud && (!w.pre || qCap() >= 4);
     const it = SHOP.find(s => s.k === w.id); if (!it) return false;
     if (it.b === 'sud') return ECO.ownSud;
@@ -2329,18 +2337,18 @@ function ladenWares(){
     return true;
   }).map(w => Object.assign({}, w, { it: SHOP.find(s => s.k === w.id), st: STORE.find(s => s.k === w.id) }));
 }
-function ladenBox(){ const top = ($('ladenTop').getBoundingClientRect().bottom || 60)/S + 8, bot = H - 150; return { top, bot }; }
+function ladenBox(){ const top = ($('ladenTop').getBoundingClientRect().bottom || 60)/S + 40, bot = H - 150; return { top, bot }; }
 function ladenLayout(){
-  const b = ladenBox(), n = LADEN.items.length, cols = 4, rows = Math.max(1, Math.ceil(n/cols)), rh = Math.min(150, (b.bot - b.top - 30)/rows);
-  LADEN.rh = rh; LADEN.rows = [];
+  const b = ladenBox(), n = LADEN.items.length, cols = LADEN.room === 'zut' ? 2 : 4, rows = Math.max(1, Math.ceil(n/cols)), rh = Math.min(LADEN.room === 'zut' ? 190 : 150, (b.bot - b.top - 30)/rows);
+  LADEN.rh = rh; LADEN.rows = []; LADEN.sc = LADEN.room === 'zut' ? 1.7 : 1.15;
   LADEN.items.forEach((w, i) => {
     const r = Math.floor(i/cols), c = i % cols, inRow = Math.min(cols, n - r*cols), cw = (W - 24)/cols;
-    w.x = W/2 + (c - (inRow - 1)/2)*cw; w.y = b.top + r*rh + rh*.56; w.r = r;
+    w.x = W/2 + (c - (inRow - 1)/2)*cw*(LADEN.room === 'zut' ? .8 : 1); w.y = b.top + r*rh + rh*.56; w.r = r;
     LADEN.rows[r] = w.y;
   });
 }
 function ladenDoor(){ const b = ladenBox(); return { x: W/2, y: Math.min(H - 60, b.bot + 50) }; }
-function ladenSpot(w){ return { x: w.x + 36, y: w.y + 36 }; }
+function ladenSpot(w){ const z = LADEN.room === 'zut'; return { x: w.x + (z ? 52 : 36), y: w.y + 36 }; }
 function ladenGo(id){
   const w = LADEN.items.find(v => v.id === id); if (!w) return;
   if (LADEN.at === id && !LADEN.pts.length) return;
@@ -2351,6 +2359,7 @@ function ladenGo(id){
 }
 function ladenPointer(e){
   const fx = toLogical(e.clientX), fy = e.clientY / S; let best = null, bd = 1e9;
+  if (ECO.ownSud){ const p = ladenPass(); if (Math.abs(fx - p.x) < 44 && fy > p.y - 120 && fy < p.y + 30){ LADEN.pts = [{ x: p.x, y: LADEN.y }, { x: p.x, y: p.y }]; LADEN.dest = '@pass'; LADEN.at = null; ladenSync(); beep(660, .05, 'triangle', .06); return; } }
   for (const w of LADEN.items){ const dx = Math.abs(fx - w.x), dy = fy - (w.y - 10); if (dx < 46 && Math.abs(dy) < LADEN.rh*.55){ const d = dx + Math.abs(dy); if (d < bd){ bd = d; best = w; } } }
   if (best) ladenGo(best.id);
 }
@@ -2363,7 +2372,7 @@ function updateLaden(dt){
     if (d <= sp){ LADEN.x = t.x; LADEN.y = t.y; sp -= d; LADEN.pts.shift(); } else { LADEN.x += dx/d*sp; LADEN.y += dy/d*sp; sp = 0; }
   }
   P.walk += dt*8;
-  if (!LADEN.pts.length){ LADEN.at = LADEN.dest; LADEN.dest = null; beep(990, .08, 'triangle', .07); ladenSync(); }
+  if (!LADEN.pts.length){ if (LADEN.dest === '@pass'){ ladenSwitch(); return; } LADEN.at = LADEN.dest; LADEN.dest = null; beep(990, .08, 'triangle', .07); ladenSync(); }
 }
 function wareState(w){
   if (w.ing){ const cost = ECO.price[w.id]*w.st.n5; return { cost, can: taler >= cost, label: `+${w.st.n5} für ${cost} 🪙`, have: ECO[w.id] }; }
@@ -2473,9 +2482,15 @@ function renderLaden(){
   ladenLayout(); updateLaden(dt); if (ladenPop) { ladenPop.t += dt; if (ladenPop.t > .6) ladenPop = null; }
   const b = ladenBox(), door = ladenDoor();
   // Wand und Boden
-  const wg = ctx.createLinearGradient(0, 0, 0, H); wg.addColorStop(0, '#5a3524'); wg.addColorStop(1, '#43271a');
+  const zut = LADEN.room === 'zut', wg = ctx.createLinearGradient(0, 0, 0, H);
+  wg.addColorStop(0, zut ? '#5b5248' : '#5a3524'); wg.addColorStop(1, zut ? '#3f3832' : '#43271a');
   ctx.fillStyle = wg; ctx.fillRect(XL, 0, XR - XL, H);
-  ctx.fillStyle = 'rgba(0,0,0,.14)'; for (let x = Math.floor(XL/34)*34; x < XR; x += 34) ctx.fillRect(x, 0, 2, H);
+  if (zut){ ctx.fillStyle = 'rgba(0,0,0,.16)'; for (let y = 0, r = 0; y < H; y += 26, r++) { ctx.fillRect(XL, y, XR - XL, 2); for (let x = Math.floor(XL/52)*52 + (r % 2)*26; x < XR; x += 52) ctx.fillRect(x, y, 2, 26); } }
+  else { ctx.fillStyle = 'rgba(0,0,0,.14)'; for (let x = Math.floor(XL/34)*34; x < XR; x += 34) ctx.fillRect(x, 0, 2, H); }
+  // Schild mit dem Namen des Raums
+  { const sy = b.top - 30, t = zut ? 'Zutaten' : 'Ausrüstung'; ctx.font = '400 20px "Lilita One", sans-serif'; const tw = ctx.measureText(t).width + 30;
+    ctx.fillStyle = '#2f5d3a'; rr(W/2 - tw/2, sy - 16, tw, 30, 6); ctx.fill(); ctx.strokeStyle = C.gold; ctx.lineWidth = 2; ctx.stroke();
+    ctx.fillStyle = C.cream; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillText(t, W/2, sy); }
   const fy = door.y - 30;
   ctx.fillStyle = '#7a5434'; ctx.fillRect(XL, fy, XR - XL, H - fy); ctx.fillStyle = 'rgba(0,0,0,.15)'; for (let y = fy + 14; y < H; y += 14) ctx.fillRect(XL, y, XR - XL, 1.5);
   // Lampen
@@ -2485,15 +2500,27 @@ function renderLaden(){
   for (const w of LADEN.items){
     const s = wareState(w), sel = LADEN.at === w.id || LADEN.dest === w.id, pop = ladenPop && ladenPop.id === w.id ? 1 + Math.sin(ladenPop.t/.6*Math.PI)*.18 : 1;
     if (sel){ ctx.fillStyle = 'rgba(230,184,74,.22)'; ctx.beginPath(); ctx.ellipse(w.x, w.y - 22, 42, 34, 0, 0, Math.PI*2); ctx.fill(); }
-    ctx.save(); ctx.translate(w.x, w.y); ctx.globalAlpha = s.max ? .45 : 1; drawWare(w.id, 1.15*pop); ctx.restore();
+    ctx.save(); ctx.translate(w.x, w.y); ctx.globalAlpha = s.max ? .45 : 1; drawWare(w.id, LADEN.sc*pop); ctx.restore();
     ctx.font = '700 13px "Barlow Condensed", sans-serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'top';
-    ctx.fillStyle = sel ? C.gold : C.cream; ctx.fillText((s.max ? '✓ ' : '') + w.w, w.x, w.y + 15);
-    if (w.ing){ ctx.fillStyle = 'rgba(20,26,36,.7)'; rr(w.x + 14, w.y - 50, 22, 16, 8); ctx.fill(); ctx.fillStyle = C.cream; ctx.font = '700 12px "Barlow Condensed", sans-serif'; ctx.textBaseline = 'middle'; ctx.fillText(fmtF(s.have), w.x + 25, w.y - 42); }
+    ctx.fillStyle = sel ? C.gold : C.cream; if (zut) ctx.font = '700 17px "Barlow Condensed", sans-serif';
+    ctx.fillText((s.max ? '✓ ' : '') + w.w, w.x, w.y + 15);
+    if (w.ing){ ctx.fillStyle = 'rgba(20,26,36,.75)'; rr(w.x + 20, w.y - 78, 30, 22, 11); ctx.fill(); ctx.fillStyle = C.cream; ctx.font = '700 16px "Barlow Condensed", sans-serif'; ctx.textBaseline = 'middle'; ctx.fillText(fmtF(s.have), w.x + 35, w.y - 67); }
   }
-  // Tür
-  ctx.fillStyle = '#3d2318'; rr(door.x - 34, fy - 70, 68, 70, 6); ctx.fill(); ctx.fillStyle = '#6b4325'; rr(door.x - 30, fy - 66, 60, 66, 4); ctx.fill();
-  ctx.fillStyle = 'rgba(255,230,160,.35)'; rr(door.x - 22, fy - 58, 44, 26, 3); ctx.fill(); ctx.fillStyle = C.gold; ctx.beginPath(); ctx.arc(door.x + 20, fy - 30, 3, 0, Math.PI*2); ctx.fill();
-  ctx.fillStyle = '#9a2a20'; ctx.beginPath(); ctx.ellipse(door.x, fy + 14, 40, 8, 0, 0, Math.PI*2); ctx.fill();
+  // Eingangstür vorne, Durchgang zum anderen Raum an der Seite
+  if (!zut){
+    ctx.fillStyle = '#3d2318'; rr(door.x - 34, fy - 70, 68, 70, 6); ctx.fill(); ctx.fillStyle = '#6b4325'; rr(door.x - 30, fy - 66, 60, 66, 4); ctx.fill();
+    ctx.fillStyle = 'rgba(255,230,160,.35)'; rr(door.x - 22, fy - 58, 44, 26, 3); ctx.fill(); ctx.fillStyle = C.gold; ctx.beginPath(); ctx.arc(door.x + 20, fy - 30, 3, 0, Math.PI*2); ctx.fill();
+    ctx.fillStyle = '#9a2a20'; ctx.beginPath(); ctx.ellipse(door.x, fy + 14, 40, 8, 0, 0, Math.PI*2); ctx.fill();
+  }
+  if (ECO.ownSud){
+    const p = ladenPass(), sel = LADEN.dest === '@pass';
+    ctx.fillStyle = '#2a1810'; ctx.beginPath(); ctx.moveTo(p.x - 30, fy); ctx.lineTo(p.x - 30, fy - 62); ctx.arc(p.x, fy - 62, 30, Math.PI, 0); ctx.lineTo(p.x + 30, fy); ctx.closePath(); ctx.fill();
+    ctx.strokeStyle = sel ? C.gold : '#8a5a34'; ctx.lineWidth = 5; ctx.stroke();
+    ctx.save(); ctx.translate(p.x, fy - 34); drawWare(zut ? 'kettle' : 'malz', .75); ctx.restore();
+    ctx.font = '700 14px "Barlow Condensed", sans-serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'bottom';
+    ctx.fillStyle = 'rgba(20,26,36,.75)'; const lt = zut ? '‹ Ausrüstung' : 'Zutaten ›', lw = ctx.measureText(lt).width + 14; rr(p.x - lw/2, fy - 120, lw, 20, 10); ctx.fill();
+    ctx.fillStyle = sel ? C.gold : C.cream; ctx.fillText(lt, p.x, fy - 103);
+  }
   // Maxi
   const nc = P.noCrate, sl = P.slim; P.noCrate = true; P.slim = false;
   ctx.save(); ctx.translate(LADEN.x, LADEN.y); ctx.scale(.5, .5); drawMan(0, 0); ctx.restore(); P.noCrate = nc; P.slim = sl;
