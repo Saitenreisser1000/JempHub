@@ -1656,7 +1656,7 @@ function updateHud(){
 function updateEarn(){
   // Ertrag der laufenden Schicht: Bar und Band = Lohn, Sudhaus = Fässer
   const r = ECO.round; if (!r) return;
-  $('earn').textContent = stage === 3 ? `🛢 +${fmtF(r.fass || 0)}` : `🪙 +${r.earned}`;
+  $('earn').textContent = stage === 3 ? '' : `🪙 +${r.earned}`; // Sudhaus: Fässer stehen in der Lagerleiste
 }
 
 function update(dt){
@@ -2788,7 +2788,8 @@ const RECIPES = [
 function bins3(){ return L3.karamell ? ['malz', 'karamell', 'hopfen', 'hefe', 'wasser'] : ['malz', 'hopfen', 'hefe', 'wasser']; }
 function geo3(){
   const binTop = H - 104, n = bins3().length, gap = 8, bw = (W - 16 - gap*(n-1)) / n;
-  return { kx: W/2, ky: Math.round(170 + (binTop - 170) * .52), binTop, bw, gap, boardY: 132 };
+  const boardY = Math.round(Math.max(100, (L3.hudB || 64) + (ECO.ownSud && !L3.trial ? 46 : 16)));
+  return { kx: W/2, ky: Math.round(boardY + 38 + (binTop - boardY - 38) * .52), binTop, bw, gap, boardY };
 }
 function binRect(k, g){ return { x: 8 + k*(g.bw + g.gap), y: g.binTop, w: g.bw, h: 84 }; }
 function newBrew(){
@@ -3168,7 +3169,7 @@ function drawBoard(g, hl){
     ctx.fillStyle = L3.beer.col; rr(x + 10, y + 6, 12, 18, 3); ctx.fill(); ctx.fillStyle = '#fffaf0'; rr(x + 9, y + 3, 14, 5, 2.5); ctx.fill();
     ctx.fillStyle = C.gold; ctx.font = '400 20px "Lilita One", sans-serif'; ctx.fillText(L3.beer.n, x + 30, y + 16);
     if (ECO.ownSud && !L3.trial){ const nw = ctx.measureText(L3.beer.n).width, q = Math.min(qCap(), usePre() ? 5 : 3);
-      ctx.font = '700 14px sans-serif'; ctx.fillStyle = C.gold; ctx.fillText('★'.repeat(q), x + 38 + nw, y + 16); ctx.fillStyle = 'rgba(243,230,196,.3)'; ctx.fillText('★'.repeat(5 - q), x + 38 + nw + ctx.measureText('★'.repeat(q)).width, y + 16); }
+      ctx.font = '700 14px sans-serif'; ctx.fillStyle = C.gold; ctx.fillText('★'.repeat(q), x + 38 + nw, y + 16); }
   }
   ctx.textAlign = 'right'; ctx.fillStyle = 'rgba(243,230,196,.75)'; ctx.font = '700 14px "Barlow Condensed", sans-serif'; ctx.fillText(`Sud ${L3.brews + 1}`, x + w - 10, y + 16);
   // Zeile 2: die Schritte, der aktuelle hervorgehoben
@@ -3200,8 +3201,8 @@ function drawStock(g){
   const left = Math.floor(Math.min(nd.malz ? m/nd.malz : 99, nd.hopfen ? h/nd.hopfen : 99)), y = g.boardY - 22;
   const parts = [['malz', fmtF(m)], ['hopfen', fmtF(h)]];
   ctx.font = '700 15px "Barlow Condensed", sans-serif'; ctx.textBaseline = 'middle'; ctx.textAlign = 'left';
-  const tSude = left <= 0 ? 'letzter Sud' : `noch ${left} ${left === 1 ? 'Sud' : 'Sude'}`, tF = fmtF(ECO.fass);
-  const wid = 2*(22 + 26) + ctx.measureText(tSude).width + 26 + 22 + ctx.measureText(tF).width + 20 + (pre ? 19 : 0);
+  const tSude = left <= 0 ? 'letzter Sud' : `noch ${left} ${left === 1 ? 'Sud' : 'Sude'}`, tF = fmtF(ECO.fass), gain = ECO.round ? ECO.round.fass || 0 : 0, tG = gain ? ` +${fmtF(gain)}` : '';
+  const wid = 2*(22 + 26) + ctx.measureText(tSude).width + 26 + 22 + ctx.measureText(tF + tG).width + 20 + (pre ? 19 : 0);
   let x = W/2 - wid/2;
   ctx.fillStyle = 'rgba(20,26,36,.72)'; rr(x - 10, y - 13, wid + 20, 26, 13); ctx.fill();
   if (pre){ ctx.fillStyle = C.gold; ctx.fillText('★', x, y); x += 19; }
@@ -3211,6 +3212,7 @@ function drawStock(g){
   // kleines Fass
   ctx.fillStyle = '#8a5a2c'; rr(x, y - 8, 14, 16, 4); ctx.fill(); ctx.fillStyle = '#4a3a2a'; ctx.fillRect(x, y - 4, 14, 2); ctx.fillRect(x, y + 2, 14, 2);
   ctx.fillStyle = C.cream; ctx.fillText(tF, x + 20, y);
+  if (tG){ ctx.fillStyle = '#9fe0a8'; ctx.fillText(tG, x + 20 + ctx.measureText(tF).width, y); }
 }
 function drawBins(g, hlIng){
   const list = bins3();
@@ -3225,6 +3227,8 @@ function drawBins(g, hlIng){
   });
 }
 function render3(){
+  // Tafel und Lagerleiste direkt unter das HUD rücken
+  if (!L3.hbT || tTotal - L3.hbT > .5 || tTotal < L3.hbT){ L3.hbT = tTotal; const hr = $('hud').getBoundingClientRect(); if (hr.height) L3.hudB = Math.round(hr.bottom / S); }
   ctx.setTransform(1,0,0,1,0,0);
   ctx.drawImage(bg3, 0, 0);
   const sx = shake && state === 'play' ? (Math.random()-.5)*8*shake/.25 : 0;
