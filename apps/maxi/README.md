@@ -82,6 +82,6 @@ Ab dem 4. Sud einer Runde bietet der Wirt manchmal einen Eilauftrag an, etwa „
 
 ## Menü und Karte
 
-„Start“ führt Neulinge direkt ins Braustüberl; danach zeigt „Maxis Laufbahn“ oben die Stufe mit Fortschrittsbalken (antippen klappt alle Stufen und Rekorde auf), die Taler bzw. das Sparziel und darunter die Karte des Brauereigeländes. Maxi geht zu einem Gebäude, unten erscheinen Infos und Knöpfe. In der Pause beendet „Runde beenden“ die Runde mit Bilanz.
+Unter dem Startmenü löscht „Spielstand zurücksetzen“ (zweimal tippen) den ganzen Spielstand samt Rekorden, nur der Name für die Bestenliste bleibt. „Start“ führt Neulinge direkt ins Braustüberl; danach zeigt „Maxis Laufbahn“ oben die Stufe mit Fortschrittsbalken (antippen klappt alle Stufen und Rekorde auf), die Taler bzw. das Sparziel und darunter die Karte des Brauereigeländes. Maxi geht zu einem Gebäude, unten erscheinen Infos und Knöpfe. In der Pause beendet „Runde beenden“ die Runde mit Bilanz.
 
 Zu Beginn jeder Runde zeigt eine Karte das aktuelle Ziel (bis zum Produktionsmitarbeiter bzw. am Band bis zum Schnuppertag), und unter den Punkten steht es dauerhaft, z. B. „Ziel 1.500“ oder „Ziel 12 / 20 sortiert“.
