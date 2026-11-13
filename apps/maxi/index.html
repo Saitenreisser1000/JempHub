@@ -126,6 +126,13 @@ html,body{height:100%;margin:0;background:var(--night);color:var(--cream);overfl
 .hslist.local li{grid-template-columns:1fr auto}
 .hslist.local li::before{display:none}
 .shopcard{max-height:calc(100% - 16px);overflow-y:auto}
+.ladencard{padding-top:0}
+#ladenArt{display:block;width:calc(100% + 40px);height:auto;aspect-ratio:640/230;margin:0 -20px 8px;border-radius:14px 14px 0 0}
+.ladencard h2{margin:0 0 2px}
+.ladentabs{display:flex;flex-wrap:wrap;gap:6px;justify-content:center;margin:0 0 10px}
+.ladentabs[hidden]{display:none}
+.ladentabs button{font:700 13px var(--f-ui);padding:6px 9px;border-radius:999px;border:2px solid var(--hop);background:transparent;color:var(--hop);cursor:pointer}
+.ladentabs button[aria-selected="true"]{background:var(--hop);color:#fff}
 .taler{font:700 18px var(--f-ui);margin:0 0 10px}
 .shoplist{list-style:none;margin:0 0 12px;padding:0;display:grid;gap:8px;text-align:left}
 .shoplist li{display:grid;grid-template-columns:1fr auto;gap:2px 10px;align-items:center;padding:8px 10px;border-radius:8px;background:rgba(47,93,58,.1)}
@@ -339,7 +346,7 @@ html,body{height:100%;margin:0;background:var(--night);color:var(--cream);overfl
       <div class="mapdesc" id="mapDesc"></div>
       <div class="mapprice" id="mapRecipe" hidden><span>Zutaten</span><button type="button" class="seg" id="recStd" aria-pressed="true">Standard</button><button type="button" class="seg" id="recPre" aria-pressed="false">Premium</button></div>
       <div class="mapprice" id="mapPrice" hidden><span>Bierpreis</span><button type="button" id="priceDown" aria-label="Preis senken">−</button><b id="priceVal">12 🪙</b><button type="button" id="priceUp" aria-label="Preis erhöhen">+</button><span id="priceRush"></span></div>
-      <div class="mapbtns"><button class="btn" id="mapGo" type="button" style="visibility:hidden">Spielen</button><button class="btn sec" id="mapUp" type="button" hidden>Ausbauen</button><button class="btn sec" id="ecoBtn" type="button" hidden>Einkauf</button></div>
+      <div class="mapbtns"><button class="btn" id="mapGo" type="button" style="visibility:hidden">Spielen</button></div>
     </div>
     <div class="maplinks" role="group" aria-label="Orte auf der Karte">
       <button type="button" id="careerBack">‹ Hauptmenü</button><button type="button" class="sr" data-loc="bar">Braustüberl</button><button type="button" class="sr" data-loc="halle">Abfüllhalle</button><button type="button" class="sr" data-loc="sud">Sudhaus</button><button type="button" class="sr" data-loc="laden">Laden</button>
@@ -375,24 +382,14 @@ html,body{height:100%;margin:0;background:var(--night);color:var(--cream);overfl
 </div>
 
 <div class="overlay" id="shop" hidden>
-  <div class="label shopcard" role="dialog" aria-modal="true" aria-labelledby="shopTitle">
-    <div class="brand">Freetown Brewery</div>
-    <h2 id="shopTitle">Brauerei-Shop</h2>
+  <div class="label shopcard ladencard" role="dialog" aria-modal="true" aria-labelledby="shopTitle">
+    <canvas id="ladenArt" width="640" height="230" aria-hidden="true"></canvas>
+    <h2 id="shopTitle">Brauerei-Laden</h2>
     <p class="taler" id="shopTaler"></p>
+    <div class="ladentabs" id="ladenTabs" role="tablist" aria-label="Regale"></div>
     <ul class="shoplist" id="shopList"></ul>
-    <p class="hsnote">Brauereitaler verdienst du mit Lohn im Braustüberl und am Förderband und mit deinem eigenen Bier. Ausbauten gibt es direkt an den Gebäuden auf der Karte.</p>
-    <button class="btn" id="shopClose" type="button">Zurück</button>
-  </div>
-</div>
-
-<div class="overlay" id="store" hidden>
-  <div class="label shopcard" role="dialog" aria-modal="true" aria-labelledby="storeTitle">
-    <div class="brand">Freetown Brewery</div>
-    <h2 id="storeTitle">Lager &amp; Einkauf</h2>
-    <p class="taler" id="storeTaler"></p>
-    <ul class="shoplist" id="storeList"></ul>
     <p class="hsnote" id="storeNote"></p>
-    <button class="btn" id="storeClose" type="button">Zurück</button>
+    <button class="btn" id="shopClose" type="button">Laden verlassen</button>
   </div>
 </div>
 
@@ -587,7 +584,7 @@ const STORE = [
   { k: 'hopfenP', n: 'Aroma-Hopfen', ic: '🌿', d: 'Für ★★★★ und mehr', n5: 5, unit: 'Sack', sud: true }
 ];
 function renderStore(){
-  $('storeTaler').textContent = `🪙 ${taler} Brauereitaler · Tag ${ECO.day}`;
+  $('shopTaler').textContent = `🪙 ${taler} Brauereitaler · Tag ${ECO.day}`;
   const items = STORE.filter(it => ECO.ownSud && (!it.k.endsWith('P') || qCap() >= 4)).map(it => {
     const li = document.createElement('li'), b = document.createElement('b'), sm = document.createElement('small'), bt = document.createElement('button');
     const pr = ECO.price[it.k], pv = ECO.prev ? ECO.prev[it.k] : pr, tr = pr > pv ? ' ▲' : pr < pv ? ' ▼' : '';
@@ -598,7 +595,8 @@ function renderStore(){
   });
   const info = (ic, n, v, d) => { const li = document.createElement('li'), b = document.createElement('b'), sm = document.createElement('small'); b.textContent = `${ic} ${n}: ${v}`; sm.textContent = d; li.append(b, sm); return li; };
   items.push(info('🛢', 'Fässer', `${fmtF(ECO.fass)} ${stars(ECO.fassQ ?? 2)}`, `Die Wirte kaufen am Tagesende bis zu ${demand()} Fass, derzeit rund ${fassPrice()} 🪙 je Fass. Besseres Bier und edlere Sorten bringen mehr.`));
-  $('storeList').replaceChildren(...items);
+  $('shopList').replaceChildren(...items);
+  drawLaden();
   $('storeNote').textContent = `Sudhaus: Malz + Hopfen → ${fmtF(1 + .5*(U.kettle || 0))} Fass · Wirte kaufen am Tagesende · Betriebskosten ${runCost()} 🪙 pro Tag. Rohstoffpreise ändern sich jeden Tag.`;
 }
 function showReport(){
@@ -618,10 +616,18 @@ function showReport(){
   $('career').hidden = true; $('dayRep').hidden = false; sCash();
 }
 
+// der Laden: das einzige Geschäft auf dem Gelände, je Regal ein Reiter
+const LADEN_TABS = [['zutaten', '🌾 Zutaten'], ['sud', '🔥 Sudhaus'], ['bar', '🍺 Stüberl'], ['halle', '📦 Halle'], ['laden', '⭐ Allgemein']];
+const LADEN_NOTE = { sud: 'Ersatzteile und Ausbauten für dein eigenes Sudhaus.', bar: 'Wirkt im Braustüberl.', halle: 'Wirkt in der Abfüllhalle am Förderband.', laden: 'Hilft in allen Spielen.' };
+function ladenTabs(){ return LADEN_TABS.filter(([k]) => k === 'zutaten' || k === 'sud' ? ECO.ownSud : k === 'laden' || !locked(k)); }
 function renderShop(bld){
   if (bld) shopBld = bld;
-  $('shopTitle').textContent = shopBld === 'laden' ? 'Brauerei-Laden' : `Ausbau: ${LOCS[shopBld].name}`;
-  $('shopTaler').textContent = `🪙 ${taler} Brauereitaler`;
+  const tabs = ladenTabs(); if (!tabs.some(([k]) => k === shopBld)) shopBld = tabs[0][0];
+  $('ladenTabs').replaceChildren(...tabs.map(([k, t]) => { const b = document.createElement('button'); b.type = 'button'; b.setAttribute('role', 'tab'); b.textContent = t; b.setAttribute('aria-selected', k === shopBld ? 'true' : 'false'); b.onclick = () => { renderShop(k); beep(740, .04, 'triangle', .05); }; return b; }));
+  $('ladenTabs').hidden = tabs.length < 2;
+  if (shopBld === 'zutaten'){ renderStore(); return; }
+  $('storeNote').textContent = LADEN_NOTE[shopBld] + ' Brauereitaler verdienst du mit Lohn im Braustüberl und am Band und mit deinem eigenen Bier.';
+  $('shopTaler').textContent = `🪙 ${taler} Brauereitaler`; drawLaden();
   $('shopList').replaceChildren(...SHOP.filter(it => it.b === shopBld).map(it => {
     const li = document.createElement('li'), b = document.createElement('b'), lv = document.createElement('span'), sm = document.createElement('small'), bt = document.createElement('button');
     const have = U[it.k] || 0, max = it.p.length, price = it.p[have];
@@ -635,7 +641,7 @@ function renderShop(bld){
 function buy(it){
   const have = U[it.k] || 0, price = it.p[have];
   if (price == null || taler < price) return;
-  taler -= price; U[it.k] = have + 1; if (ECO.ownSud){ ECO.today.build = (ECO.today.build || 0) + price; saveEco(); } saveShop(); renderShop();
+  taler -= price; U[it.k] = have + 1; if (ECO.ownSud){ ECO.today.build = (ECO.today.build || 0) + price; saveEco(); } saveShop(); renderShop(); updateEcoBar();
   try { ac = ac || new (window.AudioContext || window.webkitAudioContext)(); ac.resume(); } catch(e) {}
   [660, 880, 1320].forEach((f, i) => setTimeout(() => beep(f, .1, 'triangle', .08), i*80));
 }
@@ -1837,7 +1843,7 @@ function gameOver(voluntary){
   $('talerInfo').textContent = (typeof voluntary === 'string' && stockWhy ? stockWhy + ' ' : '') + shiftText(endShift()); stockWhy = '';
   // Knöpfe passend zur Lage: ohne Zutaten erst einkaufen statt „Nochmal“; zurück entweder Karte oder Hauptmenü
   if (stage === 3 && ECO.ownSud && !L3.trial && !canBrew(brewNeed(RECIPES[0]))) overStock = true; // ohne Zutaten bringt „Nochmal“ nichts
-  $('againBtn').textContent = overStock ? 'Zum Einkauf' : 'Nochmal';
+  $('againBtn').textContent = overStock ? 'Zum Laden' : 'Nochmal';
   $('toMapBtn').hidden = ECO.story < 3; $('menuBtn').hidden = ECO.story >= 3;
   $('intro').hidden = true;
   $('over').hidden = false; try { wake?.release(); } catch(e) {}
@@ -2261,7 +2267,7 @@ const LOCS = {
   sud:   { u: .3,  v: .2,  c: [.36, .42], name: 'Maxis Sudhaus', sub: 'Sudhaus', lv: 3, need: 1, desc: () => `Jeder Sud ergibt ${fmtF(1 + .5*(U.kettle || 0))} Fass. Die Wirte kaufen am Tagesende.` },
   halle: { u: .74, v: .3,  c: [.68, .5],  name: 'Abfüllhalle', sub: 'Förderband', lv: 2, need: 1, desc: () => `Flaschen sortieren: ${lohn2()} 🪙 Lohn je voller Kiste.` },
   bar:   { u: .25, v: .79, c: [.3, .6],   name: 'Braustüberl', sub: 'Braustüberl', lv: 1, need: 0, desc: () => `Flaschen fangen: ${lohn1()} 🪙 Lohn je voller Kiste.` },
-  laden: { u: .76, v: .82, c: [.7, .7],   name: 'Brauerei-Laden', sub: 'Shop', shop: true, desc: 'Verbesserungen, die überall helfen.' }
+  laden: { u: .76, v: .82, c: [.7, .7],   name: 'Brauerei-Laden', sub: 'Laden', shop: true, desc: () => ECO.ownSud ? 'Zutaten, Ersatzteile und Ausbauten: alles gibt es nur hier.' : 'Ausbauten für Braustüberl und Abfüllhalle und Hilfen für alle Spiele.' }
 };
 const LOCK = ['sud', 'halle', 'bar', 'laden'];
 const MAP = { at: 'plaza', x: 0, y: 0, pts: [], dest: null, placed: false, dust: [], last: 0 };
@@ -2287,13 +2293,10 @@ function locked(k){ const L = LOCS[k], all = typeof UNLOCK_ALL !== 'undefined' &
 function mapInfo(){
   const L = LOCS[MAP.at], go = $('mapGo'); go.disabled = false;
   $('mapPrice').style.visibility = 'hidden';
-  $('ecoBtn').hidden = !(MAP.at === 'sud' && ECO.ownSud && !MAP.pts.length);
   $('mapRecipe').hidden = !(MAP.at === 'sud' && !MAP.pts.length && !locked('sud') && qCap() >= 4);
   $('recStd').setAttribute('aria-pressed', ECO.recipe !== 'pre' ? 'true' : 'false'); $('recPre').setAttribute('aria-pressed', ECO.recipe === 'pre' ? 'true' : 'false');
   $('priceVal').textContent = `${ECO.barPrice} 🪙` + (U.tables ? ` +${2*U.tables}` : ''); $('priceRush').textContent = rushText();
   $('priceDown').disabled = ECO.barPrice <= 8; $('priceUp').disabled = ECO.barPrice >= 18;
-  $('mapUp').hidden = !MAP.at || MAP.at === 'plaza' || MAP.at === 'laden' || !!MAP.pts.length || locked(MAP.at) || (MAP.at !== 'sud' && taler < 30 && !bldLevel(MAP.at));
-  if (!$('mapUp').hidden){ const lv = Math.min(5, bldLevel(MAP.at)); $('mapUp').textContent = MAP.at === 'sud' ? (lv ? 'Ausbau' : 'Reparieren') : lv ? `Ausbau ${'★'.repeat(lv)}` : 'Ausbauen'; }
   if (!MAP.at || MAP.at === 'plaza' || MAP.pts.length){
     $('mapName').textContent = MAP.pts.length ? 'Maxi ist unterwegs …' : seen.map ? 'Brauereigelände' : 'Willkommen in der Brauerei';
     $('mapDesc').textContent = 'Tipp auf ein Gebäude, dann geht Maxi hin.'; go.style.visibility = 'hidden'; return;
@@ -2313,7 +2316,7 @@ function mapInfo(){
   $('mapDesc').textContent = L.shop ? ds : st ? st : ds;
   go.textContent = L.shop ? 'Laden betreten' : 'Spielen'; go.style.visibility = 'visible';
   const sm = stockMsg(MAP.at);
-  if (sm){ $('mapDesc').textContent = '⚠ ' + sm; go.textContent = 'Lager & Einkauf'; }
+  if (sm){ $('mapDesc').textContent = '⚠ ' + sm; go.textContent = 'Zum Laden: Zutaten kaufen'; }
 }
 function mapTap(k){
   if (!LOCS[k]) return;
@@ -2338,7 +2341,40 @@ function mapPointer(e){
   if (best) mapTap(best);
   else { const p = locPos('plaza'); if (Math.hypot(fx - p.x, fy - p.y) < 50) mapTap('plaza'); }
 }
-function openShop(b){ renderShop(b); $('career').hidden = true; $('shop').hidden = false; $('shopClose').focus(); }
+function openShop(b){ renderShop(b || (ECO.ownSud ? 'zutaten' : 'bar')); $('career').hidden = true; $('shop').hidden = false; $('shop').querySelector('.shopcard').scrollTop = 0; $('shopClose').focus(); }
+function drawLaden(){
+  // Blick in den Brauerei-Laden: Regale, Säcke, Ersatzteile, Ladner hinter der Theke
+  const cv = $('ladenArt'), g = cv.getContext('2d'), w = cv.width, h = cv.height;
+  const sky = g.createLinearGradient(0, 0, 0, h); sky.addColorStop(0, '#5a3524'); sky.addColorStop(1, '#3d2318'); g.fillStyle = sky; g.fillRect(0, 0, w, h);
+  g.fillStyle = 'rgba(0,0,0,.18)'; for (let x = 0; x < w; x += 46) g.fillRect(x, 0, 3, h);
+  const shelf = y => { g.fillStyle = '#8a5a34'; g.fillRect(16, y, w - 32, 9); g.fillStyle = '#6b4325'; g.fillRect(16, y + 9, w - 32, 4); };
+  const sack = (x, y, c, t) => { g.fillStyle = c; g.beginPath(); g.moveTo(x - 17, y); g.quadraticCurveTo(x - 22, y - 26, x - 9, y - 34); g.lineTo(x + 9, y - 34); g.quadraticCurveTo(x + 22, y - 26, x + 17, y); g.closePath(); g.fill(); g.fillStyle = 'rgba(0,0,0,.25)'; g.fillRect(x - 9, y - 38, 18, 5); g.fillStyle = '#f3e6c4'; g.font = '700 12px sans-serif'; g.textAlign = 'center'; g.fillText(t, x, y - 11); };
+  const bottle = (x, y, c) => { g.fillStyle = c; g.fillRect(x - 5, y - 24, 10, 24); g.fillRect(x - 2, y - 33, 4, 10); g.fillStyle = '#f3e6c4'; g.fillRect(x - 5, y - 16, 10, 7); };
+  shelf(62); shelf(122);
+  [[60, '#d8b25a', 'M'], [100, '#d8b25a', 'M'], [140, '#c79a3e', 'M+'], [196, '#4f8a4a', 'H'], [236, '#4f8a4a', 'H'], [276, '#3b6f3a', 'H+']].forEach(([x, c, t]) => sack(x, 62, c, t));
+  for (let i = 0; i < 7; i++) bottle(372 + i*17, 62, i % 3 === 1 ? '#2f6b34' : '#5a3010');
+  g.fillStyle = '#c8763a'; g.beginPath(); g.arc(540, 44, 18, Math.PI, 0); g.lineTo(558, 62); g.lineTo(522, 62); g.fill(); g.fillStyle = 'rgba(255,230,180,.45)'; g.fillRect(528, 34, 5, 20);
+  g.strokeStyle = '#b26a33'; g.lineWidth = 7; g.beginPath(); g.moveTo(52, 118); g.lineTo(52, 96); g.lineTo(100, 96); g.stroke();
+  g.fillStyle = '#d9d2bf'; g.beginPath(); g.arc(150, 104, 13, 0, Math.PI*2); g.fill(); g.strokeStyle = '#555'; g.lineWidth = 2; g.stroke(); g.beginPath(); g.moveTo(150, 104); g.lineTo(158, 98); g.stroke();
+  g.fillStyle = '#7a5032'; g.fillRect(186, 96, 46, 26); g.fillStyle = '#5b3a24'; g.fillRect(186, 104, 46, 3); g.fillRect(186, 114, 46, 3);
+  g.fillStyle = '#9aa0a6'; g.fillRect(420, 100, 54, 22); g.fillStyle = '#c9ced3'; g.fillRect(426, 104, 42, 4);
+  g.fillStyle = '#c8763a'; for (let i = 0; i < 3; i++){ g.beginPath(); g.ellipse(520 + i*28, 112, 11, 10, 0, 0, Math.PI*2); g.fill(); }
+  g.fillStyle = 'rgba(255,214,120,.18)'; g.beginPath(); g.moveTo(320, 0); g.lineTo(220, h); g.lineTo(420, h); g.fill();
+  g.fillStyle = '#e6b84a'; g.beginPath(); g.arc(320, 14, 9, 0, Math.PI*2); g.fill(); g.fillStyle = '#2a2a33'; g.fillRect(318, 0, 4, 6);
+  // Ladner
+  const mx = 320, my = 176;
+  g.fillStyle = '#3f7f3c'; g.fillRect(mx - 26, my - 34, 52, 40);
+  g.fillStyle = '#f3e6c4'; g.fillRect(mx - 16, my - 30, 32, 36);
+  g.fillStyle = '#f0c39b'; g.beginPath(); g.arc(mx, my - 50, 16, 0, Math.PI*2); g.fill();
+  g.fillStyle = '#8a5a34'; g.fillRect(mx - 17, my - 70, 34, 9); g.fillRect(mx - 22, my - 63, 44, 4);
+  g.fillStyle = '#6b4325'; g.beginPath(); g.ellipse(mx - 6, my - 42, 7, 3, .2, 0, Math.PI*2); g.ellipse(mx + 6, my - 42, 7, 3, -.2, 0, Math.PI*2); g.fill();
+  g.fillStyle = '#141a24'; g.fillRect(mx - 7, my - 54, 3, 3); g.fillRect(mx + 4, my - 54, 3, 3);
+  // Theke
+  g.fillStyle = '#7a4a2a'; g.fillRect(0, 176, w, 54); g.fillStyle = '#9b6438'; g.fillRect(0, 172, w, 10);
+  g.fillStyle = 'rgba(0,0,0,.2)'; for (let x = 30; x < w; x += 80) g.fillRect(x, 186, 3, 44);
+  g.fillStyle = '#2f5d3a'; g.fillRect(474, 146, 58, 28); g.fillStyle = '#e6b84a'; g.fillRect(480, 152, 46, 8); g.fillStyle = '#1f3d27'; g.fillRect(468, 166, 70, 8);
+  sack(110, 174, '#d8b25a', 'Malz'); sack(160, 174, '#4f8a4a', 'Hopfen');
+}
 function stockMsg(k){
   if (!ECO.ownSud || k !== 'sud') return '';
   if (k === 'sud' && !canBrew(brewNeed(RECIPES[0]))) return `Zu wenig ${usePre() ? 'Premium-Zutaten' : 'Zutaten'} für einen Sud (mindestens ${brewNeed(RECIPES[0]).malz} Malz und ${brewNeed(RECIPES[0]).hopfen} Hopfen).`;
@@ -2356,9 +2392,9 @@ function buySud(){
 function enterLoc(k){
   if (k === 'sud' && !ECO.ownSud && rank >= 1){ buySud(); return; }
   if (!k || k === 'plaza' || locked(k)) return;
-  if (stockMsg(k)){ renderStore(); $('career').hidden = true; $('store').hidden = false; $('storeClose').focus(); return; }
+  if (stockMsg(k)){ mapTap('laden'); return; }
   const L = LOCS[k];
-  if (L.shop){ openShop('laden'); return; }
+  if (L.shop){ openShop(); return; }
   if (L.lv === 3) start3(); else if (L.lv === 2) start2(); else start();
 }
 function updateMap(dt){
@@ -2759,7 +2795,7 @@ function showRecords(){
 }
 function toTitle(){
   stage = 1; P.noCrate = false; P.slim = false; state = 'menu';
-  ['over','paused','hud','board','legalBox','promo','toast','shop','career','store','dayRep','goalBanner'].forEach(id => $(id).hidden = true); $('intro').hidden = true;
+  ['over','paused','hud','board','legalBox','promo','toast','shop','career','dayRep','goalBanner'].forEach(id => $(id).hidden = true); $('intro').hidden = true;
   $('start').hidden = false; updateMenu(); showRecords();
 }
 /* ================= Level 3: Im Sudhaus =================
@@ -3257,7 +3293,7 @@ function drawIntro3(g){
   }
 }
 $('againBtn').onclick = () => {
-  if (overStock){ overStock = false; toTitle(); openCareer(); renderStore(); $('career').hidden = true; $('store').hidden = false; $('storeClose').focus(); return; }
+  if (overStock){ overStock = false; toTitle(); openCareer(); MAP.at = 'laden'; MAP.pts = []; MAP.dest = null; MAP.placed = false; openShop('zutaten'); return; }
   stage === 3 ? start3() : stage === 2 ? start2() : start();
 };
 $('menuBtn').onclick = () => { overStock = false; toTitle(); };
@@ -3377,7 +3413,7 @@ function sudIntro(){
     const d = document.createElement('div'); r.forEach((t, i) => { const sp = document.createElement('span'); sp.textContent = i === 1 ? `→ ${t} →` : t; d.append(sp); }); ch.append(d); });
   showTip('Geschafft', 'Maxis eigenes Sudhaus', [
     p('Der Kessel gehört dir. So verdienst du mit deinem Bier:'), ch,
-    p('Der alte Kessel ist undicht, dein Bier hat erst einmal höchstens ★★. Über „Reparieren“ am Sudhaus machst du es besser und bekommst neue Sorten.'),
+    p('Der alte Kessel ist undicht, dein Bier hat erst einmal höchstens ★★. Im Brauerei-Laden gibt es Ersatzteile, damit machst du es besser und bekommst neue Sorten.'),
     p(`Jeden Tag kosten Strom und Miete mindestens ${runCost()} 🪙. Bis sich die Brauerei trägt, verdienst du weiter Lohn im Braustüberl und am Band.`)
   ], () => { MAP.at = 'sud'; openCareer(); });
 }
@@ -3405,12 +3441,9 @@ $('startBtn').onclick = () => {
 };
 $('rankMini').onclick = () => { const m = $('rankMore'), open = m.hidden; m.hidden = !open; $('rankMini').setAttribute('aria-expanded', open ? 'true' : 'false'); };
 $('tipOk').onclick = () => { $('tip').hidden = true; const f = tipNext; tipNext = null; if (f) f(); else openCareer(); };
-$('ecoBtn').onclick = () => { renderStore(); $('career').hidden = true; $('store').hidden = false; $('storeClose').focus(); };
-$('storeClose').onclick = () => { $('store').hidden = true; openCareer(); };
 $('repNext').onclick = () => { $('dayRep').hidden = true; openCareer(); };
 $('careerBack').onclick = () => { $('career').hidden = true; $('start').hidden = false; $('startBtn').focus({ preventScroll: true }); };
 $('mapGo').onclick = () => enterLoc(MAP.at);
-$('mapUp').onclick = () => { if (MAP.at && LOCS[MAP.at] && !locked(MAP.at)) openShop(MAP.at); };
 const setPrice = d => { ECO.barPrice = Math.max(8, Math.min(18, ECO.barPrice + d)); saveEco(); beep(d > 0 ? 880 : 660, .05, 'triangle', .06); mapInfo(); };
 const setRecipe = r => { ECO.recipe = r; saveEco(); beep(r === 'pre' ? 990 : 660, .05, 'triangle', .06); mapInfo(); };
 $('recStd').onclick = () => setRecipe('std'); $('recPre').onclick = () => setRecipe('pre');
