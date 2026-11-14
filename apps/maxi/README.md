@@ -10,7 +10,7 @@ Handyspiel im Hochformat für die Freetown Brewery: Maximilian Weichl steht vor 
 
 ## Beförderungen
 
-Maxi beginnt als **Brauereilakai**. Erreicht eine Runde 1500 Punkte, wird er **Mitarbeiter** (Förderband frei, Angebot für den alten Sudkessel), bei 12 000 Punkten **Produktionsmitarbeiter**, bei 25 000 **Vorarbeiter**; jede Stufe erhöht den Lohn. Die Stufe merkt sich das Gerät (`localStorage`), Maxi trägt pro Beförderung einen goldenen Stern auf der Jacke. Braumeister wird er über sein eigenes Sudhaus (siehe Spielbogen).
+Maxi beginnt als **Brauereilakai**. Die Laufbahn hängt an Erfahrungspunkten (EP): Jede Runde hat ein Rundenziel in Punkten (Braustüberl 1500, Förderband 2000, Sudhaus 2500, Schank 1000; jedes Erreichen hebt das nächste Ziel dieses Spiels um ein Viertel des Grundwerts, bis zum 4-Fachen). Ein erreichtes Rundenziel bringt 50 EP (als Lakai 100), ein Kapitel der Chronik so viele EP wie Taler, eine Medaille so viele EP wie ihr Preisgeld. Ab 100 EP wird Maxi **Mitarbeiter** (Förderband frei, Angebot für den alten Sudkessel), ab 600 EP **Produktionsmitarbeiter**, ab 1500 EP **Vorarbeiter**; jede Stufe erhöht den Lohn. Gespeichert in `ftb-xp` und `ftb-rank`; alte Spielstände starten mit den EP ihrer Stufe.
 
 ## Förderband (Abfüllhalle)
 

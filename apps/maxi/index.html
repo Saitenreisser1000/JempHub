@@ -529,7 +529,7 @@ function bldLevel(b){ return SHOP.filter(it => it.b === b).reduce((a, it) => a +
 try { taler = Math.max(0, +localStorage.getItem('ftb-taler') || 0); Object.assign(U, JSON.parse(localStorage.getItem('ftb-upg') || '{}')); } catch(e) {}
 function saveShop(){ try { localStorage.setItem('ftb-taler', taler); localStorage.setItem('ftb-upg', JSON.stringify(U)); } catch(e) {} }
 function applyUpg(){
-  goalShown = false;
+  goalShown = false; goalHit = false;
   // zu Beginn jeder Runde: gekaufte Verbesserungen wirken
   MAXMISS = 5 + (U.life || 0); baseMult = 1 + (U.mult || 0); mult = baseMult; streak = 0; roundPaid = false; setMultUI(null);
   if (typeof ECO !== 'undefined') ECO.round = ecoRound0();
@@ -1640,14 +1640,18 @@ function breakStreak(){
   if (had) floatText(W/2, groundY - 240, 'Multiplikator weg', '#ff8a6a');
 }
 const STORY_SORT = 20; // so viele Flaschen am Band, dann ruft der Braumeister
-let goalShown = false;
+let goalShown = false, goalHit = false;
+// Rundenziel je Spiel: wird mit jedem Erreichen etwas höher
+const GOAL_BASE = [0, 1500, 2000, 2500, 1000];
+const goalPts = () => Math.round(GOAL_BASE[stage]*(1 + .25*Math.min(12, (ECO.goals || {})[stage] || 0))/100)*100;
+const goalXP = () => rank === 0 ? 100 : 50;
 function goalInfo(){
   // aktuelles Ziel der Runde: zuerst die Geschichte, sonst die nächste Beförderung
   if (stage === 4) return null;
   if (stage === 2 && ECO.story === 1) return { hud: `Ziel ${Math.min(L2.sorted, STORY_SORT)} / ${STORY_SORT} sortiert`, head: `${STORY_SORT} Flaschen sortieren`, sub: 'Dann holt dich der Braumeister ins Sudhaus.' };
   if (stage === 3 && L3.trial) return { hud: `Probe ${Math.min(2, L3.brews)} / 2 Sude` };
-  const nx = RANKS[rank + 1]; if (!nx) return null;
-  return { hud: `Ziel ${nx.pts.toLocaleString('de-DE')}`, head: `${nx.pts.toLocaleString('de-DE')} Punkte`, sub: rank === 0 ? 'Schaffst du das in einer Runde, wirst du Mitarbeiter und darfst ans Förderband.' : `Dann wirst du ${nx.t}.` };
+  const gp = goalPts(), rw = goalXP();
+  return { hud: goalHit ? `Ziel ✓ +${rw} EP` : `Ziel ${gp.toLocaleString('de-DE')}`, head: `${gp.toLocaleString('de-DE')} Punkte`, sub: rank === 0 ? `Rundenziel: +${rw} EP – damit wirst du Mitarbeiter und darfst ans Förderband.` : `Rundenziel: +${rw} Erfahrungspunkte` };
 }
 function showGoal(){
   const g = goalInfo(); if (!g || !g.head) return;
@@ -1803,7 +1807,7 @@ function loop(t){
   if (moodT > 0 && state !== 'intro') moodT -= dt;
   if (state === 'play') (stage === 4 ? update4(dt) : stage === 3 ? update3(dt) : stage === 2 ? update2(dt) : update(dt)); else tTotal += dt;
   if (state === 'play') checkPromo();
-  if (state === 'play' && !goalShown){ goalShown = true; if (rank < 2 || ECO.story === 1) showGoal(); }
+  if (state === 'play' && !goalShown){ goalShown = true; showGoal(); }
   if (state === 'promo') for (const p of parts){ p.vy += 420*dt; p.x += p.vx*dt; p.y += p.vy*dt; p.life -= dt*.45; }
   if (state === 'forklift') updateForklift(dt);
   if (state === 'intro' && introKind === 'move'){ const nx = W/2 + Math.sin(introT*2.2)*95; P.vx = (nx - P.x)/Math.max(dt, .001); P.x = nx; P.walk += dt*Math.abs(P.vx)/22; }
@@ -1915,9 +1919,9 @@ function renderChronBar(){
 function chronCheck(){
   // fertiges Kapitel feiern; gibt true zurück, wenn ein Fenster offen ist
   const c = CHAPTERS[ECO.chron]; if (!c || !chapDone(c)) return false;
-  ECO.chron++; taler += c.r; saveEco(); saveShop();
+  ECO.chron++; taler += c.r; saveEco(); saveShop(); addXP(c.r);
   $('cdNum').textContent = `Kapitel ${ECO.chron} geschafft`;
-  $('cdTitle').textContent = c.t; $('cdText').textContent = c.txt; $('cdReward').textContent = `+${c.r} 🪙`;
+  $('cdTitle').textContent = c.t; $('cdText').textContent = c.txt; $('cdReward').textContent = `+${c.r} 🪙 · +${c.r} EP`;
   const nx = CHAPTERS[ECO.chron]; $('cdNext').textContent = nx ? `Als Nächstes: ${nx.goal}` : 'Die Chronik ist vollendet. Prost, Braumeister!';
   $('career').hidden = true; $('chron').hidden = true; $('chronDone').hidden = false; $('cdOk').focus();
   try { sCash(); setTimeout(() => sCash(), 160); } catch(e) {}
@@ -1929,7 +1933,7 @@ function openChron(){
     const li = document.createElement('li'), done = i < ECO.chron, cur = i === ECO.chron;
     li.className = done ? 'done' : cur ? 'cur' : 'todo';
     if (done) li.textContent = `✓ ${c.t}`;
-    else if (cur){ const [h, n] = c.p(); li.innerHTML = ''; const b = document.createElement('b'); b.textContent = c.t; li.append(b, document.createElement('br'), `${c.goal}${n > 1 ? ` (${fmtF(Math.min(h, n))} / ${n})` : ''} · +${c.r} 🪙`); }
+    else if (cur){ const [h, n] = c.p(); li.innerHTML = ''; const b = document.createElement('b'); b.textContent = c.t; li.append(b, document.createElement('br'), `${c.goal}${n > 1 ? ` (${fmtF(Math.min(h, n))} / ${n})` : ''} · +${c.r} 🪙 · +${c.r} EP`); }
     else li.textContent = i === ECO.chron + 1 ? c.t : '· · ·';
     ol.append(li);
   });
@@ -1960,9 +1964,9 @@ function renderContest(){
 function submitBeer(n, lv){
   const k = ECO.keller[n]; if (!k || k.f < 1 - 1e-6) return;
   const prev = ECO.medals[n] || 0, prize = MEDAL[lv].prize - (prev ? MEDAL[prev].prize : 0);
-  k.f = Math.round((k.f - 1)*10000)/10000; syncFass(); ECO.medals[n] = lv; taler += prize; saveEco(); saveShop();
+  k.f = Math.round((k.f - 1)*10000)/10000; syncFass(); ECO.medals[n] = lv; taler += prize; saveEco(); saveShop(); addXP(prize);
   try { sCash(); } catch(e) {}
-  showToast(`${['', '🥉', '🥈', '🥇'][lv]} ${MEDAL[lv].n} für dein ${n}! +${prize} 🪙`);
+  showToast(`${['', '🥉', '🥈', '🥇'][lv]} ${MEDAL[lv].n} für dein ${n}! +${prize} 🪙 · +${prize} EP`);
   if (!chronCheck()) openChron();
 }
 /* ================= Ausschank im Braustüberl =================
@@ -2571,14 +2575,25 @@ function drawIntro2(g){
   }
 }
 /* Beförderungen: Maxis Laufbahn in der Brauerei (auf dem Gerät gespeichert) */
+// Laufbahn: Erfahrungspunkte (EP) aus Rundenzielen, Kapiteln der Chronik und Medaillen
 const RANKS = [
-  { t: 'Brauereilakai', pts: 0 },
-  { t: 'Mitarbeiter', pts: 1500 },
-  { t: 'Produktionsmitarbeiter', pts: 12000 },
-  { t: 'Vorarbeiter', pts: 25000 }
+  { t: 'Brauereilakai', xp: 0 },
+  { t: 'Mitarbeiter', xp: 100 },
+  { t: 'Produktionsmitarbeiter', xp: 600 },
+  { t: 'Vorarbeiter', xp: 1500 }
 ];
-let rank = 0, promoTarget = 2;
+let rank = 0, promoTarget = 2, xp = 0;
 try { rank = Math.max(0, Math.min(RANKS.length - 1, +localStorage.getItem('ftb-rank') || 0)); } catch(e) {}
+{ let s = null; try { s = localStorage.getItem('ftb-xp'); } catch(e) {} xp = s == null ? RANKS[rank].xp : Math.max(0, +s || 0); }
+function saveXP(){ try { localStorage.setItem('ftb-xp', xp); } catch(e) {} }
+function addXP(n){
+  // EP gutschreiben; im Spiel kommt die Beförderung mit Fanfare, sonst als Hinweis
+  xp += n; saveXP();
+  if (rank < RANKS.length - 1 && xp >= RANKS[rank + 1].xp){
+    rank++; saveRank();
+    if (state === 'play') promote(); else showToast(`⭐ Beförderung: Maxi ist jetzt ${RANKS[rank].t}!`);
+  }
+}
 chronInit();
 if (ECO.ownSud === undefined) ECO.ownSud = rank >= 2; // wer schon im Sudhaus war, behält es
 function saveRank(){ try { localStorage.setItem('ftb-rank', rank); } catch(e) {} }
@@ -2592,7 +2607,7 @@ function updateMenu(){
     if (i === rank) li.setAttribute('aria-current', 'step');
     li.title = r.t; dot.className = 'dot'; dot.textContent = i < rank ? '✓' : i + 1;
     nm.className = 'nm'; nm.textContent = short[i];
-    pt.className = 'pt'; pt.textContent = i === rank ? 'jetzt' : i < rank ? 'erreicht' : `ab ${r.pts.toLocaleString('de-DE')}`;
+    pt.className = 'pt'; pt.textContent = i === rank ? 'jetzt' : i < rank ? 'erreicht' : `ab ${r.xp} EP`;
     li.append(dot, nm, pt); return li;
   }));
   const set = (id, lv, name, needRank) => {
@@ -2604,8 +2619,9 @@ function updateMenu(){
   };
   const top = Math.max(best, best2, best3), nx = RANKS[rank + 1];
   $('rmBadge').textContent = ECO.master ? '★' : rank + 1; $('rmName').textContent = ECO.master ? 'Braumeister' : RANKS[rank].t;
-  $('rmFill').style.width = (nx ? Math.min(100, top / nx.pts * 100) : 100) + '%';
-  $('nextRank').textContent = rank < RANKS.length - 1 ? `Nächste Stufe: ${RANKS[rank + 1].t} ab ${RANKS[rank + 1].pts.toLocaleString('de-DE')} Punkten` : 'Maxi ist Brauer, die höchste Stufe. Prost!';
+  $('rmFill').style.width = (nx ? Math.max(0, Math.min(100, (xp - RANKS[rank].xp) / (nx.xp - RANKS[rank].xp) * 100)) : 100) + '%';
+  $('rankMini').title = `${xp} Erfahrungspunkte`;
+  $('nextRank').textContent = nx ? `${xp} EP · Nächste Stufe: ${nx.t} ab ${nx.xp} EP. EP gibt es für Rundenziele, Kapitel der Chronik und Medaillen.` : `${xp} EP · Maxi ist Vorarbeiter, die höchste Stufe. Prost!`;
 }
 /* ---------- Karte: Maxi geht über das Brauereigelände ---------- */
 const LOCS = {
@@ -2654,7 +2670,7 @@ function mapInfo(){
     go.textContent = taler >= KESSEL ? `Sudkessel kaufen (${KESSEL} 🪙)` : `Noch ${KESSEL - taler} 🪙 sparen`; go.style.visibility = 'visible'; go.disabled = taler < KESSEL; return;
   }
   if (locked(MAP.at)){
-    $('mapDesc').textContent = MAP.at === 'sud' ? '🔒 Das alte Sudhaus steht leer.' : `🔒 Ab ${RANKS[L.need].t}: ${RANKS[L.need].pts.toLocaleString('de-DE')} Punkte in einer Runde.`; go.style.visibility = 'hidden'; return;
+    $('mapDesc').textContent = MAP.at === 'sud' ? '🔒 Das alte Sudhaus steht leer.' : `🔒 Ab ${RANKS[L.need].t}: ${xp} / ${RANKS[L.need].xp} EP. EP gibt es für Rundenziele.`; go.style.visibility = 'hidden'; return;
   }
   const pre = usePre();
   const st = MAP.at === 'sud' && ECO.ownSud ? `Lager: ${pre ? ECO.malzP : ECO.malz} Malz, ${pre ? ECO.hopfenP : ECO.hopfen} Hopfen${pre ? ' (Premium)' : ''}. Reicht für ${availRecipes().map(r => `${r.n} ${sudCount(r)}×`).join(', ')}.` : '';
@@ -3182,21 +3198,25 @@ function renderMap(){
 }
 
 function checkPromo(){
-  if (state !== 'play' || stage === 4 || rank >= RANKS.length - 1) return;
-  if (score >= RANKS[rank + 1].pts) promote();
+  // Rundenziel erreicht: Erfahrungspunkte, das nächste Ziel dieses Spiels wird höher
+  if (state !== 'play' || goalHit || (stage === 2 && ECO.story === 1) || (stage === 3 && L3.trial)) return;
+  if (score < goalPts()) return;
+  const rw = goalXP(); goalHit = true; ECO.goals = ECO.goals || {}; ECO.goals[stage] = (ECO.goals[stage] || 0) + 1; saveEco();
+  floatText(W/2, H*.32, `Ziel geschafft! +${rw} EP`, C.gold); [659, 880].forEach((f, i) => setTimeout(() => beep(f, .12, 'triangle', .08), i*110));
+  addXP(rw); updateHud();
 }
 function promote(){
-  rank++; saveRank(); state = 'promo'; touchX = null; down2.clear(); setMood('proud', 99);
+  state = 'promo'; touchX = null; down2.clear(); setMood('proud', 99);
   const r = RANKS[rank];
   $('promoRank').textContent = r.t;
   $('promoText').textContent = rank === 1 ? 'Maxi hat sich bewährt und darf drinnen ans Förderband.'
     : rank === RANKS.length - 1 ? 'Maxi ist Vorarbeiter: der beste Lohn, den die Freetown Brewery zahlt.'
     : 'Maxi ist Produktionsmitarbeiter: mehr Lohn im Braustüberl und am Band.';
-  $('promoNext').textContent = rank < RANKS.length - 1 ? `Nächste Stufe: ${RANKS[rank + 1].t} ab ${RANKS[rank + 1].pts} Punkten` : '';
+  $('promoNext').textContent = rank < RANKS.length - 1 ? `Nächste Stufe: ${RANKS[rank + 1].t} ab ${RANKS[rank + 1].xp} EP` : '';
   promoTarget = stage === 2 ? 1 : 2;
-  $('promoStay').textContent = ['', 'Im Braustüberl weiterspielen', 'Am Förderband weiterspielen', 'Im Sudhaus weiterspielen'][stage];
+  $('promoStay').textContent = ['', 'Im Braustüberl weiterspielen', 'Am Förderband weiterspielen', 'Im Sudhaus weiterspielen', 'In der Schank weiterspielen'][stage];
   $('promoGo').textContent = promoTarget === 2 ? 'Ab ans Förderband' : 'Ins Braustüberl';
-  $('promoGo').hidden = promoTarget === stage;
+  $('promoGo').hidden = promoTarget === stage || stage >= 3;
   $('promoStay').hidden = ECO.story === 0 && stage === 1;
   $('promo').hidden = false;
   // Fanfare und Konfetti
