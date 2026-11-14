@@ -10,7 +10,7 @@ Handyspiel im Hochformat für die Freetown Brewery: Maximilian Weichl steht vor 
 
 ## Beförderungen
 
-Maxi beginnt als **Brauereilakai**. Erreicht eine Runde 1500 Punkte, wird er **Mitarbeiter** (Förderband frei, Angebot für den alten Sudkessel), bei 12 000 Punkten **Produktionsmitarbeiter**, bei 25 000 **Vorarbeiter**; jede Stufe erhöht den Lohn. Die Stufe merkt sich das Gerät (`localStorage`), Maxi trägt pro Beförderung einen goldenen Stern auf der Jacke. Braumeister wird er über sein eigenes Sudhaus (siehe Spielbogen).
+Maxi beginnt als **Brauereilakai**. Die Laufbahn hängt an Erfahrungspunkten (EP): Jede Runde hat ein Rundenziel in Punkten (Braustüberl 1500, Förderband 2000, Sudhaus 2500, Schank 1000; jedes Erreichen hebt das nächste Ziel dieses Spiels um ein Viertel des Grundwerts, bis zum 4-Fachen). Ein erreichtes Rundenziel bringt 50 EP (als Lakai 100), ein Kapitel der Chronik so viele EP wie Taler, eine Medaille so viele EP wie ihr Preisgeld. Ab 100 EP wird Maxi **Mitarbeiter** (Förderband frei, Angebot für den alten Sudkessel), ab 600 EP **Produktionsmitarbeiter**, ab 1500 EP **Vorarbeiter**; jede Stufe erhöht den Lohn. Gespeichert in `ftb-xp` und `ftb-rank`; alte Spielstände starten mit den EP ihrer Stufe.
 
 ## Förderband (Abfüllhalle)
 
@@ -19,6 +19,14 @@ In der Brauerei kommen Flaschen von der Verschließmaschine aufs Hauptband. Maxi
 ## Sudhaus
 
 Maxis eigenes Sudhaus, nach dem Kauf des alten Sudkessels. Jeder Sud ist eine Biersorte mit eigenem Rezept; anfangs nur Märzen, mit Läuterbottich Pils und Zwickl, mit Gärkeller Festbier und Dunkles. Über der Tafel steht im eigenen Sudhaus das Lager: Malz, Hopfen und Fässer (mit dem Zuwachs der Runde), darunter je Sorte, wie viele Sude der Bestand noch hergibt. Die Karte zeigt das auch beim Sudhaus. Die Tafel zeigt oben die Sorte mit der höchstmöglichen Qualität und den Sud, darunter alle Schritte mit dem aktuellen hervorgehoben und dann, was der Sudkessel im aktuellen Schritt braucht (Einmaischen: Wasser und Malz, Würzekochen: Hopfen, Anstellen: Hefe). Ab dem 2. Sud folgt nach dem Einmaischen die Maischrast: Finger auf dem Bildschirm halten heizt, loslassen kühlt; die Temperatur muss im grünen Bereich bleiben, bis die Rastzeit voll ist (zu heiß ist ein Fehler). Ein Tipp auf die Zutat unten (oder Taste 1–5) lässt Maxi sie in den Kessel werfen. Falsche oder zu viele Zutaten und abgelaufene Zeit zählen als Fehler, fünf Fehler beenden das Spiel. Jeder fertige Sud bringt einen Bonus, die Mengen steigen und die Zeit wird knapper. Ab dem 3. Sud kann der Kessel beim Würzekochen überkochen (schnell zweimal mit dem Finger im Kreis um den Kessel rühren), für Dunkles braucht es Karamellmalz. Eigener lokaler Rekord.
+
+## Chronik und Bierwettbewerb
+
+Im Kartenmenü zeigt die Chronik-Leiste das aktuelle Kapitel mit Ziel und Fortschritt; ein Tipp öffnet Maxis Chronik. 13 Kapitel führen vom Lakai bis zur eigenen Marke (Kisten füllen, Beförderung, Sudhaus kaufen, erstes Fass, 20 Gläser zapfen, Dichtung, erste Medaille, Pils, 50 perfekte Gläser, Silber, 3 Fass Festbier, Gold, Medaille in allen fünf Sorten). Jedes geschaffte Kapitel bringt Taler und ein kurzes Fenster mit dem nächsten Ziel. Bestehende Spielstände bekommen schon Erreichtes still angerechnet.
+
+Beim Bierwettbewerb (in der Chronik) reicht Maxi ein volles Fass einer Sorte ein; die Jury bewertet die Qualität im Keller: ★★★ Bronze (30 🪙), ★★★★ Silber (60 🪙), ab 4,6 Sternen Gold (120 🪙); eine bessere Medaille zahlt die Differenz. Die Medaillen hängen in der Schank an der Wand und an der Fassade des Braustüberls.
+
+Die Brauerei wächst sichtbar: Biergarten-Tische vor dem Braustüberl je Stammtisch-Ausbau, Läuterbottich und Gärkeller am Sudhaus auf der Karte und neben dem Kessel im Sudhaus, Thermometer am Kessel, „MAXIS KESSEL“ nach dem Kauf.
 
 ## Schank (Braustüberl, eigenes Bier)
 
