@@ -247,6 +247,31 @@ html,body{height:100%;margin:0;background:var(--night);color:var(--cream);overfl
 .maplinks{display:flex;justify-content:center;gap:4px;flex-wrap:wrap}
 .maplinks button{font:600 13px var(--f-ui);color:var(--cream);background:none;border:0;padding:4px 6px;text-decoration:underline;text-underline-offset:3px;cursor:pointer;opacity:.8}
 .ranknote:empty{display:none}
+.chronbar{display:flex;align-items:center;gap:10px;width:100%;text-align:left;border:0;border-radius:12px;padding:8px 10px;background:rgba(47,93,58,.12);color:var(--ink);cursor:pointer;font-family:var(--f-ui)}
+.chronbar .cb-book{font-size:24px}
+.chronbar .cb-txt{flex:1;display:grid;gap:2px;min-width:0}
+.chronbar b{font:400 17px var(--f-display);color:var(--hop)}
+.chronbar #chronGoal{font:600 13px var(--f-ui);opacity:.85}
+.chronbar .cb-bar{height:6px;border-radius:3px;background:rgba(0,0,0,.12);overflow:hidden}
+.chronbar #chronFill{display:block;height:100%;background:var(--gold);border-radius:3px;transition:width .4s}
+.chronbar.ready{box-shadow:0 0 0 2px var(--gold)}
+.chroncard{text-align:left;gap:8px}
+.chroncard h2,.chroncard h3{text-align:center}
+.chroncard h3{margin:6px 0 0;font:400 22px var(--f-display);color:var(--crate)}
+.chronlist{margin:0;padding:0 0 0 26px;display:grid;gap:4px;font:600 15px var(--f-ui)}
+.chronlist .done{color:var(--hop)}
+.chronlist .cur{background:rgba(230,184,74,.2);border-radius:8px;padding:4px 8px;margin-left:-8px}
+.chronlist .cur b{font:400 18px var(--f-display);color:var(--crate)}
+.chronlist .todo{opacity:.45}
+.medalwall{display:grid;grid-template-columns:repeat(5,1fr);gap:4px;text-align:center;font:700 12px var(--f-ui)}
+.medalwall .medal{display:grid;gap:2px;opacity:.5}
+.medalwall .medal i{font-style:normal;font-size:26px;line-height:1.1}
+.medalwall .medal.m1,.medalwall .medal.m2,.medalwall .medal.m3{opacity:1}
+.contest{list-style:none;margin:0;padding:0;display:grid;gap:6px}
+.contest li{display:flex;align-items:center;justify-content:space-between;gap:8px;font:700 15px var(--f-ui)}
+.contest .btn{font-size:15px;padding:8px 10px}
+.contest .btn:disabled{opacity:.45}
+.cdbook{font-size:48px;line-height:1}
 .promorank{font:400 27px/1.1 var(--f-display);color:var(--hop);overflow-wrap:anywhere;hyphens:auto}
 .promocard p{font-size:16px}
 /* Startbild: on praehortus studios (lat. prae hortus, „vor dem Garten“): Gartentor mit Keimling */
@@ -345,6 +370,7 @@ html,body{height:100%;margin:0;background:var(--night);color:var(--cream);overfl
       <p class="records" id="bestStart"></p>
     </div>
     <div class="ranknote" id="rankLine"></div>
+    <button type="button" class="chronbar" id="chronBtn"><span class="cb-book" aria-hidden="true">📖</span><span class="cb-txt"><b id="chronName"></b><span id="chronGoal"></span><span class="cb-bar" aria-hidden="true"><span id="chronFill"></span></span></span><span class="rm-more" aria-hidden="true">›</span></button>
   </div>
   <div class="startbox">
     <div class="label mapcard" id="mapCard" aria-live="polite">
@@ -398,6 +424,30 @@ html,body{height:100%;margin:0;background:var(--night);color:var(--cream);overfl
     <h2 id="tipTitle"></h2>
     <div class="tipbody" id="tipBody"></div>
     <button class="btn" id="tipOk" type="button">Verstanden</button>
+  </div>
+</div>
+
+<div class="overlay" id="chron" hidden>
+  <div class="label shopcard chroncard" role="dialog" aria-modal="true" aria-labelledby="chronTitle">
+    <h2 id="chronTitle">Maxis Chronik</h2>
+    <ol class="chronlist" id="chronList"></ol>
+    <h3>Bierwettbewerb</h3>
+    <div class="medalwall" id="medalWall" aria-label="Medaillen je Sorte"></div>
+    <p class="hsnote" id="contestNote"></p>
+    <ul class="contest" id="contestList"></ul>
+    <button class="btn" id="chronClose" type="button">Zurück</button>
+  </div>
+</div>
+
+<div class="overlay" id="chronDone" hidden>
+  <div class="label promocard" role="dialog" aria-modal="true" aria-labelledby="cdTitle">
+    <div class="brand" id="cdNum"></div>
+    <div class="cdbook" aria-hidden="true">📖</div>
+    <h2 id="cdTitle"></h2>
+    <p id="cdText"></p>
+    <div class="promorank" id="cdReward"></div>
+    <p class="hsnote" id="cdNext"></p>
+    <button class="btn" id="cdOk" type="button">Weiter</button>
   </div>
 </div>
 
@@ -530,7 +580,8 @@ function refundBrew(){
 function ecoBrew(perf){
   const c = L3.charged; L3.charged = null; if (!c || L3.trial || !ECO.ownSud) return 0;
   const pre = c.pre, add = 1 + .5*(U.kettle || 0), q = Math.min(qCap(), pre ? Math.min(5, 3.5 + perf*1.5) : Math.min(3.4, 2 + perf*1.4));
-  kegAdd(L3.beer ? L3.beer.n : 'Märzen', add, q); ECO.round.q = q; ECO.round.fass = (ECO.round.fass || 0) + add; updateEarn(); ECO.today.brewed++; ECO.round.brewed++; saveEco(); return q;
+  kegAdd(L3.beer ? L3.beer.n : 'Märzen', add, q); ECO.round.q = q;
+  { const bn = L3.beer ? L3.beer.n : 'Märzen'; ECO.stats.fass = Math.round((ECO.stats.fass + add)*100)/100; ECO.stats.byName[bn] = Math.round(((ECO.stats.byName[bn] || 0) + add)*100)/100; } ECO.round.fass = (ECO.round.fass || 0) + add; updateEarn(); ECO.today.brewed++; ECO.round.brewed++; saveEco(); return q;
 }
 function ecoFill(){
   // Förderband: Lohn je voller Kiste
@@ -546,7 +597,7 @@ function kegAdd(n, add, q){ const k = ECO.keller[n] || { f: 0, q }; k.q = mixQ(k
 const hasOwnBeer = () => !!ECO.ownSud && ECO.fass >= 1/50 - 1e-6;
 function ecoSell(){
   // Braustüberl, Flaschen fangen: Lohn je voller Kiste
-  const w = lohn1(); taler += w; ECO.round.earned += w; ECO.today.wage += w; saveShop(); saveEco(); updateEarn(); return w;
+  const w = lohn1(); taler += w; ECO.round.earned += w; ECO.today.wage += w; ECO.stats.crates++; saveShop(); saveEco(); updateEarn(); return w;
 }
 function endShift(){
   // einmal pro Runde: Ertrag sichern, Rohstoffpreise ändern sich
@@ -586,6 +637,7 @@ function buy(it){
   const have = U[it.k] || 0, price = it.p[have];
   if (price == null || taler < price) return;
   taler -= price; U[it.k] = have + 1; if (ECO.ownSud){ ECO.today.build = (ECO.today.build || 0) + price; saveEco(); } saveShop(); ladenSync(); updateEcoBar();
+  { const c = CHAPTERS[ECO.chron]; if (c && chapDone(c)) showToast(`📖 Kapitel „${c.t}“ geschafft – beim Verlassen gibt es die Belohnung`); }
   try { ac = ac || new (window.AudioContext || window.webkitAudioContext)(); ac.resume(); } catch(e) {}
   [660, 880, 1320].forEach((f, i) => setTimeout(() => beep(f, .1, 'triangle', .08), i*80));
 }
@@ -1805,6 +1857,106 @@ function togglePause(){
   if (state === 'play'){ state = 'pause'; $('paused').hidden = false; }
   else if (state === 'pause'){ state = 'play'; $('paused').hidden = true; }
 }
+/* ================= Maxis Chronik und Bierwettbewerb =================
+   Ein Kapitel nach dem anderen gibt Maxi ein Ziel; Medaillen gibt es für
+   eingereichte Fässer, je nach Qualität Bronze, Silber oder Gold. */
+const MEDAL = [null, { n: 'Bronze', q: 3, prize: 30, c: '#c27a3a' }, { n: 'Silber', q: 4, prize: 60, c: '#c9ced3' }, { n: 'Gold', q: 4.6, prize: 120, c: '#e6b84a' }];
+function drawMedal(x, y, lv, s = 1){
+  ctx.save(); ctx.translate(x, y); ctx.scale(s, s);
+  ctx.fillStyle = '#9a2a20'; ctx.beginPath(); ctx.moveTo(-7, -16); ctx.lineTo(-2, -2); ctx.lineTo(2, -2); ctx.lineTo(7, -16); ctx.fill(); ctx.fillStyle = '#2f5d3a'; ctx.fillRect(-2, -16, 4, 12);
+  ctx.fillStyle = MEDAL[lv].c; ctx.beginPath(); ctx.arc(0, 6, 10, 0, Math.PI*2); ctx.fill(); ctx.strokeStyle = 'rgba(0,0,0,.25)'; ctx.lineWidth = 1.5; ctx.stroke();
+  ctx.fillStyle = 'rgba(255,255,255,.55)'; ctx.beginPath(); ctx.arc(-3, 3, 3, 0, Math.PI*2); ctx.fill();
+  ctx.restore();
+}
+const medalCount = (lv = 1) => Object.values(ECO.medals).filter(v => v >= lv).length;
+const st = () => ECO.stats;
+const CHAPTERS = [
+  { t: 'Der Lakai', goal: 'Fülle 5 Kisten im Braustüberl', p: () => [st().crates, 5], r: 20, txt: 'Maxi fängt an, wo alle anfangen: beim Flaschensammeln.' },
+  { t: 'Beförderung', goal: 'Werde Mitarbeiter', p: () => [rank >= 1 ? 1 : 0, 1], r: 30, txt: 'Der Chef ist zufrieden. Maxi darf ans Förderband.' },
+  { t: 'Der alte Kessel', goal: 'Kauf das alte Sudhaus', p: () => [ECO.ownSud ? 1 : 0, 1], r: 50, txt: 'Verbeult, grün und undicht – aber Maxis eigener Kessel.' },
+  { t: 'Das erste Fass', goal: 'Brau 1 Fass Bier', p: () => [st().fass, 1], r: 40, txt: 'Das erste eigene Fass steht im Keller. Es riecht nach Malz und Stolz.' },
+  { t: 'Feierabendbier', goal: 'Zapf 20 Gläser', p: () => [st().glasses, 20], r: 40, txt: 'Die ersten Gäste trinken Maxis Bier – und bestellen nach.' },
+  { t: 'Dicht ist dicht', goal: 'Kauf die Dichtung im Laden', p: () => [U.seal ? 1 : 0, 1], r: 40, txt: 'Der Kessel tropft nicht mehr. Jetzt wird das Bier besser.' },
+  { t: 'Erste Medaille', goal: 'Gewinn eine Medaille beim Bierwettbewerb', p: () => [medalCount(), 1], r: 60, txt: 'Die Jury nickt. Die erste Medaille hängt im Braustüberl.' },
+  { t: 'Pils', goal: 'Brau ein Pils (Läuterbottich)', p: () => [st().byName.Pils ? 1 : 0, 1], r: 60, txt: 'Hell, herb, schaumig: Maxi kann jetzt auch Pils.' },
+  { t: 'Stammlokal', goal: 'Zapf 50 Gläser perfekt', p: () => [st().perfect, 50], r: 80, txt: 'Im Braustüberl hat Maxi jetzt seine Stammgäste.' },
+  { t: 'Silber', goal: 'Gewinn eine Silbermedaille', p: () => [medalCount(2), 1], r: 100, txt: 'Silber! In der Zeitung steht ein kleiner Artikel über Maxi.' },
+  { t: 'Bierfest', goal: 'Brau 3 Fass Festbier', p: () => [st().byName.Festbier || 0, 3], r: 120, txt: 'Das Festbier ist fertig. Das Bierfest kann kommen.' },
+  { t: 'Gold', goal: 'Gewinn eine Goldmedaille', p: () => [medalCount(3), 1], r: 150, txt: 'Gold für Maxis Bier. Der Braumeister schüttelt ihm die Hand.' },
+  { t: 'Maxis Bier', goal: 'Medaille in allen fünf Sorten', p: () => [medalCount(), 5], r: 300, txt: 'Fünf Sorten, fünf Medaillen: Maxi ist Braumeister mit eigener Marke.' }
+];
+const chapDone = c => { const [h, n] = c.p(); return h >= n; };
+function chronInit(){
+  if (!ECO.stats) ECO.stats = { crates: 0, fass: 0, glasses: 0, perfect: 0, byName: {} };
+  if (!ECO.medals) ECO.medals = {};
+  // bestehende Spielstände: schon Erreichtes zählt still, ohne Belohnung
+  if (ECO.chron == null){ ECO.chron = 0;
+    if (ECO.story >= 3 || rank >= 1) ECO.stats.crates = Math.max(ECO.stats.crates, 5);
+    for (const [n, k] of Object.entries(ECO.keller || {})){ ECO.stats.byName[n] = Math.max(ECO.stats.byName[n] || 0, k.f); ECO.stats.fass = Math.max(ECO.stats.fass, ECO.fass >= 1 ? 1 : 0); }
+    if (ECO.story >= 3 || rank >= 1) while (ECO.chron < CHAPTERS.length && chapDone(CHAPTERS[ECO.chron])) ECO.chron++; saveEco(); }
+}
+function renderChronBar(){
+  const c = CHAPTERS[ECO.chron], b = $('chronBtn');
+  if (!c){ $('chronName').textContent = 'Chronik vollendet'; $('chronGoal').textContent = `Maxi ist Braumeister · ${medalCount()} Medaillen`; $('chronFill').style.width = '100%'; return; }
+  const [h, n] = c.p();
+  $('chronName').textContent = `Kapitel ${ECO.chron + 1}: ${c.t}`;
+  $('chronGoal').textContent = `${c.goal}${n > 1 ? ` · ${fmtF(Math.min(h, n))} / ${n}` : ''}`;
+  $('chronFill').style.width = `${Math.min(100, h/n*100)}%`;
+  b.classList.toggle('ready', h >= n);
+}
+function chronCheck(){
+  // fertiges Kapitel feiern; gibt true zurück, wenn ein Fenster offen ist
+  const c = CHAPTERS[ECO.chron]; if (!c || !chapDone(c)) return false;
+  ECO.chron++; taler += c.r; saveEco(); saveShop();
+  $('cdNum').textContent = `Kapitel ${ECO.chron} geschafft`;
+  $('cdTitle').textContent = c.t; $('cdText').textContent = c.txt; $('cdReward').textContent = `+${c.r} 🪙`;
+  const nx = CHAPTERS[ECO.chron]; $('cdNext').textContent = nx ? `Als Nächstes: ${nx.goal}` : 'Die Chronik ist vollendet. Prost, Braumeister!';
+  $('career').hidden = true; $('chron').hidden = true; $('chronDone').hidden = false; $('cdOk').focus();
+  try { sCash(); setTimeout(() => sCash(), 160); } catch(e) {}
+  return true;
+}
+function openChron(){
+  const ol = $('chronList'); ol.replaceChildren();
+  CHAPTERS.forEach((c, i) => {
+    const li = document.createElement('li'), done = i < ECO.chron, cur = i === ECO.chron;
+    li.className = done ? 'done' : cur ? 'cur' : 'todo';
+    if (done) li.textContent = `✓ ${c.t}`;
+    else if (cur){ const [h, n] = c.p(); li.innerHTML = ''; const b = document.createElement('b'); b.textContent = c.t; li.append(b, document.createElement('br'), `${c.goal}${n > 1 ? ` (${fmtF(Math.min(h, n))} / ${n})` : ''} · +${c.r} 🪙`); }
+    else li.textContent = i === ECO.chron + 1 ? c.t : '· · ·';
+    ol.append(li);
+  });
+  renderContest();
+  $('career').hidden = true; $('chron').hidden = false; $('chronClose').focus();
+}
+function renderContest(){
+  // Medaillenwand: je Sorte die beste Medaille, darunter was gerade einreichbar ist
+  const wall = $('medalWall'); wall.replaceChildren();
+  for (const r of RECIPES){
+    const lv = ECO.medals[r.n] || 0, d = document.createElement('div'); d.className = 'medal' + (lv ? ' m' + lv : '');
+    const i = document.createElement('i'); i.textContent = lv ? ['', '🥉', '🥈', '🥇'][lv] : '○'; d.append(i, r.n); wall.append(d);
+  }
+  const ul = $('contestList'); ul.replaceChildren();
+  const cand = Object.entries(ECO.keller || {}).filter(([, k]) => k.f >= 1 - 1e-6);
+  if (!ECO.ownSud){ $('contestNote').textContent = 'Mit eigenem Sudhaus kannst du hier Fässer einreichen.'; return; }
+  $('contestNote').textContent = cand.length ? 'Reich ein volles Fass ein. Die Jury bewertet die Qualität: ★★★ Bronze, ★★★★ Silber, fast ★★★★★ Gold.' : 'Du brauchst ein volles Fass einer Sorte im Keller.';
+  for (const [n, k] of cand){
+    const lv = k.q >= MEDAL[3].q ? 3 : k.q >= MEDAL[2].q ? 2 : k.q >= MEDAL[1].q ? 1 : 0, have = ECO.medals[n] || 0;
+    const li = document.createElement('li'), s = document.createElement('span'), bt = document.createElement('button');
+    s.textContent = `${n} ${stars(k.q)}`; bt.type = 'button'; bt.className = 'btn';
+    if (!lv){ bt.textContent = 'zu schwach'; bt.disabled = true; }
+    else if (lv <= have){ bt.textContent = `${MEDAL[have].n} schon da`; bt.disabled = true; }
+    else { bt.textContent = `Einreichen → ${MEDAL[lv].n}`; bt.onclick = () => submitBeer(n, lv); }
+    li.append(s, bt); ul.append(li);
+  }
+}
+function submitBeer(n, lv){
+  const k = ECO.keller[n]; if (!k || k.f < 1 - 1e-6) return;
+  const prev = ECO.medals[n] || 0, prize = MEDAL[lv].prize - (prev ? MEDAL[prev].prize : 0);
+  k.f = Math.round((k.f - 1)*10000)/10000; syncFass(); ECO.medals[n] = lv; taler += prize; saveEco(); saveShop();
+  try { sCash(); } catch(e) {}
+  showToast(`${['', '🥉', '🥈', '🥇'][lv]} ${MEDAL[lv].n} für dein ${n}! +${prize} 🪙`);
+  if (!chronCheck()) openChron();
+}
 /* ================= Ausschank im Braustüberl =================
    Gäste an der Theke wünschen sich eine Sorte aus Maxis Keller. Finger auf den
    Zapfhahn halten füllt das Glas, am Eichstrich loslassen; jede Sorte schäumt
@@ -1902,7 +2054,7 @@ function pourDone(i){
 function serve4(f){
   const gu = f.gu, T = GTYPE[gu.ty || 'normal'], price = Math.max(1, Math.round(glassPrice(f.n)*(T.pay || 1))) + (f.perfect ? 1 + (U.tables || 0) + (T.tip || 0) : 0), pts = (f.perfect ? 60 : 30)*mult*(T.pay > 1 ? 2 : 1);
   taler += price; ECO.round.earned += price; ECO.round.beer = (ECO.round.beer || 0) + price; ECO.today.sales += price;
-  score += pts; L4.served++; saveShop(); saveEco(); updateHud(); sCash();
+  score += pts; L4.served++; ECO.stats.glasses++; if (f.perfect) ECO.stats.perfect++; saveShop(); saveEco(); updateHud(); sCash();
   if (f.perfect){ streak++; if (mult < MULT_MAX && streak % 3 === 0){ mult++; setMultUI('pop'); floatText(W/2, geo4().cy - 190, `×${mult}`, C.gold); } }
   gu.st = 'happy'; gu.t = 0;
   floatText(f.x1, f.y1 - 120, `+${price} 🪙`, C.gold);
@@ -1997,6 +2149,9 @@ function render4(){
   ctx.fillStyle = '#5a321f'; ctx.fillRect(XL, g.cy - 70, XR - XL, 70); ctx.fillStyle = 'rgba(0,0,0,.15)'; for (let x = Math.floor(XL/40)*40; x < XR; x += 40) ctx.fillRect(x, g.cy - 70, 2, 70);
   for (const wx of [W*.12, W*.88]){ ctx.fillStyle = '#3a2418'; rr(wx - 30, g.top + 10, 60, 74, 4); ctx.fill(); ctx.fillStyle = '#d9a66a'; ctx.fillRect(wx - 25, g.top + 15, 23, 31); ctx.fillRect(wx + 2, g.top + 15, 23, 31); ctx.fillRect(wx - 25, g.top + 50, 23, 29); ctx.fillRect(wx + 2, g.top + 50, 23, 29); }
   ctx.fillStyle = 'rgba(255,214,120,.08)'; ctx.beginPath(); ctx.moveTo(W/2, g.top - 10); ctx.lineTo(W/2 - 150, g.cy); ctx.lineTo(W/2 + 150, g.cy); ctx.fill();
+  { const ms = RECIPES.filter(r => ECO.medals[r.n]); if (ms.length){ const mw = ms.length*30 + 16, my = g.top + 26;
+      ctx.fillStyle = '#4a2a1a'; rr(W/2 - mw/2, my - 22, mw, 50, 6); ctx.fill(); ctx.strokeStyle = '#9b6438'; ctx.lineWidth = 3; ctx.stroke();
+      ms.forEach((r, i) => drawMedal(W/2 - mw/2 + 23 + i*30, my, ECO.medals[r.n], .95)); } }
   L4.guests.slice().sort((a, b) => a.slot - b.slot).forEach(gu => drawPatron(g.slots[gu.slot], g.cy, gu));
   // Theke
   ctx.fillStyle = '#9b6438'; ctx.fillRect(XL, g.cy - 4, XR - XL, 12); ctx.fillStyle = '#6b4325'; ctx.fillRect(XL, g.cy + 8, XR - XL, 22);
@@ -2416,6 +2571,7 @@ const RANKS = [
 ];
 let rank = 0, promoTarget = 2;
 try { rank = Math.max(0, Math.min(RANKS.length - 1, +localStorage.getItem('ftb-rank') || 0)); } catch(e) {}
+chronInit();
 if (ECO.ownSud === undefined) ECO.ownSud = rank >= 2; // wer schon im Sudhaus war, behält es
 function saveRank(){ try { localStorage.setItem('ftb-rank', rank); } catch(e) {} }
 function updateMenu(){
@@ -2819,6 +2975,11 @@ function drawLoc(k, p){
     for (let i=0;i<8;i++){ ctx.fillStyle = i%2 ? '#f3e6c4' : '#2f5d3a'; ctx.beginPath(); ctx.moveTo(-50 + i*12.5, -30); ctx.lineTo(-37.5 + i*12.5, -30); ctx.lineTo(-37.5 + i*12.5, -23); ctx.arc(-43.75 + i*12.5, -23, 6.25, 0, Math.PI); ctx.fill(); }
     ctx.fillStyle = '#2a1a12'; rr(-9, -22, 18, 22, 3); ctx.fill(); ctx.fillStyle = 'rgba(255,200,90,.35)'; ctx.fillRect(-7, -20, 14, 18);
     win(-40, -18, 14, 11, true); win(26, -18, 14, 11, true);
+    // Biergarten: ein Tisch mit Schirm je Stammtisch-Ausbau
+    for (let t = 0; t < Math.min(3, U.tables || 0); t++){ const tx = -78 - t*22, ty = 14 - (t % 2)*8;
+      ctx.fillStyle = '#7a5a3a'; ctx.fillRect(tx - 7, ty - 3, 14, 3); ctx.fillRect(tx - 6, ty, 2, 5); ctx.fillRect(tx + 4, ty, 2, 5); ctx.fillStyle = '#5a3a24'; ctx.fillRect(tx - .7, ty - 18, 1.4, 15);
+      ctx.fillStyle = t % 2 ? '#2f5d3a' : '#9a2a20'; ctx.beginPath(); ctx.moveTo(tx - 12, ty - 14); ctx.quadraticCurveTo(tx, ty - 26, tx + 12, ty - 14); ctx.fill(); }
+    if (medalCount()){ drawMedal(18, -36, Math.max(...Object.values(ECO.medals)), .6); }
     // Laternen
     for (const lx of [-54, 54]){ ctx.fillStyle = '#2a2a2a'; ctx.fillRect(lx - 1, -40, 2, 10); ctx.fillStyle = `rgba(255,214,120,${.8 + Math.sin(tTotal*7 + lx)*.15})`; ctx.beginPath(); ctx.arc(lx, -28, 3.5, 0, Math.PI*2); ctx.fill(); }
   } else if (k === 'halle'){
@@ -2863,6 +3024,8 @@ function drawLoc(k, p){
     for (let t=0;t<Math.min(2, U.kettle || 0);t++){ const tx = 58 + t*18;
       const tg = ctx.createLinearGradient(tx - 8, 0, tx + 8, 0); tg.addColorStop(0, '#8a4c20'); tg.addColorStop(.4, '#e0a060'); tg.addColorStop(1, '#7a4420');
       ctx.fillStyle = tg; rr(tx - 8, -30, 16, 30, 3); ctx.fill(); ctx.beginPath(); ctx.arc(tx, -30, 8, Math.PI, 0); ctx.fill(); ctx.fillStyle = '#5a3a24'; ctx.fillRect(tx - 9, -2, 18, 3); }
+    if (U.lauter){ ctx.fillStyle = '#9a6a3c'; ctx.beginPath(); ctx.moveTo(-34, 4); ctx.lineTo(-14, 4); ctx.lineTo(-16, 16); ctx.lineTo(-32, 16); ctx.closePath(); ctx.fill(); ctx.fillStyle = '#3a3a40'; ctx.fillRect(-34.5, 6, 21, 2); ctx.fillRect(-33, 12, 18, 2); }
+    if (U.cellar){ ctx.fillStyle = '#8a8478'; rr(4, 2, 30, 16, 3); ctx.fill(); ctx.fillStyle = '#3a2a1e'; ctx.beginPath(); ctx.moveTo(12, 18); ctx.lineTo(12, 10); ctx.arc(19, 10, 7, Math.PI, 0); ctx.lineTo(26, 18); ctx.fill(); ctx.fillStyle = 'rgba(0,0,0,.15)'; for (let i = 0; i < 3; i++) ctx.fillRect(4, 5 + i*5, 30, 1); }
     // Malzsilos
     for (const sx of [-66, -56]){ ctx.fillStyle = '#b8bec4'; rr(sx - 5, -58, 10, 58, 4); ctx.fill(); ctx.fillStyle = 'rgba(255,255,255,.35)'; ctx.fillRect(sx - 3, -54, 2, 50); ctx.fillStyle = '#8b9196'; ctx.beginPath(); ctx.ellipse(sx, -58, 5, 2, 0, 0, Math.PI*2); ctx.fill(); }
   } else if (k === 'laden'){
@@ -3168,7 +3331,7 @@ function showRecords(){
 }
 function toTitle(){
   stage = 1; P.noCrate = false; P.slim = false; state = 'menu';
-  ['over','paused','hud','board','legalBox','promo','toast','ladenUi','career','goalBanner'].forEach(id => $(id).hidden = true); $('intro').hidden = true;
+  ['over','paused','hud','board','legalBox','promo','toast','ladenUi','career','goalBanner','chron','chronDone'].forEach(id => $(id).hidden = true); $('intro').hidden = true;
   $('start').hidden = false; updateMenu(); showRecords();
 }
 /* ================= Level 3: Im Sudhaus =================
@@ -3511,6 +3674,16 @@ function drawKettle(g){
     ctx.fillStyle = 'rgba(0,0,0,.22)'; for (const [dx, dy] of [[34, 22], [-22, -42], [-56, 40]]){ ctx.beginPath(); ctx.ellipse(kx + dx, ky + dy, 8, 5, .4, 0, Math.PI*2); ctx.fill(); }
     ctx.fillStyle = 'rgba(140,70,30,.55)'; ctx.fillRect(kx - r - 3, ky + 46, 22, 4); ctx.fillRect(kx + r - 30, ky - 18, 26, 4);
   }
+  if (ECO.ownSud && !L3.trial){
+    if (U.thermo){ ctx.fillStyle = '#e8e2d4'; ctx.beginPath(); ctx.arc(kx + 48, ky - 4, 11, 0, Math.PI*2); ctx.fill(); ctx.strokeStyle = '#3a3a40'; ctx.lineWidth = 2.5; ctx.stroke();
+      ctx.strokeStyle = '#c23a2a'; ctx.lineWidth = 2; ctx.beginPath(); ctx.moveTo(kx + 48, ky - 4); ctx.lineTo(kx + 48 + Math.cos(-2.2 + Math.sin(tTotal)*.2)*8, ky - 4 + Math.sin(-2.2 + Math.sin(tTotal)*.2)*8); ctx.stroke(); }
+    if (U.lauter){ const lx = kx - r - 44, ly = ky + 82; ctx.fillStyle = '#9a6a3c'; ctx.beginPath(); ctx.moveTo(lx - 28, ly - 46); ctx.lineTo(lx + 28, ly - 46); ctx.lineTo(lx + 24, ly); ctx.lineTo(lx - 24, ly); ctx.closePath(); ctx.fill();
+      ctx.strokeStyle = '#6b4325'; ctx.lineWidth = 1.5; for (let i = -18; i <= 18; i += 9){ ctx.beginPath(); ctx.moveTo(lx + i, ly - 46); ctx.lineTo(lx + i*.88, ly); ctx.stroke(); }
+      ctx.fillStyle = '#3a3a40'; ctx.fillRect(lx - 29, ly - 40, 58, 4); ctx.fillRect(lx - 26, ly - 12, 52, 4); ctx.fillStyle = '#d8b25a'; ctx.beginPath(); ctx.ellipse(lx, ly - 46, 28, 6, 0, 0, Math.PI*2); ctx.fill(); }
+    if (U.cellar){ const tx = kx + r + 44, ty = ky + 82, tg = ctx.createLinearGradient(tx - 20, 0, tx + 20, 0); tg.addColorStop(0, '#8d949b'); tg.addColorStop(.45, '#e4e8ec'); tg.addColorStop(1, '#7a8188');
+      ctx.fillStyle = tg; rr(tx - 20, ty - 96, 40, 70, 6); ctx.fill(); ctx.beginPath(); ctx.moveTo(tx - 20, ty - 28); ctx.lineTo(tx + 20, ty - 28); ctx.lineTo(tx + 4, ty - 12); ctx.lineTo(tx - 4, ty - 12); ctx.fill();
+      ctx.strokeStyle = '#6b7178'; ctx.lineWidth = 3; ctx.beginPath(); ctx.moveTo(tx - 16, ty - 28); ctx.lineTo(tx - 20, ty); ctx.moveTo(tx + 16, ty - 28); ctx.lineTo(tx + 20, ty); ctx.stroke(); }
+  }
   // Schauglas mit Würze
   ctx.fillStyle = '#3a2416'; ctx.beginPath(); ctx.arc(kx, ky + 16, 25, 0, Math.PI*2); ctx.fill();
   ctx.save(); ctx.beginPath(); ctx.arc(kx, ky + 16, 20, 0, Math.PI*2); ctx.clip();
@@ -3520,7 +3693,7 @@ function drawKettle(g){
   ctx.fillStyle = 'rgba(255,255,255,.35)'; for (let k=0;k<4;k++){ ctx.beginPath(); ctx.arc(kx - 10 + k*7, lv + 8 + ((tTotal*20 + k*9) % 20), 1.6, 0, Math.PI*2); ctx.fill(); }
   ctx.restore();
   ctx.fillStyle = old ? 'rgba(255,255,255,.1)' : 'rgba(255,255,255,.3)'; ctx.fillRect(kx - r*.52, ky - 40, 6, 80);
-  ctx.fillStyle = C.cream; ctx.font = '12px "Alfa Slab One", Georgia, serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillText(old ? 'ALTER KESSEL' : 'SUDKESSEL', kx, ky - 34);
+  ctx.fillStyle = C.cream; ctx.font = '12px "Alfa Slab One", Georgia, serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillText(old ? 'ALTER KESSEL' : ECO.ownSud && !L3.trial ? 'MAXIS KESSEL' : 'SUDKESSEL', kx, ky - 34);
   if (leak){
     // undichter Kessel: es tropft aus der Naht, unten eine Pfütze
     ctx.fillStyle = 'rgba(200,150,60,.45)'; ctx.beginPath(); ctx.ellipse(kx + 40, ky + 92, 26, 5, 0, 0, Math.PI*2); ctx.fill();
@@ -3868,6 +4041,8 @@ function openCareer(){
   if (rank >= 1 && !ECO.ownSud && !ECO.offerSeen && ECO.story >= 3){ ECO.offerSeen = true; saveEco(); ecoIntro(); return; }
   if (ECO.ownSud && !ECO.master && ['seal', 'thermo', 'copper', 'lauter', 'cellar'].every(k => U[k])){ ECO.master = true; saveEco(); masterIntro(); return; }
   $('ecoBar').hidden = false;
+  if (chronCheck()) return;
+  renderChronBar();
   $('career').hidden = false; mapInfo(); $('rankMini').focus?.({ preventScroll: true });
 }
 $('startBtn').onclick = () => {
@@ -3879,6 +4054,9 @@ $('startBtn').onclick = () => {
 };
 $('rankMini').onclick = () => { const m = $('rankMore'), open = m.hidden; m.hidden = !open; $('rankMini').setAttribute('aria-expanded', open ? 'true' : 'false'); };
 $('tipOk').onclick = () => { $('tip').hidden = true; const f = tipNext; tipNext = null; if (f) f(); else openCareer(); };
+ $('chronBtn').onclick = openChron;
+$('chronClose').onclick = () => { $('chron').hidden = true; openCareer(); };
+$('cdOk').onclick = () => { $('chronDone').hidden = true; openCareer(); };
 $('careerBack').onclick = () => { $('career').hidden = true; $('start').hidden = false; $('startBtn').focus({ preventScroll: true }); };
 $('mapGo').onclick = () => enterLoc(MAP.at);
 $('mapGo2').onclick = () => start();
