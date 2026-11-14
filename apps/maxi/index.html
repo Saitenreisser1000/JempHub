@@ -139,6 +139,9 @@ html,body{height:100%;margin:0;background:var(--night);color:var(--cream);overfl
 .ladenbuy span{grid-column:1;font:600 15px var(--f-ui);opacity:.8}
 .ladenbuy .btn{grid-column:2;grid-row:1 / span 2;font-size:20px;padding:12px 14px;min-width:110px}
 .ladenbuy .btn:disabled{opacity:.45}
+.ladenbuy small{grid-column:1 / -1;font:500 14px/1.3 var(--f-ui);opacity:.85;margin-top:4px}
+.ladenbuy small:empty{display:none}
+.ladenbuy span:empty{display:none}
 .taler{font:700 18px var(--f-ui);margin:0 0 10px}
 .shoplist{list-style:none;margin:0 0 12px;padding:0;display:grid;gap:8px;text-align:left}
 .shoplist li{display:grid;grid-template-columns:1fr auto;gap:2px 10px;align-items:center;padding:8px 10px;border-radius:8px;background:rgba(47,93,58,.1)}
@@ -214,6 +217,11 @@ html,body{height:100%;margin:0;background:var(--night);color:var(--cream);overfl
 .mapcard{gap:4px;padding:10px 14px;text-align:center}
 .mapname{font:400 19px var(--f-display);color:var(--crate)}
 .mapdesc{font:600 14px/1.25 var(--f-ui);color:var(--ink);height:2.5em;overflow:hidden;opacity:.85}
+.mapdesc.stock{display:flex;flex-wrap:wrap;justify-content:center;align-items:center;gap:0 12px;opacity:1;height:3.6em;font-size:15px}
+.mapdesc .ibreak{flex-basis:100%;height:0}
+.itile{display:inline-flex;align-items:center;gap:4px;white-space:nowrap}
+.itile img{width:22px;height:22px}
+.mapdesc .itile.none{opacity:.45}
 #career{overflow:hidden;overscroll-behavior:none}
 .mapcard .btn{margin-top:4px;padding:9px;font-size:20px}
 .mapprice{display:flex;justify-content:center;align-items:center;gap:8px;font:700 15px var(--f-ui);color:var(--ink)}
@@ -415,7 +423,7 @@ html,body{height:100%;margin:0;background:var(--night);color:var(--cream);overfl
 
 <div class="ladenui" id="ladenUi" hidden>
   <div class="ladentop" id="ladenTop"><button class="btn" id="ladenOut" type="button">‹ Raus</button><span class="ladentaler" id="ladenTaler"></span></div>
-  <div class="ladenbuy" id="ladenBuy" role="group" aria-live="polite" hidden><b id="buyName"></b><span id="buyFx"></span><button class="btn" id="buyBtn" type="button"></button></div>
+  <div class="ladenbuy" id="ladenBuy" role="group" aria-live="polite" hidden><b id="buyName"></b><span id="buyFx"></span><button class="btn" id="buyBtn" type="button"></button><small id="buyInfo"></small></div>
 </div>
 
 <div class="overlay" id="tip" hidden>
@@ -494,27 +502,27 @@ html,body{height:100%;margin:0;background:var(--night);color:var(--cream);overfl
 
 <script>
 (() => {
-const cv = document.getElementById('c'), ctx = cv.getContext('2d');
+const cv = document.getElementById('c'); let ctx = cv.getContext('2d');
 const $ = id => document.getElementById(id);
 const W = 400; let H = 700, S = 1, dpr = 1, groundY = 620, OX = 0, XL = 0, XR = 400;
 const CAP = 20; let MAXMISS = 5;
 /* Shop: Brauereitaler (1 je 100 Punkte) gegen dauerhafte Verbesserungen, auf dem Gerät gespeichert */
 // Ausbauten: je Gebäude zwei, jeweils drei Stufen; Laden = allgemeine Verbesserungen
 const SHOP = [
-  { k: 'life',   b: 'laden', n: 'Ersatzbier',          d: 'Ein Fehler mehr erlaubt, überall', p: [40, 100, 200] },
-  { k: 'mult',   b: 'laden', n: 'Eingespielt',         d: 'Start mit höherem Multiplikator; nach einem Fehler fällt er nur bis dorthin', p: [60, 150, 300] },
-  { k: 'catch',  b: 'bar',   n: 'Breite Kiste',        d: 'Braustüberl: Flaschen landen leichter in der Kiste', p: [30, 80, 160] },
-  { k: 'tables', b: 'bar',   n: 'Stammgäste',          d: '+2 🪙 Lohn je voller Kiste im Braustüberl', p: [80, 180, 320] },
+  { k: 'life',   b: 'laden', n: 'Ersatzbier',          d: 'Ein Fehler mehr erlaubt, in allen Spielen', p: [40, 100, 200] },
+  { k: 'mult',   b: 'laden', n: 'Eingespielt',         d: 'Jede Runde startet mit höherem Punkte-Multiplikator, nach einem Fehler fällt er nur bis dorthin', p: [60, 150, 300] },
+  { k: 'catch',  b: 'bar',   n: 'Breite Kiste',        d: 'Breitere Kiste: Im Braustüberl landen die Flaschen leichter darin', p: [30, 80, 160] },
+  { k: 'tables', b: 'bar',   n: 'Stammgäste',          d: 'Ein Tisch mehr im Biergarten: +2 🪙 je Kiste im Braustüberl und mehr Trinkgeld in der Schank', p: [80, 180, 320] },
   { k: 'belt',   b: 'halle', n: 'Ruhiges Band',        d: 'Das Förderband läuft 10 % langsamer', p: [50, 120, 240] },
   { k: 'filler', b: 'halle', n: 'Akkordprämie',        d: '+2 🪙 Lohn je voller Kiste am Band', p: [90, 200, 360] },
   // Maxis eigenes Sudhaus: reparieren, optimieren, erweitern
   { k: 'seal',   b: 'sud',   n: 'Kessel abdichten',    d: 'Der alte Kessel leckt nicht mehr: Bier bis ★★★', p: [120] },
-  { k: 'thermo', b: 'sud',   n: 'Neues Thermometer',   d: 'Rast leichter zu treffen, Bier bis ★★★★', p: [220] },
+  { k: 'thermo', b: 'sud',   n: 'Neues Thermometer',   d: 'Die Rast-Temperatur ist leichter zu treffen, Bier bis ★★★★', p: [220] },
   { k: 'copper', b: 'sud',   n: 'Kupfer aufpolieren',  d: 'Glänzender Kupferkessel: Bier bis ★★★★★', p: [380] },
-  { k: 'lauter', b: 'sud',   n: 'Läuterbottich',       d: 'Neue Sorten: Pils und Zwickl', p: [180] },
-  { k: 'cellar', b: 'sud',   n: 'Gärkeller',           d: 'Neue Sorten: Festbier und Dunkles', p: [300] },
-  { k: 'kettle', b: 'sud',   n: 'Größerer Sudkessel',  d: '+½ Fass je Sud', p: [250, 450] },
-  { k: 'time',   b: 'sud',   n: 'Routinierter Brauer', d: '15 % mehr Zeit pro Brauschritt', p: [50, 120, 240] }
+  { k: 'lauter', b: 'sud',   n: 'Läuterbottich',       d: 'Damit braust du zwei neue Sorten: Pils und Zwickl', p: [180] },
+  { k: 'cellar', b: 'sud',   n: 'Gärkeller',           d: 'Damit braust du zwei neue Sorten: Festbier und Dunkles', p: [300] },
+  { k: 'kettle', b: 'sud',   n: 'Größerer Sudkessel',  d: 'Mehr Platz im Kessel: Jeder Sud ergibt ½ Fass mehr', p: [250, 450] },
+  { k: 'time',   b: 'sud',   n: 'Routinierter Brauer', d: 'Im Sudhaus hast du 15 % mehr Zeit für jeden Brauschritt', p: [50, 120, 240] }
 ];
 let taler = 0, U = { life: 0, mult: 0, catch: 0, belt: 0, time: 0, tables: 0, filler: 0, kettle: 0, seal: 0, thermo: 0, copper: 0, lauter: 0, cellar: 0 }, baseMult = 1, roundPaid = false, shopBld = 'laden';
 function bldLevel(b){ return SHOP.filter(it => it.b === b).reduce((a, it) => a + (U[it.k] || 0), 0); }
@@ -623,7 +631,7 @@ function shiftText(r){
 function updateEcoBar(){
   $('ecoStock').textContent = !ECO.ownSud && rank >= 1 ? `🪙 ${taler} / ${KESSEL}` : `🪙 ${taler}`;
   $('ecoBar').title = !ECO.ownSud && rank >= 1 ? `Sparziel Sudkessel: ${Math.min(taler, KESSEL)} von ${KESSEL} Talern` : 'Brauereitaler';
-  $('ecoDay').textContent = `🛢 ${fmtF(ECO.fass)} Fass ${stars(ECO.fassQ ?? 2)} im Keller`;
+  $('ecoDay').replaceChildren(iconTile('fass', `${fmtF(ECO.fass)} Fass ${stars(ECO.fassQ ?? 2)} im Keller`, '', 'Fass im Keller'));
   $('ecoMeta').hidden = !ECO.ownSud;
 }
 const STORE = [
@@ -2651,7 +2659,13 @@ function mapInfo(){
   const pre = usePre();
   const st = MAP.at === 'sud' && ECO.ownSud ? `Lager: ${pre ? ECO.malzP : ECO.malz} Malz, ${pre ? ECO.hopfenP : ECO.hopfen} Hopfen${pre ? ' (Premium)' : ''}. Reicht für ${availRecipes().map(r => `${r.n} ${sudCount(r)}×`).join(', ')}.` : '';
   const ds = typeof L.desc === 'function' ? L.desc() : L.desc;
-  $('mapDesc').textContent = L.shop ? ds : st ? st : ds;
+  $('mapDesc').textContent = L.shop ? ds : st ? st : ds; $('mapDesc').classList.remove('stock');
+  if (st){
+    const md = $('mapDesc'); md.replaceChildren(); md.classList.add('stock');
+    md.append(iconTile(pre ? 'malzP' : 'malz', String(pre ? ECO.malzP : ECO.malz), '', pre ? 'Edelmalz' : 'Malz'), iconTile(pre ? 'hopfenP' : 'hopfen', String(pre ? ECO.hopfenP : ECO.hopfen), '', pre ? 'Aromahopfen' : 'Hopfen'), iconTile('fass', fmtF(ECO.fass), '', 'Fass im Keller'));
+    const br = document.createElement('span'); br.className = 'ibreak'; md.append(br);
+    for (const r of availRecipes()){ const t = iconTile('glas', `${r.n} ${sudCount(r)}×`, r.col, r.n); if (!sudCount(r)) t.classList.add('none'); md.append(t); }
+  }
   go.textContent = L.shop ? 'Laden betreten' : 'Spielen'; go.style.visibility = 'visible';
   if (MAP.at === 'bar' && hasOwnBeer()){ go.textContent = 'Zapfen'; $('mapGo2').hidden = false; }
   const sm = stockMsg(MAP.at);
@@ -2698,6 +2712,7 @@ function ladenSwitch(){
   const p = ladenPass(); LADEN.x = p.x; LADEN.y = p.y; LADEN.at = null; LADEN.dest = null; LADEN.pts = []; ladenSync(); beep(520, .08, 'triangle', .07);
 }
 // Waren: ein Wort als Name, ein kurzes Zeichen als Wirkung
+const ING_INFO = { malz: 'Grundzutat: Jeder Sud braucht Malz.', hopfen: 'Gibt dem Bier Bittere und Aroma. Jeder Sud braucht Hopfen.', malzP: 'Premium-Malz: Damit wird Bier besser als ★★★.', hopfenP: 'Premium-Hopfen: Damit wird Bier besser als ★★★.' };
 const WARES = [
   { id: 'malz', w: 'Malz', ing: 1 }, { id: 'hopfen', w: 'Hopfen', ing: 1 }, { id: 'malzP', w: 'Edelmalz', ing: 1, pre: 1 }, { id: 'hopfenP', w: 'Aromahopfen', ing: 1, pre: 1 },
   { id: 'seal', w: 'Dichtung', fx: 'bis ★★★' }, { id: 'thermo', w: 'Thermometer', fx: 'bis ★★★★' }, { id: 'copper', w: 'Politur', fx: 'bis ★★★★★' }, { id: 'kettle', w: 'Kessel', fx: '+½ Fass' },
@@ -2705,6 +2720,22 @@ const WARES = [
   { id: 'catch', w: 'Großkiste', fx: 'Braustüberl' }, { id: 'tables', w: 'Stammtisch', fx: '+2 🪙 je Kiste' }, { id: 'belt', w: 'Bandbremse', fx: 'Band −10 %' }, { id: 'filler', w: 'Prämie', fx: '+2 🪙 je Kiste' },
   { id: 'life', w: 'Ersatzbier', fx: '+1 🍺' }, { id: 'mult', w: 'Training', fx: 'Start ×+1' }
 ];
+const ICONS = {};
+function iconURL(id, col){
+  const key = id + (col || ''); if (ICONS[key]) return ICONS[key];
+  const c = document.createElement('canvas'); c.width = c.height = 64; const keep = ctx; ctx = c.getContext('2d');
+  try {
+    ctx.translate(32, 58);
+    if (id === 'fass'){ ctx.fillStyle = '#8a5a2c'; rr(-18, -50, 36, 48, 12); ctx.fill(); ctx.fillStyle = '#4a3a2a'; ctx.fillRect(-18, -40, 36, 5); ctx.fillRect(-18, -16, 36, 5); ctx.fillStyle = 'rgba(255,255,255,.18)'; ctx.fillRect(-10, -46, 4, 40); }
+    else if (id === 'glas'){ ctx.fillStyle = col; rr(-13, -44, 26, 42, 4); ctx.fill(); ctx.fillStyle = '#fbf3df'; rr(-15, -52, 30, 12, 6); ctx.fill(); ctx.strokeStyle = col; ctx.lineWidth = 5; ctx.beginPath(); ctx.arc(15, -24, 9, -1.3, 1.3); ctx.stroke(); }
+    else drawWare(id, 1.3);
+  } catch(e) {}
+  ctx = keep; return ICONS[key] = c.toDataURL();
+}
+function iconTile(id, txt, col, title){
+  const s = document.createElement('span'), im = document.createElement('img'); s.className = 'itile'; im.src = iconURL(id, col); im.alt = title || ''; im.width = im.height = 22;
+  s.append(im, txt); if (title) s.title = title; return s;
+}
 function ladenWares(){
   return WARES.filter(w => {
     if (!!w.ing !== (LADEN.room === 'zut')) return false;
@@ -2763,8 +2794,9 @@ function ladenSync(){
   if (!w){ box.hidden = true; return; }
   const s = wareState(w); box.hidden = false;
   $('buyName').textContent = w.w;
-  $('buyFx').textContent = w.ing ? `${fmtF(s.have)} im Lager` : (s.n > 1 ? '●'.repeat(s.have) + '○'.repeat(s.n - s.have) + '  ' : '') + w.fx;
+  $('buyFx').textContent = w.ing ? `${fmtF(s.have)} im Lager` : s.n > 1 ? `Stufe ${'●'.repeat(s.have) + '○'.repeat(s.n - s.have)}` : '';
   const bt = $('buyBtn'); bt.textContent = s.label; bt.disabled = !s.can;
+  $('buyInfo').textContent = w.ing ? ING_INFO[w.id] : w.it.d;
 }
 function ladenBuy(){
   const w = LADEN.items.find(v => v.id === LADEN.at); if (!w) return;
