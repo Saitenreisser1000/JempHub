@@ -34,7 +34,7 @@ Hat Maxi Bier im Keller, bietet die Karte beim Braustüberl „Zapfen“ (und �
 
 ## Pixel-Grafik (Braustüberl)
 
-Das Braustüberl-Spiel nutzt Pixel-Grafiken aus `px/` (Hintergrund, Maxi mit Kiste in Stand-, Lauf- und Stimmungsbildern, Gäste von hinten und gehend, Flaschen, Bananenschale, Lebkuchenherz, Storch, Kleckse, Gabelstapler). Sie werden mit 2,5-facher Pixelgröße und ohne Weichzeichnung gezeichnet; die Flaschenhälse in Maxis Kiste zeigen den Füllstand. Fehlt ein Bild, bleibt die gezeichnete Grafik. Die anderen Spiele sind noch gezeichnet. `build.mjs` kopiert `px/` mit.
+Das Braustüberl-Spiel nutzt Pixel-Grafiken aus `px/` (Hintergrund, Maxi mit Kiste in Stand-, Lauf- und Stimmungsbildern, Gäste von hinten und gehend, Flaschen, Bananenschale, Lebkuchenherz, Storch, Kleckse, Gabelstapler). Alle Bilder werden mit derselben Pixelgröße (2,5 Spielpunkte je Bildpixel), ohne Weichzeichnung und auf ganze Gerätepixel gerundet gezeichnet (iPhone: 7 Gerätepixel je Bildpixel, Hintergrund 8); die Leinwand nutzt die volle Pixeldichte bis 3 und `image-rendering: pixelated`. Gedreht wird nur in Vierteldrehungen. Der Hintergrund liegt in seiner echten Auflösung von 152 × 321 Bildpunkten vor, die Figuren mit reduzierter Farbpalette; die Flaschenhälse in Maxis Kiste zeigen den Füllstand. Fehlt ein Bild, bleibt die gezeichnete Grafik. Die anderen Spiele sind noch gezeichnet. `build.mjs` kopiert `px/` mit.
 
 ## Technik
 
