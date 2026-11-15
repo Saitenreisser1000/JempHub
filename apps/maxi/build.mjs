@@ -9,4 +9,6 @@ await Promise.all(files.map(file => access(resolve(root, file))));
 await rm(resolve(root, 'dist'), { recursive: true, force: true });
 await mkdir(resolve(root, 'dist'), { recursive: true });
 for (const file of files) await cp(resolve(root, file), resolve(root, 'dist', file));
+// Pixel-Grafiken fürs Braustüberl
+await cp(resolve(root, 'px'), resolve(root, 'dist', 'px'), { recursive: true });
 console.log('maxi: dist/ gebaut');
