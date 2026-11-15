@@ -59,7 +59,8 @@ html,body{height:100%;margin:0;background:var(--night);color:var(--cream);overfl
 .earn{display:inline-block;margin-top:4px;font:700 14px/1 var(--f-ui);padding:4px 8px;border-radius:7px;background:rgba(20,26,36,.6);color:var(--gold);font-variant-numeric:tabular-nums}
 .earn:empty{display:none}
 .mult{font:400 17px/1 var(--f-display);min-width:38px;text-align:center;padding:5px 7px 4px;border-radius:7px;background:rgba(20,26,36,.6);color:rgba(243,230,196,.55);transition:background .2s,color .2s}
-.mult.on{background:var(--gold);color:var(--ink);text-shadow:none}
+.mult{background-image:linear-gradient(to right,rgba(230,184,74,.45) var(--p,0%),transparent var(--p,0%))}
+.mult.on{background-color:var(--gold);background-image:linear-gradient(to right,rgba(255,255,255,.45) var(--p,0%),transparent var(--p,0%));color:var(--ink);text-shadow:none}
 .mult.pop{animation:pop .45s ease-out}
 .mult.lost{animation:lost .5s ease-out}
 @keyframes pop{0%{transform:scale(1)}40%{transform:scale(1.45)}100%{transform:scale(1)}}
@@ -88,7 +89,7 @@ html,body{height:100%;margin:0;background:var(--night);color:var(--cream);overfl
 .hud:not(.s1) .fillrow{display:none}
 .scorerow{display:flex;align-items:center;gap:7px}
 .scorerow .mult{font-size:14px;min-width:0;padding:3px 6px 2px}
-.scorerow .mult:not(.on){display:none}
+.scorerow .mult{min-width:34px}
 .hud .lbl:empty{display:none}
 #lives{white-space:nowrap}
 .overlay{position:fixed;inset:0;display:grid;place-items:center;background:rgba(15,20,30,.62);
@@ -531,7 +532,7 @@ function saveShop(){ try { localStorage.setItem('ftb-taler', taler); localStorag
 function applyUpg(){
   goalShown = false; goalHit = false;
   // zu Beginn jeder Runde: gekaufte Verbesserungen wirken
-  MAXMISS = 5 + (U.life || 0); baseMult = 1 + (U.mult || 0); mult = baseMult; streak = 0; roundPaid = false; setMultUI(null);
+  MAXMISS = 5 + (U.life || 0); baseMult = 1 + (U.mult || 0); mult = baseMult; streak = 0; serieT = 0; roundPaid = false; setMultUI(null);
   if (typeof ECO !== 'undefined') ECO.round = ecoRound0();
 }
 function catchW(){ return 38 + 6*(U.catch || 0); }
@@ -1306,7 +1307,6 @@ function updateForklift(dt){
   } else if (FL.phase === 2){
     if (moveTo(zoneX() - FL.face*FORK, sp, dt)){
       crates++; stack++; const used = mult, pts = 100 * level() * used; score += pts; FL.carry = null;
-      streak = 0; mult = baseMult; setMultUI(null);
       if (missed > 0){ missed = 0; floatText(W/2, groundY - 260, 'Bruch zurückgesetzt', '#9fe0a8'); }
       floatText(zoneX(), groundY - 130, used > 1 ? `+${pts} (×${used})` : `+${pts}`, C.gold); sCash();
       { const w = ecoSell(); floatText(W/2, groundY - 310, `Lohn +${w} 🪙`, C.gold); }
@@ -1621,23 +1621,28 @@ function burst(x, y, foam){
   if (foam) for (let i=0;i<10;i++) parts.push({ x, y, vx:(Math.random()-.5)*140, vy:-Math.random()*160, life:.6, c:'#fff6dc', s:3+Math.random()*3, round:true });
 }
 function floatText(x, y, t, c){ texts.push({ x, y, t, c, life: 1 }); }
-/* Punktemultiplikator: alle 5 Flaschen ohne Bruch +1 (bis ×5), eingelöst bei der Abgabe */
-const MULT_STEP = 5, MULT_MAX = 5;
-let streak = 0, mult = 1;
+/* Punktemultiplikator in allen Spielen: je länger ohne verlorenes Leben, desto höher –
+   alle 15 Sekunden ohne Fehler +1 (bis ×8); ein Fehler setzt ihn auf den Startwert zurück */
+const SERIE_STEP = 15, MULT_MAX = 8;
+let streak = 0, mult = 1, serieT = 0;
 function setMultUI(cls){
   const el = $('mult'); el.textContent = '×' + mult; el.classList.toggle('on', mult > 1);
+  el.style.setProperty('--p', (mult >= MULT_MAX ? 100 : Math.round(serieT / SERIE_STEP * 100)) + '%');
   if (cls){ el.classList.remove('pop', 'lost'); void el.offsetWidth; el.classList.add(cls); }
 }
-function cleanCatch(){
-  streak++;
-  if (mult < MULT_MAX && streak % MULT_STEP === 0){
-    mult++; setMultUI('pop'); setMood('proud', .8);
-    floatText(P.x, groundY - 165, `×${mult}`, C.gold); beep(880 + mult*90, .12, 'triangle', .12);
-  }
+function multTick(dt){
+  // läuft nur während gespielt wird; Pause, Erklärungen und Menüs zählen nicht
+  if (mult >= MULT_MAX){ serieT = 0; return; }
+  serieT += dt;
+  if (serieT >= SERIE_STEP){
+    serieT -= SERIE_STEP; mult++; setMultUI('pop'); setMood('proud', .8);
+    floatText(W/2, H*.3, `Ohne Fehler: ×${mult}`, C.gold); beep(880 + mult*70, .12, 'triangle', .12);
+  } else if (Math.floor((serieT - dt)*4) !== Math.floor(serieT*4)) setMultUI(null);
 }
+function cleanCatch(){ streak++; }
 function breakStreak(){
-  const had = mult > baseMult; streak = 0; mult = baseMult; setMultUI(had ? 'lost' : null);
-  if (had) floatText(W/2, groundY - 240, 'Multiplikator weg', '#ff8a6a');
+  const had = mult > baseMult; streak = 0; serieT = 0; mult = baseMult; setMultUI(had ? 'lost' : null);
+  if (had) floatText(W/2, H*.3 + 30, 'Multiplikator weg', '#ff8a6a');
 }
 const STORY_SORT = 20; // so viele Flaschen am Band, dann ruft der Braumeister
 let goalShown = false, goalHit = false;
@@ -1805,7 +1810,7 @@ function render(){
 function loop(t){
   const dt = Math.min(.033, (t - last)/1000 || 0); last = t;
   if (moodT > 0 && state !== 'intro') moodT -= dt;
-  if (state === 'play') (stage === 4 ? update4(dt) : stage === 3 ? update3(dt) : stage === 2 ? update2(dt) : update(dt)); else tTotal += dt;
+  if (state === 'play'){ (stage === 4 ? update4(dt) : stage === 3 ? update3(dt) : stage === 2 ? update2(dt) : update(dt)); if (state === 'play') multTick(dt); } else tTotal += dt;
   if (state === 'play') checkPromo();
   if (state === 'play' && !goalShown){ goalShown = true; showGoal(); }
   if (state === 'promo') for (const p of parts){ p.vy += 420*dt; p.x += p.vx*dt; p.y += p.vy*dt; p.life -= dt*.45; }
@@ -2067,7 +2072,7 @@ function serve4(f){
   const gu = f.gu, T = GTYPE[gu.ty || 'normal'], price = Math.max(1, Math.round(glassPrice(f.n)*(T.pay || 1))) + (f.perfect ? 1 + (U.tables || 0) + (T.tip || 0) : 0), pts = (f.perfect ? 60 : 30)*mult*(T.pay > 1 ? 2 : 1);
   taler += price; ECO.round.earned += price; ECO.round.beer = (ECO.round.beer || 0) + price; ECO.today.sales += price;
   score += pts; L4.served++; ECO.stats.glasses++; if (f.perfect) ECO.stats.perfect++; saveShop(); saveEco(); updateHud(); sCash();
-  if (f.perfect){ streak++; if (mult < MULT_MAX && streak % 3 === 0){ mult++; setMultUI('pop'); floatText(W/2, geo4().cy - 190, `×${mult}`, C.gold); } }
+  if (f.perfect) streak++;
   gu.st = 'happy'; gu.t = 0;
   floatText(f.x1, f.y1 - 120, `+${price} 🪙`, C.gold);
 }
