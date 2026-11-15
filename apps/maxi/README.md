@@ -32,6 +32,10 @@ Die Brauerei wächst sichtbar: Biergarten-Tische vor dem Braustüberl je Stammti
 
 Hat Maxi Bier im Keller, bietet die Karte beim Braustüberl „Zapfen“ (und „Flaschen“ für das Lohnspiel). An der Theke wünschen sich bis zu drei Gäste je eine Sorte aus dem Keller, mit Geduldsbalken. Finger auf den Zapfhahn der Sorte halten füllt das Glas; am gestrichelten Eichstrich loslassen. Jede Sorte schäumt nach dem Loslassen etwas nach (Pils am meisten). Übergelaufen, zu wenig, eine Sorte, die keiner will, oder ein Gast, der geht, sind Fehler. Ab dem dritten Gast kommen Sonderwünsche: der Stammgast mit Trachtenhut will viel Schaum (Strich knapp unter dem Rand, +2 Trinkgeld), der Tourist im Blumenhemd nur einen Pfiff (halbes Glas, halber Preis), der Bürgermeister mit Zylinder zahlt doppelt, verlangt aber genaues Zapfen und ist ungeduldiger, der Bauarbeiter hat Durst und kaum Geduld (+1). Der Eichstrich am Glas zeigt jeweils den Wunsch des nächsten Gasts für diese Sorte. Jedes Glas verbraucht 1/50 Fass der Sorte; der Preis je Glas richtet sich nach Sorte und Qualität, perfekt gezapft gibt es Trinkgeld (+1, +1 je Stammtisch). Drei perfekte Gläser in Folge erhöhen den Multiplikator. Ist der Keller leer, endet die Runde. Eigener Rekord (`ftb-best4`).
 
+## Pixel-Grafik (Braustüberl)
+
+Das Braustüberl-Spiel nutzt Pixel-Grafiken aus `px/` (Hintergrund, Maxi mit Kiste in Stand-, Lauf- und Stimmungsbildern, Gäste von hinten und gehend, Flaschen, Bananenschale, Lebkuchenherz, Storch, Kleckse, Gabelstapler). Sie werden mit 2,5-facher Pixelgröße und ohne Weichzeichnung gezeichnet; die Flaschenhälse in Maxis Kiste zeigen den Füllstand. Fehlt ein Bild, bleibt die gezeichnete Grafik. Die anderen Spiele sind noch gezeichnet. `build.mjs` kopiert `px/` mit.
+
 ## Technik
 
 - Eine einzige Datei `index.html`: Canvas-Spiel in reinem JavaScript, alle Figuren werden im Code gezeichnet, Töne entstehen live mit der Web Audio API.

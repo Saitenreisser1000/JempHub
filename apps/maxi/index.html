@@ -744,6 +744,8 @@ function takeHeart(h){
   for (let k=0;k<10;k++) parts.push({ x: h.x, y: h.y, vx:(Math.random()-.5)*200, vy:-Math.random()*220, life:.7, c:'#ff6b8a', s:2.5+Math.random()*2.5, round:true });
 }
 function drawHeart(x, y, sc, a){
+  if (pxOn()){ const im = PXA['herz']; ctx.save(); ctx.globalAlpha = a; ctx.imageSmoothingEnabled = false; ctx.translate(x, y); ctx.scale(sc, sc);
+    ctx.fillStyle = 'rgba(255,107,138,.22)'; ctx.beginPath(); ctx.arc(0, 0, 24, 0, Math.PI*2); ctx.fill(); ctx.drawImage(im, -19, -19, 38, 38); ctx.restore(); return; }
   ctx.save(); ctx.globalAlpha = a; ctx.translate(x, y); ctx.scale(sc, sc);
   ctx.fillStyle = 'rgba(255,107,138,.25)'; ctx.beginPath(); ctx.arc(0, 0, 20, 0, Math.PI*2); ctx.fill();
   ctx.beginPath(); ctx.moveTo(0, 12);
@@ -785,6 +787,67 @@ function sWhoosh(){ beep(300 + Math.random()*120, .22, 'sine', .05, 2.2); }
 function sCash(){ beep(660,.12,'square',.08); setTimeout(()=>beep(880,.12,'square',.08),110); setTimeout(()=>beep(1320,.22,'square',.08),220); }
 
 /* ---------- layout ---------- */
+/* ---------- Pixel-Grafik fürs Braustüberl: Bilder aus px/, sonst die gezeichnete Grafik ---------- */
+const PXN = ['bg-braustueberl','maxi-kiste-steht','maxi-kiste-laeuft','maxi-jubelt','maxi-erschrocken','maxi-angewidert','maxi-rutscht','flasche-freetown','flasche-rot','bananenschale','herz','kiste-flaschenhals','kiste-leer','gast-hinten','gast-geht','storch-nest','storch-fliegt','klecks','klecks-scheibe','gabelstapler'];
+const PXA = {}, PXC = {"maxi-kiste-steht.png":[[4,28,34,41]],"maxi-kiste-laeuft.png":[[15,27,33,38],[15,27,34,38],[17,27,34,38],[16,27,33,37]],"maxi-erschrocken.png":[[9,27,34,41]],"maxi-angewidert.png":[[11,27,35,41]]}, PXS = 2.5; let PIX = false, PXBG = { x: 0, k: 2.5 };
+(function loadPix(){
+  let n = 0, bad = false;
+  for (const k of PXN){ const im = new Image(); PXA[k] = im;
+    im.onload = () => { if (++n === PXN.length && !bad){ PIX = true; resize(); } };
+    im.onerror = () => { bad = true; };
+    im.src = `px/${k}.png`; }
+})();
+const pxOn = () => PIX && stage === 1 && state !== 'shop';
+function spr(k, fi, fn, x, y, sc, flip, rot){
+  // Bild k, Einzelbild fi von fn, unten mittig an (x, y)
+  const im = PXA[k], fw = im.width / fn, fh = im.height;
+  ctx.save(); ctx.imageSmoothingEnabled = false; ctx.translate(x, y); if (rot) ctx.rotate(rot); if (flip) ctx.scale(-1, 1);
+  ctx.drawImage(im, fi*fw, 0, fw, fh, -fw*sc/2, -fh*sc, fw*sc, fh*sc); ctx.restore();
+}
+function buildBgPix(b){
+  // Hintergrundbild: Handy füllend, die Hausmauer bleibt hinter den Gästen; breite Bildschirme bekommen unscharfe Ränder
+  const im = PXA['bg-braustueberl'], kw = (XR - XL)/160, kh = H/346;
+  let k = Math.max(kw, kh); if (kw > kh*1.35) k = kh;
+  const w = 160*k, x = W/2 - w/2; let y = Math.min(0, backY() - 15 - 243*k); if (346*k + y < H) y = H - 346*k;
+  PXBG = { x, y, k };
+  if (x > XL + 1){ b.save(); try { b.filter = 'blur(14px) brightness(.55)'; } catch(e) {} b.drawImage(im, XL - 30, -30, XR - XL + 60, H + 60); b.restore(); b.fillStyle = 'rgba(10,14,22,.35)'; b.fillRect(XL, 0, XR - XL, H); }
+  b.imageSmoothingEnabled = false; b.drawImage(im, x, y, w, 346*k);
+}
+function drawManPix(x, base){
+  const md = mood(), mv = Math.abs(P.vx) > 30;
+  if (P.vx < -30) P.face = -1; else if (P.vx > 30) P.face = 1;
+  let k = 'maxi-kiste-steht', fi = 0, fn = 1, flip = (P.face || 1) < 0;
+  if (md === 'dizzy') k = 'maxi-rutscht';
+  else if (moodT > 0 && moodK === 'proud') k = 'maxi-jubelt';
+  else if (md === 'shock' || md === 'worried') k = 'maxi-erschrocken';
+  else if (md === 'disgust' || md === 'angry' || md === 'sad') k = 'maxi-angewidert';
+  else if (mv){ k = 'maxi-kiste-laeuft'; fn = 4; fi = Math.floor(P.walk / (Math.PI/2)) % 4; }
+  ctx.fillStyle = 'rgba(0,0,0,.3)'; ctx.beginPath(); ctx.ellipse(x, base + 1, 34, 6, 0, 0, Math.PI*2); ctx.fill();
+  spr(k, fi, fn, x, base + 3, PXS, flip);
+  // Flaschenhälse oben aus der Kiste, je nach Füllstand
+  const cb = PXC[k + '.png'] && PXC[k + '.png'][fi];
+  if (cb && !P.noCrate){
+    const fw = PXA[k].width/fn, fh = PXA[k].height, l = (flip ? fw - 1 - cb[2] : cb[0]) - fw/2, r = (flip ? fw - 1 - cb[0] : cb[2]) - fw/2;
+    const top = base + 3 - (fh - cb[1])*PXS, x0 = x + (l + 1.5)*PXS, span = (r - l - 2)*PXS, neck = PXA['kiste-flaschenhals'];
+    ctx.save(); ctx.imageSmoothingEnabled = false;
+    for (let i = 0; i < Math.min(P.count, 20); i++){ const row = i < 10 ? 0 : 1, col = i % 10;
+      ctx.drawImage(neck, x0 + span*(col + .5)/10 - 3.5 + row*2, top - 12 + row*3, 7, 14); }
+    ctx.restore();
+    for (let kk = 0; kk < P.extra; kk++) drawBottle(x - 10 + kk*20, top - 12 - kk*3, Math.PI/2*(kk ? -.92 : .92), false);
+  }
+  if (P.trip > 0){ ctx.fillStyle = '#f5d33f'; ctx.font = '14px sans-serif'; ctx.textAlign = 'center';
+    for (let kk = 0; kk < 3; kk++){ const a = tTotal*6 + kk*2.1; ctx.fillText('★', x + Math.cos(a)*20, base - 132 + Math.sin(a)*5); } }
+}
+function drawVisitorPix(v){
+  const fy = backY() - 2, walking = v.state === 'in' || v.state === 'out', sc = 2;
+  if (v.look == null) v.look = Math.floor(Math.random()*6);
+  if (walking){ const dir = v.tx > v.x ? 1 : -1; spr('gast-geht', Math.floor(v.walk / (Math.PI/2)) % 4, 4, v.x, fy, sc, dir < 0); return; }
+  let p = 0; if (v.throwT > 0) p = 1 - v.throwT/THROW_WIND; else if (v.back > 0) p = v.back/.3;
+  const sway = Math.sin(tTotal*1.6 + v.phase)*1.2;
+  spr('gast-hinten', v.look, 6, v.x + sway, fy - p*4, sc, v.side < 0, v.side*p*.12);
+  if (v.throwT > 0 && v.pending){ ctx.save(); ctx.translate(v.x + v.side*20, fy - 92 - p*14); ctx.rotate(-v.side*.4); ctx.scale(.8, .8);
+    if (v.pending === 'nana') drawBanana(0, 4, 0, false); else drawBottle(0, 0, 0, v.pending === 'red'); ctx.restore(); }
+}
 let bg = document.createElement('canvas');
 function resize(){
   dpr = Math.min(devicePixelRatio || 1, 2);
@@ -801,6 +864,7 @@ addEventListener('resize', () => { cancelAnimationFrame(rzF); rzF = requestAnima
 function buildBg(){
   bg.width = cv.width; bg.height = cv.height;
   const b = bg.getContext('2d'); b.setTransform(dpr*S,0,0,dpr*S,dpr*OX,0);
+  if (PIX){ buildBgPix(b); return; }
   const gb = backY();
   const g = b.createLinearGradient(0,0,0,gb); g.addColorStop(0,C.skyTop); g.addColorStop(1,C.skyBot);
   b.fillStyle = g; b.fillRect(XL,0,XR-XL,gb);
@@ -935,6 +999,7 @@ function buildBg(){
 /* ---------- drawing ---------- */
 function rr(x,y,w,h,r){ ctx.beginPath(); ctx.roundRect ? ctx.roundRect(x,y,w,h,r) : ctx.rect(x,y,w,h); }
 function drawBottle(x, y, rot, red){
+  if (pxOn()){ const im = PXA[red ? 'flasche-rot' : 'flasche-freetown']; ctx.save(); ctx.imageSmoothingEnabled = false; ctx.translate(x, y); ctx.rotate(rot); ctx.drawImage(im, -9.6, -26, 19.2, 48); ctx.restore(); return; }
   const capC = red ? C.capR : C.capG, labC = red ? C.labelR : C.labelG;
   ctx.save(); ctx.translate(x,y); ctx.rotate(rot);
   // braune 0,5-l-Flasche mit langem Hals
@@ -994,6 +1059,7 @@ function drawCrate(cx, topY, count, w=70, h=35, sty){
   ctx.fillStyle = sty?.s || C.labelR; ctx.fillRect(cx - 4*k, py + ph - 3*k, 8*k, 1.6*k);
 }
 function drawBanana(x, y, rot, onGround){
+  if (pxOn()){ const im = PXA['bananenschale']; ctx.save(); ctx.imageSmoothingEnabled = false; ctx.translate(x, y); ctx.rotate(rot); if (onGround) ctx.scale(1, .8); ctx.drawImage(im, -18, -11, 36, 22.5); ctx.restore(); return; }
   // Bananenschale: in der Luft hängen die Lappen nach unten, am Boden liegen sie flach
   ctx.save(); ctx.translate(x, y); ctx.rotate(rot); ctx.lineJoin = 'round'; ctx.lineCap = 'round';
   const petal = (len, wid, a, flat, bend) => {
@@ -1092,6 +1158,7 @@ function drawBrows(m){
   }
 }
 function drawMan(x, base){
+  if (pxOn() && !P.slim){ drawManPix(x, base); return; }
   const moving = Math.min(1, Math.abs(P.vx)/200), sw = Math.sin(P.walk)*6*moving, bob = Math.abs(Math.sin(P.walk))*2*moving;
   ctx.save(); ctx.translate(x, base);
   const bk = P.slim ? .78 : 1; // Level 2: Maxi etwas schlanker
@@ -1147,9 +1214,9 @@ function drawMan(x, base){
   ctx.restore();
 }
 let zoneSignY = 0;
-function chimneyX(){ return W - 72; }
+function chimneyX(){ return PIX && stage === 1 ? PXBG.x + 129*PXBG.k : W - 72; }
 function backY(){ return groundY - Math.min(90, Math.max(50, (groundY - 520)*.5 + 50)); }
-function chimneyTop(){ return Math.max(175, backY() - 370); }
+function chimneyTop(){ return PIX && stage === 1 ? (PXBG.y || 0) + 40*PXBG.k : Math.max(175, backY() - 370); }
 function zoneX(){ return zone === 'left' ? 38 : W-38; }
 function drawZone(){
   const zx = zoneX(), full = P.count >= CAP, pulse = full ? (Math.sin(tTotal*8)+1)/2 : 0;
@@ -1322,6 +1389,12 @@ function updateForklift(dt){
 const FORK = 84, FLK = 1.4;
 function drawForklift(){
   if (!FL) return;
+  if (pxOn()){
+    if (FL.carry){ ctx.save(); ctx.translate(FL.fx + FORK*FL.face, groundY + (FL.bob || 0)); drawCrate(0, -66, FL.carry === 'full' ? CAP : 0); ctx.restore(); }
+    ctx.fillStyle = 'rgba(0,0,0,.3)'; ctx.beginPath(); ctx.ellipse(FL.fx - 8*FL.face, groundY + 2, 62, 7, 0, 0, Math.PI*2); ctx.fill();
+    spr('gabelstapler', Math.floor(tTotal*8) % 2, 2, FL.fx, groundY + 4 + (FL.bob || 0), 2.6, FL.face < 0);
+    return;
+  }
   ctx.save(); ctx.translate(FL.fx, groundY + (FL.bob || 0)); ctx.scale(FL.face, 1);
   // Gabeln in Originalgröße, damit sie genau auf Kistenhöhe sitzen
   ctx.fillStyle = '#2f3237'; ctx.fillRect(41, -100, 7, 72); ctx.fillRect(41, -31, FORK + 34 - 41, 5);
@@ -1450,6 +1523,7 @@ function splat(){
   floatText(P.x, groundY - 140, 'Igitt!', '#fff6dc'); shake = .25; beep(160, .3, 'sawtooth', .1, .5);
 }
 function drawPoop(x, y, ground){
+  if (pxOn()){ const im = PXA['klecks']; ctx.save(); ctx.imageSmoothingEnabled = false; ctx.translate(x, y); if (ground) ctx.scale(1.6, .6); ctx.drawImage(im, -7.5, -10, 15, 20); ctx.restore(); return; }
   ctx.save(); ctx.translate(x, y); ctx.scale(1.9, 1.9);
   if (ground){ ctx.fillStyle = '#f4f2ea'; ctx.beginPath(); ctx.ellipse(0, 1, 9, 3, 0, 0, Math.PI*2); ctx.fill(); ctx.fillStyle = '#9aa0a6'; ctx.beginPath(); ctx.ellipse(1, 0, 3, 1.5, 0, 0, Math.PI*2); ctx.fill(); }
   else { ctx.fillStyle = '#f4f2ea'; ctx.beginPath(); ctx.moveTo(0, -8); ctx.quadraticCurveTo(6, 2, 0, 6); ctx.quadraticCurveTo(-6, 2, 0, -8); ctx.fill();
@@ -1460,6 +1534,11 @@ function drawStork(){
   if (!storkOn && ST.mode === 'nest') return;
   const flying = ST.mode === 'fly' || ST.mode === 'flee';
   if (!flying && ST.x < XL) return;
+  if (pxOn()){
+    if (flying) spr('storch-fliegt', Math.floor(tTotal*(ST.mode === 'flee' ? 14 : 6)) % 2, 2, ST.x, ST.y + 24, 2, ST.face < 0);
+    else spr('storch-nest', 0, 1, chimneyX(), chimneyTop() + 14, 2, false);
+    return;
+  }
   const x = flying ? ST.x : chimneyX(), y = flying ? ST.y : chimneyTop() - 14;
   ctx.save(); ctx.translate(x, y); ctx.scale(flying ? ST.face : -1, 1);
   ctx.lineCap = 'round';
@@ -1494,6 +1573,9 @@ function drawStork(){
 function drawSplats(){
   if (blindT <= 0) return;
   const a = Math.min(1, blindT / 1.2);
+  if (pxOn()){ ctx.save(); ctx.globalAlpha = a; ctx.imageSmoothingEnabled = false; const im = PXA['klecks-scheibe'];
+    for (const sp of splats){ const s = 3 + sp.blobs[0].r/20; ctx.drawImage(im, sp.x - 32*s, sp.y - 24*s, 64*s, 48*s + (4 - blindT)*8); }
+    ctx.restore(); return; }
   ctx.save(); ctx.globalAlpha = a;
   for (const sp of splats){
     ctx.fillStyle = '#f2f0e6';
@@ -1586,6 +1668,7 @@ function updateVisitors(dt){
   }
 }
 function drawVisitor(v){
+  if (pxOn()){ drawVisitorPix(v); return; }
   const fy = backY() - 2;
   ctx.save(); ctx.translate(v.x, fy); ctx.scale(VS, VS);
   const walking = v.state === 'in' || v.state === 'out';
