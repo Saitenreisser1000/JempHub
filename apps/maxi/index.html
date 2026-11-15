@@ -517,9 +517,9 @@ const SHOP = [
   { k: 'belt',   b: 'halle', n: 'Ruhiges Band',        d: 'Das Förderband läuft 10 % langsamer', p: [50, 120, 240] },
   { k: 'filler', b: 'halle', n: 'Akkordprämie',        d: '+2 🪙 Lohn je voller Kiste am Band', p: [90, 200, 360] },
   // Maxis eigenes Sudhaus: reparieren, optimieren, erweitern
-  { k: 'seal',   b: 'sud',   n: 'Kessel abdichten',    d: 'Der alte Kessel leckt nicht mehr: Bier bis ★★★', p: [120] },
-  { k: 'thermo', b: 'sud',   n: 'Neues Thermometer',   d: 'Die Rast-Temperatur ist leichter zu treffen, Bier bis ★★★★', p: [220] },
-  { k: 'copper', b: 'sud',   n: 'Kupfer aufpolieren',  d: 'Glänzender Kupferkessel: Bier bis ★★★★★', p: [380] },
+  { k: 'seal',   b: 'sud',   n: 'Kessel abdichten',    d: 'Der alte Kessel leckt nicht mehr: Bier bis ★★★. Besseres Bier bringt mehr pro Glas (Märzen ★★ 2 🪙, ★★★ 3 🪙)', p: [120] },
+  { k: 'thermo', b: 'sud',   n: 'Neues Thermometer',   d: 'Die Rast-Temperatur ist leichter zu treffen, Bier bis ★★★★ (mit Premium-Zutaten). Märzen ★★★★: 4 🪙 pro Glas', p: [220] },
+  { k: 'copper', b: 'sud',   n: 'Kupfer aufpolieren',  d: 'Glänzender Kupferkessel: Bier bis ★★★★★ (mit Premium-Zutaten). Märzen ★★★★★: 5 🪙 pro Glas, doppelt so viel wie ★★★', p: [380] },
   { k: 'lauter', b: 'sud',   n: 'Läuterbottich',       d: 'Damit braust du zwei neue Sorten: Pils und Zwickl', p: [180] },
   { k: 'cellar', b: 'sud',   n: 'Gärkeller',           d: 'Damit braust du zwei neue Sorten: Festbier und Dunkles', p: [300] },
   { k: 'kettle', b: 'sud',   n: 'Größerer Sudkessel',  d: 'Mehr Platz im Kessel: Jeder Sud ergibt ½ Fass mehr', p: [250, 450] },
@@ -1983,7 +1983,11 @@ const GLAS = 50, L4_T = .86;
 const FOAM = { 'Märzen': .03, Pils: .075, Zwickl: .05, Festbier: .04, Dunkles: .035 };
 const recipeOf = n => RECIPES.find(r => r.n === n) || RECIPES[0];
 const kegLeft = n => ECO.keller && ECO.keller[n] ? ECO.keller[n].f : 0;
-function glassPrice(n){ const q = ECO.keller[n] ? ECO.keller[n].q : 2; return Math.max(2, Math.round(recipeOf(n).v/13*(.6 + .2*q))); }
+// Qualität bestimmt den Preis: ★★★ = Grundpreis, darunter weniger, darüber deutlich mehr
+const QF = [.5, .5, .7, 1, 1.4, 2];
+function qualFactor(q){ q = Math.max(1, Math.min(5, q || 2)); const i = Math.floor(q), t = q - i; return i >= 5 ? QF[5] : QF[i] + (QF[i + 1] - QF[i])*t; }
+const priceFor = (n, q) => Math.max(1, Math.round(recipeOf(n).v/10*qualFactor(q)));
+function glassPrice(n){ return priceFor(n, ECO.keller[n] ? ECO.keller[n].q : 2); }
 let best4 = 0;
 try { best4 = +localStorage.getItem('ftb-best4') || 0; } catch(e) {}
 function geo4(){
@@ -2195,7 +2199,8 @@ function render4(){
     const tgu = tp.st === 'pour' || tp.st === 'settle' ? tp.gu : tapGuest(tp), ly = g.gb - g.gh*(tgu ? gTgt(tgu) : L4_T); ctx.strokeStyle = tgu && tgu.ty !== 'normal' ? GTYPE[tgu.ty].col === '#2f5d3a' ? '#9fe0a8' : '#fff' : C.gold; ctx.lineWidth = 2; ctx.setLineDash([5, 4]); ctx.beginPath(); ctx.moveTo(x - g.gw/2 - 8, ly); ctx.lineTo(x + g.gw/2 + 2, ly); ctx.stroke(); ctx.setLineDash([]);
     // Fass und Preis
     ctx.font = '700 13px "Barlow Condensed", sans-serif'; ctx.fillStyle = 'rgba(243,230,196,.85)';
-    ctx.fillText(`🛢 ${fmtF(Math.round(left*GLAS))} Gl. · ${glassPrice(tp.n)} 🪙`, x, g.gb + 24);
+    ctx.font = '700 12px sans-serif'; ctx.fillStyle = C.gold; ctx.fillText(stars(ECO.keller[tp.n] ? ECO.keller[tp.n].q : 2).replace(/☆/g, ''), x, g.gb + 18);
+    ctx.font = '700 14px "Barlow Condensed", sans-serif'; ctx.fillStyle = C.cream; ctx.fillText(`${glassPrice(tp.n)} 🪙 · ${fmtF(Math.round(left*GLAS))} Gl.`, x, g.gb + 34);
   });
   for (const f of L4.fly){ const k = Math.min(1, f.t), e = k*k*(3 - 2*k); drawGlass(f.x0 + (f.x1 - f.x0)*e, f.y0 + (f.y1 - f.y0)*e - Math.sin(k*Math.PI)*40, g.gw*(1 - .35*e), g.gh*(1 - .35*e), f.lvl, recipeOf(f.n).col); }
   if (!seen.l4 && state === 'play' && L4.taps.length){
