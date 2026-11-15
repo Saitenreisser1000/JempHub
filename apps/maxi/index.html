@@ -519,8 +519,8 @@ const SHOP = [
   { k: 'seal',   b: 'sud',   n: 'Kessel abdichten',    d: 'Der alte Kessel leckt nicht mehr: Bier bis ★★★', p: [120] },
   { k: 'thermo', b: 'sud',   n: 'Neues Thermometer',   d: 'Die Rast-Temperatur ist leichter zu treffen, Bier bis ★★★★', p: [220] },
   { k: 'copper', b: 'sud',   n: 'Kupfer aufpolieren',  d: 'Glänzender Kupferkessel: Bier bis ★★★★★', p: [380] },
-  { k: 'lauter', b: 'sud',   n: 'Läuterbottich',       d: 'Damit braust du zwei neue Sorten: Pils und Zwickl', p: [180] },
-  { k: 'cellar', b: 'sud',   n: 'Gärkeller',           d: 'Damit braust du zwei neue Sorten: Festbier und Dunkles', p: [300] },
+  { k: 'lauter', b: 'sud',   n: 'Läuterbottich',       d: 'Damit braust du zwei neue Sorten: Pils und Zwickl. Jede weitere Sorte im Ausschank hebt alle Preise um 25 %', p: [180] },
+  { k: 'cellar', b: 'sud',   n: 'Gärkeller',           d: 'Damit braust du zwei neue Sorten: Festbier und Dunkles. Jede weitere Sorte im Ausschank hebt alle Preise um 25 %', p: [300] },
   { k: 'kettle', b: 'sud',   n: 'Größerer Sudkessel',  d: 'Mehr Platz im Kessel: Jeder Sud ergibt ½ Fass mehr', p: [250, 450] },
   { k: 'time',   b: 'sud',   n: 'Routinierter Brauer', d: 'Im Sudhaus hast du 15 % mehr Zeit für jeden Brauschritt', p: [50, 120, 240] }
 ];
@@ -1978,7 +1978,10 @@ const GLAS = 50, L4_T = .86;
 const FOAM = { 'Märzen': .03, Pils: .075, Zwickl: .05, Festbier: .04, Dunkles: .035 };
 const recipeOf = n => RECIPES.find(r => r.n === n) || RECIPES[0];
 const kegLeft = n => ECO.keller && ECO.keller[n] ? ECO.keller[n].f : 0;
-function glassPrice(n){ const q = ECO.keller[n] ? ECO.keller[n].q : 2; return Math.max(2, Math.round(recipeOf(n).v/13*(.6 + .2*q))); }
+// Sortenvielfalt: je mehr verschiedene Biere im Ausschank, desto mehr zahlen die Gäste (+25 % je weitere Sorte)
+function sortsOnTap(){ const has = n => kegLeft(n) >= 1/GLAS - 1e-6; return stage === 4 && L4.taps.length ? L4.taps.filter(tp => has(tp.n)).length : Object.keys(ECO.keller || {}).filter(has).length; }
+const varietyMul = (k = sortsOnTap()) => 1 + .25*Math.max(0, k - 1);
+function glassPrice(n){ const q = ECO.keller[n] ? ECO.keller[n].q : 2; return Math.max(2, Math.round(recipeOf(n).v/13*(.6 + .2*q)*varietyMul())); }
 let best4 = 0;
 try { best4 = +localStorage.getItem('ftb-best4') || 0; } catch(e) {}
 function geo4(){
@@ -1990,7 +1993,7 @@ function tapX(i, g){ return 12 + g.cw*(i + .5); }
 function reset4(){
   parts = []; texts = []; score = 0; crates = 0; missed = 0; shake = 0;
   applyUpg(); setMood('idle', 0);
-  const sorts = Object.keys(ECO.keller || {}).filter(n => kegLeft(n) >= 1/GLAS - 1e-6).sort((a, b) => kegLeft(b) - kegLeft(a)).slice(0, 4);
+  const sorts = Object.keys(ECO.keller || {}).filter(n => kegLeft(n) >= 1/GLAS - 1e-6).sort((a, b) => kegLeft(b) - kegLeft(a)).slice(0, 5);
   sorts.sort((a, b) => RECIPES.findIndex(r => r.n === a) - RECIPES.findIndex(r => r.n === b));
   L4.taps = sorts.map(n => ({ n, lvl: 0, st: 'empty', t: 0, extra: 0 }));
   L4.guests = []; L4.fly = []; L4.t = 0; L4.spawnT = .5; L4.served = 0; L4.pour = null; L4.hbT = 0; L4.count = 0;
@@ -2167,6 +2170,9 @@ function render4(){
   L4.guests.slice().sort((a, b) => a.slot - b.slot).forEach(gu => drawPatron(g.slots[gu.slot], g.cy, gu));
   // Theke
   ctx.fillStyle = '#9b6438'; ctx.fillRect(XL, g.cy - 4, XR - XL, 12); ctx.fillStyle = '#6b4325'; ctx.fillRect(XL, g.cy + 8, XR - XL, 22);
+  { const k = sortsOnTap(), m = varietyMul(k); ctx.font = '700 14px "Barlow Condensed", sans-serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+    ctx.fillStyle = k > 1 ? C.gold : 'rgba(243,230,196,.75)';
+    ctx.fillText(k > 1 ? `${k} Sorten im Ausschank · Preise ×${fmtF(m)}` : 'Nur 1 Sorte – mehr Sorten bringen höhere Preise', W/2, g.cy + 19); }
   // hinter der Schank
   const bg = ctx.createLinearGradient(0, g.cy + 30, 0, H); bg.addColorStop(0, '#3a2418'); bg.addColorStop(1, '#24160f'); ctx.fillStyle = bg; ctx.fillRect(XL, g.cy + 30, XR - XL, H - g.cy - 30);
   // Zapfanlage: Messingrohr, Hähne, Tropfblech
@@ -2190,7 +2196,8 @@ function render4(){
     const tgu = tp.st === 'pour' || tp.st === 'settle' ? tp.gu : tapGuest(tp), ly = g.gb - g.gh*(tgu ? gTgt(tgu) : L4_T); ctx.strokeStyle = tgu && tgu.ty !== 'normal' ? GTYPE[tgu.ty].col === '#2f5d3a' ? '#9fe0a8' : '#fff' : C.gold; ctx.lineWidth = 2; ctx.setLineDash([5, 4]); ctx.beginPath(); ctx.moveTo(x - g.gw/2 - 8, ly); ctx.lineTo(x + g.gw/2 + 2, ly); ctx.stroke(); ctx.setLineDash([]);
     // Fass und Preis
     ctx.font = '700 13px "Barlow Condensed", sans-serif'; ctx.fillStyle = 'rgba(243,230,196,.85)';
-    ctx.fillText(`🛢 ${fmtF(Math.round(left*GLAS))} Gl. · ${glassPrice(tp.n)} 🪙`, x, g.gb + 24);
+    ctx.font = '700 15px "Barlow Condensed", sans-serif'; ctx.fillStyle = C.gold; ctx.fillText(`${glassPrice(tp.n)} 🪙`, x, g.gb + 20);
+    ctx.font = '600 12px "Barlow Condensed", sans-serif'; ctx.fillStyle = 'rgba(243,230,196,.75)'; ctx.fillText(`${fmtF(Math.round(left*GLAS))} Gläser`, x, g.gb + 36);
   });
   for (const f of L4.fly){ const k = Math.min(1, f.t), e = k*k*(3 - 2*k); drawGlass(f.x0 + (f.x1 - f.x0)*e, f.y0 + (f.y1 - f.y0)*e - Math.sin(k*Math.PI)*40, g.gw*(1 - .35*e), g.gh*(1 - .35*e), f.lvl, recipeOf(f.n).col); }
   if (!seen.l4 && state === 'play' && L4.taps.length){
@@ -2628,7 +2635,7 @@ const LOCS = {
   plaza: { u: .5,  v: .55 },
   sud:   { u: .3,  v: .2,  c: [.36, .42], name: 'Maxis Sudhaus', sub: 'Sudhaus', lv: 3, need: 1, desc: () => `Jeder Sud ergibt ${fmtF(1 + .5*(U.kettle || 0))} Fass. Ausgeschenkt wird im Braustüberl.` },
   halle: { u: .74, v: .3,  c: [.68, .5],  name: 'Abfüllhalle', sub: 'Förderband', lv: 2, need: 1, desc: () => `Flaschen sortieren: ${lohn2()} 🪙 Lohn je voller Kiste.` },
-  bar:   { u: .25, v: .79, c: [.3, .6],   name: 'Braustüberl', sub: 'Braustüberl', lv: 1, need: 0, desc: () => hasOwnBeer() ? `Im Keller: ${Object.keys(ECO.keller).map(n => `${n} ${fmtF(ECO.keller[n].f)}`).join(', ')} Fass. Zapfen oder Flaschen fangen (${lohn1()} 🪙 Lohn je Kiste).` : `Flaschen fangen: ${lohn1()} 🪙 Lohn je voller Kiste.` },
+  bar:   { u: .25, v: .79, c: [.3, .6],   name: 'Braustüberl', sub: 'Braustüberl', lv: 1, need: 0, desc: () => hasOwnBeer() ? `Im Keller: ${Object.keys(ECO.keller).map(n => `${n} ${fmtF(ECO.keller[n].f)}`).join(', ')} Fass${sortsOnTap() > 1 ? ` (Preise ×${fmtF(varietyMul())})` : ''}. Zapfen oder Flaschen fangen (${lohn1()} 🪙 Lohn je Kiste).` : `Flaschen fangen: ${lohn1()} 🪙 Lohn je voller Kiste.` },
   laden: { u: .76, v: .82, c: [.7, .7],   name: 'Brauerei-Laden', sub: 'Laden', shop: true, desc: () => ECO.ownSud ? 'Zutaten, Ersatzteile und Ausbauten: alles gibt es nur hier.' : 'Ausbauten für Braustüberl und Abfüllhalle und Hilfen für alle Spiele.' }
 };
 const LOCK = ['sud', 'halle', 'bar', 'laden'];
