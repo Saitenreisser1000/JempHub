@@ -61,6 +61,8 @@ Fähigkeiten gibt es nur von Endgegnern. Jeder Boss schenkt die Fähigkeit, die 
   Käferkönig = `b4`); die Anzeige-Nummern kommen aus `WNO_TAB`.
 - **Käferkönig:** krabbelt heran, stürmt los und liegt nach dem Aufprall an der Wand benommen auf dem Rücken;
   ab dem zweiten Treffer hüpft er und schickt Erdwellen über den Boden. Von oben reicht ein einfacher Sprung.
+- Nach dem letzten Treffer fällt statt der Krone die **Fähigkeit** herab; Sam hebt sie auf, der Jubel zeigt
+  ihren Namen. Nur der Sturmgeist (Finale) lässt die Krone fallen.
 - Ältere Spielstände: Ein Kronentor ist auch offen, wenn man die Fähigkeit seines Bosses schon hat – wer früher
   den Doppelsprung im Wald bekommen hat, muss den Käferkönig nicht nachholen.
 - Die Bonuswelten öffnen jetzt bei ◆ 9 / 17 / 25, weil es mit der Wiese früher mehr Diamanten gibt.
@@ -123,6 +125,12 @@ Höhe (Klettern) und bei 1-1 der gedrosselten Strecke ohne Schuhe – derzeit 60
   (`MOVER_SLOW` in `index.html`). Die „Dauer (s)“ im Editor bleibt der eingetragene Wert.
 - 1-1 Blumenwiese hat keine Abgründe mehr: Gräben, Teich und die Senken unter den Bröckelblöcken sind flach
   (1–2 Kacheln tief) – wer hineinfällt, springt wieder heraus.
+
+## Abschluss-Bildschirm
+
+Nach einer Welt nur das Wesentliche: Name, Punkte (mit Rekord-Hinweis), drei Kacheln für Diamanten, Sterne
+und Zeit (blau umrandet, wenn vollständig bzw. neue Bestzeit), die drei Medaillen und ggf. „Neue Medaille“.
+Nach einem Boss: Zeit, Zahl der besiegten Endgegner und die neue Fähigkeit.
 
 ## Erster Start und schnelle Schuhe
 

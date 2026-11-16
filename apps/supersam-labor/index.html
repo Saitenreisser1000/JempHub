@@ -121,6 +121,11 @@ canvas{position:fixed;left:0;top:var(--gt,0px);width:100%;height:100vh;height:va
 .btn:focus-visible{outline:3px solid var(--cream);outline-offset:3px}
 .ability{border:2px solid var(--sky);padding:10px 16px;max-width:36em}
 .stats{font-size:13px;line-height:1.8}
+.tiles{display:flex;gap:10px;flex-wrap:wrap;justify-content:center}
+.tile{min-width:74px;padding:8px 12px;background:rgba(13,21,36,.6);border:2px solid rgba(246,234,210,.18);text-align:center}
+.tile b{display:block;font-size:20px;line-height:1.2}.tile span{font-size:9px;color:var(--dim);letter-spacing:.06em}
+.tile.full{border-color:var(--sky)}.big{font-size:clamp(26px,6vw,40px);color:var(--ember);text-shadow:3px 3px 0 var(--ink);line-height:1}
+.big small{display:block;font-size:11px;color:var(--gold,#ffd166);text-shadow:none;margin-top:4px}
 #start{background:linear-gradient(to top,rgba(13,21,36,.8),rgba(13,21,36,0) 38%);justify-content:flex-end;padding-bottom:calc(env(safe-area-inset-bottom,0px) + 22px)}
 #ending{background:radial-gradient(ellipse at 50% 40%,#3a2a6a 0%,#16233a 60%,#0d1524 100%);z-index:12;padding:0}
 #endcv{position:absolute;inset:0;width:100%;height:100%;image-rendering:pixelated}
@@ -1611,7 +1616,7 @@ function drawCelebrate(){
   ctx.restore(); ctx.globalAlpha=1;
   const y=Math.round(cy-8-Math.max(0,1-celebT*2)*20+Math.sin(clock*4)*1.5);
   ctx.fillStyle=col; ctx.globalAlpha=.35; ctx.beginPath(); ctx.arc(cx,y+8,13,0,7); ctx.fill(); ctx.globalAlpha=1;
-  if(celebBoss) ctx.drawImage(CROWN,cx-12,y,24,16); else ctx.drawImage(ITEM[celebAb],cx-8,y);
+  if(celebAb) ctx.drawImage(ITEM[celebAb],cx-8,y); else ctx.drawImage(CROWN,cx-12,y,24,16);
 }
 function finishLevel(celebrated){
   const n=L.id; state='done'; clearInput(); doneWorld=n; AU.song=null; if(!celebrated) sfx('fanfare');
@@ -1619,25 +1624,26 @@ function finishLevel(celebrated){
   const bonusNew=BONUS.includes(n)&&!save.done[n]; if(bonusNew) save.lives=Math.min(9,(save.lives??LIVES)+1);   // Bonuswelt: beim ersten Mal ein Extraleben
   save.done[n]=true;
   const prev=save.best[n]||{};
-  const got=L.crystals.filter(k=>k.known).length;
   const sp=scoreParts(), total=sp.total;
   save.best[n]={time:prev.time?Math.min(prev.time,time):time,coins:Math.max(prev.coins||0,levelCoins),score:Math.max(prev.score||0,total)};
   const ab=AB_OF[n], isNew=!!ab&&!save.ab[ab];
   if(isNew) save.ab[ab]=true;
   persist();
-  document.getElementById('donetitle').textContent=BONUS.includes(n)?`Bonuswelt · ${NAMES[n]} geschafft`:`Welt ${WNO(n)} · ${NAMES[n]} geschafft`;
-  document.getElementById('donestats').innerHTML=
-    `<b style="font-size:20px;color:var(--ember)">${total} Punkte</b>${prev.score&&total>prev.score?' · neuer Rekord':''}<br>`+
-    `Münzen ${levelCoins}/${L.coins.length} = ${sp.coins} · Diamanten ${sp.nc}/${L.crystals.length} = ${sp.crystals} · Sterne ${sp.ns}/${L.stars.length} = ${sp.stars}<br>`+
-    `Gegner ${sp.nk} = +${sp.enemies} · Tode ${sp.nd} = ${sp.deaths} · Restzeit ${sp.nt} s = ${sp.time}<br>Zeit ${time.toFixed(1)} s · Höchster Schwung ×${bestTier+1}`;
-  const nw=document.getElementById('donenew'); nw.hidden=!isNew;
-  if(isNew){ document.getElementById('newname').textContent='Neu: '+AB_INFO[ab].name; document.getElementById('newhow').textContent=AB_INFO[ab].how+' Neues Outfit: '+OUTFIT_NAME[ab]+'.'; }
-  document.getElementById('donehint').textContent= got<L.crystals.length ? 'Einige Diamanten und Sterne erreichst du erst mit späteren Fähigkeiten.' : 'Alle Diamanten dieser Welt gefunden.';
-  if(medBefore){ const m=medals(n), names={b:'Bronze',s:'Silber',g:'Gold'}, nw=['b','s','g'].filter(k=>m[k]&&!medBefore[k]);
-    document.getElementById('donestats').innerHTML+=`<br><span style="color:var(--dim)">Medaillen:</span> `+['b','s','g'].map(k=>`<span style="color:${m[k]?MEDAL_COL[k]:'rgba(255,255,255,.25)'}">● ${names[k]}</span>`).join(' ')+` · Gold ≤ ${fmtT(m.gold)}`;
-    if(nw.length) document.getElementById('donehint').textContent=`Neue Medaille: ${nw.map(k=>names[k]).join(', ')}!`+(m.s?'':' Für Silber fehlen noch Diamanten oder Sterne.'); }
-  if(BONUS.includes(n)){ document.getElementById('donestats').innerHTML=`Zeit ${time.toFixed(1)} s${prev.time&&time<prev.time?' · neue Bestzeit':''} · Münzen ${levelCoins}/${L.coins.length}`;
-    document.getElementById('donehint').textContent=bonusNew?`Extraleben! Du hast jetzt ${save.lives} ♥`:'Das Extraleben dieser Bonuswelt hast du schon bekommen.'; }
+  // Abschluss: nur das Wesentliche – Punkte, Sammelstücke, Zeit, Medaillen
+  const tile=(v,lab,full)=>`<div class="tile${full?' full':''}"><b>${v}</b><span>${lab}</span></div>`;
+  const best=prev.time&&time<prev.time, rec=prev.score&&total>prev.score;
+  document.getElementById('donetitle').textContent=BONUS.includes(n)?`${NAMES[n]} geschafft`:`${WNO(n)} ${NAMES[n]}`;
+  let html=`<div class="big">${total}<small>${rec?'★ neuer Rekord':'Punkte'}</small></div>`;
+  html+=`<div class="tiles">${tile(`◆ ${sp.nc}/${L.crystals.length}`,'DIAMANTEN',sp.nc===L.crystals.length)}${tile(`★ ${sp.ns}/${L.stars.length}`,'STERNE',sp.ns===L.stars.length)}${tile(fmtT(time),best?'NEUE BESTZEIT':'ZEIT',best)}</div>`;
+  let hint='';
+  if(medBefore){ const m=medals(n), nm=['b','s','g'].filter(k=>m[k]&&!medBefore[k]), names={b:'Bronze',s:'Silber',g:'Gold'};
+    html+=`<div class="tiles">`+['b','s','g'].map(k=>`<span style="font-size:22px;color:${m[k]?MEDAL_COL[k]:'rgba(255,255,255,.18)'}">●</span>`).join('')+`</div>`;
+    if(nm.length) hint=`Neue Medaille: ${nm.map(k=>names[k]).join(', ')}!`; }
+  if(BONUS.includes(n)){ html=`<div class="tiles">${tile(fmtT(time),best?'NEUE BESTZEIT':'ZEIT',best)}${tile(`${save.lives} ♥`,'LEBEN',bonusNew)}</div>`;
+    hint=bonusNew?'Extraleben!':''; }
+  document.getElementById('donestats').innerHTML=html;
+  document.getElementById('donenew').hidden=true;
+  document.getElementById('donehint').textContent=hint;
   doneEl.hidden=false;
 }
 const msgEl=document.getElementById('msg'); let msgTimer=0;
@@ -2010,7 +2016,7 @@ function drawBoss(){
   }
   if(B.trophy){ const T=B.trophy, bob=Math.sin(clock*4)*2;
     ctx.fillStyle=BOSS_INFO[B.id].col; ctx.globalAlpha=.35; ctx.beginPath(); ctx.arc(T.x,T.y+4+bob,14,0,7); ctx.fill(); ctx.globalAlpha=1;
-    ctx.drawImage(CROWN,Math.round(T.x-12),Math.round(T.y-4+bob),24,16); }
+    const ab=AB_OF[B.id]; if(ab) ctx.drawImage(ITEM[ab],Math.round(T.x-10),Math.round(T.y-6+bob),20,20); else ctx.drawImage(CROWN,Math.round(T.x-12),Math.round(T.y-4+bob),24,16); }   // Belohnung: die Fähigkeit (Finale: Krone)
   if(B.state==='gone') return;
   const blink=B.inv>0&&Math.floor(B.inv*14)%2;
   if(B.state==='dying') ctx.globalAlpha=Math.max(0,1-B.deathT/1.8);
@@ -2061,10 +2067,11 @@ function drawBoss(){
 }
 function startBossWin(){
   const B=L.boss, info=BOSS_INFO[B.id];
-  state='celebrate'; clearInput(); celebT=0; celebAb=null; celebBoss=B.id; flash=1; AU.song=null; sfx('fanfare');
+  const ab=AB_OF[B.id];
+  state='celebrate'; clearInput(); celebT=0; celebAb=ab||null; celebBoss=B.id; flash=1; AU.song=null; sfx('fanfare');
   P.vx=0; P.vy=0;
-  document.getElementById('celebname').textContent='Sieg!';
-  document.getElementById('celebtip').textContent=info.name+' besiegt';
+  document.getElementById('celebname').textContent=ab?AB_INFO[ab].name+'!':'Sieg!';
+  document.getElementById('celebtip').textContent=ab?AB_TIP[ab]:info.name+' besiegt';
   celebEl.style.setProperty('--glow',info.col);
   celebEl.hidden=true; void celebEl.offsetWidth; celebEl.hidden=false;
   for(let i=0;i<50;i++){ const a=Math.random()*Math.PI*2, sp=60+Math.random()*140; particles.push({x:P.x+5,y:P.y-10,vx:Math.cos(a)*sp,vy:Math.sin(a)*sp-80,t:1+Math.random()*.6,col:['#ffd166','#ffffff',info.col,'#7fe0ff'][i%4]}); }
@@ -2076,10 +2083,11 @@ function finishBoss(){
   const ab=AB_OF[id], isNew=!!ab&&!save.ab[ab]; if(isNew) save.ab[ab]=true;   // Belohnung: die Fähigkeit fürs nächste Kapitel
   persist();
   document.getElementById('donetitle').textContent=`${info.name} besiegt!`;
-  document.getElementById('donestats').innerHTML=`Zeit ${time.toFixed(1)} s${prev.time&&time<prev.time?' · neue Bestzeit':''}<br>Versuche ${bossDeaths+1}`;
+  { const best=prev.time&&time<prev.time, n=BOSS_ORDER.filter(b=>save.bosses[b]).length;
+    document.getElementById('donestats').innerHTML=`<div class="tiles"><div class="tile${best?' full':''}"><b>${fmtT(time)}</b><span>${best?'NEUE BESTZEIT':'ZEIT'}</span></div><div class="tile"><b>♛ ${n}/${BOSS_ORDER.length}</b><span>ENDGEGNER</span></div></div>`; }
   const nw=document.getElementById('donenew'); nw.hidden=!isNew;
-  if(isNew){ document.getElementById('newname').textContent='Neu: '+AB_INFO[ab].name; document.getElementById('newhow').textContent=AB_INFO[ab].how+' Neues Outfit: '+OUTFIT_NAME[ab]+'.'; }
-  document.getElementById('donehint').textContent=first?`${BOSS_ORDER.filter(b=>save.bosses[b]).length} von ${BOSS_ORDER.length} Endgegnern besiegt.`:'Erneut gewonnen.';
+  if(isNew){ document.getElementById('newname').textContent='Neu: '+AB_INFO[ab].name; document.getElementById('newhow').textContent=AB_INFO[ab].how; }
+  document.getElementById('donehint').textContent='';
   if(BOSS_ORDER.every(b=>save.bosses[b])&&!save.endingSeen){ save.endingSeen=true; persist(); showEnding(); return; }
   doneEl.hidden=false;
 }
@@ -4023,7 +4031,7 @@ function updateHud(){
   if(lv){ lv.hidden=!showLv; if(showLv){ const h=heartsHtml(save.lives??LIVES); if(lv.innerHTML!==h) lv.innerHTML=h; } }
   if(dbg.info) dbgInfo.textContent=`vx ${P.vx.toFixed(0)} · vy ${P.vy.toFixed(0)} · max ${(PH.max+tier()*PH.tierBonus).toFixed(0)} · Schwung ${flow.toFixed(0)}`;
   bossBar.hidden=!L.boss;
-  if(L.boss){ scoreBox.hidden=true; const B=L.boss; bossName.textContent=B.state==='gone'?'Sieg! Hol dir die Krone':BOSS_INFO[B.id].name;
+  if(L.boss){ scoreBox.hidden=true; const B=L.boss; bossName.textContent=B.state==='gone'?(AB_OF[B.id]?`Sieg! Hol dir: ${AB_INFO[AB_OF[B.id]].name}`:'Sieg! Hol dir die Krone'):BOSS_INFO[B.id].name;
     bFill.style.width=(Math.max(0,B.hp)/B.max*100)+'%'; bFill.style.background=BOSS_INFO[B.id].col;
     hcol.textContent=B.state==='intro'?BOSS_INFO[B.id].tip:''; const bp=bossScore();
     hr.innerHTML=`<span style="font-size:16px;color:${bp<=BOSS_HIT?'#ff6a6a':'var(--cream)'}">${bp} Punkte</span>`; }
