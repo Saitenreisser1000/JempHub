@@ -245,8 +245,6 @@ html,body{height:100%;margin:0;background:var(--night);color:var(--cream);overfl
 .rm-txt small{font:600 13px/1.2 var(--f-ui);color:var(--ink);opacity:.8}
 .rm-more{font-size:18px;color:var(--hop);transition:transform .2s}
 .rankmini[aria-expanded="true"] .rm-more{transform:rotate(180deg)}
-.rm-bar{display:block;height:5px;border-radius:3px;background:rgba(47,93,58,.18);overflow:hidden}
-.rm-bar span{display:block;height:100%;width:0;background:var(--hop);border-radius:4px;transition:width .4s}
 #rankMore{display:grid;gap:6px}
 #rankMore[hidden]{display:none}
 .tipbody{display:grid;gap:8px;text-align:left;font:600 15px/1.35 var(--f-ui)}
@@ -366,7 +364,7 @@ html,body{height:100%;margin:0;background:var(--night);color:var(--cream);overfl
     <div class="headrow">
       <button type="button" class="rankmini" id="rankMini" aria-expanded="false" aria-controls="rankMore">
         <span class="rm-badge" id="rmBadge">1</span>
-        <span class="rm-txt"><b id="rmName"></b><span class="rm-bar" aria-hidden="true"><span id="rmFill"></span></span></span>
+        <span class="rm-txt"><b id="rmName"></b></span>
         <span class="rm-more" aria-hidden="true">▾</span>
       </button>
       <div class="coin" id="ecoBar"><span id="ecoStock"></span></div>
@@ -1888,8 +1886,8 @@ function drawMedal(x, y, lv, s = 1){
 const medalCount = (lv = 1) => Object.values(ECO.medals).filter(v => v >= lv).length;
 const st = () => ECO.stats;
 const CHAPTERS = [
-  { t: 'Der Lakai', goal: 'Fülle 5 Kisten im Braustüberl', p: () => [st().crates, 5], r: 20, txt: 'Maxi fängt an, wo alle anfangen: beim Flaschensammeln.' },
-  { t: 'Beförderung', goal: 'Werde Mitarbeiter', p: () => [rank >= 1 ? 1 : 0, 1], r: 30, txt: 'Der Chef ist zufrieden. Maxi darf ans Förderband.' },
+  { t: 'Flaschensammeln', goal: 'Fülle 5 Kisten im Braustüberl', p: () => [st().crates, 5], r: 20, txt: 'Maxi fängt an, wo alle anfangen: beim Flaschensammeln.' },
+  { t: 'Beförderung', goal: 'Werde Mitarbeiter', u: ' EP', p: () => [rank >= 1 ? RANKS[1].xp : Math.min(xp, RANKS[1].xp), RANKS[1].xp], r: 30, txt: 'Der Chef ist zufrieden. Maxi darf ans Förderband.' },
   { t: 'Der alte Kessel', goal: 'Kauf das alte Sudhaus', p: () => [ECO.ownSud ? 1 : 0, 1], r: 50, txt: 'Verbeult, grün und undicht – aber Maxis eigener Kessel.' },
   { t: 'Das erste Fass', goal: 'Brau 1 Fass Bier', p: () => [st().fass, 1], r: 40, txt: 'Das erste eigene Fass steht im Keller. Es riecht nach Malz und Stolz.' },
   { t: 'Feierabendbier', goal: 'Zapf 20 Gläser', p: () => [st().glasses, 20], r: 40, txt: 'Die ersten Gäste trinken Maxis Bier – und bestellen nach.' },
@@ -1917,7 +1915,7 @@ function renderChronBar(){
   if (!c){ $('chronName').textContent = 'Chronik vollendet'; $('chronGoal').textContent = `Maxi ist Braumeister · ${medalCount()} Medaillen`; $('chronFill').style.width = '100%'; return; }
   const [h, n] = c.p();
   $('chronName').textContent = `Kapitel ${ECO.chron + 1}: ${c.t}`;
-  $('chronGoal').textContent = `${c.goal}${n > 1 ? ` · ${fmtF(Math.min(h, n))} / ${n}` : ''}`;
+  $('chronGoal').textContent = `${c.goal}${n > 1 ? ` · ${fmtF(Math.min(h, n))} / ${n}${c.u || ''}` : ''}`;
   $('chronFill').style.width = `${Math.min(100, h/n*100)}%`;
   b.classList.toggle('ready', h >= n);
 }
@@ -2624,7 +2622,6 @@ function updateMenu(){
   };
   const top = Math.max(best, best2, best3), nx = RANKS[rank + 1];
   $('rmBadge').textContent = ECO.master ? '★' : rank + 1; $('rmName').textContent = ECO.master ? 'Braumeister' : RANKS[rank].t;
-  $('rmFill').style.width = (nx ? Math.max(0, Math.min(100, (xp - RANKS[rank].xp) / (nx.xp - RANKS[rank].xp) * 100)) : 100) + '%';
   $('rankMini').title = `${xp} Erfahrungspunkte`;
   $('nextRank').textContent = nx ? `${xp} EP · Nächste Stufe: ${nx.t} ab ${nx.xp} EP. EP gibt es für Rundenziele, Kapitel der Chronik und Medaillen.` : `${xp} EP · Maxi ist Vorarbeiter, die höchste Stufe. Prost!`;
 }
