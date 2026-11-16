@@ -638,21 +638,21 @@ const DEFS={
   9:{name:'Blumenwiese',need:800,timeLimit:200,w:280,h:26,top:20,style:'meadow',sky:.1,build(b){
     // Abschnitt 1: Anlauf – kleine Gräben, ein sanfter Hügel, der erste Käfer
     b.ground(0,279); b.start(3,19); b.coins(18,6,12);
-    b.clear(16,20,18,25); b.coins(17,15,19);
+    b.clear(16,20,18,20); b.coins(17,15,19);                               // flache Gräben statt Abgründe: wer hineinfällt, springt wieder raus
     b.hill(24,2,3,true); b.coins(17,26,29);
     b.enemy(37,19); b.coins(18,34,40);
     b.rect(44,18,45,19); b.coins(16,44,45);
-    b.clear(50,20,53,25); b.coins(17,49,54);
+    b.clear(50,20,53,20); b.coins(17,49,54);
     b.cp(58,19);
     // Abschnitt 2: Bretter über dem Käferweg, eine Feder über die hohe Mauer, die erste Bröckelbrücke
     b.plat(17,62,66); b.plat(15,69,73); b.plat(17,76,80); b.coins(16,62,66); b.coins(14,69,73); b.coins(16,76,80);
     b.enemy(71,19); b.star(71,8);                                                           // ★ hoch über den Brettern: Doppelsprung
     b.spring(86,19); b.rect(89,15,90,19); b.coins(13,86,90);
     b.enemy(97,19); b.coins(18,94,100);
-    b.clear(104,20,112,25); b.crumb(20,104,112); b.coins(18,104,112); b.crystal(108,15);
+    b.clear(104,20,112,21); b.crumb(20,104,112); b.coins(18,104,112); b.crystal(108,15);
     b.cp(116,19);
-    // Abschnitt 3: fahrendes Brett über den Teich, Hügel, Treppe aus Brettern
-    b.clear(122,20,140,25); b.water(122,140,22); b.mover(123,18,12,0,3,3.4); b.coins(16,125,138); b.crystal(131,11);   // ◆ über dem Teich: Doppelsprung
+    // Abschnitt 3: fahrendes Brett über die Senke, Hügel, Treppe aus Brettern
+    b.clear(122,20,140,21); b.mover(123,18,12,0,3,3.4); b.coins(16,125,138); b.crystal(131,11);   // ◆ über dem Teich: Doppelsprung
     b.enemy(146,19); b.hill(150,3,4,true); b.coins(16,153,156); b.star(155,12);
     b.plat(17,176,180); b.plat(14,183,186); b.coins(16,176,180); b.coins(13,183,186); b.star(185,8);   // ★ ganz oben auf der Treppe
     b.cp(192,19);
@@ -660,7 +660,7 @@ const DEFS={
     b.ramp(196,20,17,true); b.ground(202,220,17); b.ramp(221,17,20,true);
     b.enemy(214,16); b.coins(16,203,219); b.plat(14,205,207); b.plat(11,209,212); b.crystal(211,10);
     b.shoes(227,19);                                                          // schnelle Schuhe: ab hier volles Tempo (bis dahin gedrosselt)
-    b.clear(232,20,246,25); b.crumb(19,234,235); b.crumb(18,239,240); b.crumb(19,244,245); b.coins(17,233,246);
+    b.clear(232,20,246,21); b.crumb(19,234,235); b.crumb(18,239,240); b.crumb(19,244,245); b.coins(17,233,246);
     b.enemy(253,19); b.coins(18,250,256);
     b.hill(259,1,2,true); b.coins(18,266,272);
     b.goal(275,19);
@@ -1283,6 +1283,7 @@ function addFlow(v){ flow=Math.max(0,Math.min(100,flow+v)); }
 // ---------- Spieler ----------
 const P={w:10,h:14,x:0,y:0,vx:0,vy:0,ground:false,face:1,coyote:0,buffer:0,squash:0,run:0,hold:0,rising:false,cut:false,plat:null,
   usedDouble:false,airDash:false,dashT:0,dashDir:1,dashCD:0,wallDir:0,kickT:0,glide:false};
+const MOVER_SLOW=1.5;   // alle bewegten Plattformen: eine Runde dauert 1,5-mal so lang wie im Level eingetragen
 const SLOW_SHOES=.65;   // 1-1 Blumenwiese: Tempo ohne schnelle Schuhe (Sprungweite dann ~72 px)
 const PH={max:150,accG:700,accA:450,fricG:800,fricA:90,tierBonus:10,grav:1150,jump:300,airJump:270,fall:420,coyote:.1,buffer:.13,
   holdMax:.18,holdGrav:.3,cutGrav:2.0,spring:560,stomp:280,
@@ -1719,7 +1720,7 @@ function update(dt){
   if(P.inv>0) P.inv=Math.max(0,P.inv-dt);
   if(L.timeLimit){ const tl=Math.ceil(timeLeft()); if(tl<=10&&tl>0&&tl!==lastTick){ lastTick=tl; sfx('tick'); } }
   if(livesCheck()){ loseLife(); return; }
-  for(const m of L.movers){ const s=(1-Math.cos(clock/m.period*Math.PI*2))/2;
+  for(const m of L.movers){ const s=(1-Math.cos(clock/(m.period*MOVER_SLOW)*Math.PI*2))/2;
     const nx=m.x0+(m.x1-m.x0)*s, ny=m.y0+(m.y1-m.y0)*s; m.dx=nx-m.x; m.dy=ny-m.y; m.x=nx; m.y=ny; }
   if(P.plat){ P.x+=P.plat.dx; P.y+=P.plat.dy; }
   P.wallDir=(!P.ground&&save.ab.wall)?wallContact():0;
