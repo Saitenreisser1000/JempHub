@@ -117,6 +117,13 @@ zeigt die Uhr darunter, wie viel Zeit bis Gold bleibt.
 Goldzeit: im Editor unter den Level-Einstellungen („Goldzeit (s)“), sonst geschätzt aus Länge (≈ 100 px/s),
 Höhe (Klettern) und bei 1-1 der gedrosselten Strecke ohne Schuhe – derzeit 60 bis 75 s.
 
+## Bewegte Plattformen und 1-1 ohne Abgründe
+
+- Alle bewegten Plattformen fahren langsamer: eine Runde dauert 1,5-mal so lang wie im Level eingetragen
+  (`MOVER_SLOW` in `index.html`). Die „Dauer (s)“ im Editor bleibt der eingetragene Wert.
+- 1-1 Blumenwiese hat keine Abgründe mehr: Gräben, Teich und die Senken unter den Bröckelblöcken sind flach
+  (1–2 Kacheln tief) – wer hineinfällt, springt wieder heraus.
+
 ## Erster Start und schnelle Schuhe
 
 Die frühere Übungswiese ist raus (Level bleibt als „Archiv: Übungswiese“ im Editor). Beim ersten Start geht
