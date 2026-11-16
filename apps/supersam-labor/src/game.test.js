@@ -260,7 +260,7 @@ test('Endgegner: ein Boss je Abschnitt, Kronentore, Bosse brauchen Fähigkeiten'
   const { dz, listeners, run } = boot();
   const key = (k, d) => d ? listeners.keydown({ key: k, preventDefault() {} }) : listeners.keyup({ key: k });
   dz.setState('play'); dz.loadLevel('hub');
-  assert.equal(dz.L.coins.length, 0, 'keine Münzen in der Hubwelt');
+  assert.equal(dz.L.coins.length, 0, 'keine Münzen auf der Karte');
   const bossDoors = dz.L.doors.filter(d => typeof d.world === 'string').map(d => d.world);
   assert.equal(JSON.stringify(bossDoors), JSON.stringify(['b4', 'b0', 'b2', 'b1', 'b3']), 'Boss-Reihenfolge Wiese, Wald, Felsen, See, Gipfel');
   assert.equal(JSON.stringify(dz.L.gates.map(g => [g.boss, g.open])), JSON.stringify([['b4', false], ['b0', false], ['b2', false], ['b1', false]]), 'Kronentore zu');
@@ -373,7 +373,7 @@ test('Erster Start: gleich in 1-1, kurze Hinweise zum Laufen und Springen', () =
   assert.equal(dz2.L.id, 'hub', 'später startet das Spiel auf der Weltkarte');
 });
 
-test('Neue Welten: Türen in der Hubwelt und Abschluss ohne neue Fähigkeit', () => {
+test('Neue Welten: Türen auf der Karte und Abschluss ohne neue Fähigkeit', () => {
   const { dz, run, warnings } = boot();
   dz.setState('play'); dz.loadLevel('hub');
   const worlds = dz.L.doors.map(d => String(d.world)).sort();
@@ -396,7 +396,7 @@ test('Weltnummern: Teil 1 und Teil 2 je Fähigkeitswelt, Summen aus allen Welten
   assert.equal([9, 10, 1, 5, 2, 6, 3, 7, 4, 8].map(dz.WNO).join(' '), '1-1 1-2 2-1 2-2 3-1 3-2 4-1 4-2 5-1 5-2');
   const t = dz.totals();
   assert.equal(t.cr, Object.values(t.per).reduce((a, b) => a + b, 0), 'Gesamtsumme passt');
-  assert.ok(t.per.hub >= 1, 'Hub-Diamant mitgezählt');
+  assert.ok(t.per.hub >= 1, 'Karten-Diamant mitgezählt');
 });
 
 test('Boss-Tür öffnet erst nach Welt X-2', () => {
@@ -409,7 +409,7 @@ test('Boss-Tür öffnet erst nach Welt X-2', () => {
   assert.equal(dz.L.id, 'b0', 'nach 1-2 geht es zur Wespenkönigin');
 });
 
-test('Hubwelt als Landkarte: Punkte in Reihenfolge, Laufen, Kronentor, Rückkehr, Geheimdiamant', () => {
+test('Karte: Punkte in Reihenfolge, Laufen, Kronentor, Rückkehr, Geheimdiamant', () => {
   const { dz, listeners, run } = boot();
   const key = (k, d) => d ? listeners.keydown({ key: k, preventDefault() {} }) : listeners.keyup({ key: k });
   dz.save.tutorialDone = true;
@@ -439,7 +439,7 @@ test('Archiv: alte Fassungen von 1-1 und 1-2 bleiben erhalten, zählen aber nich
   const { dz, run } = boot();
   for (const id of ['archiv1', 'archiv5']) { dz.setState('play'); dz.loadLevel(id); run(10); assert.ok(dz.L.goal && dz.L.crystals.length >= 3, `${id} ladbar`); }
   dz.setState('play'); dz.loadLevel('hub');
-  assert.ok(!dz.L.doors.some(d => String(d.world).startsWith('archiv')), 'keine Tür in der Hubwelt');
+  assert.ok(!dz.L.doors.some(d => String(d.world).startsWith('archiv')), 'keine Tür auf der Karte');
   assert.equal(dz.totals().per.archiv1, undefined, 'nicht in den Summen');
 });
 

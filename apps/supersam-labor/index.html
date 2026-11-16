@@ -154,7 +154,7 @@ body.title .hud,body.title .zone,body.title #msg,body.title #tut{display:none!im
 <div class="zone l" id="zl"><span>◀</span></div>
 <div class="zone r" id="zr"><span>▶</span></div>
 <div class="hud" id="hl">
-  <button id="home" type="button" aria-label="Zurück zur Hubwelt" hidden>⌂ Hub</button>
+  <button id="home" type="button" aria-label="Zurück zur Karte" hidden>⌂ Karte</button>
   <button id="gear" type="button" aria-label="Menü öffnen">⌂</button>
 </div>
 <div class="hud" id="hc">
@@ -191,7 +191,7 @@ body.title .hud,body.title .zone,body.title #msg,body.title #tut{display:none!im
     <h1 id="endtitle">Glückwunsch!</h1>
     <p class="endsub">Sam hat alle drei Endgegner besiegt.</p>
     <div class="endstats" id="endstats"></div>
-    <button class="btn" id="endbtn" type="button">Zurück zur Hubwelt</button>
+    <button class="btn" id="endbtn" type="button">Zurück zur Karte</button>
   </div>
 </div>
 <div class="panel" id="done" hidden>
@@ -199,7 +199,7 @@ body.title .hud,body.title .zone,body.title #msg,body.title #tut{display:none!im
   <div class="stats" id="donestats"></div>
   <div class="ability" id="donenew" hidden><h2 id="newname"></h2><p id="newhow"></p></div>
   <p id="donehint"></p>
-  <button class="btn" id="donebtn" type="button">Zur Hubwelt</button>
+  <button class="btn" id="donebtn" type="button">Zur Karte</button>
 </div>
 
 <div class="panel" id="lifelost" hidden>
@@ -208,14 +208,14 @@ body.title .hud,body.title .zone,body.title #msg,body.title #tut{display:none!im
   <p id="lltext"></p>
   <div class="row" style="flex-direction:column;align-items:stretch;min-width:220px">
     <button class="btn" id="llagain" type="button">Nochmal</button>
-    <button class="btn ghost" id="llhub" type="button">Zur Hubwelt</button>
+    <button class="btn ghost" id="llhub" type="button">Zur Karte</button>
   </div>
 </div>
 <div class="panel" id="pause" hidden>
   <h1>Pause</h1>
   <div class="row" style="flex-direction:column;align-items:stretch;min-width:220px">
     <button class="btn" id="presume" type="button">Weiter</button>
-    <button class="btn ghost" id="phub" type="button">Zur Hubwelt</button>
+    <button class="btn ghost" id="phub" type="button">Zur Karte</button>
     <button class="btn ghost" id="pmain" type="button">Hauptmenü</button>
   </div>
   <div class="stilwahl"><span>Auflösung</span><button type="button" data-res="2">Hoch</button><button type="button" data-res="1.5">Mittel</button><button type="button" data-res="1">Niedrig</button><span style="margin-left:10px">Licht</span><button type="button" data-fx="1">An</button><button type="button" data-fx="0">Aus</button></div>
@@ -275,7 +275,7 @@ try{ const s=JSON.parse(localStorage.getItem(SAVE_KEY)||'null'); if(s){ save=Obj
   if(s.shoes===undefined) save.shoes=!!(s.tutorialDone||s.done?.uebung||Object.keys(s.done||{}).length); } }catch(_){}   // früher gab es die Schuhe in der Übungswiese
 function persist(){ if(EDIT_MODE) return; try{ localStorage.setItem(SAVE_KEY,JSON.stringify(save)); }catch(_){} }   // Probespiel aus dem Editor speichert nichts
 
-const NAMES={9:'Blumenwiese',10:'Bachtal',b4:'Käferkönig',bonus1:'Moosklippen',bonus2:'Glutschlot',bonus3:'Eisspalte',0:'Hubwelt',1:'Wald',2:'Felsen',3:'See',4:'Gipfel',5:'Wipfelwald',6:'Schlucht',7:'Lagune',8:'Sturmgrat',b0:'Wespenkönigin',b1:'Igelkönig',b2:'Felsgolem',b3:'Sturmgeist'};
+const NAMES={9:'Blumenwiese',10:'Bachtal',b4:'Käferkönig',bonus1:'Moosklippen',bonus2:'Glutschlot',bonus3:'Eisspalte',0:'Karte',1:'Wald',2:'Felsen',3:'See',4:'Gipfel',5:'Wipfelwald',6:'Schlucht',7:'Lagune',8:'Sturmgrat',b0:'Wespenkönigin',b1:'Igelkönig',b2:'Felsgolem',b3:'Sturmgeist'};
 const WORLD_COL={9:'#f2c14e',10:'#5fc0b0',b4:'#d84a4a',b0:'#ffd166',b1:'#9be06a',b2:'#e0884a',b3:'#b07aff',0:'#f6ead2',1:'#6aa84f',2:'#c69a6a',3:'#4fa3d9',4:'#b9a7ff',5:'#9be06a',6:'#e0a050',7:'#5fd0e0',8:'#d0c0ff'};
 // Fähigkeiten gibt es nur von Endgegnern: jeder Boss schenkt die Fähigkeit, die das nächste Kapitel braucht
 const AB_OF={b4:'double',b0:'wall',b2:'dash',b1:'glide'};
@@ -290,7 +290,7 @@ const AB_INFO={
   glide:{name:'Gleiten',short:'Gleit',how:'Halte im Fallen einen Daumen als Sprungdaumen gedrückt, dann segelst du langsam. In hellen Aufwinden trägt dich das Blatt nach oben.'}
 };
 const NEED_FOR_DOOR={1:'double',5:'double',2:'wall',6:'wall',3:'dash',7:'dash',4:'glide',8:'glide',b0:'double',b2:'wall',b1:'dash',b3:'glide'};
-// Abschnitte der Hubwelt: Boss je Abschnitt, Kronentor zum nächsten Abschnitt
+// Abschnitte der Karte: Boss je Abschnitt, Kronentor zum nächsten Abschnitt
 const BOSS_ORDER=['b4','b0','b2','b1','b3'];
 const BOSS_NEEDS_WORLD={b4:10,b0:5,b2:6,b1:7,b3:8};   // Boss-Tür öffnet erst, wenn auch Welt X-2 geschafft ist
 
@@ -581,8 +581,8 @@ const T={
 // ---------- Welten ----------
 // Koordinaten in Kacheln; (c,r) ist die Zelle, in der ein Objekt steht (Unterkante = Zellenboden).
 const DEFS={
-  // Hubwelt in vier Abschnitten: je Abschnitt Welt X-1, X-2 und Boss; das Kronentor öffnet den nächsten Abschnitt
-  hub:{name:'Hubwelt',w:262,h:26,top:23,style:'meadow',zones:[{to:14,s:'meadow'},{to:74,s:'forest'},{to:136,s:'stone'},{to:200,s:'lake'},{to:262,s:'snow'}],build(b){
+  // Karte in vier Abschnitten: je Abschnitt Welt X-1, X-2 und Boss; das Kronentor öffnet den nächsten Abschnitt
+  hub:{name:'Karte',w:262,h:26,top:23,style:'meadow',zones:[{to:14,s:'meadow'},{to:74,s:'forest'},{to:136,s:'stone'},{to:200,s:'lake'},{to:262,s:'snow'}],build(b){
     b.ground(0,261); b.start(4,22);
     // Wiese – ohne Fähigkeit; der Käferkönig schenkt den Doppelsprung (auf der Weltkarte zählt nur die Reihenfolge)
     b.door(8,22,9); b.door(10,22,10); b.door(12,22,'b4'); b.gate(14,'b4');
@@ -1322,7 +1322,7 @@ function loadLevel(id,spawnDoor){
   if(id==='hub'&&spawnDoor){ const d=L.doors.find(d=>d.world===spawnDoor); if(d) p={x:d.x+24,y:d.bottom-14}; }
   resetPlayer(p);
   if(id==='hub'){ L.map=true; mapBuild(spawnDoor); }
-  document.getElementById('home').hidden=true;   // Hubwelt erreicht man über das Menü (Haus-Knopf)
+  document.getElementById('home').hidden=true;   // Karte erreicht man über das Menü (Haus-Knopf)
   playSong(id);
   updateHud();
 }
@@ -1529,7 +1529,7 @@ const TUT_STEPS=[
   {t:'Aufzug: draufstellen, oben auf den Block springen.',zone:null},
   {t:'Feder: drauflaufen und über die Mauer fliegen.',zone:null},
   {t:'Bröckelbrücke: schnell rüber, nicht stehen bleiben.',zone:null},
-  {t:'Geschafft! Lauf zur Tür und bleib darin stehen – sie bringt dich in die Hubwelt.',zone:'r',end:true}];
+  {t:'Geschafft! Lauf zur Tür und bleib darin stehen – sie bringt dich zur Karte.',zone:'r',end:true}];
 const tutEl=document.getElementById('tut'), tutStep=document.getElementById('tstep'), tutText=document.getElementById('ttext');
 const TUT={on:false,i:0,ok:0,x0:0,y0:0,peak:0,air:false,endT:0};
 function startTutorial(){ TUT.on=true; TUT.i=0; tutShow(); }
@@ -1860,7 +1860,7 @@ function update(dt){
     const inside=d.armed&&over&&P.ground&&Math.abs(P.y+P.h-d.bottom)<4&&Math.abs(P.vx)<25;
     d.t=inside?d.t+dt:Math.max(0,d.t-dt*2);
     if(d.t>=.7){ const why=doorBlock(d); if(why){ d.t=0; d.armed=false; sfx('locked'); showMsg(why); continue; } }
-    if(d.t>=.7){ clearInput(); sfx('door'); const n=d.world; if(n===0){ const w=L.id; if(w==='uebung'){ tutEnd(); save.done.uebung=true; persist(); loadLevel('hub','home'); showMsg('Übungswiese geschafft – weiter zu Welt 1-1!'); } else { loadLevel('hub',w); showMsg('Hubwelt'); } } else { loadLevel(n); showMsg(typeof n==='number'?`Welt ${WNO(n)} · ${NAMES[n]}`:`Endgegner: ${NAMES[n]}`); } return; }
+    if(d.t>=.7){ clearInput(); sfx('door'); const n=d.world; if(n===0){ const w=L.id; if(w==='uebung'){ tutEnd(); save.done.uebung=true; persist(); loadLevel('hub','home'); showMsg('Übungswiese geschafft – weiter zu Welt 1-1!'); } else { loadLevel('hub',w); showMsg('Karte'); } } else { loadLevel(n); showMsg(typeof n==='number'?`Welt ${WNO(n)} · ${NAMES[n]}`:`Endgegner: ${NAMES[n]}`); } return; }
   }
 }
 // Warum eine Tür (noch) zu ist – null, wenn sie offen ist. Gilt für Türen im Level und Punkte auf der Karte.
@@ -1872,7 +1872,7 @@ function doorBlock(d){
   return null; }
 let ribbon=[], floaters=[];
 // ---------- Endgegner ----------
-// Vier Arenen, je eine pro Abschnitt der Hubwelt. Jeder Boss hat 3 Leben und ist nur mit der Fähigkeit seines Abschnitts zu besiegen.
+// Vier Arenen, je eine pro Abschnitt der Karte. Jeder Boss hat 3 Leben und ist nur mit der Fähigkeit seines Abschnitts zu besiegen.
 const CROWN=spr([
   "k..kk..kk..k",
   "kyk.kyyk.kyk",
@@ -2793,7 +2793,7 @@ function drawDoors(){ for(const d of L.doors){
   ctx.fillStyle=col; ctx.globalAlpha=.55+.25*Math.sin(clock*3+d.world); ctx.fillRect(x+6,y+8,12,24); ctx.globalAlpha=1;
   if(save.done[d.world]){ ctx.fillStyle=C.gold; ctx.fillRect(x+10,y+3,4,3); }
   ctx.textAlign='center'; ctx.font='7px Silkscreen, monospace';
-  ctx.fillStyle='#1a1020'; const lbl=!d.world?'⌂ Hubwelt':typeof d.world==='number'?`${WNO(d.world)} ${NAMES[d.world]}`:NAMES[d.world]; ctx.fillText(lbl,d.x+9,y-13); ctx.fillStyle=C.cream; ctx.fillText(lbl,d.x+8,y-14);
+  ctx.fillStyle='#1a1020'; const lbl=!d.world?'⌂ Karte':typeof d.world==='number'?`${WNO(d.world)} ${NAMES[d.world]}`:NAMES[d.world]; ctx.fillText(lbl,d.x+9,y-13); ctx.fillStyle=C.cream; ctx.fillText(lbl,d.x+8,y-14);
   if(d.stars){ const have=starsGot(), open=have>=d.stars;
     if(!open){ ctx.fillStyle='rgba(13,21,36,.7)'; ctx.fillRect(x+5,y+7,14,25);
       ctx.fillStyle='#8a94a8'; for(let i=0;i<3;i++) ctx.fillRect(x+3,y+11+i*7,18,2);
@@ -2809,8 +2809,8 @@ function drawDoors(){ for(const d of L.doors){
   ctx.font='6px Silkscreen, monospace'; ctx.fillStyle=C.sky; ctx.fillText(`◆ ${total}/${totals().per[d.world]||0}`,d.x+8,y-5); }
   if(d.t>0){ ctx.strokeStyle=C.ember; ctx.lineWidth=2; ctx.beginPath(); ctx.arc(d.x+8,y+19,9,-Math.PI/2,-Math.PI/2+Math.PI*2*Math.min(1,d.t/.7)); ctx.stroke(); }
 } }
-// ---------- Hubwelt als Landkarte ----------
-// Die Hubwelt bleibt intern das Level 'hub' (Türen, Kronentore, Geheimdiamant – Spielstand und Sperren wie bisher),
+// ---------- Karte (Inselkarte von oben) ----------
+// Die Karte bleibt intern das Level 'hub' (Türen, Kronentore, Geheimdiamant – Spielstand und Sperren wie bisher),
 // wird aber als Inselkarte von oben gezeigt: Sam läuft mit ◀ ▶ von Punkt zu Punkt, Springen betritt die Welt.
 const MAPW=540, MAPH=200, MAPX=100;   // MAPX: die Wiese (Kapitel 1) liegt links vor dem Wald
 const MAP_POS={home:[34,150],9:[64,118],10:[96,88],b4:[118,128],'g-b4':[140,146],1:[168,133],5:[158,96],b0:[196,70],'g-b0':[224,61],2:[248,53],6:[286,37],b2:[316,61],'g-b2':[312,85],
@@ -2862,7 +2862,7 @@ function mapFog(fx){ if(MAPFOG[fx]) return MAPFOG[fx]; const c=mk(MAPW,MAPH), g=
   for(let y=0;y<MAPH;y++) for(let x=Math.max(0,fx-24);x<MAPW;x++){ const n=mapFbm(x*.04+3,y*.05), ramp=Math.min(1,(x-fx+24)/40), a=Math.max(.35,Math.min(.92,.35+(n-.3)*1.6))*ramp, k=(y*MAPW+x)*4;
     D[k]=240; D[k+1]=244; D[k+2]=250; D[k+3]=Math.round(a*255); }
   g.putImageData(id,0,0); return MAPFOG[fx]=c; }
-// Knoten: Türen, Kronentore und Geheimdiamant der Hubwelt in Reihenfolge von links nach rechts
+// Knoten: Türen, Kronentore und Geheimdiamant der Karte in Reihenfolge von links nach rechts
 function mapBuild(spawn){ const N=[];
   for(const d of L.doors) N.push({key:d.world,kind:'door',ref:d,x:d.x});
   for(const g of L.gates||[]) N.push({key:'g-'+g.boss,kind:'gate',ref:g,x:g.x});
@@ -3447,7 +3447,7 @@ function skDoors(){ const label=(t,x,y,col,s)=>{ ctx.font=`${s}px Silkscreen, mo
     let lock=false; if(d.stars) lock=starsGot()<d.stars; if(d.need) lock=crystalTotal()<d.need;
     const pf=Math.floor(clock*4+(+d.world||0))%6; blit(sprite(`portal|${col}|${pf}`,()=>portalImg(col,pf)),cx,b);
     blit(sprite(`door|${lock?1:0}`,()=>vox(30,36,15,34,doorPrims(lock))),cx,b);
-    const y=b-32, lbl=!d.world?'⌂ Hubwelt':typeof d.world==='number'?`${WNO(d.world)} ${NAMES[d.world]}`:NAMES[d.world];
+    const y=b-32, lbl=!d.world?'⌂ Karte':typeof d.world==='number'?`${WNO(d.world)} ${NAMES[d.world]}`:NAMES[d.world];
     label(lbl,cx,y-14,C.cream,7);
     if(d.stars){ const have=starsGot(); label(`★ ${Math.min(have,d.stars)}/${d.stars}`,cx,y-5,have>=d.stars?C.gold:'#ff8a8a',6); }
     if(d.need){ const have=crystalTotal(); label(`◆ ${Math.min(have,d.need)}/${d.need}`,cx,y-5,have>=d.need?C.sky:'#ff8a8a',6); if(save.bosses&&save.bosses[d.world]) ctx.drawImage(CROWN,d.x,y-30,16,11); }

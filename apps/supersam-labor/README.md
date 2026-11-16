@@ -67,9 +67,9 @@ Fähigkeiten gibt es nur von Endgegnern. Jeder Boss schenkt die Fähigkeit, die 
   den Doppelsprung im Wald bekommen hat, muss den Käferkönig nicht nachholen.
 - Die Bonuswelten öffnen jetzt bei ◆ 9 / 17 / 25, weil es mit der Wiese früher mehr Diamanten gibt.
 
-## Hubwelt als Landkarte
+## Karte
 
-Die Hubwelt ist eine Inselkarte von oben: Wiese ganz im Westen, daneben der Wald, Felsen im Norden, See mit Lagune im Süden,
+Die Karte ist eine Insel von oben: Wiese ganz im Westen, daneben der Wald, Felsen im Norden, See mit Lagune im Süden,
 Gipfel im Osten. **Punkt antippen:** Sam läuft selbst über den Weg dorthin (nicht durch geschlossene
 Kronentore). Nochmal antippen oder **Los ▶** auf der Infokarte betritt die Welt. Am Rechner gehen auch
 ◀ ▶ und Springen. Die Karte ist näher herangezoomt (`MAP_ZOOM`) und folgt Sam; mit dem Finger
@@ -146,12 +146,12 @@ auch ganz ohne Schuhe schaffbar. Ältere Spielstände haben die Schuhe schon. Im
 
 ## Leben
 
-Jeder Spielstand hat 3 Leben (♥ oben unter der Punkteanzeige, auch in der Hubwelt). Fällt die Punktzahl in
+Jeder Spielstand hat 3 Leben (♥ oben unter der Punkteanzeige, auch auf der Karte). Fällt die Punktzahl in
 einer Welt mit Zeitlimit auf 0 – weil die Restzeit abläuft oder Tode Punkte kosten –, ist ein Leben weg und
-die Welt beginnt neu (oder zurück zur Hubwelt). Beim letzten Leben gibt es **Game Over**: der Spielstand
+die Welt beginnt neu (oder zurück zur Karte). Beim letzten Leben gibt es **Game Over**: der Spielstand
 beginnt von vorn (Diamanten, Sterne, Fähigkeiten, Bosse, erledigte Welten), nur „Einführung gesehen“ und
 die Einstellungen bleiben; danach wieder 3 Leben. Bei den Endgegnern gibt es 300 Punkte fix, jeder Treffer
-kostet 100 (rechts oben angezeigt) – bei 0 ist ebenfalls ein Leben weg. Hubwelt und Probespiele
+kostet 100 (rechts oben angezeigt) – bei 0 ist ebenfalls ein Leben weg. Karte und Probespiele
 aus dem Editor kosten keine Leben. Extraleben sind für später geplant.
 
 ## Sam und Hochformat

@@ -240,7 +240,7 @@ const TILES=[
   ['#','Boden','1'],['=','Holz','2'],['B','Bröckel','3'],['X','Rissfels','4'],['^','Stacheln','5'],['~','Wasser','6'],['H','Geheimgang','7'],['-','Steg'],[' ','Leer','0'],
   ['/','Schräge ↗'],['\\','Schräge ↘'],['(','sanft ↗ unten'],[')','sanft ↗ oben'],['[','sanft ↘ oben'],[']','sanft ↘ unten']];
 const LAYERS=[['back','Rückwand','8'],['up','Aufwind','9']];
-const OBJS=[['coin','Münze'],['crystal','Diamant'],['star','Stern'],['spring','Feder'],['cp','Kontrollpunkt'],['mover','Fahrplattform'],['start','Start'],['goal','Ziel'],['door','Tür (Hub)'],['shoes','Schnelle Schuhe']];
+const OBJS=[['coin','Münze'],['crystal','Diamant'],['star','Stern'],['spring','Feder'],['cp','Kontrollpunkt'],['mover','Fahrplattform'],['start','Start'],['goal','Ziel'],['door','Tür (Karte)'],['shoes','Schnelle Schuhe']];
 const ENEMIES=[['beetle','Käfer'],['igel','Igel'],['wespe','Wespe'],['skorpion','Skorpion'],['frosch','Frosch'],['fisch','Fisch'],['geist','Geist']];
 const NAMES={'#':'Boden','=':'Holz','-':'Steg (durchspringbar)','B':'Bröckelblock (durchspringbar)','X':'Rissfels','^':'Stacheln','~':'Wasser','H':'Geheimgang',' ':'leer','/':'Schräge','\\':'Schräge','(':'sanfte Schräge',')':'sanfte Schräge','[':'sanfte Schräge',']':'sanfte Schräge','K':'Kronentor'};
 const SLOPE={'/':lx=>16-lx,'\\':lx=>lx,'(':lx=>16-lx/2,')':lx=>8-lx/2,'[':lx=>lx/2,']':lx=>8+lx/2};
@@ -524,7 +524,7 @@ function renderObjProps(){ const host=$('objprops'); host.innerHTML=''; updateIn
   if(o.k==='enemy'){ propRow(host,'Art',o.t,v=>o.t=v,{options:ENEMIES}); propRow(host,'Reichweite',o.range??3,v=>{ o.range=v===3?undefined:v; if(o.range==null) delete o.range; }); }
   if(o.k==='mover'){ propRow(host,'Breite',o.w,v=>o.w=Math.max(1,v)); propRow(host,'Weg waagrecht',o.dc,v=>o.dc=v); propRow(host,'Weg senkrecht',o.dr,v=>o.dr=v); propRow(host,'Dauer (s)',o.p,v=>o.p=Math.max(.5,v),{step:.1}); }
   if(o.k==='deco'){ propRow(host,'Stück',o.n,v=>o.n=v,{options:E.deco.list.map(([n,l])=>[n,l])}); if(['vine','ice','root'].includes(o.n)) propRow(host,'Länge (px)',o.len||({vine:10,ice:6,root:10})[o.n],v=>{ o.len=Math.max(2,Math.min(48,Math.round(v))); }); }
-  if(o.k==='door'){ propRow(host,'Ziel',o.world,v=>o.world=isNaN(+v)?v:+v,{options:[[0,'Hubwelt']]}); propRow(host,'Sterne nötig',o.stars||0,v=>{ if(v>0) o.stars=Math.round(v); else delete o.stars; }); }
+  if(o.k==='door'){ propRow(host,'Ziel',o.world,v=>o.world=isNaN(+v)?v:+v,{options:[[0,'Karte']]}); propRow(host,'Sterne nötig',o.stars||0,v=>{ if(v>0) o.stars=Math.round(v); else delete o.stars; }); }
   const b=document.createElement('div'); b.className='btns'; const del=document.createElement('button'); del.textContent='Objekt löschen'; del.title='⌫'; del.onclick=()=>{ pushHist(); M.objs.splice(selObj,1); selObj=null; changed(true); }; b.append(del); host.append(b);
 }
 
