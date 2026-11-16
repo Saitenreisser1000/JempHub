@@ -32,6 +32,12 @@ Die Brauerei wächst sichtbar: Biergarten-Tische vor dem Braustüberl je Stammti
 
 Hat Maxi Bier im Keller, bietet die Karte beim Braustüberl „Zapfen“ (und „Flaschen“ für das Lohnspiel). An der Theke wünschen sich bis zu drei Gäste je eine Sorte aus dem Keller, mit Geduldsbalken. Finger auf den Zapfhahn der Sorte halten füllt das Glas; am gestrichelten Eichstrich loslassen. Jede Sorte schäumt nach dem Loslassen etwas nach (Pils am meisten). Übergelaufen, zu wenig, eine Sorte, die keiner will, oder ein Gast, der geht, sind Fehler. Ab dem dritten Gast kommen Sonderwünsche: der Stammgast mit Trachtenhut will viel Schaum (Strich knapp unter dem Rand, +2 Trinkgeld), der Tourist im Blumenhemd nur einen Pfiff (halbes Glas, halber Preis), der Bürgermeister mit Zylinder zahlt doppelt, verlangt aber genaues Zapfen und ist ungeduldiger, der Bauarbeiter hat Durst und kaum Geduld (+1). Der Eichstrich am Glas zeigt jeweils den Wunsch des nächsten Gasts für diese Sorte. Jedes Glas verbraucht 1/50 Fass der Sorte; der Preis je Glas richtet sich nach Sorte und Qualität, perfekt gezapft gibt es Trinkgeld (+1, +1 je Stammtisch). Ist der Keller leer, endet die Runde. Eigener Rekord (`ftb-best4`).
 
+## Bauernhof (Echtzeit)
+
+Mit eigenem Sudhaus öffnet sich der Bauernhof auf der Karte. Dort sät Maxi Gerste (6 🪙 Saatgut), nach 4 Stunden ist sie reif (8 Gerste). Die Mälzerei macht daraus in 2 Stunden Malz (bis 12 auf einmal), das ins Sudhaus-Lager kommt. Ein zweites und drittes Feld kosten 80 und 200 🪙. Felder und Mälzerei laufen in echter Zeit weiter, auch wenn das Spiel geschlossen ist; auf der Karte zeigt der Bauernhof „🌾 fertig!“.
+
+Die Zeit kommt aus dem `Date`-Kopf der Serverantwort (HEAD-Anfrage auf die eigene Seite), sonst von der Handyuhr. Sie läuft nie rückwärts (`ftb-clk`), und vorgestellte Handyzeit wird beim nächsten Abgleich mit dem Server korrigiert.
+
 ## Technik
 
 - Eine einzige Datei `index.html`: Canvas-Spiel in reinem JavaScript, alle Figuren werden im Code gezeichnet, Töne entstehen live mit der Web Audio API.

@@ -422,6 +422,10 @@ html,body{height:100%;margin:0;background:var(--night);color:var(--cream);overfl
   </div>
 </div>
 
+<div class="ladenui" id="farmUi" hidden>
+  <div class="ladentop" id="farmTop"><button class="btn" id="farmOut" type="button">‹ Raus</button><span class="ladentaler" id="farmTaler"></span></div>
+  <div class="ladenbuy" id="farmBuy" role="group" aria-live="polite" hidden><b id="farmName"></b><span id="farmFx"></span><button class="btn" id="farmBtn" type="button"></button><small id="farmInfo"></small></div>
+</div>
 <div class="ladenui" id="ladenUi" hidden>
   <div class="ladentop" id="ladenTop"><button class="btn" id="ladenOut" type="button">‹ Raus</button><span class="ladentaler" id="ladenTaler"></span></div>
   <div class="ladenbuy" id="ladenBuy" role="group" aria-live="polite" hidden><b id="buyName"></b><span id="buyFx"></span><button class="btn" id="buyBtn" type="button"></button><small id="buyInfo"></small></div>
@@ -764,7 +768,7 @@ function updateHearts(dt, crateTop){
     if (h.y > groundY - 10){ h.fade -= dt*2; if (h.fade <= 0) hearts.splice(i,1); }
   }
 }
-cv.addEventListener('pointerdown', e => { if (state === 'shop'){ ladenPointer(e); return; } if (state === 'scene'){ sceneTap(); return; } if (stage === 4 && state !== 'menu'){ if (state === 'play') down4(e); return; } if (stage === 3 && state === 'play'){ tap3(e); return; } if (stage === 3 && state !== 'intro') return; if (stage === 2 && state === 'play'){ tap2(e); return; } if (stage === 2 && state !== 'intro') return; if (state === 'menu'){ if (!$('career').hidden) mapPointer(e); return; } if (startRub(e)) return; if (state === 'play' && nearZone(toLogical(e.clientX), e.clientY / S)) { startForklift(); return; } if (state === 'intro'){ if (introT > (INTRO_TAP[introKind] ?? 1.2)) endIntro(); return; } if (tryFlick(e.clientX, e.clientY)) { flickIds.add(e.pointerId); return; } touchX = toLogical(e.clientX); });
+cv.addEventListener('pointerdown', e => { if (state === 'farm'){ farmPointer(e); return; } if (state === 'shop'){ ladenPointer(e); return; } if (state === 'scene'){ sceneTap(); return; } if (stage === 4 && state !== 'menu'){ if (state === 'play') down4(e); return; } if (stage === 3 && state === 'play'){ tap3(e); return; } if (stage === 3 && state !== 'intro') return; if (stage === 2 && state === 'play'){ tap2(e); return; } if (stage === 2 && state !== 'intro') return; if (state === 'menu'){ if (!$('career').hidden) mapPointer(e); return; } if (startRub(e)) return; if (state === 'play' && nearZone(toLogical(e.clientX), e.clientY / S)) { startForklift(); return; } if (state === 'intro'){ if (introT > (INTRO_TAP[introKind] ?? 1.2)) endIntro(); return; } if (tryFlick(e.clientX, e.clientY)) { flickIds.add(e.pointerId); return; } touchX = toLogical(e.clientX); });
 cv.addEventListener('pointermove', e => { if (stage === 4) return; if (stage === 3){ if (state === 'play') stirMove(e); return; } if (stage === 2){ if (state === 'play' && down2.has(e.pointerId)) move2(e); return; } if (RUB.has(e.pointerId)) { moveRub(e); return; } if (flickIds.has(e.pointerId)) { tryFlick(e.clientX, e.clientY); return; } if (touchX !== null || e.pointerType === 'mouse') touchX = toLogical(e.clientX); });
 cv.addEventListener('pointerup', e => { up4(e); down2.delete(e.pointerId); L3.heat = false; if (L3.stirId === e.pointerId){ L3.stirId = null; L3.paddle = null; } if (RUB.delete(e.pointerId)) return; if (flickIds.delete(e.pointerId)) return; touchX = null; });
 cv.addEventListener('pointercancel', e => { up4(e); L3.heat = false; L3.stirId = null; L3.paddle = null; RUB.delete(e.pointerId); flickIds.delete(e.pointerId); touchX = null; });
@@ -1761,6 +1765,7 @@ function update(dt){
 
 function render(){
   if (state === 'shop'){ ctx.setTransform(dpr*S,0,0,dpr*S, dpr*OX, 0); renderLaden(); return; }
+  if (state === 'farm'){ ctx.setTransform(dpr*S,0,0,dpr*S, dpr*OX, 0); renderFarm(); return; }
   if (state === 'scene' && scene){ ctx.setTransform(1,0,0,1,0,0); ctx.fillStyle = '#1e2430'; ctx.fillRect(0, 0, cv.width, cv.height); renderScene(); return; }
   if (stage === 4 && state !== 'menu'){ render4(); return; }
   if (stage === 3 && state !== 'menu'){ render3(); return; }
@@ -2628,15 +2633,178 @@ function updateMenu(){
   $('rankMini').title = `${xp} Erfahrungspunkte`;
   $('nextRank').textContent = nx ? `${xp} EP · Nächste Stufe: ${nx.t} ab ${nx.xp} EP. EP gibt es für Rundenziele, Kapitel der Chronik und Medaillen.` : `${xp} EP · Maxi ist Vorarbeiter, die höchste Stufe. Prost!`;
 }
+/* ================= Bauernhof: Gerstenfelder und Mälzerei in Echtzeit =================
+   Die Zeit kommt vom Server (Datum der Antwort), sonst von der Handyuhr. Sie läuft nie rückwärts:
+   Wer die Uhr zurückdreht, gewinnt nichts, und vorgestellte Zeit wird beim nächsten Abgleich korrigiert. */
+const CLK = { off: 0, sync: false, last: 0 };
+try { CLK.last = +localStorage.getItem('ftb-clk') || 0; } catch(e) {}
+function nowMs(){
+  const t = Math.max(Date.now() + CLK.off, CLK.last);
+  if (t - CLK.last > 5000){ CLK.last = t; try { localStorage.setItem('ftb-clk', t); } catch(e) {} }
+  return t;
+}
+async function clockSync(){
+  try {
+    const r = await fetch(location.href.split('#')[0], { method: 'HEAD', cache: 'no-store' });
+    const d = Date.parse(r.headers.get('date') || '');
+    if (d){ CLK.off = d - Date.now(); CLK.sync = true; if (CLK.last > d + 60000){ CLK.last = d; try { localStorage.setItem('ftb-clk', d); } catch(e) {} } }
+  } catch(e) {}
+}
+clockSync(); addEventListener('visibilitychange', () => { if (!document.hidden) clockSync(); });
+
+const FARM = { SOW: 6, YIELD: 8, GROW: 4*3600e3, MALT: 2*3600e3, KILN: 12, FIELDS: [0, 80, 200], speed: 1, sel: null, flash: [] };
+function farm(){ if (!ECO.farm) ECO.farm = { fields: [{ t0: 0 }], gerste: 0, kiln: null }; return ECO.farm; }
+const growK = f => f.t0 ? Math.min(1, (nowMs() - f.t0)*FARM.speed/FARM.GROW) : 0;
+const kilnK = () => { const k = farm().kiln; return k ? Math.min(1, (nowMs() - k.t0)*FARM.speed/FARM.MALT) : 0; };
+function fmtLeft(ms){ ms = Math.max(0, ms/FARM.speed); const s = Math.ceil(ms/1000), h = Math.floor(s/3600), m = Math.floor(s % 3600/60);
+  return h ? (m ? `${h} h ${m} min` : `${h} h`) : m ? `${m} min ${s % 60 ? (s % 60) + ' s' : ''}`.trim() : `${s} s`; }
+function farmNews(){ // für die Karte: was ist fertig?
+  const F = farm(), ripe = F.fields.filter(f => f.t0 && growK(f) >= 1).length, malt = F.kiln && kilnK() >= 1;
+  return ripe || malt ? '🌾 fertig!' : F.fields.some(f => f.t0) || F.kiln ? '⏳' : '';
+}
+function farmGeo(){
+  const top = ($('farmTop').getBoundingClientRect().bottom || 60)/S + 8, fw = (W - 40)/3, fh = Math.min(200, (H - top - 330)*.62);
+  const fields = [0, 1, 2].map(i => ({ x: 14 + i*(fw + 6), y: top + 36, w: fw, h: fh }));
+  const ky = top + 36 + fh + 70, kh = Math.min(210, H - ky - 190);
+  return { top, fields, kiln: { x: 40, y: ky, w: W - 80, h: kh } };
+}
+function openFarm(){ state = 'farm'; $('career').hidden = true; $('farmUi').hidden = false; FARM.sel = null; farm(); farmSync(); $('farmOut').focus({ preventScroll: true }); }
+function leaveFarm(){ state = 'menu'; $('farmUi').hidden = true; saveEco(); openCareer(); }
+function farmAct(){
+  const F = farm(), s = FARM.sel; if (!s) return;
+  if (s.k === 'field'){
+    const f = F.fields[s.i];
+    if (!f){ const c = FARM.FIELDS[s.i]; if (taler < c) return; taler -= c; F.fields[s.i] = { t0: 0 }; sCash(); }
+    else if (!f.t0){ if (taler < FARM.SOW) return; taler -= FARM.SOW; f.t0 = nowMs(); beep(520, .08, 'triangle', .08); }
+    else if (growK(f) >= 1){ f.t0 = 0; F.gerste += FARM.YIELD; sClink(); FARM.flash.push({ t: tTotal, x: s.i, txt: `+${FARM.YIELD} Gerste` }); }
+  } else if (s.k === 'kiln'){
+    if (F.kiln && kilnK() >= 1){ const n = F.kiln.n; ECO.malz += n; F.kiln = null; sCash(); FARM.flash.push({ t: tTotal, x: 'kiln', txt: `+${n} Malz ins Lager` }); }
+    else if (!F.kiln && F.gerste > 0){ const n = Math.min(FARM.KILN, F.gerste); F.gerste -= n; F.kiln = { t0: nowMs(), n }; beep(330, .12, 'triangle', .08); }
+  }
+  saveEco(); saveShop(); farmSync();
+}
+function farmSync(){
+  const F = farm(); $('farmTaler').textContent = `🪙 ${taler}`;
+  const s = FARM.sel, box = $('farmBuy'), bt = $('farmBtn');
+  if (!s){ box.hidden = true; return; } box.hidden = false;
+  let name = '', fx = '', lab = '', can = false, info = '';
+  if (s.k === 'field'){
+    const f = F.fields[s.i]; name = `Gerstenfeld ${s.i + 1}`;
+    if (!f){ const c = FARM.FIELDS[s.i]; fx = 'noch nicht deins'; lab = `Kaufen ${c} 🪙`; can = taler >= c && F.fields.length === s.i; info = can || F.fields.length === s.i ? 'Mehr Felder, mehr Gerste.' : 'Erst das Feld davor kaufen.'; }
+    else if (!f.t0){ fx = 'leer'; lab = `Säen ${FARM.SOW} 🪙`; can = taler >= FARM.SOW; info = `Saatgut für ${FARM.SOW} 🪙. Nach ${fmtLeft(FARM.GROW)} ernten: ${FARM.YIELD} Gerste.`; }
+    else if (growK(f) < 1){ fx = `wächst · noch ${fmtLeft(FARM.GROW - (nowMs() - f.t0)*FARM.speed)}`; lab = 'Ernten'; info = 'Die Gerste wächst auch, wenn das Spiel zu ist.'; }
+    else { fx = 'reif!'; lab = `Ernten +${FARM.YIELD}`; can = true; info = 'Die Gerste kommt in die Mälzerei.'; }
+  } else {
+    name = 'Mälzerei'; const k = F.kiln;
+    if (k && kilnK() >= 1){ fx = `${k.n} Malz fertig`; lab = 'Ins Lager'; can = true; info = 'Das Malz kommt ins Sudhaus-Lager.'; }
+    else if (k){ fx = `${k.n} Gerste keimt · noch ${fmtLeft(FARM.MALT - (nowMs() - k.t0)*FARM.speed)}`; lab = 'Mälzen'; info = 'Gerste keimt und wird auf der Darre getrocknet.'; }
+    else { fx = `${F.gerste} Gerste da`; lab = F.gerste ? `Mälzen ${Math.min(FARM.KILN, F.gerste)}` : 'Mälzen'; can = F.gerste > 0; info = F.gerste ? `Aus jeder Gerste wird ein Malz (bis ${FARM.KILN} auf einmal, ${fmtLeft(FARM.MALT)}).` : 'Erst Gerste ernten.'; }
+  }
+  $('farmName').textContent = name; $('farmFx').textContent = fx; bt.textContent = lab; bt.disabled = !can; $('farmInfo').textContent = info;
+}
+function farmPointer(e){
+  const x = toLogical(e.clientX), y = e.clientY / S, g = farmGeo();
+  let hit = null;
+  g.fields.forEach((r, i) => { if (x >= r.x && x <= r.x + r.w && y >= r.y - 20 && y <= r.y + r.h + 10) hit = { k: 'field', i }; });
+  const kr = g.kiln; if (x >= kr.x && x <= kr.x + kr.w && y >= kr.y - 40 && y <= kr.y + kr.h) hit = { k: 'kiln' };
+  if (!hit) { FARM.sel = null; farmSync(); return; }
+  // zweimal auf dasselbe tippen: gleich ausführen
+  if (FARM.sel && FARM.sel.k === hit.k && FARM.sel.i === hit.i && !$('farmBtn').disabled) farmAct();
+  else { FARM.sel = hit; beep(700, .04, 'triangle', .05); farmSync(); }
+}
+function gerstePlant(x, y, h, ripe, ph){
+  // ein Halm mit Ähre; reif golden und geneigt
+  const sw = Math.sin(tTotal*1.8 + ph)*2*h/30, lean = ripe ? 5 : 0;
+  ctx.strokeStyle = ripe ? '#c9a640' : '#5f9a3a'; ctx.lineWidth = 1.6; ctx.beginPath(); ctx.moveTo(x, y); ctx.quadraticCurveTo(x + sw*.5, y - h*.6, x + sw + lean, y - h); ctx.stroke();
+  if (h < 14) return;
+  ctx.fillStyle = ripe ? '#e6c25a' : '#8cc152';
+  for (let i = 0; i < 4; i++){ const ey = y - h + i*3.5, ex = x + sw + lean - i*.6*(lean/5); ctx.beginPath(); ctx.ellipse(ex - 2, ey, 1.8, 3, -.5, 0, Math.PI*2); ctx.ellipse(ex + 2, ey, 1.8, 3, .5, 0, Math.PI*2); ctx.fill(); }
+  if (ripe){ ctx.strokeStyle = 'rgba(230,194,90,.8)'; ctx.lineWidth = .8; ctx.beginPath(); ctx.moveTo(x + sw + lean, y - h - 2); ctx.lineTo(x + sw + lean + 3, y - h - 12); ctx.stroke(); }
+}
+function drawField(r, f, i, sel){
+  const k = f ? growK(f) : 0, ripe = f && f.t0 && k >= 1;
+  ctx.fillStyle = 'rgba(10,30,15,.3)'; rr(r.x + 4, r.y + 6, r.w, r.h, 10); ctx.fill();
+  ctx.fillStyle = f ? '#7a5434' : '#5a6a3a'; rr(r.x, r.y, r.w, r.h, 10); ctx.fill();
+  if (f){ ctx.strokeStyle = '#5e3e24'; ctx.lineWidth = 3; for (let j = 1; j < 6; j++){ const yy = r.y + j*r.h/6; ctx.beginPath(); ctx.moveTo(r.x + 8, yy); ctx.lineTo(r.x + r.w - 8, yy); ctx.stroke(); }
+    if (f.t0){ const hh = 6 + k*30; for (let j = 1; j < 6; j++) for (let c = 0; c < 6; c++){ const px = r.x + 12 + c*(r.w - 24)/5 + (j % 2)*4, py = r.y + j*r.h/6; gerstePlant(px, py, hh, ripe, i*7 + j + c*1.7); } } }
+  else { ctx.fillStyle = 'rgba(255,255,255,.08)'; for (let j = 0; j < 14; j++){ ctx.beginPath(); ctx.arc(r.x + hsh(j + i*30)*r.w, r.y + hsh(j + 90 + i*30)*r.h, 2, 0, Math.PI*2); ctx.fill(); } }
+  // Zaun
+  ctx.strokeStyle = '#8a6a44'; ctx.lineWidth = 2.5; ctx.beginPath(); ctx.moveTo(r.x - 2, r.y - 6); ctx.lineTo(r.x + r.w + 2, r.y - 6); ctx.stroke();
+  for (let j = 0; j <= 4; j++){ ctx.fillStyle = '#6b4c2e'; ctx.fillRect(r.x + j*r.w/4 - 2, r.y - 14, 4, 14); }
+  if (sel){ ctx.strokeStyle = `rgba(230,184,74,${.6 + Math.sin(tTotal*5)*.3})`; ctx.lineWidth = 3; rr(r.x - 3, r.y - 18, r.w + 6, r.h + 24, 12); ctx.stroke(); }
+  // Schild
+  ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+  const lab = !f ? `🔒 ${FARM.FIELDS[i]} 🪙` : !f.t0 ? 'leer · säen' : ripe ? 'reif!' : fmtLeft(FARM.GROW - (nowMs() - f.t0)*FARM.speed);
+  ctx.font = '700 13px "Barlow Condensed", sans-serif'; const tw = ctx.measureText(lab).width + 16;
+  ctx.fillStyle = ripe ? C.gold : 'rgba(20,26,36,.8)'; rr(r.x + r.w/2 - tw/2, r.y + r.h - 12, tw, 22, 11); ctx.fill();
+  ctx.fillStyle = ripe ? C.ink : C.cream; ctx.fillText(lab, r.x + r.w/2, r.y + r.h - 1);
+  if (f && f.t0 && !ripe){ ctx.fillStyle = 'rgba(0,0,0,.35)'; rr(r.x + 10, r.y + r.h + 14, r.w - 20, 6, 3); ctx.fill(); ctx.fillStyle = '#8cc152'; rr(r.x + 10, r.y + r.h + 14, (r.w - 20)*k, 6, 3); ctx.fill(); }
+}
+function drawKiln(r, sel){
+  const F = farm(), k = F.kiln, kk = kilnK(), done = k && kk >= 1;
+  const bx = r.x + r.w*.5 - 90, by = r.y + r.h, bw = 180, bh = r.h*.62;
+  ctx.fillStyle = 'rgba(10,30,15,.3)'; ctx.beginPath(); ctx.ellipse(bx + bw/2 + 14, by + 4, bw*.6, 10, 0, 0, Math.PI*2); ctx.fill();
+  obox(bx, by, bw, bh, 18, 12, '#e8d7b0', '#c8b48a', null);
+  // Satteldach und Darre-Turm mit Haube
+  ctx.fillStyle = '#9a3a28'; ctx.beginPath(); ctx.moveTo(bx - 8, by - bh); ctx.lineTo(bx + bw/2, by - bh - 40); ctx.lineTo(bx + bw + 8, by - bh); ctx.fill();
+  ctx.fillStyle = '#7a2e20'; ctx.beginPath(); ctx.moveTo(bx + bw + 8, by - bh); ctx.lineTo(bx + bw/2, by - bh - 40); ctx.lineTo(bx + bw/2 + 18, by - bh - 52); ctx.lineTo(bx + bw + 26, by - bh - 12); ctx.fill();
+  const tx = bx + bw - 44; ctx.fillStyle = '#d9c6a0'; ctx.fillRect(tx, by - bh - 58, 26, 40); ctx.fillStyle = '#5a5a62'; ctx.beginPath(); ctx.moveTo(tx - 6, by - bh - 58); ctx.lineTo(tx + 13, by - bh - 76); ctx.lineTo(tx + 32, by - bh - 58); ctx.fill();
+  if (k && !done){ for (let i = 0; i < 3; i++){ const t = (tTotal*.6 + i/3) % 1; ctx.fillStyle = `rgba(230,230,230,${.5*(1 - t)})`; ctx.beginPath(); ctx.arc(tx + 13 + Math.sin(t*6 + i)*5, by - bh - 80 - t*30, 5 + t*8, 0, Math.PI*2); ctx.fill(); } }
+  ctx.fillStyle = '#6b4325'; rr(bx + bw/2 - 18, by - 44, 36, 44, 4); ctx.fill(); win(bx + 22, by - bh + 16, 22, 20, !!k); win(bx + bw - 44, by - bh + 16, 22, 20, !!k);
+  ctx.fillStyle = '#2f5d3a'; rr(bx + bw/2 - 44, by - bh - 4, 88, 18, 4); ctx.fill(); ctx.fillStyle = C.gold; ctx.font = '700 12px "Barlow Condensed", sans-serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillText('MÄLZEREI', bx + bw/2, by - bh + 5);
+  // Gerste-Säcke davor
+  const nS = Math.min(6, Math.ceil(F.gerste/2)); for (let i = 0; i < nS; i++){ const sx = bx - 30 + (i % 3)*14, sy = by - 2 - Math.floor(i/3)*14; ctx.fillStyle = '#e6d39a'; rr(sx - 7, sy - 16, 14, 16, 5); ctx.fill(); ctx.fillStyle = '#b89a50'; ctx.fillRect(sx - 5, sy - 13, 10, 2); }
+  if (done){ ctx.fillStyle = '#c8955a'; rr(bx + bw + 18, by - 30, 30, 30, 8); ctx.fill(); ctx.fillStyle = C.ink; ctx.font = '700 11px "Barlow Condensed", sans-serif'; ctx.fillText('MALZ', bx + bw + 33, by - 15); }
+  if (sel){ ctx.strokeStyle = `rgba(230,184,74,${.6 + Math.sin(tTotal*5)*.3})`; ctx.lineWidth = 3; rr(r.x, r.y - 40, r.w, r.h + 46, 14); ctx.stroke(); }
+  // Fortschritt
+  const lab = done ? `${k.n} Malz fertig!` : k ? `${k.n} Gerste · ${fmtLeft(FARM.MALT - (nowMs() - k.t0)*FARM.speed)}` : F.gerste ? `${F.gerste} Gerste bereit` : 'wartet auf Gerste';
+  ctx.font = '700 13px "Barlow Condensed", sans-serif'; const tw = ctx.measureText(lab).width + 16;
+  ctx.fillStyle = done ? C.gold : 'rgba(20,26,36,.8)'; rr(W/2 - tw/2, by + 12, tw, 22, 11); ctx.fill(); ctx.fillStyle = done ? C.ink : C.cream; ctx.fillText(lab, W/2, by + 23);
+  if (k && !done){ ctx.fillStyle = 'rgba(0,0,0,.35)'; rr(W/2 - 60, by + 40, 120, 6, 3); ctx.fill(); ctx.fillStyle = '#d9a441'; rr(W/2 - 60, by + 40, 120*kk, 6, 3); ctx.fill(); }
+}
+function renderFarm(){
+  const g = farmGeo(), F = farm();
+  const sky = ctx.createLinearGradient(0, 0, 0, H); sky.addColorStop(0, '#9ccbe8'); sky.addColorStop(.25, '#d8ecd0'); sky.addColorStop(.26, '#5f9a4a'); sky.addColorStop(1, '#3f7a3c');
+  ctx.fillStyle = sky; ctx.fillRect(XL, 0, XR - XL, H);
+  ctx.fillStyle = '#6aa04a'; ctx.beginPath(); ctx.ellipse(W*.2, H*.25, 160, 40, 0, Math.PI, 0); ctx.ellipse(W*.85, H*.26, 140, 34, 0, Math.PI, 0); ctx.fill();
+  for (let i = 0; i < 30; i++){ ctx.strokeStyle = 'rgba(30,60,30,.4)'; ctx.lineWidth = 1; const gx = XL + hsh(i + 50)*(XR - XL), gy = H*.3 + hsh(i + 70)*H*.7; ctx.beginPath(); ctx.moveTo(gx, gy); ctx.lineTo(gx - 1.5, gy - 4); ctx.moveTo(gx, gy); ctx.lineTo(gx + 1.5, gy - 4); ctx.stroke(); }
+  g.fields.forEach((r, i) => drawField(r, F.fields[i], i, FARM.sel && FARM.sel.k === 'field' && FARM.sel.i === i));
+  drawKiln(g.kiln, FARM.sel && FARM.sel.k === 'kiln');
+  // Lagerleiste: Gerste und Malz
+  const ly = g.kiln.y + g.kiln.h + 58; ctx.fillStyle = 'rgba(20,26,36,.7)'; rr(W/2 - 120, ly, 240, 30, 15); ctx.fill();
+  ctx.fillStyle = C.cream; ctx.font = '700 15px "Barlow Condensed", sans-serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+  ctx.fillText(`🌾 ${F.gerste} Gerste     ·     Malz im Lager: ${ECO.malz}`, W/2, ly + 15);
+  // Rückmeldungen
+  FARM.flash = FARM.flash.filter(f => tTotal - f.t < 1.6);
+  for (const f of FARM.flash){ const a = 1 - (tTotal - f.t)/1.6, r = f.x === 'kiln' ? { x: W/2, y: g.kiln.y } : { x: g.fields[f.x].x + g.fields[f.x].w/2, y: g.fields[f.x].y + 20 };
+    ctx.globalAlpha = a; ctx.font = '20px "Alfa Slab One", Georgia, serif'; ctx.strokeStyle = 'rgba(0,0,0,.55)'; ctx.lineWidth = 4; ctx.strokeText(f.txt, r.x, r.y - (1 - a)*40); ctx.fillStyle = C.gold; ctx.fillText(f.txt, r.x, r.y - (1 - a)*40); ctx.globalAlpha = 1; }
+  if (Math.floor(tTotal) !== FARM.sec){ FARM.sec = Math.floor(tTotal); farmSync(); }
+}
+function drawHofMap(){
+  // Bauernhof auf der Karte: kleine Mälzerei mit Darre, daneben zwei Gerstenstreifen
+  const F = farm();
+  for (let i = 0; i < 2; i++){ const fx = i ? 26 : -74, f = F.fields[i], k = f ? growK(f) : 0, ripe = f && f.t0 && k >= 1;
+    ctx.fillStyle = f ? '#7a5434' : 'rgba(90,106,58,.7)'; ctx.beginPath(); ctx.moveTo(fx, 0); ctx.lineTo(fx + 44, 0); ctx.lineTo(fx + 52, -22); ctx.lineTo(fx + 8, -22); ctx.fill();
+    if (f){ ctx.strokeStyle = '#5e3e24'; ctx.lineWidth = 1.5; for (let j = 1; j < 4; j++){ ctx.beginPath(); ctx.moveTo(fx + 2*j, -j*5.5); ctx.lineTo(fx + 44 + 2*j, -j*5.5); ctx.stroke(); } }
+    if (f && f.t0){ ctx.fillStyle = ripe ? '#e6c25a' : '#7cb342'; for (let j = 0; j < 4; j++) for (let c = 0; c < 6; c++){ const px = fx + 4 + 2*j + c*7.5, py = -j*5.5 - 1; ctx.fillRect(px, py - (3 + k*6), 2, 3 + k*6); } } }
+  bshadow(-24, -20, 48, 40); obox(-24, -20, 48, 30, 10, 7, '#e8d7b0', '#c8b48a', null);
+  ctx.fillStyle = '#9a3a28'; ctx.beginPath(); ctx.moveTo(-28, -50); ctx.lineTo(0, -66); ctx.lineTo(28, -50); ctx.fill();
+  ctx.fillStyle = '#7a2e20'; ctx.beginPath(); ctx.moveTo(28, -50); ctx.lineTo(0, -66); ctx.lineTo(10, -73); ctx.lineTo(38, -57); ctx.fill();
+  ctx.fillStyle = '#d9c6a0'; ctx.fillRect(10, -78, 12, 18); ctx.fillStyle = '#5a5a62'; ctx.beginPath(); ctx.moveTo(7, -78); ctx.lineTo(16, -87); ctx.lineTo(25, -78); ctx.fill();
+  if (F.kiln && kilnK() < 1){ const t = (tTotal*.6) % 1; ctx.fillStyle = `rgba(235,235,235,${.6*(1 - t)})`; ctx.beginPath(); ctx.arc(16 + Math.sin(t*6)*3, -92 - t*16, 3 + t*5, 0, Math.PI*2); ctx.fill(); }
+  ctx.fillStyle = '#6b4325'; ctx.fillRect(-7, -38, 14, 18);
+}
+
 /* ---------- Karte: Maxi geht über das Brauereigelände ---------- */
 const LOCS = {
   plaza: { u: .5,  v: .55 },
   sud:   { u: .3,  v: .2,  c: [.36, .42], name: 'Maxis Sudhaus', sub: 'Sudhaus', lv: 3, need: 1, desc: () => `Jeder Sud ergibt ${fmtF(1 + .5*(U.kettle || 0))} Fass. Ausgeschenkt wird im Braustüberl.` },
   halle: { u: .74, v: .3,  c: [.68, .5],  name: 'Abfüllhalle', sub: 'Förderband', lv: 2, need: 1, desc: () => `Flaschen sortieren: ${lohn2()} 🪙 Lohn je voller Kiste.` },
   bar:   { u: .25, v: .79, c: [.3, .6],   name: 'Braustüberl', sub: 'Braustüberl', lv: 1, need: 0, desc: () => hasOwnBeer() ? `Im Keller: ${Object.keys(ECO.keller).map(n => `${n} ${fmtF(ECO.keller[n].f)}`).join(', ')} Fass. Zapfen oder Flaschen fangen (${lohn1()} 🪙 Lohn je Kiste).` : `Flaschen fangen: ${lohn1()} 🪙 Lohn je voller Kiste.` },
+  hof:   { u: .5,  v: 1.0, c: [.5, .8],   name: 'Bauernhof', sub: 'Gerste und Mälzerei', farm: true, desc: () => { const F = farm(), n = farmNews(); return `${F.fields.length} ${F.fields.length === 1 ? 'Gerstenfeld' : 'Gerstenfelder'}, ${F.gerste} Gerste.` + (n === '🌾 fertig!' ? ' Es gibt etwas zu ernten!' : ' Hier wächst dein eigenes Malz, auch wenn das Spiel zu ist.'); } },
   laden: { u: .76, v: .82, c: [.7, .7],   name: 'Brauerei-Laden', sub: 'Laden', shop: true, desc: () => ECO.ownSud ? 'Zutaten, Ersatzteile und Ausbauten: alles gibt es nur hier.' : 'Ausbauten für Braustüberl und Abfüllhalle und Hilfen für alle Spiele.' }
 };
-const LOCK = ['sud', 'halle', 'bar', 'laden'];
+const LOCK = ['sud', 'halle', 'bar', 'laden', 'hof'];
 const MAP = { at: 'plaza', x: 0, y: 0, pts: [], dest: null, placed: false, dust: [], last: 0 };
 let mapA = null, mapAT = -1;
 function mapArea(){
@@ -2656,7 +2824,7 @@ function curve(k){
   for (let i=0;i<=18;i++){ const t = i/18, m = 1 - t; out.push({ x: m*m*a.x + 2*m*t*c.x + t*t*b.x, y: m*m*a.y + 2*m*t*c.y + t*t*(b.y + 4) }); }
   return out;
 }
-function locked(k){ const L = LOCS[k], all = typeof UNLOCK_ALL !== 'undefined' && UNLOCK_ALL; if (all) return false; if (k === 'sud') return !ECO.ownSud; return L.need != null && rank < L.need; }
+function locked(k){ const L = LOCS[k], all = typeof UNLOCK_ALL !== 'undefined' && UNLOCK_ALL; if (all) return false; if (k === 'sud' || k === 'hof') return !ECO.ownSud; return L.need != null && rank < L.need; }
 function mapInfo(){
   const L = LOCS[MAP.at], go = $('mapGo'); go.disabled = false; $('mapGo2').hidden = true;
   $('mapPrice').style.visibility = 'hidden';
@@ -2675,7 +2843,7 @@ function mapInfo(){
     go.textContent = taler >= KESSEL ? `Sudkessel kaufen (${KESSEL} 🪙)` : `Noch ${KESSEL - taler} 🪙 sparen`; go.style.visibility = 'visible'; go.disabled = taler < KESSEL; return;
   }
   if (locked(MAP.at)){
-    $('mapDesc').textContent = MAP.at === 'sud' ? '🔒 Das alte Sudhaus steht leer.' : `🔒 Ab ${RANKS[L.need].t}: ${xp} / ${RANKS[L.need].xp} EP. EP gibt es für Rundenziele.`; go.style.visibility = 'hidden'; return;
+    $('mapDesc').textContent = MAP.at === 'hof' ? '🔒 Gerste anbauen lohnt sich erst mit eigenem Sudhaus.' : MAP.at === 'sud' ? '🔒 Das alte Sudhaus steht leer.' : `🔒 Ab ${RANKS[L.need].t}: ${xp} / ${RANKS[L.need].xp} EP. EP gibt es für Rundenziele.`; go.style.visibility = 'hidden'; return;
   }
   const pre = usePre();
   const st = MAP.at === 'sud' && ECO.ownSud ? `Lager: ${pre ? ECO.malzP : ECO.malz} Malz, ${pre ? ECO.hopfenP : ECO.hopfen} Hopfen${pre ? ' (Premium)' : ''}. Reicht für ${availRecipes().map(r => `${r.n} ${sudCount(r)}×`).join(', ')}.` : '';
@@ -2687,7 +2855,7 @@ function mapInfo(){
     const br = document.createElement('span'); br.className = 'ibreak'; md.append(br);
     for (const r of availRecipes()){ const t = iconTile('glas', `${r.n} ${sudCount(r)}×`, r.col, r.n); if (!sudCount(r)) t.classList.add('none'); md.append(t); }
   }
-  go.textContent = L.shop ? 'Laden betreten' : 'Spielen'; go.style.visibility = 'visible';
+  go.textContent = L.shop ? 'Laden betreten' : L.farm ? 'Hof betreten' : 'Spielen'; go.style.visibility = 'visible';
   if (MAP.at === 'bar' && hasOwnBeer()){ go.textContent = 'Zapfen'; $('mapGo2').hidden = false; }
   const sm = stockMsg(MAP.at);
   if (sm){ $('mapDesc').textContent = '⚠ ' + sm; go.textContent = 'Zum Laden: Zutaten kaufen'; }
@@ -2976,6 +3144,7 @@ function enterLoc(k){
   if (stockMsg(k)){ mapTap('laden'); return; }
   const L = LOCS[k];
   if (L.shop){ openShop(); return; }
+  if (L.farm){ openFarm(); return; }
   if (L.lv === 3) start3(); else if (L.lv === 2) start2(); else if (k === 'bar' && hasOwnBeer()) start4(); else start();
 }
 function updateMap(dt){
@@ -3016,6 +3185,7 @@ function drawLoc(k, p){
   ctx.save(); ctx.translate(p.x, p.y); ctx.scale(p.k, p.k);
   if (sel){ ctx.strokeStyle = `rgba(230,184,74,${.55 + Math.sin(tTotal*5)*.35})`; ctx.lineWidth = 4; ctx.beginPath(); ctx.ellipse(4, 4, 72, 17, 0, 0, Math.PI*2); ctx.stroke(); }
   if (lk) ctx.globalAlpha = k === 'sud' && rank >= 1 ? .85 : .5;
+  if (k === 'hof') drawHofMap();
   if (k === 'bar'){
     bshadow(-50, 0, 100, 74);
     obox(-50, 0, 100, 50, 14, 10, '#a85e3c', '#7e4229');
@@ -3105,9 +3275,9 @@ function drawLoc(k, p){
 }
 function drawLocLabel(k, p){
   const L = LOCS[k], lk = locked(k), sel = MAP.at === k;
-  const name = k === 'bar' ? 'Braustüberl' : k === 'laden' ? 'Laden' : k === 'halle' ? 'Abfüllhalle' : ECO.ownSud ? 'Sudhaus' : 'Altes Sudhaus';
+  const name = k === 'hof' ? 'Bauernhof' : k === 'bar' ? 'Braustüberl' : k === 'laden' ? 'Laden' : k === 'halle' ? 'Abfüllhalle' : ECO.ownSud ? 'Sudhaus' : 'Altes Sudhaus';
   const lv = Math.min(5, bldLevel(k));
-  const sub = k === 'sud' && !ECO.ownSud ? (rank >= 1 ? `${KESSEL} 🪙` : '') : lk ? `ab ${['Lakai', 'Mitarbeiter', 'Produktion', 'Vorarbeiter'][L.need]}` : lv && !L.shop ? '★'.repeat(lv) : '';
+  const sub = k === 'hof' ? (lk ? 'mit Sudhaus' : farmNews()) : k === 'sud' && !ECO.ownSud ? (rank >= 1 ? `${KESSEL} 🪙` : '') : lk ? `ab ${['Lakai', 'Mitarbeiter', 'Produktion', 'Vorarbeiter'][L.need]}` : lv && !L.shop ? '★'.repeat(lv) : '';
   ctx.save(); ctx.translate(p.x, p.y); ctx.scale(p.k, p.k);
   ctx.font = '700 14px "Barlow Condensed", sans-serif'; const tw = ctx.measureText(name).width;
   ctx.font = '600 11px "Barlow Condensed", sans-serif'; const sw = sub ? ctx.measureText(sub).width + 8 : 0;
@@ -3179,7 +3349,7 @@ function renderMap(){
       ctx.fillStyle = i ? '#2f5d3a' : '#f3e6c4'; ctx.beginPath(); ctx.moveTo(-18, -26); ctx.quadraticCurveTo(0, -38, 18, -26); ctx.closePath(); ctx.fill();
       ctx.restore(); } }); }
   // Bäume am Rand
-  [[.0, .04], [.54, .0], [1.0, .06], [1.0, .6], [.0, .52], [.5, 1.0]].forEach(([u, v], i) => { const q = mapUV(u, v); stuff.push({ y: q.y, f: () => tree(q.x, q.y, k, i) }); });
+  [[.0, .04], [.54, .0], [1.0, .06], [1.0, .6], [.0, .52], [.0, .98]].forEach(([u, v], i) => { const q = mapUV(u, v); stuff.push({ y: q.y, f: () => tree(q.x, q.y, k, i) }); });
   // Gebäude, Maxi und Kleinkram von hinten nach vorne
   LOCK.forEach(kk => { const q = locPos(kk); stuff.push({ y: q.y, f: () => drawLoc(kk, q) }); });
   stuff.push({ y: MAP.y + .5, f: () => {
@@ -3388,7 +3558,7 @@ function showRecords(){
 }
 function toTitle(){
   stage = 1; P.noCrate = false; P.slim = false; state = 'menu';
-  ['over','paused','hud','board','legalBox','promo','toast','ladenUi','career','goalBanner','chron','chronDone'].forEach(id => $(id).hidden = true); $('intro').hidden = true;
+  ['over','paused','hud','board','legalBox','promo','toast','ladenUi','farmUi','career','goalBanner','chron','chronDone'].forEach(id => $(id).hidden = true); $('intro').hidden = true;
   $('start').hidden = false; updateMenu(); showRecords();
 }
 /* ================= Level 3: Im Sudhaus =================
@@ -4060,6 +4230,7 @@ async function sendScore(){
 for (const b of document.querySelectorAll('[data-board]')) b.addEventListener('click', () => openBoard(b.closest('.overlay').id));
 $('boardClose').onclick = closeBoard;
 $('ladenOut').onclick = leaveShop;
+$('farmOut').onclick = leaveFarm; $('farmBtn').onclick = farmAct;
 $('buyBtn').onclick = ladenBuy;
 let tipNext = null;
 function showTip(brand, title, nodes, next){
