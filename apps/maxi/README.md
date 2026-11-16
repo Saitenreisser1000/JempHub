@@ -34,7 +34,7 @@ Hat Maxi Bier im Keller, bietet die Karte beim Braustüberl „Zapfen“ (und �
 
 ## Bauernhof (Echtzeit)
 
-Mit eigenem Sudhaus öffnet sich der Bauernhof auf der Karte. Dort sät Maxi Gerste (6 🪙 Saatgut), nach 4 Stunden ist sie reif (8 Gerste). Die Mälzerei macht daraus in 2 Stunden Malz (bis 12 auf einmal), das ins Sudhaus-Lager kommt. Ein zweites und drittes Feld kosten 80 und 200 🪙. Felder und Mälzerei laufen in echter Zeit weiter, auch wenn das Spiel geschlossen ist; auf der Karte zeigt der Bauernhof „🌾 fertig!“.
+Mit eigenem Sudhaus öffnet sich der Bauernhof auf der Karte. Gesät und geerntet wird von Hand: Mit dem Finger über das Feld streichen streut die Saat (6 🪙 je Feld, jedes der 24 Kästchen trägt), nach 4 Stunden mäht man die reifen Ähren mit der Sichel (je 3 Büschel 1 Gerste, volles Feld = 8 Gerste). Lücken kann man im ersten Fünftel der Wachstumszeit nachsäen. Mit Sämaschine (150 🪙) und Mähdrescher (300 🪙) aus dem Laden geht beides auf einen Tipp. Die Mälzerei macht aus Gerste in 2 Stunden Malz (bis 12 auf einmal), das ins Sudhaus-Lager kommt. Ein zweites und drittes Feld kosten 80 und 200 🪙. Felder und Mälzerei laufen in echter Zeit weiter, auch wenn das Spiel geschlossen ist; auf der Karte zeigt der Bauernhof „🌾 fertig!“.
 
 Die Zeit kommt aus dem `Date`-Kopf der Serverantwort (HEAD-Anfrage auf die eigene Seite), sonst von der Handyuhr. Sie läuft nie rückwärts (`ftb-clk`), und vorgestellte Handyzeit wird beim nächsten Abgleich mit dem Server korrigiert.
 
