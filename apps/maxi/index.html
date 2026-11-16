@@ -116,6 +116,7 @@ html,body{height:100%;margin:0;background:var(--night);color:var(--cream);overfl
 .legalcard p{font-size:15px!important}
 .legal button{font:600 14px var(--f-ui);letter-spacing:.04em;color:var(--cream);opacity:.85;text-decoration:underline;text-underline-offset:3px;padding:4px 2px;background:none;border:0;cursor:pointer}
 .legal.dark button{color:var(--hop);opacity:1}
+.legal .ver{font:600 13px var(--f-ui);color:var(--cream);opacity:.55;align-self:center}
 .legal button:focus-visible{outline:2px solid var(--copper);outline-offset:2px;border-radius:3px}
 #over,#board{grid-template-columns:minmax(0,1fr);justify-items:center}
 .boardcard{max-height:calc(100% - 16px);overflow-y:auto}
@@ -355,7 +356,7 @@ html,body{height:100%;margin:0;background:var(--night);color:var(--cream);overfl
   <div class="startbox">
     <button class="btn" id="startBtn" type="button">Start</button>
     <button class="btn ghost" id="boardBtn" type="button" data-board>Bestenliste</button>
-    <nav class="legal" aria-label="Rechtliches"><button type="button" data-legal="imp">Impressum</button><button type="button" data-legal="priv">Datenschutz</button><button type="button" id="resetBtn">Spielstand zurücksetzen</button></nav>
+    <nav class="legal" aria-label="Rechtliches"><button type="button" data-legal="imp">Impressum</button><button type="button" data-legal="priv">Datenschutz</button><button type="button" id="resetBtn">Spielstand zurücksetzen</button><span class="ver" id="verTag"></span></nav>
   </div>
 </div>
 
@@ -377,7 +378,7 @@ html,body{height:100%;margin:0;background:var(--night);color:var(--cream);overfl
       <p class="records" id="bestStart"></p>
     </div>
     <div class="ranknote" id="rankLine"></div>
-    <button type="button" class="chronbar" id="chronBtn"><span class="cb-book" aria-hidden="true">📖</span><span class="cb-txt"><b id="chronName"></b><span id="chronGoal"></span><span class="cb-bar" aria-hidden="true"><span id="chronFill"></span></span></span><span class="rm-more" aria-hidden="true">›</span></button>
+    <button type="button" class="chronbar" id="chronBtn"><span class="cb-book" aria-hidden="true">🏅</span><span class="cb-txt"><b id="chronName"></b><span id="chronGoal"></span><span class="cb-bar" aria-hidden="true"><span id="chronFill"></span></span></span><span class="rm-more" aria-hidden="true">›</span></button>
   </div>
   <div class="startbox">
     <div class="label mapcard" id="mapCard" aria-live="polite">
@@ -440,7 +441,7 @@ html,body{height:100%;margin:0;background:var(--night);color:var(--cream);overfl
 
 <div class="overlay" id="chron" hidden>
   <div class="label shopcard chroncard" role="dialog" aria-modal="true" aria-labelledby="chronTitle">
-    <h2 id="chronTitle">Maxis Chronik</h2>
+    <h2 id="chronTitle">Errungenschaften</h2>
     <ol class="chronlist" id="chronList"></ol>
     <h3>Bierwettbewerb</h3>
     <div class="medalwall" id="medalWall" aria-label="Medaillen je Sorte"></div>
@@ -530,7 +531,6 @@ const SHOP = [
   { k: 'time',   b: 'sud',   n: 'Routinierter Brauer', d: 'Im Sudhaus hast du 15 % mehr Zeit für jeden Brauschritt', p: [50, 120, 240] }
 ];
 let taler = 0, U = { life: 0, mult: 0, catch: 0, belt: 0, time: 0, tables: 0, filler: 0, kettle: 0, seal: 0, thermo: 0, copper: 0, lauter: 0, cellar: 0 }, baseMult = 1, roundPaid = false, shopBld = 'laden';
-function bldLevel(b){ return SHOP.filter(it => it.b === b).reduce((a, it) => a + (U[it.k] || 0), 0); }
 try { taler = Math.max(0, +localStorage.getItem('ftb-taler') || 0); Object.assign(U, JSON.parse(localStorage.getItem('ftb-upg') || '{}')); } catch(e) {}
 function saveShop(){ try { localStorage.setItem('ftb-taler', taler); localStorage.setItem('ftb-upg', JSON.stringify(U)); } catch(e) {} }
 function applyUpg(){
@@ -650,7 +650,7 @@ function buy(it){
   const have = U[it.k] || 0, price = it.p[have];
   if (price == null || taler < price) return;
   taler -= price; U[it.k] = have + 1; if (ECO.ownSud){ ECO.today.build = (ECO.today.build || 0) + price; saveEco(); } saveShop(); ladenSync(); updateEcoBar();
-  { const c = CHAPTERS[ECO.chron]; if (c && chapDone(c)) showToast(`📖 Kapitel „${c.t}“ geschafft – beim Verlassen gibt es die Belohnung`); }
+  if (rank < 3 && ECO.story >= 3){ const a = ACH[rank].find(x => achOk(x) && !(ECO.achSeen || []).includes(x.id)); if (a){ (ECO.achSeen = ECO.achSeen || []).push(a.id); saveEco(); showToast(`🏅 Errungenschaft: ${a.t}`); } }
   try { ac = ac || new (window.AudioContext || window.webkitAudioContext)(); ac.resume(); } catch(e) {}
   [660, 880, 1320].forEach((f, i) => setTimeout(() => beep(f, .1, 'triangle', .08), i*80));
 }
@@ -768,11 +768,11 @@ function updateHearts(dt, crateTop){
     if (h.y > groundY - 10){ h.fade -= dt*2; if (h.fade <= 0) hearts.splice(i,1); }
   }
 }
-cv.addEventListener('pointerdown', e => { if (state === 'farm'){ farmPointer(e); return; } if (state === 'shop'){ ladenPointer(e); return; } if (state === 'scene'){ sceneTap(); return; } if (stage === 4 && state !== 'menu'){ if (state === 'play') down4(e); return; } if (stage === 3 && state === 'play'){ tap3(e); return; } if (stage === 3 && state !== 'intro') return; if (stage === 2 && state === 'play'){ tap2(e); return; } if (stage === 2 && state !== 'intro') return; if (state === 'menu'){ if (!$('career').hidden) mapPointer(e); return; } if (startRub(e)) return; if (state === 'play' && nearZone(toLogical(e.clientX), e.clientY / S)) { startForklift(); return; } if (state === 'intro'){ if (introT > (INTRO_TAP[introKind] ?? 1.2)) endIntro(); return; } if (tryFlick(e.clientX, e.clientY)) { flickIds.add(e.pointerId); return; } touchX = toLogical(e.clientX); });
+cv.addEventListener('pointerdown', e => { if (state === 'farm'){ farmPointer(e); return; } if (state === 'shop'){ ladenPointer(e); return; } if (state === 'scene'){ sceneTap(); return; } if (state === 'dress'){ dressTap(); return; } if (stage === 4 && state !== 'menu'){ if (state === 'play') down4(e); return; } if (stage === 3 && state === 'play'){ tap3(e); return; } if (stage === 3 && state !== 'intro') return; if (stage === 2 && state === 'play'){ tap2(e); return; } if (stage === 2 && state !== 'intro') return; if (state === 'menu'){ if (!$('career').hidden) mapPointer(e); return; } if (startRub(e)) return; if (state === 'play' && nearZone(toLogical(e.clientX), e.clientY / S)) { startForklift(); return; } if (state === 'intro'){ if (introT > (INTRO_TAP[introKind] ?? 1.2)) endIntro(); return; } if (tryFlick(e.clientX, e.clientY)) { flickIds.add(e.pointerId); return; } touchX = toLogical(e.clientX); });
 cv.addEventListener('pointermove', e => { if (state === 'farm'){ farmMove(e); return; } if (stage === 4) return; if (stage === 3){ if (state === 'play') stirMove(e); return; } if (stage === 2){ if (state === 'play' && down2.has(e.pointerId)) move2(e); return; } if (RUB.has(e.pointerId)) { moveRub(e); return; } if (flickIds.has(e.pointerId)) { tryFlick(e.clientX, e.clientY); return; } if (touchX !== null || e.pointerType === 'mouse') touchX = toLogical(e.clientX); });
 cv.addEventListener('pointerup', e => { if (state === 'farm') farmUp(e); up4(e); down2.delete(e.pointerId); L3.heat = false; if (L3.stirId === e.pointerId){ L3.stirId = null; L3.paddle = null; } if (RUB.delete(e.pointerId)) return; if (flickIds.delete(e.pointerId)) return; touchX = null; });
 cv.addEventListener('pointercancel', e => { if (state === 'farm') farmUp(e); up4(e); L3.heat = false; L3.stirId = null; L3.paddle = null; RUB.delete(e.pointerId); flickIds.delete(e.pointerId); touchX = null; });
-addEventListener('keydown', e => { keys[e.key] = true; if (state === 'scene' && (e.key === 'Enter' || e.key === ' ')){ sceneTap(); return; } if (stage === 4){ if (e.key === 'p' || e.key === 'Escape') togglePause(); return; } if (stage === 3 && state === 'play'){ const n = +e.key; if (n >= 1 && n <= bins3().length) throwIng(n - 1); if (e.key === ' ' && L3.boilOn) stir3(); } if (stage === 2 && state === 'play'){ const k = { ArrowLeft: 0, ArrowDown: 1, ArrowRight: 2 }[e.key]; if (k !== undefined) setSwitch(k); } if (e.key === 'Enter' || e.key === ' ') startForklift(); if (e.key === 'p' || e.key === 'Escape') togglePause(); });
+addEventListener('keydown', e => { keys[e.key] = true; if (state === 'scene' && (e.key === 'Enter' || e.key === ' ')){ sceneTap(); return; } if (state === 'dress' && (e.key === 'Enter' || e.key === ' ')){ dressTap(); return; } if (stage === 4){ if (e.key === 'p' || e.key === 'Escape') togglePause(); return; } if (stage === 3 && state === 'play'){ const n = +e.key; if (n >= 1 && n <= bins3().length) throwIng(n - 1); if (e.key === ' ' && L3.boilOn) stir3(); } if (stage === 2 && state === 'play'){ const k = { ArrowLeft: 0, ArrowDown: 1, ArrowRight: 2 }[e.key]; if (k !== undefined) setSwitch(k); } if (e.key === 'Enter' || e.key === ' ') startForklift(); if (e.key === 'p' || e.key === 'Escape') togglePause(); });
 addEventListener('keyup', e => { keys[e.key] = false; });
 
 /* ---------- audio ---------- */
@@ -1100,19 +1100,20 @@ function drawMan(x, base){
   const moving = Math.min(1, Math.abs(P.vx)/200), sw = Math.sin(P.walk)*6*moving, bob = Math.abs(Math.sin(P.walk))*2*moving;
   ctx.save(); ctx.translate(x, base);
   const bk = P.slim ? .78 : 1; // Level 2: Maxi etwas schlanker
+  const o = outfit(); // Gewand je Berufsstufe
   // Schatten
   ctx.fillStyle = 'rgba(0,0,0,.3)'; ctx.beginPath(); ctx.ellipse(0,2,38*bk,7,0,0,Math.PI*2); ctx.fill();
   if (P.trip > 0){ const k = Math.min(1, P.trip/.35); ctx.rotate(P.tripDir*.5*k + Math.sin(tTotal*20)*.12*k); }
   ctx.translate(0,-bob);
   // Beine
   ctx.fillStyle = C.pants; rr(-18,-34+(sw>0?0:-sw*.3),14,32,4); ctx.fill(); rr(4,-34+(sw<0?0:sw*.3),14,32,4); ctx.fill();
-  ctx.fillStyle = '#1a1310'; ctx.beginPath(); ctx.ellipse(-11+sw*.5,-2,10,5,0,0,Math.PI*2); ctx.fill(); ctx.beginPath(); ctx.ellipse(11-sw*.5,-2,10,5,0,0,Math.PI*2); ctx.fill();
+  ctx.fillStyle = o.boot; ctx.beginPath(); ctx.ellipse(-11+sw*.5,-2,10,5,0,0,Math.PI*2); ctx.fill(); ctx.beginPath(); ctx.ellipse(11-sw*.5,-2,10,5,0,0,Math.PI*2); ctx.fill();
   // Bauch / Jacke
-  ctx.fillStyle = C.jacket; ctx.beginPath(); ctx.ellipse(0,-58,32*bk,31 - 3*(1-bk)/.22,0,0,Math.PI*2); ctx.fill();
+  ctx.fillStyle = o.j; ctx.beginPath(); ctx.ellipse(0,-58,32*bk,31 - 3*(1-bk)/.22,0,0,Math.PI*2); ctx.fill();
   if (P.slim){ ctx.fillStyle = '#2b2f36'; ctx.fillRect(-25*bk*1.0,-36,50*bk,4); ctx.fillStyle = '#c9a646'; ctx.fillRect(-3,-36.5,6,5); }
-  ctx.fillStyle = C.jacketDark; ctx.fillRect(-1,-86,2,52);
+  ctx.fillStyle = o.jd; ctx.fillRect(-1,-86,2,52);
   ctx.beginPath(); ctx.moveTo(-12,-86); ctx.lineTo(0,-76); ctx.lineTo(12,-86); ctx.lineTo(8,-89); ctx.lineTo(0,-82); ctx.lineTo(-8,-89); ctx.fill();
-  drawRankStars();
+  drawOutfit(o, bk);
   // Kopf
   ctx.fillStyle = C.skin; ctx.beginPath(); ctx.arc(0,-104,17,0,Math.PI*2); ctx.fill();
   ctx.beginPath(); ctx.arc(-17,-104,4,0,Math.PI*2); ctx.arc(17,-104,4,0,Math.PI*2); ctx.fill();
@@ -1132,21 +1133,23 @@ function drawMan(x, base){
   ctx.strokeStyle = '#151515'; ctx.lineWidth = 1.8; rr(-12.5,-111.5,10,7.5,2); ctx.stroke(); rr(2.5,-111.5,10,7.5,2); ctx.stroke();
   ctx.beginPath(); ctx.moveTo(-2.5,-109); ctx.lineTo(2.5,-109); ctx.moveTo(-12.5,-109.5); ctx.lineTo(-17,-108); ctx.moveTo(12.5,-109.5); ctx.lineTo(17,-108); ctx.stroke();
   ctx.fillStyle = 'rgba(255,255,255,.18)'; ctx.fillRect(-11,-110.5,3,2); ctx.fillRect(4,-110.5,3,2);
+  if (o.cap === 'brew') drawBrewCap(); else {
   // graue Trucker-Kappe mit Aufnäher
   ctx.fillStyle = C.cap; ctx.beginPath(); ctx.moveTo(-18,-113); ctx.quadraticCurveTo(-18,-133,0,-133); ctx.quadraticCurveTo(18,-133,18,-113); ctx.fill();
   ctx.fillStyle = C.capDark; ctx.beginPath(); ctx.moveTo(-20,-113); ctx.quadraticCurveTo(0,-118,20,-113); ctx.quadraticCurveTo(22,-109,18,-109.5); ctx.quadraticCurveTo(0,-113,-18,-109.5); ctx.quadraticCurveTo(-22,-109,-20,-113); ctx.fill();
   ctx.fillStyle = C.paper; ctx.beginPath(); ctx.moveTo(0,-128); ctx.lineTo(8,-122.5); ctx.lineTo(0,-117.5); ctx.lineTo(-8,-122.5); ctx.fill();
   ctx.strokeStyle = C.labelG; ctx.lineWidth = 1.2; ctx.stroke();
   ctx.fillStyle = C.labelG; ctx.fillRect(-4,-123,8,1.4);
+  }
   drawBrows(md);
   // Arme
-  ctx.strokeStyle = C.jacket; ctx.lineWidth = 12; ctx.lineCap = 'round';
+  ctx.strokeStyle = o.j; ctx.lineWidth = 12; ctx.lineCap = 'round';
   ctx.beginPath(); ctx.moveTo(-26*bk,-78); ctx.quadraticCurveTo(-40*bk,-66,-36*bk,-54); ctx.moveTo(26*bk,-78); ctx.quadraticCurveTo(40*bk,-66,36*bk,-54); ctx.stroke();
   // Kiste
   if (!P.noCrate) drawCrate(0, -66, P.count);
   if (!P.noCrate) for (let k=0;k<P.extra;k++) drawBottle(-10 + k*20, -78 - k*3, Math.PI/2 * (k ? -.92 : .92), false);
   // Hände
-  ctx.fillStyle = C.skin; ctx.beginPath(); ctx.arc(-35*bk,-52,6,0,Math.PI*2); ctx.arc(35*bk,-52,6,0,Math.PI*2); ctx.fill();
+  ctx.fillStyle = o.hand || C.skin; ctx.beginPath(); ctx.arc(-35*bk,-52,6,0,Math.PI*2); ctx.arc(35*bk,-52,6,0,Math.PI*2); ctx.fill();
   if (P.trip > 0){ ctx.fillStyle = '#f5d33f'; ctx.font = '14px sans-serif'; ctx.textAlign = 'center';
     for (let k=0;k<3;k++){ const a = tTotal*6 + k*2.1; ctx.fillText('★', Math.cos(a)*20, -142 + Math.sin(a)*5); } }
   ctx.restore();
@@ -1639,7 +1642,7 @@ function multTick(dt){
   if (mult >= MULT_MAX){ serieT = 0; return; }
   serieT += dt;
   if (serieT >= SERIE_STEP){
-    serieT -= SERIE_STEP; mult++; setMultUI('pop'); setMood('proud', .8);
+    serieT -= SERIE_STEP; mult++; if (stage === 1 && ECO.stats) ECO.stats.mult1 = Math.max(ECO.stats.mult1 || 1, mult); setMultUI('pop'); setMood('proud', .8);
     floatText(W/2, H*.3, `Ohne Fehler: ×${mult}`, C.gold); beep(880 + mult*70, .12, 'triangle', .12);
   } else if (Math.floor((serieT - dt)*4) !== Math.floor(serieT*4)) setMultUI(null);
 }
@@ -1650,17 +1653,20 @@ function breakStreak(){
 }
 const STORY_SORT = 20; // so viele Flaschen am Band, dann ruft der Braumeister
 let goalShown = false, goalHit = false;
-// Rundenziel je Spiel: wird mit jedem Erreichen etwas höher
-const GOAL_BASE = [0, 1500, 2000, 2500, 1000];
-const goalPts = () => Math.round(GOAL_BASE[stage]*(1 + .25*Math.min(12, (ECO.goals || {})[stage] || 0))/100)*100;
-const goalXP = () => rank === 0 ? 100 : 50;
+function scoreAch(){
+  // offene Punkte-Errungenschaft für dieses Spiel (sonst kein Ziel im HUD)
+  if (ECO.story < 3 || rank >= 3) return null;
+  return ACH[rank].find(a => a.st === stage && !achOk(a)) || null;
+}
 function goalInfo(){
-  // aktuelles Ziel der Runde: zuerst die Geschichte, sonst die nächste Beförderung
-  if (stage === 4) return null;
-  if (stage === 2 && ECO.story === 1) return { hud: `Ziel ${Math.min(L2.sorted, STORY_SORT)} / ${STORY_SORT} sortiert`, head: `${STORY_SORT} Flaschen sortieren`, sub: 'Dann holt dich der Braumeister ins Sudhaus.' };
-  if (stage === 3 && L3.trial) return { hud: `Probe ${Math.min(2, L3.brews)} / 2 Sude` };
-  const gp = goalPts(), rw = goalXP();
-  return { hud: goalHit ? `Ziel ✓ +${rw} EP` : `Ziel ${gp.toLocaleString('de-DE')}`, head: `${gp.toLocaleString('de-DE')} Punkte`, sub: rank === 0 ? `Rundenziel: +${rw} EP – damit wirst du Mitarbeiter und darfst ans Förderband.` : `Rundenziel: +${rw} Erfahrungspunkte` };
+  // Ziel im HUD: in der Einführung das Kapitel, danach eine offene Punkte-Errungenschaft
+  if (stage >= 4) return null;
+  if (stage === 1 && ECO.story === 0) return { hud: `Kapitel 1 · ${Math.min(st().crates, 5)} / 5 Kisten`, head: 'Kapitel 1: Fülle 5 Kisten', sub: 'Fang die Flaschen und bring volle Kisten zur Abgabe. Das ist erst der Anfang …' };
+  if (stage === 2 && ECO.story === 1) return { hud: `Kapitel 2 · ${Math.min(L2.sorted, STORY_SORT)} / ${STORY_SORT} sortiert`, head: `${STORY_SORT} Flaschen sortieren`, sub: 'Dann holt dich der Braumeister ins Sudhaus.' };
+  if (stage === 3 && L3.trial) return { hud: `Kapitel 3 · Probe ${Math.min(2, L3.brews)} / 2 Sude` };
+  const a = scoreAch(); if (!a) return null;
+  const pts = a.pts.toLocaleString('de-DE');
+  return { hud: goalHit ? '🏅 geschafft!' : `🏅 ${pts} Punkte`, head: `${pts} Punkte`, sub: `Errungenschaft auf dem Weg zum ${RANKS[rank + 1].t}` };
 }
 function showGoal(){
   const g = goalInfo(); if (!g || !g.head) return;
@@ -1766,6 +1772,7 @@ function update(dt){
 function render(){
   if (state === 'shop'){ ctx.setTransform(dpr*S,0,0,dpr*S, dpr*OX, 0); renderLaden(); return; }
   if (state === 'farm'){ ctx.setTransform(dpr*S,0,0,dpr*S, dpr*OX, 0); renderFarm(); return; }
+  if (state === 'dress' && dress){ ctx.setTransform(1,0,0,1,0,0); ctx.fillStyle = '#1e2430'; ctx.fillRect(0, 0, cv.width, cv.height); renderDress(); return; }
   if (state === 'scene' && scene){ ctx.setTransform(1,0,0,1,0,0); ctx.fillStyle = '#1e2430'; ctx.fillRect(0, 0, cv.width, cv.height); renderScene(); return; }
   if (stage === 4 && state !== 'menu'){ render4(); return; }
   if (stage === 3 && state !== 'menu'){ render3(); return; }
@@ -1890,63 +1897,92 @@ function drawMedal(x, y, lv, s = 1){
   ctx.fillStyle = 'rgba(255,255,255,.55)'; ctx.beginPath(); ctx.arc(-3, 3, 3, 0, Math.PI*2); ctx.fill();
   ctx.restore();
 }
+/* ================= Progression: Einführung in 3 Kapiteln, danach Berufsstufen über Errungenschaften =================
+   Zwei Systeme: Errungenschaften (nur Leistung) führen zur nächsten Stufe, Taler (Arbeit und Verkauf) kaufen alles.
+   Eine Stufe macht Dinge im Laden kaufbar, bezahlt wird mit Talern. Übersicht: apps/maxi/docs/progression.md */
 const medalCount = (lv = 1) => Object.values(ECO.medals).filter(v => v >= lv).length;
 const st = () => ECO.stats;
-const CHAPTERS = [
-  { t: 'Flaschensammeln', goal: 'Fülle 5 Kisten im Braustüberl', p: () => [st().crates, 5], r: 20, txt: 'Maxi fängt an, wo alle anfangen: beim Flaschensammeln.' },
-  { t: 'Beförderung', goal: 'Werde Mitarbeiter', u: ' EP', p: () => [rank >= 1 ? RANKS[1].xp : Math.min(xp, RANKS[1].xp), RANKS[1].xp], r: 30, txt: 'Der Chef ist zufrieden. Maxi darf ans Förderband.' },
-  { t: 'Der alte Kessel', goal: 'Kauf das alte Sudhaus', p: () => [ECO.ownSud ? 1 : 0, 1], r: 50, txt: 'Verbeult, grün und undicht – aber Maxis eigener Kessel.' },
-  { t: 'Das erste Fass', goal: 'Brau 1 Fass Bier', p: () => [st().fass, 1], r: 40, txt: 'Das erste eigene Fass steht im Keller. Es riecht nach Malz und Stolz.' },
-  { t: 'Feierabendbier', goal: 'Zapf 20 Gläser', p: () => [st().glasses, 20], r: 40, txt: 'Die ersten Gäste trinken Maxis Bier – und bestellen nach.' },
-  { t: 'Dicht ist dicht', goal: 'Kauf die Dichtung im Laden', p: () => [U.seal ? 1 : 0, 1], r: 40, txt: 'Der Kessel tropft nicht mehr. Jetzt wird das Bier besser.' },
-  { t: 'Erste Medaille', goal: 'Gewinn eine Medaille beim Bierwettbewerb', p: () => [medalCount(), 1], r: 60, txt: 'Die Jury nickt. Die erste Medaille hängt im Braustüberl.' },
-  { t: 'Pils', goal: 'Brau ein Pils (Läuterbottich)', p: () => [st().byName.Pils ? 1 : 0, 1], r: 60, txt: 'Hell, herb, schaumig: Maxi kann jetzt auch Pils.' },
-  { t: 'Stammlokal', goal: 'Zapf 50 Gläser perfekt', p: () => [st().perfect, 50], r: 80, txt: 'Im Braustüberl hat Maxi jetzt seine Stammgäste.' },
-  { t: 'Silber', goal: 'Gewinn eine Silbermedaille', p: () => [medalCount(2), 1], r: 100, txt: 'Silber! In der Zeitung steht ein kleiner Artikel über Maxi.' },
-  { t: 'Bierfest', goal: 'Brau 3 Fass Festbier', p: () => [st().byName.Festbier || 0, 3], r: 120, txt: 'Das Festbier ist fertig. Das Bierfest kann kommen.' },
-  { t: 'Gold', goal: 'Gewinn eine Goldmedaille', p: () => [medalCount(3), 1], r: 150, txt: 'Gold für Maxis Bier. Der Braumeister schüttelt ihm die Hand.' },
-  { t: 'Maxis Bier', goal: 'Medaille in allen fünf Sorten', p: () => [medalCount(), 5], r: 300, txt: 'Fünf Sorten, fünf Medaillen: Maxi ist Braumeister mit eigener Marke.' }
+const KAPITEL = [
+  { t: 'Braustüberl', goal: 'Fülle 5 Kisten', p: () => [st().crates, 5] },
+  { t: 'Förderband', goal: 'Sortiere die Flaschen am Band', p: () => [0, 1] },
+  { t: 'Sudhaus', goal: 'Braue zwei Probesude', p: () => [0, 1] }
 ];
-const chapDone = c => { const [h, n] = c.p(); return h >= n; };
-function chronInit(){
+const topOf = s => Math.max(s === 1 ? best : s === 2 ? best2 : 0, (st().top || {})[s] || 0);
+const UPG5 = [['seal', 'Dichtung'], ['thermo', 'Thermometer'], ['copper', 'Politur'], ['lauter', 'Läuterbottich'], ['cellar', 'Gärtank']];
+// je Stufe die Errungenschaften für die nächste; st/pts: Punkteziel in einem Spiel (zeigt das HUD)
+const ACH = [
+  [ { id: 'l-kisten', t: '20 Kisten im Braustüberl', p: () => [st().crates, 20] },
+    { id: 'l-1500', t: '1500 Punkte im Braustüberl', st: 1, pts: 1500, p: () => [topOf(1), 1500] },
+    { id: 'l-mult', t: 'Multiplikator ×4 im Braustüberl', p: () => [st().mult1 || 1, 4] } ],
+  [ { id: 'm-sud', t: 'Sudhaus gekauft', p: () => [ECO.ownSud ? 1 : 0, 1] },
+    { id: 'm-fass', t: 'Erstes Fass gebraut', p: () => [st().fass, 1] },
+    { id: 'm-glas', t: '20 Gläser gezapft', p: () => [st().glasses, 20] },
+    { id: 'm-2000', t: '2000 Punkte am Förderband', st: 2, pts: 2000, p: () => [topOf(2), 2000] },
+    { id: 'm-seal', t: 'Dichtung gekauft', p: () => [U.seal ? 1 : 0, 1] } ],
+  [ ...['Märzen', 'Pils', 'Zwickl', 'Festbier', 'Dunkles'].map(n => ({ id: 'b-med-' + n, t: `🏅 Medaille: ${n}`, p: () => [ECO.medals[n] ? 1 : 0, 1] })),
+    ...UPG5.map(([k, n]) => ({ id: 'b-upg-' + k, t: `🛠 Ausbau: ${n}`, p: () => [U[k] ? 1 : 0, 1] })) ]
+];
+const achOk = a => { const [h, n] = a.p(); return h >= n; };
+const achAll = r => !!ACH[r] && ACH[r].every(achOk);
+const achCount = r => [(ACH[r] || []).filter(achOk).length, (ACH[r] || []).length];
+function progInit(){
   if (!ECO.stats) ECO.stats = { crates: 0, fass: 0, glasses: 0, perfect: 0, byName: {} };
+  ECO.stats.top = ECO.stats.top || {};
   if (!ECO.medals) ECO.medals = {};
-  // bestehende Spielstände: schon Erreichtes zählt still, ohne Belohnung
-  if (ECO.chron == null){ ECO.chron = 0;
-    if (ECO.story >= 3 || rank >= 1) ECO.stats.crates = Math.max(ECO.stats.crates, 5);
-    for (const [n, k] of Object.entries(ECO.keller || {})){ ECO.stats.byName[n] = Math.max(ECO.stats.byName[n] || 0, k.f); ECO.stats.fass = Math.max(ECO.stats.fass, ECO.fass >= 1 ? 1 : 0); }
-    if (ECO.story >= 3 || rank >= 1) while (ECO.chron < CHAPTERS.length && chapDone(CHAPTERS[ECO.chron])) ECO.chron++; saveEco(); }
+  let v = 0; try { v = +localStorage.getItem('ftb-prog') || 0; } catch(e) {}
+  if (v >= 2) return;
+  // alte Spielstände: Produktionsmitarbeiter und Vorarbeiter gibt es nicht mehr, schon Erreichtes zählt still
+  rank = ECO.story >= 3 && rank >= 1 ? 1 : 0;
+  if (ECO.story >= 1) ECO.stats.crates = Math.max(ECO.stats.crates, 5);
+  for (const [n, k] of Object.entries(ECO.keller || {})){ ECO.stats.byName[n] = Math.max(ECO.stats.byName[n] || 0, k.f); ECO.stats.fass = Math.max(ECO.stats.fass, ECO.fass >= 1 ? 1 : 0); }
+  if (ECO.story >= 3) while (rank < 3 && achAll(rank)) rank++;
+  ECO.achSeen = ACH.flat().filter(achOk).map(a => a.id);
+  saveRank(); saveEco();
+  try { localStorage.setItem('ftb-prog', '2'); localStorage.removeItem('ftb-xp'); } catch(e) {}
 }
 function renderChronBar(){
-  const c = CHAPTERS[ECO.chron], b = $('chronBtn');
-  if (!c){ $('chronName').textContent = 'Chronik vollendet'; $('chronGoal').textContent = `Maxi ist Braumeister · ${medalCount()} Medaillen`; $('chronFill').style.width = '100%'; return; }
-  const [h, n] = c.p();
-  $('chronName').textContent = `Kapitel ${ECO.chron + 1}: ${c.t}`;
-  $('chronGoal').textContent = `${c.goal}${n > 1 ? ` · ${fmtF(Math.min(h, n))} / ${n}${c.u || ''}` : ''}`;
-  $('chronFill').style.width = `${Math.min(100, h/n*100)}%`;
-  b.classList.toggle('ready', h >= n);
+  // der eine Balken oben: in der Einführung das Kapitel, danach die Errungenschaften der Stufe
+  const b = $('chronBtn');
+  if (ECO.story < 3){ const c = KAPITEL[Math.min(2, ECO.story)], [h, n] = c.p();
+    $('chronName').textContent = `Kapitel ${Math.min(2, ECO.story) + 1}: ${c.t}`;
+    $('chronGoal').textContent = `${c.goal}${n > 1 ? ` · ${Math.min(h, n)} / ${n}` : ''}`;
+    $('chronFill').style.width = `${Math.min(100, h/n*100)}%`; b.classList.remove('ready'); return; }
+  if (rank >= 3){ $('chronName').textContent = 'Maxi ist Braumeister'; $('chronGoal').textContent = `${medalCount()} Medaillen · ${medalCount(3)} davon Gold`; $('chronFill').style.width = '100%'; b.classList.remove('ready'); return; }
+  const [d, n] = achCount(rank), nx = ACH[rank].find(a => !achOk(a));
+  $('chronName').textContent = `Weg zum ${RANKS[rank + 1].t}`;
+  $('chronGoal').textContent = nx ? `${nx.t} · ${d} / ${n}` : 'Alles erledigt: Beförderung!';
+  $('chronFill').style.width = `${d/n*100}%`;
+  b.classList.toggle('ready', d >= n);
 }
 function chronCheck(){
-  // fertiges Kapitel feiern; gibt true zurück, wenn ein Fenster offen ist
-  const c = CHAPTERS[ECO.chron]; if (!c || !chapDone(c)) return false;
-  ECO.chron++; taler += c.r; saveEco(); saveShop(); addXP(c.r);
-  $('cdNum').textContent = `Kapitel ${ECO.chron} geschafft`;
-  $('cdTitle').textContent = c.t; $('cdText').textContent = c.txt; $('cdReward').textContent = `+${c.r} 🪙 · +${c.r} EP`;
-  const nx = CHAPTERS[ECO.chron]; $('cdNext').textContent = nx ? `Als Nächstes: ${nx.goal}` : 'Die Chronik ist vollendet. Prost, Braumeister!';
-  $('career').hidden = true; $('chron').hidden = true; $('chronDone').hidden = false; $('cdOk').focus();
-  try { sCash(); setTimeout(() => sCash(), 160); } catch(e) {}
+  // alle Errungenschaften der Stufe erledigt: Beförderung mit neuem Gewand; true, wenn die Animation läuft
+  if (ECO.story < 3 || rank >= 3 || !achAll(rank)) return false;
+  rank++; saveRank();
+  playDress(rank, () => { if (rank === 3) masterIntro(); else openCareer(); });
   return true;
 }
+function achWatch(){
+  // im Spiel: frisch erledigte Errungenschaften gleich anzeigen
+  if (ECO.story < 3 || rank >= 3) return;
+  ECO.achSeen = ECO.achSeen || [];
+  for (const a of ACH[rank]) if (!ECO.achSeen.includes(a.id) && achOk(a)){
+    ECO.achSeen.push(a.id); saveEco();
+    floatText(W/2, H*.26, `🏅 ${a.t}`, C.gold); [784, 988, 1175].forEach((f, i) => setTimeout(() => beep(f, .1, 'triangle', .07), i*90));
+    if (achAll(rank)) setTimeout(() => floatText(W/2, H*.26 + 30, 'Beförderung wartet auf der Karte!', C.cream), 900);
+  }
+}
 function openChron(){
+  // Errungenschaften der aktuellen Stufe, darunter der Bierwettbewerb
   const ol = $('chronList'); ol.replaceChildren();
-  CHAPTERS.forEach((c, i) => {
-    const li = document.createElement('li'), done = i < ECO.chron, cur = i === ECO.chron;
-    li.className = done ? 'done' : cur ? 'cur' : 'todo';
-    if (done) li.textContent = `✓ ${c.t}`;
-    else if (cur){ const [h, n] = c.p(); li.innerHTML = ''; const b = document.createElement('b'); b.textContent = c.t; li.append(b, document.createElement('br'), `${c.goal}${n > 1 ? ` (${fmtF(Math.min(h, n))} / ${n})` : ''} · +${c.r} 🪙 · +${c.r} EP`); }
-    else li.textContent = i === ECO.chron + 1 ? c.t : '· · ·';
+  if (rank >= 3){ const li = document.createElement('li'); li.className = 'done'; li.textContent = '✓ Maxi ist Braumeister. Alle Errungenschaften erledigt.'; ol.append(li); }
+  else for (const a of ACH[rank]){
+    const li = document.createElement('li'), ok = achOk(a), [h, n] = a.p();
+    li.className = ok ? 'done' : 'cur';
+    li.textContent = `${ok ? '✓' : '☐'} ${a.t}${!ok && n > 1 ? ` (${fmtF(Math.min(h, n))} / ${n})` : ''}`;
     ol.append(li);
-  });
+  }
+  if (rank < 3){ const li = document.createElement('li'); li.className = 'todo'; li.textContent = `Danach: ${RANKS[rank + 1].t} · ${RANKS[rank + 1].fit}`; ol.append(li); }
+  $('chronTitle').textContent = rank < 3 ? `Errungenschaften · Weg zum ${RANKS[rank + 1].t}` : 'Errungenschaften';
   renderContest();
   $('career').hidden = true; $('chron').hidden = false; $('chronClose').focus();
 }
@@ -1974,9 +2010,9 @@ function renderContest(){
 function submitBeer(n, lv){
   const k = ECO.keller[n]; if (!k || k.f < 1 - 1e-6) return;
   const prev = ECO.medals[n] || 0, prize = MEDAL[lv].prize - (prev ? MEDAL[prev].prize : 0);
-  k.f = Math.round((k.f - 1)*10000)/10000; syncFass(); ECO.medals[n] = lv; taler += prize; saveEco(); saveShop(); addXP(prize);
+  k.f = Math.round((k.f - 1)*10000)/10000; syncFass(); ECO.medals[n] = lv; taler += prize; saveEco(); saveShop();
   try { sCash(); } catch(e) {}
-  showToast(`${['', '🥉', '🥈', '🥇'][lv]} ${MEDAL[lv].n} für dein ${n}! +${prize} 🪙 · +${prize} EP`);
+  showToast(`${['', '🥉', '🥈', '🥇'][lv]} ${MEDAL[lv].n} für dein ${n}! +${prize} 🪙`);
   if (!chronCheck()) openChron();
 }
 /* ================= Ausschank im Braustüberl =================
@@ -2589,40 +2625,30 @@ function drawIntro2(g){
     if (p < 1.5){ const k = Math.min(1, p/.9); finger(cx + 70 - 62*k, cy + 110 - 96*k, p > .9 && p < 1.05 ? .88 : 1); }
   }
 }
-/* Beförderungen: Maxis Laufbahn in der Brauerei (auf dem Gerät gespeichert) */
-// Laufbahn: Erfahrungspunkte (EP) aus Rundenzielen, Kapiteln der Chronik und Medaillen
+/* Berufsstufen: Maxis Laufbahn in der Brauerei (auf dem Gerät gespeichert); befördert wird über Errungenschaften */
 const RANKS = [
-  { t: 'Brauereilakai', xp: 0 },
-  { t: 'Mitarbeiter', xp: 100 },
-  { t: 'Produktionsmitarbeiter', xp: 600 },
-  { t: 'Vorarbeiter', xp: 1500 }
+  { t: 'Brauereilakai', s: 'Lakai', fit: 'Leiberl und Kapperl', open: '' },
+  { t: 'Mitarbeiter', s: 'Mitarbeiter', fit: 'Arbeitsjacke und Handschuhe', open: 'Arbeit in der Abfüllhalle, das alte Sudhaus, eigener Bierpreis' },
+  { t: 'Brauer', s: 'Brauer', fit: 'Brauerschürze und Gummistiefel', open: 'Bauernhof, Läuterbottich, Gärtank, Thermometer, Politur, größerer Kessel' },
+  { t: 'Braumeister', s: 'Braumeister', fit: 'Braumeisterkappe und Gilet', open: '' }
 ];
-let rank = 0, promoTarget = 2, xp = 0;
+const NEED_BRAUER = ['thermo', 'copper', 'lauter', 'cellar', 'kettle', 'saer', 'drescher'];
+let rank = 0, promoTarget = 2;
 try { rank = Math.max(0, Math.min(RANKS.length - 1, +localStorage.getItem('ftb-rank') || 0)); } catch(e) {}
-{ let s = null; try { s = localStorage.getItem('ftb-xp'); } catch(e) {} xp = s == null ? RANKS[rank].xp : Math.max(0, +s || 0); }
-function saveXP(){ try { localStorage.setItem('ftb-xp', xp); } catch(e) {} }
-function addXP(n){
-  // EP gutschreiben; im Spiel kommt die Beförderung mit Fanfare, sonst als Hinweis
-  xp += n; saveXP();
-  if (rank < RANKS.length - 1 && xp >= RANKS[rank + 1].xp){
-    rank++; saveRank();
-    if (state === 'play') promote(); else showToast(`⭐ Beförderung: Maxi ist jetzt ${RANKS[rank].t}!`);
-  }
-}
-chronInit();
 if (ECO.ownSud === undefined) ECO.ownSud = rank >= 2; // wer schon im Sudhaus war, behält es
 function saveRank(){ try { localStorage.setItem('ftb-rank', rank); } catch(e) {} }
+progInit();
 function updateMenu(){
   const all = typeof UNLOCK_ALL !== 'undefined' && UNLOCK_ALL;
   $('rankLine').textContent = all ? 'Testversion: alle Level offen' : '';
-  const short = ['Lakai', 'Mitarbeiter', 'Produktion', 'Vorarbeiter'], ol = $('rankSteps');
+  const ol = $('rankSteps');
   ol.replaceChildren(...RANKS.map((r, i) => {
     const li = document.createElement('li'), dot = document.createElement('span'), nm = document.createElement('span'), pt = document.createElement('span');
     li.className = i < rank ? 'done' : i === rank ? 'cur' : 'todo';
     if (i === rank) li.setAttribute('aria-current', 'step');
     li.title = r.t; dot.className = 'dot'; dot.textContent = i < rank ? '✓' : i + 1;
-    nm.className = 'nm'; nm.textContent = short[i];
-    pt.className = 'pt'; pt.textContent = i === rank ? 'jetzt' : i < rank ? 'erreicht' : `ab ${r.xp} EP`;
+    nm.className = 'nm'; nm.textContent = r.s;
+    pt.className = 'pt'; pt.textContent = i === rank ? 'jetzt' : i < rank ? 'erreicht' : '🔒';
     li.append(dot, nm, pt); return li;
   }));
   const set = (id, lv, name, needRank) => {
@@ -2633,9 +2659,10 @@ function updateMenu(){
     b.replaceChildren(k, n);
   };
   const top = Math.max(best, best2, best3), nx = RANKS[rank + 1];
-  $('rmBadge').textContent = ECO.master ? '★' : rank + 1; $('rmName').textContent = ECO.master ? 'Braumeister' : RANKS[rank].t;
-  $('rankMini').title = `${xp} Erfahrungspunkte`;
-  $('nextRank').textContent = nx ? `${xp} EP · Nächste Stufe: ${nx.t} ab ${nx.xp} EP. EP gibt es für Rundenziele, Kapitel der Chronik und Medaillen.` : `${xp} EP · Maxi ist Vorarbeiter, die höchste Stufe. Prost!`;
+  $('rmBadge').textContent = rank >= 3 ? '★' : rank + 1; $('rmName').textContent = RANKS[rank].t;
+  const [ad, an] = achCount(rank);
+  $('rankMini').title = rank < 3 ? `${ad} von ${an} Errungenschaften` : 'Braumeister';
+  $('nextRank').textContent = rank < 3 ? `Nächste Stufe: ${RANKS[rank + 1].t}, wenn alle Errungenschaften erledigt sind (${ad} / ${an}). Danach kaufbar: ${RANKS[rank + 1].open || 'der Titel'}.` : 'Maxi ist Braumeister, die höchste Stufe. Prost!';
 }
 /* ================= Bauernhof: Gerstenfelder und Mälzerei in Echtzeit =================
    Die Zeit kommt vom Server (Datum der Antwort), sonst von der Handyuhr. Sie läuft nie rückwärts:
@@ -2901,7 +2928,7 @@ function curve(k){
   for (let i=0;i<=18;i++){ const t = i/18, m = 1 - t; out.push({ x: m*m*a.x + 2*m*t*c.x + t*t*b.x, y: m*m*a.y + 2*m*t*c.y + t*t*(b.y + 4) }); }
   return out;
 }
-function locked(k){ const L = LOCS[k], all = typeof UNLOCK_ALL !== 'undefined' && UNLOCK_ALL; if (all) return false; if (k === 'sud' || k === 'hof') return !ECO.ownSud; return L.need != null && rank < L.need; }
+function locked(k){ const L = LOCS[k], all = typeof UNLOCK_ALL !== 'undefined' && UNLOCK_ALL; if (all) return false; if (ECO.story < 3) return k !== 'bar'; if (k === 'hof') return !ECO.ownSud || rank < 2; if (k === 'sud') return !ECO.ownSud; return L.need != null && rank < L.need; }
 function mapInfo(){
   const L = LOCS[MAP.at], go = $('mapGo'); go.disabled = false; $('mapGo2').hidden = true;
   $('mapPrice').style.visibility = 'hidden';
@@ -2914,13 +2941,13 @@ function mapInfo(){
     $('mapDesc').textContent = 'Tipp auf ein Gebäude, dann geht Maxi hin.'; go.style.visibility = 'hidden'; return;
   }
   $('mapName').textContent = L.name;
-  if (MAP.at === 'sud' && !ECO.ownSud && rank >= 1){
+  if (MAP.at === 'sud' && !ECO.ownSud && rank >= 1 && ECO.story >= 3){
     $('mapName').textContent = 'Das alte Sudhaus';
     $('mapDesc').textContent = taler >= KESSEL ? `Du hast genug gespart: Der alte Sudkessel kostet ${KESSEL} 🪙.` : `Zu verkaufen für ${KESSEL} 🪙. Den Rest verdienst du im Braustüberl und am Band.`;
     go.textContent = taler >= KESSEL ? `Sudkessel kaufen (${KESSEL} 🪙)` : `Noch ${KESSEL - taler} 🪙 sparen`; go.style.visibility = 'visible'; go.disabled = taler < KESSEL; return;
   }
   if (locked(MAP.at)){
-    $('mapDesc').textContent = MAP.at === 'hof' ? '🔒 Gerste anbauen lohnt sich erst mit eigenem Sudhaus.' : MAP.at === 'sud' ? '🔒 Das alte Sudhaus steht leer.' : `🔒 Ab ${RANKS[L.need].t}: ${xp} / ${RANKS[L.need].xp} EP. EP gibt es für Rundenziele.`; go.style.visibility = 'hidden'; return;
+    $('mapDesc').textContent = ECO.story < 3 ? '🔒 Das ist erst der Anfang … Hier geht es später weiter.' : MAP.at === 'hof' ? '🔒 Den Bauernhof gibt es ab der Stufe Brauer.' : MAP.at === 'sud' ? '🔒 Das alte Sudhaus steht leer.' : `🔒 Ab ${RANKS[L.need].t}: erledige die Errungenschaften (🏅 oben).`; go.style.visibility = 'hidden'; return;
   }
   const pre = usePre();
   const st = MAP.at === 'sud' && ECO.ownSud ? `Lager: ${pre ? ECO.malzP : ECO.malz} Malz, ${pre ? ECO.hopfenP : ECO.hopfen} Hopfen${pre ? ' (Premium)' : ''}. Reicht für ${availRecipes().map(r => `${r.n} ${sudCount(r)}×`).join(', ')}.` : '';
@@ -3007,7 +3034,7 @@ function ladenWares(){
     if (!!w.ing !== (LADEN.room === 'zut')) return false;
     if (w.ing) return ECO.ownSud && (!w.pre || qCap() >= 4);
     const it = SHOP.find(s => s.k === w.id); if (!it) return false;
-    if (it.b === 'sud' || it.b === 'hof') return ECO.ownSud;
+    if (it.b === 'sud' || it.b === 'hof') return ECO.ownSud && (rank >= 2 || !NEED_BRAUER.includes(it.k));
     if (it.b === 'halle') return !locked('halle');
     return true;
   }).map(w => Object.assign({}, w, { it: SHOP.find(s => s.k === w.id), st: STORE.find(s => s.k === w.id) }));
@@ -3218,7 +3245,7 @@ function buySud(){
   sudIntro();
 }
 function enterLoc(k){
-  if (k === 'sud' && !ECO.ownSud && rank >= 1){ buySud(); return; }
+  if (k === 'sud' && !ECO.ownSud && rank >= 1 && ECO.story >= 3){ buySud(); return; }
   if (!k || k === 'plaza' || locked(k)) return;
   if (stockMsg(k)){ mapTap('laden'); return; }
   const L = LOCS[k];
@@ -3349,14 +3376,13 @@ function drawLoc(k, p){
     ctx.fillStyle = '#6b4a2e'; ctx.beginPath(); ctx.moveTo(-54, 8); ctx.lineTo(-48, -10); ctx.lineTo(-42, 8); ctx.fill(); ctx.fillStyle = '#2a3a30'; ctx.fillRect(-53, -8, 10, 12);
     ctx.fillStyle = '#e8e8e8'; ctx.fillRect(-51, -5, 6, 1); ctx.fillRect(-51, -1, 4, 1);
   }
-  if (lk && !(k === 'sud' && rank >= 1)){ ctx.globalAlpha = 1; ctx.fillStyle = 'rgba(20,26,36,.82)'; ctx.beginPath(); ctx.arc(0, -46, 19, 0, Math.PI*2); ctx.fill(); ctx.strokeStyle = C.gold; ctx.lineWidth = 2; ctx.stroke(); ctx.font = '20px serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillText('🔒', 0, -45); }
+  if (lk && !(k === 'sud' && rank >= 1 && ECO.story >= 3)){ ctx.globalAlpha = 1; ctx.fillStyle = 'rgba(20,26,36,.82)'; ctx.beginPath(); ctx.arc(0, -46, 19, 0, Math.PI*2); ctx.fill(); ctx.strokeStyle = C.gold; ctx.lineWidth = 2; ctx.stroke(); ctx.font = '20px serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillText('🔒', 0, -45); }
   ctx.restore();
 }
 function drawLocLabel(k, p){
   const L = LOCS[k], lk = locked(k), sel = MAP.at === k;
   const name = k === 'hof' ? 'Bauernhof' : k === 'bar' ? 'Braustüberl' : k === 'laden' ? 'Laden' : k === 'halle' ? 'Abfüllhalle' : ECO.ownSud ? 'Sudhaus' : 'Altes Sudhaus';
-  const lv = Math.min(5, bldLevel(k));
-  const sub = k === 'hof' ? (lk ? 'mit Sudhaus' : farmNews()) : k === 'sud' && !ECO.ownSud ? (rank >= 1 ? `${KESSEL} 🪙` : '') : lk ? `ab ${['Lakai', 'Mitarbeiter', 'Produktion', 'Vorarbeiter'][L.need]}` : lv && !L.shop ? '★'.repeat(lv) : '';
+  const sub = lk && ECO.story < 3 ? 'später' : k === 'hof' ? (lk ? 'ab Brauer' : farmNews()) : k === 'sud' && !ECO.ownSud ? (rank >= 1 ? `${KESSEL} 🪙` : '') : lk ? `ab ${RANKS[L.need].s}` : '';
   ctx.save(); ctx.translate(p.x, p.y); ctx.scale(p.k, p.k);
   ctx.font = '700 14px "Barlow Condensed", sans-serif'; const tw = ctx.measureText(name).width;
   ctx.font = '600 11px "Barlow Condensed", sans-serif'; const sw = sub ? ctx.measureText(sub).width + 8 : 0;
@@ -3452,35 +3478,93 @@ function renderMap(){
 }
 
 function checkPromo(){
-  // Rundenziel erreicht: Erfahrungspunkte, das nächste Ziel dieses Spiels wird höher
-  if (state !== 'play' || goalHit || (stage === 2 && ECO.story === 1) || (stage === 3 && L3.trial)) return;
-  if (score < goalPts()) return;
-  const rw = goalXP(); goalHit = true; ECO.goals = ECO.goals || {}; ECO.goals[stage] = (ECO.goals[stage] || 0) + 1; saveEco();
-  floatText(W/2, H*.32, `Ziel geschafft! +${rw} EP`, C.gold); [659, 880].forEach((f, i) => setTimeout(() => beep(f, .12, 'triangle', .08), i*110));
-  addXP(rw); updateHud();
+  // Punkte-Errungenschaft im laufenden Spiel erreicht; Kapitel 1 endet nach 5 Kisten
+  if (state !== 'play') return;
+  if (stage === 1 && ECO.story === 0 && st().crates >= 5){ storyHall(); return; }
+  if (Math.floor(tTotal*2) !== checkPromo.k){ checkPromo.k = Math.floor(tTotal*2); achWatch(); }
+  if (goalHit) return; const a = scoreAch(); if (!a || score < a.pts) return;
+  goalHit = true; st().top[stage] = Math.max(st().top[stage] || 0, score); saveEco();
+  [659, 880].forEach((f, i) => setTimeout(() => beep(f, .12, 'triangle', .08), i*110)); updateHud(); achWatch();
 }
-function promote(){
-  state = 'promo'; touchX = null; down2.clear(); setMood('proud', 99);
-  const r = RANKS[rank];
-  $('promoRank').textContent = r.t;
-  $('promoText').textContent = rank === 1 ? 'Maxi hat sich bewährt und darf drinnen ans Förderband.'
-    : rank === RANKS.length - 1 ? 'Maxi ist Vorarbeiter: der beste Lohn, den die Freetown Brewery zahlt.'
-    : 'Maxi ist Produktionsmitarbeiter: mehr Lohn im Braustüberl und am Band.';
-  $('promoNext').textContent = rank < RANKS.length - 1 ? `Nächste Stufe: ${RANKS[rank + 1].t} ab ${RANKS[rank + 1].xp} EP` : '';
-  promoTarget = stage === 2 ? 1 : 2;
-  $('promoStay').textContent = ['', 'Im Braustüberl weiterspielen', 'Am Förderband weiterspielen', 'Im Sudhaus weiterspielen', 'In der Schank weiterspielen'][stage];
-  $('promoGo').textContent = promoTarget === 2 ? 'Ab ans Förderband' : 'Ins Braustüberl';
-  $('promoGo').hidden = promoTarget === stage || stage >= 3;
-  $('promoStay').hidden = ECO.story === 0 && stage === 1;
-  $('promo').hidden = false;
-  // Fanfare und Konfetti
-  [523, 659, 784, 1047].forEach((f, i) => setTimeout(() => beep(f, i === 3 ? .4 : .14, 'square', .08), i*120));
-  for (let k=0;k<60;k++) parts.push({ x: W/2 + (Math.random()-.5)*60, y: H*.3, vx: (Math.random()-.5)*420, vy: -200 - Math.random()*320, life: 1.6, c: ['#e6b84a','#2f5d3a','#c22a22','#f3e6c4'][k%4], s: 2 + Math.random()*3, rot: Math.random()*6 });
+/* ---------- Beförderung: Maxi zieht hinter dem Vorhang das neue Gewand an ---------- */
+const OUTFIT = [
+  { j: '#d6d0c2', jd: '#aca596', boot: '#1a1310', cap: 'truck', items: ['👕', '🧢'] },                      // Lakai: Leiberl und Kapperl
+  { j: '#e07a2a', jd: '#b25a17', boot: '#1a1310', cap: 'truck', hand: '#4a4f57', stripe: true, items: ['🦺', '🧤'] }, // Mitarbeiter
+  { j: '#3f7f3c', jd: '#2e5f2c', boot: '#2e6b3a', cap: 'truck', apron: true, items: ['🥼', '🥾'] },        // Brauer
+  { j: '#3f7f3c', jd: '#2e5f2c', boot: '#1a1310', cap: 'brew', vest: true, items: ['🎩', '🏅'] }          // Braumeister
+];
+let dress = null, dressRank = null;
+const outfit = () => OUTFIT[dressRank ?? (ECO.story < 3 ? 0 : rank)] || OUTFIT[0];
+function drawOutfit(o, bk){
+  // Zusätze auf der Jacke: Warnstreifen, Brauerschürze oder Gilet mit Abzeichen
+  if (o.stripe){ ctx.fillStyle = '#e8e4da'; ctx.fillRect(-28*bk, -62, 56*bk, 4); ctx.fillRect(-25*bk, -50, 50*bk, 4); }
+  if (o.apron){ ctx.fillStyle = '#f5f1e6'; ctx.beginPath(); ctx.moveTo(-17*bk, -80); ctx.lineTo(17*bk, -80); ctx.lineTo(24*bk, -30); ctx.quadraticCurveTo(0, -24, -24*bk, -30); ctx.closePath(); ctx.fill();
+    ctx.strokeStyle = '#c9c2b0'; ctx.lineWidth = 2; ctx.beginPath(); ctx.moveTo(-12*bk, -80); ctx.lineTo(-16*bk, -88); ctx.moveTo(12*bk, -80); ctx.lineTo(16*bk, -88); ctx.stroke();
+    ctx.fillStyle = '#2f5d3a'; ctx.font = '700 7px "Barlow Condensed", sans-serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillText('FREETOWN', 0, -58); }
+  if (o.vest){ ctx.fillStyle = '#6b4325'; for (const s of [-1, 1]){ ctx.beginPath(); ctx.moveTo(s*3, -84); ctx.lineTo(s*20*bk, -82); ctx.lineTo(s*26*bk, -40); ctx.lineTo(s*4, -34); ctx.closePath(); ctx.fill(); }
+    ctx.fillStyle = C.gold; ctx.beginPath(); ctx.arc(13*bk, -66, 4.5, 0, Math.PI*2); ctx.fill(); ctx.fillStyle = '#c22a22'; ctx.fillRect(11*bk, -61, 4, 6);
+    ctx.fillStyle = '#e6b84a'; for (let i = 0; i < 3; i++){ ctx.beginPath(); ctx.arc(6, -74 + i*12, 1.6, 0, Math.PI*2); ctx.fill(); } }
+}
+function drawBrewCap(){
+  ctx.fillStyle = '#2f5d3a'; ctx.beginPath(); ctx.ellipse(0, -118, 21, 15, 0, Math.PI, 0); ctx.fill(); ctx.fillRect(-21, -120, 42, 6);
+  ctx.fillStyle = '#244a2e'; ctx.beginPath(); ctx.ellipse(10, -127, 15, 5, -.2, 0, Math.PI*2); ctx.fill();
+  ctx.fillStyle = C.gold; ctx.beginPath(); ctx.arc(-8, -124, 3, 0, Math.PI*2); ctx.fill();
+}
+function playDress(to, done){
+  ['hud', 'over', 'career', 'start', 'promo', 'paused', 'intro', 'chron', 'chronDone', 'tip'].forEach(id => { const e = $(id); if (e) e.hidden = true; });
+  dress = { to, t0: tTotal, done, conf: false, last: performance.now() }; dressRank = to - 1; state = 'dress'; touchX = null; setMood('proud', 99);
+  beep(392, .2, 'triangle', .06);
+}
+function dressTap(){
+  if (!dress || tTotal - dress.t0 < 3.2) return;
+  const d = dress.done; dress = null; dressRank = null; state = 'menu'; setMood('happy', 1); parts = []; if (d) d();
+}
+function renderDress(){
+  ctx.setTransform(dpr*S, 0, 0, dpr*S, dpr*OX, 0);
+  const t = tTotal - dress.t0, now = performance.now(), dt = Math.min(.05, (now - dress.last)/1000); dress.last = now;
+  if (t > 1.3) dressRank = dress.to;
+  const floor = H*.74; ctx.fillStyle = '#efe3c8'; ctx.fillRect(XL, 0, XR - XL, floor); ctx.fillStyle = '#b08a5a'; ctx.fillRect(XL, floor, XR - XL, H - floor);
+  ctx.fillStyle = 'rgba(160,130,90,.18)'; for (let y = 0; y < floor; y += 22) ctx.fillRect(XL, y, XR - XL, 1);
+  // Lichtkegel und Maxi
+  ctx.fillStyle = 'rgba(255,240,200,.55)'; ctx.beginPath(); ctx.moveTo(W/2 - 40, 0); ctx.lineTo(W/2 + 40, 0); ctx.lineTo(W/2 + 120, floor + 6); ctx.lineTo(W/2 - 120, floor + 6); ctx.closePath(); ctx.fill();
+  ctx.fillStyle = 'rgba(122,90,58,.35)'; ctx.beginPath(); ctx.ellipse(W/2, floor + 6, 110, 16, 0, 0, Math.PI*2); ctx.fill();
+  const keep = [P.noCrate, P.vx, P.trip, P.slim]; P.noCrate = true; P.vx = 0; P.trip = 0; P.slim = false;
+  ctx.save(); ctx.translate(W/2, floor + 4); ctx.scale(1.7, 1.7); drawMan(0, 0); ctx.restore();
+  [P.noCrate, P.vx, P.trip, P.slim] = keep;
+  // Vorhang zu, Gewand fliegt hinein, Vorhang auf
+  const c = t < .5 ? t/.5 : t < 1.9 ? 1 : t < 2.5 ? 1 - (t - 1.9)/.6 : 0, half = (XR - XL)/2;
+  for (const s of [-1, 1]){ const w = half*c, x0 = s < 0 ? XL : XR - w;
+    ctx.fillStyle = '#a3302a'; ctx.fillRect(x0, 0, w, floor + 10); ctx.fillStyle = 'rgba(0,0,0,.18)';
+    for (let k = 0; k < w; k += 18) ctx.fillRect(x0 + k + 8, 0, 4, floor + 10); }
+  if (c > 0){ ctx.fillStyle = '#7a2420'; ctx.fillRect(XL, 0, XR - XL, 16); }
+  const items = OUTFIT[dress.to].items;
+  if (t > .5 && t < 1.9) items.forEach((em, i) => { const k = Math.min(1, Math.max(0, (t - .55 - i*.35)/.5)); if (k <= 0 || k >= 1) return;
+    const sx = i ? XR + 30 : XL - 30, ex = W/2, sy = H*.2, ey = H*.48, x = sx + (ex - sx)*k, y = sy + (ey - sy)*k - Math.sin(k*Math.PI)*80;
+    ctx.save(); ctx.translate(x, y); ctx.rotate(k*6); ctx.font = `${44 - k*14}px sans-serif`; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillText(em, 0, 0); ctx.restore();
+    if (Math.abs(k - .5) < .03) beep(600 + i*200, .05, 'triangle', .05); });
+  if (t > 2.4 && !dress.conf){ dress.conf = true; [523, 659, 784, 1047].forEach((f, i) => setTimeout(() => beep(f, i === 3 ? .4 : .14, 'square', .08), i*120));
+    for (let k = 0; k < 70; k++) parts.push({ x: W/2 + (Math.random() - .5)*80, y: H*.25, vx: (Math.random() - .5)*420, vy: -200 - Math.random()*300, life: 1.8, c: ['#e6b84a', '#2f5d3a', '#c22a22', '#f3e6c4'][k % 4], s: 2 + Math.random()*3 }); }
+  for (const p of parts){ p.vy += 420*dt; p.x += p.vx*dt; p.y += p.vy*dt; p.life -= dt*.5; ctx.globalAlpha = Math.max(0, Math.min(1, p.life)); ctx.fillStyle = p.c; ctx.fillRect(p.x, p.y, p.s, p.s*1.6); }
+  ctx.globalAlpha = 1; parts = parts.filter(p => p.life > 0);
+  if (t > 2.5){ const a = Math.min(1, (t - 2.5)/.4), r = RANKS[dress.to], bw = Math.min(360, XR - XL - 24), y0 = 40; ctx.globalAlpha = a; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+    ctx.font = '700 15px "Barlow Condensed", sans-serif'; const fit = wrapLines(`Neues Gewand: ${r.fit}`, bw - 28), op = r.open ? wrapLines(`Jetzt kaufbar: ${r.open}`, bw - 28) : [];
+    ctx.fillStyle = 'rgba(30,36,48,.88)'; rr(W/2 - bw/2, y0, bw, 92 + (fit.length + op.length)*19, 16); ctx.fill();
+    ctx.fillStyle = C.gold; ctx.font = '400 17px "Lilita One", sans-serif'; ctx.fillText('Beförderung!', W/2, y0 + 22);
+    ctx.fillStyle = C.cream; ctx.font = '30px "Alfa Slab One", Georgia, serif'; ctx.fillText(r.t, W/2, y0 + 56);
+    ctx.font = '700 15px "Barlow Condensed", sans-serif'; fit.forEach((l, i) => ctx.fillText(l, W/2, y0 + 88 + i*19));
+    ctx.fillStyle = C.gold; op.forEach((l, i) => ctx.fillText(l, W/2, y0 + 88 + (fit.length + i)*19));
+    ctx.globalAlpha = 1; }
+  if (t > 3.2){ ctx.globalAlpha = .6 + Math.sin(tTotal*4)*.4; ctx.fillStyle = C.ink; ctx.font = '700 15px "Barlow Condensed", sans-serif'; ctx.textAlign = 'center'; ctx.fillText('Tippen zum Weiter', W/2, H - 30); ctx.globalAlpha = 1; }
 }
 
 /* ---------- Geschichte: Schnuppertag und Angebot des Braumeisters ----------
    ECO.story: 0 Bar, 1 Förderband, 2 Schnuppertag im Sudhaus, 3 Karte offen */
 const SCENES = {
+  hall: [
+    { bg: 'nice', who: 'bm', text: 'Maxi! Fünf volle Kisten und kaum eine Flasche kaputt. Saubere Arbeit!' },
+    { bg: 'nice', who: 'maxi', text: 'Danke, Chef! Das macht richtig Spaß.' },
+    { bg: 'nice', who: 'bm', text: 'Dann komm mit in die Abfüllhalle. Heute zeig ich dir das Förderband.' }
+  ],
   invite: [
     { bg: 'nice', who: 'bm', text: 'Maxi! Du sortierst wie ein Weltmeister. Komm mit ins Sudhaus, heute darfst du mitbrauen.' },
     { bg: 'nice', who: 'maxi', text: 'Echt? Ins Sudhaus? Da sag ich nicht nein!' },
@@ -3490,8 +3574,8 @@ const SCENES = {
     { bg: 'nice', who: 'bm', text: 'Nicht schlecht für den ersten Tag! Du hast ein Händchen fürs Brauen.' },
     { bg: 'old', who: 'bm', text: 'Komm, ich zeig dir was. Das ist mein alter Sudkessel. Ich brauche ihn nicht mehr.' },
     { bg: 'old', who: 'bm', text: `Für ${KESSEL} Taler gehört er dir, samt dem alten Sudhaus. Er ist undicht und verstaubt, aber er braut.` },
-    { bg: 'old', who: 'maxi', text: 'Abgemacht! Ich spar meinen Lohn vom Braustüberl und vom Band.' },
-    { bg: 'old', who: 'bm', text: 'So gefällt mir das. Ab jetzt steht dir das ganze Brauereigelände offen.' }
+    { bg: 'old', who: 'maxi', text: 'Abgemacht! Dafür spar ich meinen Lohn.' },
+    { bg: 'old', who: 'bm', text: 'Erst zeigst du als Lakai im Braustüberl, was du kannst. Als Mitarbeiter darfst du ans Band und den Kessel kaufen.' }
   ]
 };
 let scene = null;
@@ -3591,6 +3675,11 @@ function renderScene(){
   for (let i=0;i<scene.panels.length;i++){ ctx.fillStyle = i === scene.i ? C.gold : 'rgba(243,230,196,.45)'; ctx.beginPath(); ctx.arc(W/2 + (i - (scene.panels.length - 1)/2)*16, H - 54, 5, 0, Math.PI*2); ctx.fill(); }
   if (tTotal - scene.t0 > .45){ ctx.globalAlpha = .6 + Math.sin(tTotal*4)*.4; ctx.fillStyle = C.cream; ctx.font = '700 15px "Barlow Condensed", sans-serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillText('Tippen zum Weiter', W/2, H - 30); ctx.globalAlpha = 1; }
 }
+function storyHall(){
+  // Kapitel 1 geschafft: Lob vom Braumeister, dann Kapitel 2 am Förderband
+  endShift(); try { wake?.release(); } catch(e) {}
+  playScene('hall', () => { ECO.story = 1; saveEco(); start2(); });
+}
 function storyInvite(){
   // vom Förderband zum Schnuppertag ins schöne Sudhaus
   endShift(); try { wake?.release(); } catch(e) {}
@@ -3598,7 +3687,7 @@ function storyInvite(){
 }
 function storyOffer(){
   endShift(); try { wake?.release(); } catch(e) {}
-  playScene('offer', () => { ECO.story = 3; ECO.offerSeen = true; saveEco(); MAP.at = 'sud'; MAP.placed = false; seen.map = true; saveSeen(); toTitle(); openCareer(); });
+  playScene('offer', () => { ECO.story = 3; ECO.offerSeen = true; saveEco(); MAP.at = 'bar'; MAP.placed = false; seen.map = true; saveSeen(); toTitle(); openCareer(); });
 }
 function promoContinue(goOther){
   $('promo').hidden = true; setMood('happy', 1); $('promoStay').hidden = false;
@@ -3606,15 +3695,6 @@ function promoContinue(goOther){
   if (!goOther){ state = 'play'; return; }
   const keep = score;
   if (promoTarget === 1) start(keep); else start2(keep);
-}
-function drawRankStars(){
-  // Abzeichen auf der Jacke: ein Stern je Beförderung
-  for (let i=0;i<rank;i++){
-    const sx = 13 + i*6.5, sy = -72;
-    ctx.fillStyle = C.gold; ctx.beginPath();
-    for (let k=0;k<10;k++){ const a = -Math.PI/2 + k*Math.PI/5, r = k%2 ? 1.4 : 3.2; ctx.lineTo(sx + Math.cos(a)*r, sy + Math.sin(a)*r); }
-    ctx.closePath(); ctx.fill();
-  }
 }
 $('promoStay').onclick = () => promoContinue(false);
 $('promoGo').onclick = () => promoContinue(true);
@@ -3628,7 +3708,7 @@ function quitToTitle(){
   try { localStorage.setItem(key, [0, best, best2, best3, best4][stage]); } catch(e) {}
   try { wake?.release(); } catch(e) {}
   endShift();
-  toTitle(); if (ECO.story >= 3) openCareer();
+  toTitle(); if (ECO.story === 0 || ECO.story >= 3) openCareer();
 }
 function showRecords(){
   // Rekorde je Level; die Steuerung erklärt jedes Level beim ersten Spielen selbst
@@ -4217,6 +4297,9 @@ function closeLegal(){ $('legalBox').hidden = true; if (legalFrom) $(legalFrom).
 for (const el of document.querySelectorAll('[data-legal]')) el.addEventListener('click', () => openLegal(el.dataset.legal, el.closest('.overlay').id));
 $('legalClose').onclick = closeLegal;
 // Spielstand zurücksetzen: erster Tipp fragt nach, zweiter löscht alles außer dem Namen für die Bestenliste
+// Versionsnummer: bei jeder Veröffentlichung erhöhen (Hauptversion.Neue Funktionen.Korrekturen)
+const VERSION = '2.0.0';
+$('verTag').textContent = `v${VERSION}`;
 $('resetBtn').onclick = () => {
   const b = $('resetBtn');
   if (!b.classList.contains('warn')){ b.classList.add('warn'); b.textContent = 'Wirklich alles löschen? Nochmal tippen'; clearTimeout(b.h); b.h = setTimeout(() => { b.classList.remove('warn'); b.textContent = 'Spielstand zurücksetzen'; }, 4000); return; }
@@ -4339,14 +4422,13 @@ function sudIntro(){
 function masterIntro(){
   const p = t => { const e = document.createElement('p'); e.style.margin = '0'; e.textContent = t; return e; };
   showTip('Prost!', 'Maxi ist Braumeister', [
-    p('Das Sudhaus ist repariert, poliert und erweitert. Maxi braut jetzt fünf Sorten in bester Qualität.'),
+    p('Alle Ausbauten im Sudhaus und eine Medaille in jeder Sorte: Maxi braut fünf Sorten in bester Qualität.'),
     p('Die Lohnarbeit im Braustüberl und am Band braucht er nicht mehr, er kann sie aber weiter für Punkte und die Bestenliste spielen.')
   ]);
 }
 function openCareer(){
   updateMenu(); showRecords(); updateEcoBar(); $('start').hidden = true;
   if (rank >= 1 && !ECO.ownSud && !ECO.offerSeen && ECO.story >= 3){ ECO.offerSeen = true; saveEco(); ecoIntro(); return; }
-  if (ECO.ownSud && !ECO.master && ['seal', 'thermo', 'copper', 'lauter', 'cellar'].every(k => U[k])){ ECO.master = true; saveEco(); masterIntro(); return; }
   $('ecoBar').hidden = false;
   if (chronCheck()) return;
   renderChronBar();
@@ -4354,7 +4436,7 @@ function openCareer(){
 }
 $('startBtn').onclick = () => {
   // bis zum Angebot des Braumeisters geht es der Reihe nach: Bar, Förderband, Schnuppertag
-  if (ECO.story === 0){ start(); return; }
+  if (ECO.story === 0){ openCareer(); return; } // Kapitel 1: erst die Karte als Ausblick, dann ins Braustüberl
   if (ECO.story === 1){ start2(); return; }
   if (ECO.story === 2){ start3(); return; }
   openCareer();
