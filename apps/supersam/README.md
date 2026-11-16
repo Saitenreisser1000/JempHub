@@ -1,11 +1,12 @@
 # Supersam
 
-Jump'n'Run fürs Handy im Querformat mit Sam, einem kleinen blonden Jungen, gesteuert mit zwei Daumen: ein Daumen läuft, der zweite springt. Eine Weltkarte verbindet die Übungswiese, acht Welten, drei Bonuswelten und die Endgegner; die Welten schenken Fähigkeiten (Doppelsprung, Wandsprung, Dash, Gleiten), mit denen man woanders weiterkommt.
+Jump'n'Run fürs Handy im Querformat mit Sam, einem kleinen blonden Jungen, gesteuert mit zwei Daumen: ein Daumen läuft, der zweite springt. Eine Karte verbindet zehn Welten in fünf Kapiteln, drei Bonuswelten und fünf Endgegner; jeder Endgegner schenkt eine Fähigkeit (Doppelsprung, Wandsprung, Dash, Gleiten) für das nächste Kapitel.
 
 ## Stand
 
-Die Hauptseite zeigt den Stand des Labors vom 11. November 2026 (Weltkarte als Hub, Übungswiese, Leben,
-Bonuswelten, Medaillen, überarbeitete Kamera, klassische Grafik, Hochformat-Hinweis). Die Beschreibung der
+Die Hauptseite zeigt den Stand des Labors vom 17. November 2026 (Karte mit fünf Kapiteln, neues Kapitel Wiese
+mit Käferkönig, Fähigkeiten von den Endgegnern, schnelle Schuhe in 1-1 statt Übungswiese, Bröckelblöcke von
+unten durchspringbar, langsamere Fahrplattformen, knapper Abschluss-Bildschirm, Leben, Bonuswelten, Medaillen). Die Beschreibung der
 einzelnen Teile steht in `apps/supersam-labor/README.md`.
 
 - Eine Datei `index.html`, dazu die Level-Dateien in `levels/`, die beim Bauen eingebaut werden (`levels.mjs`).
