@@ -74,8 +74,7 @@ Kronentore). Nochmal antippen oder **Los ▶** auf der Infokarte betritt die Wel
 lässt sie sich verschieben, bis Sam wieder losläuft. Welten sind Punkte
 (gold = geschafft, rot = offen, grau mit Schloss = gesperrt), Endgegner Burgen (mit Krone, wenn besiegt),
 Kronentore Schranken auf dem Weg. Hinter dem ersten geschlossenen Tor liegt Nebel. Unten zeigt eine
-Infokarte Name, Diamanten, Sterne und Bestzeit – oder warum der Punkt gesperrt ist. Ganz links liegt die
-Übungswiese, am Gipfel ein Geheimnis, das nur mit Gleiten zu holen ist.
+Infokarte Name, Diamanten, Sterne und Bestzeit – oder warum der Punkt gesperrt ist. Erster Punkt ist 1-1 Blumenwiese, am Gipfel ein Geheimnis, das nur mit Gleiten zu holen ist.
 
 Intern bleibt `hub` das bisherige Level mit Türen, Toren und Diamant (Sperren in `doorBlock`, Reihenfolge
 nach der Lage von links nach rechts); `MAP_POS` legt fest, wo die Punkte auf der Karte liegen. Zurück aus
@@ -110,22 +109,25 @@ Editor verschoben, fehlt er in der Tabelle, bis neu gerechnet wird; die Karte z�
 
 ## Medaillen
 
-Pro Welt (Übungswiese und 1-1 bis 5-2) drei Medaillen: **Bronze** fürs Schaffen, **Silber** für alle Diamanten
+Pro Welt (1-1 bis 5-2) drei Medaillen: **Bronze** fürs Schaffen, **Silber** für alle Diamanten
 und Sterne der Welt, **Gold**, wenn die Bestzeit höchstens die Goldzeit ist. Sie stehen auf der Karte unter
 jedem Punkt und neben dem Namen auf der Infokarte; der Abschlussbildschirm meldet neue Medaillen. Im Level
 zeigt die Uhr darunter, wie viel Zeit bis Gold bleibt.
 
 Goldzeit: im Editor unter den Level-Einstellungen („Goldzeit (s)“), sonst geschätzt aus Länge (≈ 100 px/s),
-Höhe (Klettern) und bei der Übungswiese der Barfuß-Strecke – derzeit 60 bis 75 s.
+Höhe (Klettern) und bei 1-1 der gedrosselten Strecke ohne Schuhe – derzeit 60 bis 75 s.
 
-## Übungswiese: erste Welt, schnelle Schuhe
+## Erster Start und schnelle Schuhe
 
-Die Übungswiese ist die erste Welt: erster Punkt auf der Karte, 1-1 (Blumenwiese) öffnet erst, wenn sie geschafft ist
-(oder die Einführung übersprungen wurde). Am Anfang läuft Sam gedrosselt (`SLOW_SHOES`, zwei Drittel des
-Tempos – Sprungweite dann rund 72 px, die Gräben sind 48 px). Am Anfang des letzten Drittels liegen die
-**schnellen Schuhe**; danach läuft er im vollen Tempo. Im Editor gibt es dafür das Objekt
-„Schnelle Schuhe“ (`{"k":"shoes","c":…,"r":…}`) – solange ein Level Schuhe enthält, ist es bis zum
-Aufsammeln gedrosselt.
+Die frühere Übungswiese ist raus (Level bleibt als „Archiv: Übungswiese“ im Editor). Beim ersten Start geht
+es gleich in **1-1 Blumenwiese**; zwei kurze Hinweise mit pulsierenden Hälften zeigen Laufen und Springen
+(`startHints`), danach startet das Spiel auf der Weltkarte.
+
+In 1-1 läuft Sam gedrosselt (`SLOW_SHOES`, zwei Drittel des Tempos – Sprungweite dann rund 72 px). Kurz vor
+dem Ende liegen die **schnellen Schuhe**; ab da läuft er im vollen Tempo, und sie gehören ihm dauerhaft
+(`save.shoes`) – beim Wiederspielen ist 1-1 nicht mehr gedrosselt. Mit der Physik-Suche geprüft: 1-1 ist
+auch ganz ohne Schuhe schaffbar. Ältere Spielstände haben die Schuhe schon. Im Editor gibt es dafür das Objekt
+„Schnelle Schuhe“ (`{"k":"shoes","c":…,"r":…}`).
 
 ## Leben
 
@@ -134,7 +136,7 @@ einer Welt mit Zeitlimit auf 0 – weil die Restzeit abläuft oder Tode Punkte k
 die Welt beginnt neu (oder zurück zur Hubwelt). Beim letzten Leben gibt es **Game Over**: der Spielstand
 beginnt von vorn (Diamanten, Sterne, Fähigkeiten, Bosse, erledigte Welten), nur „Einführung gesehen“ und
 die Einstellungen bleiben; danach wieder 3 Leben. Bei den Endgegnern gibt es 300 Punkte fix, jeder Treffer
-kostet 100 (rechts oben angezeigt) – bei 0 ist ebenfalls ein Leben weg. Hubwelt, Übungswiese und Probespiele
+kostet 100 (rechts oben angezeigt) – bei 0 ist ebenfalls ein Leben weg. Hubwelt und Probespiele
 aus dem Editor kosten keine Leben. Extraleben sind für später geplant.
 
 ## Sam und Hochformat

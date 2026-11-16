@@ -360,51 +360,17 @@ test('Outfits verändern Sam je nach Fähigkeiten', () => {
   for (const r of all.split('\n')) assert.equal(r.length, 16, 'Zeilenbreite bleibt 16');
 });
 
-test('Übungswiese beim ersten Start: Stationen nacheinander, dann Hubwelt', () => {
+test('Erster Start: gleich in 1-1, kurze Hinweise zum Laufen und Springen', () => {
   const { dz, listeners, run } = boot();
   const kd = key => listeners.keydown({ key, preventDefault() {} }), ku = key => listeners.keyup({ key });
-  assert.equal(dz.save.tutorialDone, false, 'neuer Spielstand ohne Übung');
+  assert.equal(dz.save.tutorialDone, false, 'neuer Spielstand');
   dz.begin(); run(10);
-  assert.equal(dz.L.id, 'uebung', 'erster Start beginnt auf der Übungswiese');
-  assert.ok(dz.L.enemies.length > 0 && dz.L.enemies.every(e => e.x > dz.L.w * 16 / 2), 'Gegner nur in der zweiten Hälfte');
-  assert.ok(dz.L.movers.length >= 2 && dz.L.springs.length >= 1, 'fahrende Plattformen und Feder vorhanden');
+  assert.equal(dz.L.id, 9, 'erster Start beginnt in 1-1 Blumenwiese');
   dz.L.enemies.length = 0;
-  const until = (n, max = 300) => { for (let i = 0; i < max && dz.TUT.i < n; i++) run(1); return dz.TUT.i >= n; };
-  kd('ArrowRight'); assert.ok(until(1), 'Station 1: rechts laufen'); ku('ArrowRight');
-  kd('ArrowLeft'); assert.ok(until(2), 'Station 2: zurück laufen'); ku('ArrowLeft');
-  kd('ArrowRight');
-  let w = 0; const W = [[24, 25.3], [35, 37], [45, 46.5]], win = c => c > W[w][0] && c < W[w][1];
-  const hop = frames => { for (let i = 0; i < 200; i++) { const c = (dz.P.x + 5) / 16; if (dz.P.ground && dz.P.vx > 100 && win(c)) break; run(1); } kd(' '); run(frames); ku(' '); w++; };
-  hop(3); assert.ok(until(3), 'Station 3: Kiste übersprungen');
-  hop(14); assert.ok(until(4), 'Station 4: Mauer mit langem Sprung');
-  hop(10); assert.ok(until(5), 'Station 5: Graben');
-  const vertical = stop => { for (let i = 0; i < 300 && (dz.P.x + 5) / 16 < stop; i++) run(1); ku('ArrowRight'); run(20); kd(' '); run(4); kd('ArrowRight'); run(14); ku(' '); };
-  vertical(63.3); assert.ok(until(6), 'Station 6: senkrecht auf den Block');
-  // Ab hier ein einfacher Läufer: springt voll, wenn vorn ein Hindernis oder eine Lücke ist
-  const solid = (c, r) => '#=BX'.includes((dz.L.grid[r] || [])[c] || ' ');
-  const auto = (n, max = 900) => { let j = 0;
-    for (let i = 0; i < max && dz.TUT.i < n; i++) { const P = dz.P, c = Math.floor((P.x + P.w / 2) / 16), r = Math.floor((P.y + P.h - 1) / 16);
-      if (j > 0) { j--; if (j === 0) ku(' '); } else if (P.ground && (solid(c + 1, r) || solid(c + 2, r) || !solid(c + 2, r + 1))) { kd(' '); j = 14; }
-      run(1); }
-    ku(' '); return dz.TUT.i >= n; };
-  assert.ok(auto(7), 'Station 7: Treppe');
-  assert.ok(auto(8), 'Station 8: Bretter über dem Graben');
-  vertical(137.3); assert.ok(until(9), 'Station 9: noch einmal senkrecht');
-  assert.ok(auto(10), 'Station 10: Parcours');
-  ku('ArrowRight'); ku(' ');
-  // Stationen 11–14 zählen erst, wenn Sam hinter dem Hindernis steht
-  const place = (c, feetRow) => { dz.P.x = c * 16; dz.P.y = feetRow * 16 - 14; dz.P.vx = 0; dz.P.vy = 0; run(2); };
-  for (const [n, c, r] of [[11, 216, 17], [12, 228, 10], [13, 248, 17], [14, 264, 17]]) { place(c, r); assert.ok(until(n), `Station ${n} gezählt`); }
-  assert.equal(dz.L.stars.length, 3, 'drei Sterne auf der Übungswiese');
-  dz.L.stars[0].got = dz.L.stars[1].got = true;
-  place(294, 17);
-  for (let i = 0; i < 200 && dz.L.id === 'uebung'; i++) run(1);
-  assert.equal(dz.L.id, 'uebung', 'Tür bleibt zu, solange ein Stern fehlt');
-  place(280, 17); run(5); dz.L.stars[2].got = true; place(294, 17);
-  for (let i = 0; i < 200 && dz.L.id === 'uebung'; i++) run(1);
-  assert.equal(dz.L.id, 'hub', 'mit allen 3 Sternen führt die Tür in die Hubwelt');
-  assert.equal(dz.save.tutorialDone, true, 'Übung gilt als erledigt');
-  assert.equal(dz.TUT.on, false, 'Übungsleiste ausgeblendet');
+  kd('ArrowRight'); run(60); kd(' '); run(10); ku(' '); ku('ArrowRight'); run(200);
+  assert.equal(dz.save.tutorialDone, true, 'nach Laufen und Springen sind die Hinweise erledigt');
+  const { dz: dz2, run: run2 } = boot(); dz2.save.tutorialDone = true; dz2.begin(); run2(5);
+  assert.equal(dz2.L.id, 'hub', 'später startet das Spiel auf der Weltkarte');
 });
 
 test('Neue Welten: Türen in der Hubwelt und Abschluss ohne neue Fähigkeit', () => {
@@ -448,8 +414,8 @@ test('Hubwelt als Landkarte: Punkte in Reihenfolge, Laufen, Kronentor, Rückkehr
   const key = (k, d) => d ? listeners.keydown({ key: k, preventDefault() {} }) : listeners.keyup({ key: k });
   dz.save.tutorialDone = true;
   dz.setState('play'); dz.loadLevel('hub'); run(5);
-  assert.equal(dz.map.nodes.map(n => n.key).join(' '), 'home 9 10 b4 g-b4 1 5 b0 bonus1 g-b0 2 6 b2 bonus2 g-b2 3 7 b1 bonus3 g-b1 4 8 secret b3', 'Reihenfolge auf der Karte');
-  assert.equal(dz.map.i, 0, 'Start bei der Übungswiese');
+  assert.equal(dz.map.nodes.map(n => n.key).join(' '), '9 10 b4 g-b4 1 5 b0 bonus1 g-b0 2 6 b2 bonus2 g-b2 3 7 b1 bonus3 g-b1 4 8 secret b3', 'Reihenfolge auf der Karte (ohne Übungswiese)');
+  assert.equal(dz.map.nodes[dz.map.i].key, 9, 'Start bei 1-1');
   key('ArrowRight', 1); for (let i = 0; i < 400; i++) run(1); key('ArrowRight', 0); for (let i = 0; i < 120; i++) run(1);
   assert.equal(dz.map.nodes[dz.map.i].key, 'g-b4', 'Kronentor des Käferkönigs hält Sam auf');
   dz.save.ab.double = true;   // Welt 2-1 (Wald) braucht den Doppelsprung vom Käferkönig
@@ -662,22 +628,19 @@ test('Endgegner: 300 Punkte, jeder Treffer kostet 100, bei 0 ist ein Leben weg',
   dz.setState('play'); dz.loadLevel('b0'); run(80); dz.die(); run(3); assert.equal(dz.editor.state, 'play', 'neuer Versuch beginnt wieder mit 300');
 });
 
-test('Übungswiese: erste Welt, gedrosseltes Tempo bis zu den schnellen Schuhen im letzten Drittel', () => {
+test('Schnelle Schuhe am Ende von 1-1: vorher gedrosselt, danach dauerhaft volles Tempo', () => {
   const { dz, listeners, run } = boot();
   const key = (k, d) => d ? listeners.keydown({ key: k, preventDefault() {} }) : listeners.keyup({ key: k });
-  dz.setState('play'); dz.loadLevel('uebung'); dz.L.enemies.length = 0; run(10);
+  dz.setState('play'); dz.loadLevel(9); dz.L.enemies.length = 0; run(10);
   const sh = dz.L.shoesItem; assert.ok(sh && !sh.got, 'Schuhe liegen bereit');
-  assert.ok(sh.x / 16 > dz.L.w * 0.6 && sh.x / 16 < dz.L.w * 0.75, 'am Anfang des letzten Drittels');
-  const P = dz.P, speed = () => { P.x = 6 * 16; P.y = 17 * 16 - P.h; P.vx = 0; P.vy = 0; key('ArrowRight', 1); run(60); const v = Math.abs(P.vx); key('ArrowRight', 0); run(30); return v; };
+  assert.ok(sh.x / 16 > dz.L.w * 0.75, 'im letzten Teil der Welt');
+  const P = dz.P, speed = () => { P.x = 6 * 16; P.y = 20 * 16 - P.h; P.vx = 0; P.vy = 0; key('ArrowRight', 1); run(45); const v = Math.abs(P.vx); key('ArrowRight', 0); run(30); return v; };
   const slow = speed(); assert.ok(slow < dz.PH.max * 0.7 && slow > dz.PH.max * 0.6, `ohne Schuhe langsamer (${Math.round(slow)})`);
-  P.x = sh.x - P.w / 2; P.y = sh.y - P.h / 2; run(2); assert.ok(sh.got, 'aufgesammelt');
+  P.x = sh.x - P.w / 2; P.y = sh.y - P.h / 2; run(2); assert.ok(sh.got, 'aufgesammelt'); assert.equal(dz.save.shoes, true, 'gehören jetzt Sam');
   const fast = speed(); assert.ok(fast >= dz.PH.max * 0.95, `mit Schuhen volles Tempo (${Math.round(fast)})`);
-  // In anderen Welten ist das Tempo nie gedrosselt
-  dz.loadLevel(1); dz.L.enemies.length = 0; assert.equal(dz.L.shoesItem, undefined);
-  // erste Welt: 1-1 (Blumenwiese) öffnet erst nach der Übungswiese
-  dz.save.tutorialDone = false; delete dz.save.done.uebung; dz.loadLevel('hub'); run(3);
-  dz.map.go(9); dz.map.enter(); run(2); assert.equal(dz.L.id, 'hub', '1-1 noch zu');
-  dz.save.done.uebung = true; dz.map.enter(); run(2); assert.equal(dz.L.id, 9, 'nach der Übungswiese offen');
+  dz.loadLevel(9); run(2); assert.equal(dz.L.shoesItem.got, true, 'beim Wiederspielen schon an');
+  assert.ok(speed() >= dz.PH.max * 0.95, 'beim Wiederspielen volles Tempo');
+  dz.loadLevel(1); assert.equal(dz.L.shoesItem, undefined, 'in anderen Welten keine Schuhe');
 });
 
 test('Bonuswelten: Diamanten-Schranke auf der Karte, Extraleben beim ersten Schaffen, Hinweise nach Fähigkeit', () => {

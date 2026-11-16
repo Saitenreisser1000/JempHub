@@ -211,7 +211,6 @@ body.title .hud,body.title .zone,body.title #msg,body.title #tut{display:none!im
   <div class="row" style="flex-direction:column;align-items:stretch;min-width:220px">
     <button class="btn" id="presume" type="button">Weiter</button>
     <button class="btn ghost" id="phub" type="button">Zur Hubwelt</button>
-    <button class="btn ghost" id="ppractice" type="button">Übungswiese</button>
     <button class="btn ghost" id="pmain" type="button">Hauptmenü</button>
   </div>
   <div class="stilwahl"><span>Auflösung</span><button type="button" data-res="2">Hoch</button><button type="button" data-res="1.5">Mittel</button><button type="button" data-res="1">Niedrig</button><span style="margin-left:10px">Licht</span><button type="button" data-fx="1">An</button><button type="button" data-fx="0">Aus</button></div>
@@ -265,9 +264,10 @@ const C={ember:'#f2a65a',cream:'#f6ead2',ink:'#0d1524',gold:'#ffd166',sky:'#7fe0
 
 // ---------- Speicherstand ----------
 const SAVE_KEY='supersam-labor-v2';
-const blankSave=()=>({ab:{double:false,wall:false,dash:false,glide:false},crystals:{},stars:{},bosses:{},done:{},best:{},wallet:0,endingSeen:false,tutorialDone:false,lives:3});
+const blankSave=()=>({ab:{double:false,wall:false,dash:false,glide:false},crystals:{},stars:{},bosses:{},done:{},best:{},wallet:0,endingSeen:false,tutorialDone:false,lives:3,shoes:false});
 let save=blankSave();
-try{ const s=JSON.parse(localStorage.getItem(SAVE_KEY)||'null'); if(s){ save=Object.assign(blankSave(),s); save.ab=Object.assign(blankSave().ab,s.ab||{}); } }catch(_){}
+try{ const s=JSON.parse(localStorage.getItem(SAVE_KEY)||'null'); if(s){ save=Object.assign(blankSave(),s); save.ab=Object.assign(blankSave().ab,s.ab||{});
+  if(s.shoes===undefined) save.shoes=!!(s.tutorialDone||s.done?.uebung||Object.keys(s.done||{}).length); } }catch(_){}   // früher gab es die Schuhe in der Übungswiese
 function persist(){ if(EDIT_MODE) return; try{ localStorage.setItem(SAVE_KEY,JSON.stringify(save)); }catch(_){} }   // Probespiel aus dem Editor speichert nichts
 
 const NAMES={9:'Blumenwiese',10:'Bachtal',b4:'Käferkönig',bonus1:'Moosklippen',bonus2:'Glutschlot',bonus3:'Eisspalte',0:'Hubwelt',1:'Wald',2:'Felsen',3:'See',4:'Gipfel',5:'Wipfelwald',6:'Schlucht',7:'Lagune',8:'Sturmgrat',b0:'Wespenkönigin',b1:'Igelkönig',b2:'Felsgolem',b3:'Sturmgeist'};
@@ -603,7 +603,8 @@ const DEFS={
     b.door(254,22,'b3');                                                            // Sturmgeist: braucht Gleiten
   }},
   // Übungswiese beim ersten Start: jede Station verlangt genau einen Handgriff, ohne Gegner und Abgründe
-  uebung:{name:'Übungswiese',w:300,h:26,top:17,style:'meadow',noReturn:true,build(b){
+  // Archiv: die frühere Übungswiese (bis Nov. 2026 erste Welt mit Einführung); nur noch im Editor
+  uebung:{name:'Übungswiese',archived:true,w:300,h:26,top:17,style:'meadow',noReturn:true,build(b){
     b.ground(0,299); b.rect(0,0,0,16); b.start(6,16); b.coins(16,9,14); b.coins(16,2,4);
     b.rect(26,16,27,16); b.coins(14,26,27);                                   // Station 3: Kiste – kurz springen
     b.rect(38,14,39,16); b.coins(12,38,39); b.star(39,10);                    // Station 4: Mauer – länger halten (★ 1)
@@ -658,6 +659,7 @@ const DEFS={
     // Abschnitt 4: Hochebene mit Brettertreppe, Bröckelinseln über dem Graben, Endspurt
     b.ramp(196,20,17,true); b.ground(202,220,17); b.ramp(221,17,20,true);
     b.enemy(214,16); b.coins(16,203,219); b.plat(14,205,207); b.plat(11,209,212); b.crystal(211,10);
+    b.shoes(227,19);                                                          // schnelle Schuhe: ab hier volles Tempo (bis dahin gedrosselt)
     b.clear(232,20,246,25); b.crumb(19,234,235); b.crumb(18,239,240); b.crumb(19,244,245); b.coins(17,233,246);
     b.enemy(253,19); b.coins(18,250,256);
     b.hill(259,1,2,true); b.coins(18,266,272);
@@ -1084,7 +1086,7 @@ const EDIT_Q=(typeof URLSearchParams!=='undefined'&&typeof location!=='undefined
 let EDIT_ID=EDIT_Q.get('edit'), EDIT_DRAFT=null, EDIT_MODE=false;
 try{ if(EDIT_ID){ EDIT_DRAFT=JSON.parse(localStorage.getItem(EDIT_KEY+EDIT_ID)||'null'); EDIT_MODE=!!EDIT_DRAFT; } }catch(_){}
 const EDIT_ENGINE=EDIT_Q.has('engine'); if(EDIT_ENGINE) EDIT_MODE=true;   // vom Editor unsichtbar zum Rechnen geladen: keine Spielschleife, nichts speichern
-const EDITABLE=['uebung',9,10,1,5,2,6,3,7,4,8,'archiv1','archiv5'];
+const EDITABLE=[9,10,1,5,2,6,3,7,4,8,'archiv1','archiv5','uebung'];
 function levelDef(id){ if(EDIT_DRAFT&&String(id)===String(EDIT_ID)) return defFromData(EDIT_DRAFT); if(LEVEL_FILES[id]) return defFromData(LEVEL_FILES[id]); return DEFS[id]; }
 function defFromData(D){
   return {name:D.name,style:D.style,scene:D.scene,w:D.w,h:D.h,top:D.top,need:D.need||0,timeLimit:D.timeLimit||0,sky:D.sky,noReturn:D.noReturn,noDeco:!!D.noDeco,...(D.gold?{gold:+D.gold}:{}),build(b){
@@ -1202,7 +1204,7 @@ function makeLevel(id,orig){
     cp:(c,r)=>L.checkpoints.push({x:c*TS,bottom:(r+1)*TS,on:false}),
     mover:(c,r,dc,dr,mw=3,period=3.5)=>L.movers.push({x0:c*TS,y0:r*TS,x1:(c+dc)*TS,y1:(r+dr)*TS,w:mw*TS,period,x:c*TS,y:r*TS,dx:0,dy:0}),
     start:(c,r)=>{ L.start={x:c*TS+3,y:(r+1)*TS-14}; },
-    shoes:(c,r)=>{ L.shoesItem={x:c*TS+8,y:(r+1)*TS-8,got:false}; },   // schnelle Schuhe (Übungswiese)
+    shoes:(c,r)=>{ L.shoesItem={x:c*TS+8,y:(r+1)*TS-8,got:!!save.shoes&&!EDIT_MODE}; },   // schnelle Schuhe (Ende von 1-1); einmal gefunden, gehören sie Sam
     deco:(c,r,n,len)=>{ if(n) L.manualDeco.push({c,r,n,...(len?{len}:{})}); },   // von Hand gesetzte Deko (Editor)
     goal:(c,r)=>{ L.goal={x:c*TS,bottom:(r+1)*TS}; },
     door:(c,r,world,need=0,o={})=>L.doors.push({x:c*TS,bottom:(r+1)*TS,world,need,stars:o.stars||0,t:0}),   // stars: so viele Sterne dieser Welt müssen gesammelt sein
@@ -1281,7 +1283,7 @@ function addFlow(v){ flow=Math.max(0,Math.min(100,flow+v)); }
 // ---------- Spieler ----------
 const P={w:10,h:14,x:0,y:0,vx:0,vy:0,ground:false,face:1,coyote:0,buffer:0,squash:0,run:0,hold:0,rising:false,cut:false,plat:null,
   usedDouble:false,airDash:false,dashT:0,dashDir:1,dashCD:0,wallDir:0,kickT:0,glide:false};
-const SLOW_SHOES=.65;   // Übungswiese: Tempo ohne schnelle Schuhe (Sprungweite dann ~72 px, Gräben sind 48 px)
+const SLOW_SHOES=.65;   // 1-1 Blumenwiese: Tempo ohne schnelle Schuhe (Sprungweite dann ~72 px)
 const PH={max:150,accG:700,accA:450,fricG:800,fricA:90,tierBonus:10,grav:1150,jump:300,airJump:270,fall:420,coyote:.1,buffer:.13,
   holdMax:.18,holdGrav:.3,cutGrav:2.0,spring:560,stomp:280,
   camLook:1.4,camSmooth:7,camSmoothY:12,camZoom:.28,camFrame:1,fxDark:1,fxBloom:1,kickX:95,kickY:330,kickT:.14,slide:70,dashSpeed:220,dashT:.2,glideFall:40,upLift:2000,upMax:220,upSpeed:45};
@@ -1533,7 +1535,7 @@ function tutShow(){
 }
 function tutEnd(){ TUT.on=false; tutEl.hidden=true; zl.classList.remove('hint'); zr.classList.remove('hint'); save.tutorialDone=true; persist(); }
 function tutNext(){ sfx('checkpoint'); tutText.classList.add('ok'); TUT.ok=.7; }
-function tickTutorial(dt){
+function tickTutorial(dt){ tickHints(dt);
   if(!TUT.on||state!=='play') return;
   if(L.id!=='uebung'){ tutEnd(); return; }
   const st=TUT_STEPS[TUT.i];
@@ -1557,13 +1559,21 @@ function tickTutorial(dt){
     case 13: if(c>263&&P.ground&&feet<=17*TS+1) tutNext(); break;
   }
 }
-function startPractice(){ loadLevel('uebung'); state='play'; startTutorial(); }
+function startPractice(){ loadLevel('uebung'); state='play'; startTutorial(); }   // Archiv-Übungswiese (nur noch über den Editor)
+// Erster Start: kurze Hinweise am Anfang von 1-1 statt Übungswiese – erst laufen, dann springen
+const HINT={on:false,i:0,x0:0,t:0};
+function startHints(){ Object.assign(HINT,{on:true,i:0,x0:P.x,t:0}); zr.classList.add('hint'); showMsg('Rechte Hälfte halten: Sam läuft',3000); }
+function endHints(){ HINT.on=false; zl.classList.remove('hint'); zr.classList.remove('hint'); save.tutorialDone=true; persist(); }
+function tickHints(dt){ if(!HINT.on||state!=='play') return; if(L.id!==9){ endHints(); return; } HINT.t+=dt;
+  if(HINT.i===0&&P.x-HINT.x0>TS*4){ HINT.i=1; zl.classList.add('hint'); showMsg('Zweiter Daumen auf die andere Hälfte: springen – länger halten, höher',3500); }
+  else if(HINT.i===1&&!P.ground&&P.vy<0){ HINT.i=2; HINT.t=0; zl.classList.remove('hint'); zr.classList.remove('hint'); }
+  else if(HINT.i===2&&HINT.t>2.5) endHints(); }
 document.getElementById('tskip').addEventListener('pointerdown',e=>e.stopPropagation());
 document.getElementById('tskip').addEventListener('click',()=>{ tutEnd(); if(L.id==='uebung') loadLevel('hub'); showMsg('Übung übersprungen'); });
 function begin(){
   document.body?.classList.remove('title');
   audioInit(); startEl.hidden=true;
-  if(!save.tutorialDone) startPractice(); else { loadLevel('hub'); state='play'; }
+  if(!save.tutorialDone&&!save.done[9]){ loadLevel(9); state='play'; startHints(); } else { loadLevel('hub'); state='play'; }
   try{ const p=document.documentElement.requestFullscreen?.({navigationUI:'hide'}); p?.then(()=>screen.orientation?.lock?.('landscape').catch(()=>{})).catch(()=>{}); }catch(_){}
 }
 document.getElementById('wipe').addEventListener('click',()=>{ save=blankSave(); persist(); document.getElementById('wipeinfo').hidden=false; });
@@ -1723,7 +1733,7 @@ function update(dt){
   const updraft=save.ab.glide&&!P.ground&&inUpdraft();
   const held=jumpSide!==0||(neutral&&(L_||R_))||keyJump;
   let maxS=PH.max+tier()*PH.tierBonus;
-  if(L.shoesItem&&!L.shoesItem.got) maxS*=SLOW_SHOES;   // Übungswiese: ohne schnelle Schuhe gemächlich
+  if(L.shoesItem&&!L.shoesItem.got) maxS*=SLOW_SHOES;   // 1-1: ohne schnelle Schuhe gemächlich
   if(updraft&&held) maxS=Math.min(maxS,PH.upSpeed);
 
   if(P.dashT>0){
@@ -1804,7 +1814,7 @@ function update(dt){
   if(L.boss&&updateBoss(dt)) return;
   // Münzen, Kristalle
   for(const k of L.coins) if(!k.got&&Math.abs(P.x+P.w/2-k.x)<10&&Math.abs(P.y+P.h/2-k.y)<12){ k.got=true; levelCoins++; sfx('coin'); save.wallet+=1+tier(); if(tier()>0) floaters.push({x:k.x,y:k.y-6,txt:'+'+(1+tier()),t:.7,col:'#ffd166'}); addFlow(1.5); burst(k.x,k.y,C.gold); }
-  const sh=L.shoesItem; if(sh&&!sh.got&&Math.abs(P.x+P.w/2-sh.x)<12&&Math.abs(P.y+P.h/2-sh.y)<13){ sh.got=true; sfx('unlock'); burst(sh.x,sh.y,'#ffd166',18,110); burst(sh.x,sh.y,'#ffffff',10,70);
+  const sh=L.shoesItem; if(sh&&!sh.got&&Math.abs(P.x+P.w/2-sh.x)<12&&Math.abs(P.y+P.h/2-sh.y)<13){ sh.got=true; if(!EDIT_MODE){ save.shoes=true; persist(); } sfx('unlock'); burst(sh.x,sh.y,'#ffd166',18,110); burst(sh.x,sh.y,'#ffffff',10,70);
     floaters.push({x:sh.x,y:sh.y-10,txt:'Schnelle Schuhe!',t:1.6,col:'#ffd166'}); showMsg('Schnelle Schuhe! Jetzt läufst du im vollen Tempo'); }
   for(const k of L.stars) if(!k.got&&Math.abs(P.x+P.w/2-k.x)<11&&Math.abs(P.y+P.h/2-k.y)<12){ k.got=true; sfx('secret'); addFlow(20); burst(k.x,k.y,'#ffe14d',14,90); floaters.push({x:k.x,y:k.y-8,txt:'+'+PTS.star,t:1.1,col:'#ffe14d'}); if(!k.known){ k.known=true; save.stars[k.id]=true; persist(); showMsg('Geheimnis gefunden!'); } }
   { const c0=Math.floor(P.x/TS), c1=Math.floor((P.x+P.w-.01)/TS), r0=Math.floor(P.y/TS), r1=Math.floor((P.y+P.h-.01)/TS);
@@ -1852,7 +1862,6 @@ function doorBlock(d){
   if(d.need&&crystalTotal()<d.need) return `Noch ${d.need-crystalTotal()} Diamanten nötig`;
   const w=BOSS_NEEDS_WORLD[d.world]; if(w&&!save.done[w]) return `Erst Welt ${WNO(w)} · ${NAMES[w]} schaffen`;
   const ab=NEED_FOR_DOOR[d.world]; if(ab&&!save.ab[ab]) return `Braucht ${AB_INFO[ab].name}`;
-  if(d.world===9&&!save.tutorialDone&&!save.done.uebung) return 'Erst die Übungswiese schaffen';
   return null; }
 let ribbon=[], floaters=[];
 // ---------- Endgegner ----------
@@ -2844,8 +2853,8 @@ function mapFog(fx){ if(MAPFOG[fx]) return MAPFOG[fx]; const c=mk(MAPW,MAPH), g=
   for(let y=0;y<MAPH;y++) for(let x=Math.max(0,fx-24);x<MAPW;x++){ const n=mapFbm(x*.04+3,y*.05), ramp=Math.min(1,(x-fx+24)/40), a=Math.max(.35,Math.min(.92,.35+(n-.3)*1.6))*ramp, k=(y*MAPW+x)*4;
     D[k]=240; D[k+1]=244; D[k+2]=250; D[k+3]=Math.round(a*255); }
   g.putImageData(id,0,0); return MAPFOG[fx]=c; }
-// Knoten: Übungswiese, dann Türen, Kronentore und Geheimdiamant der Hubwelt in Reihenfolge von links nach rechts
-function mapBuild(spawn){ const N=[{key:'home',kind:'home',x:0}];
+// Knoten: Türen, Kronentore und Geheimdiamant der Hubwelt in Reihenfolge von links nach rechts
+function mapBuild(spawn){ const N=[];
   for(const d of L.doors) N.push({key:d.world,kind:'door',ref:d,x:d.x});
   for(const g of L.gates||[]) N.push({key:'g-'+g.boss,kind:'gate',ref:g,x:g.x});
   for(const k of L.crystals) N.push({key:'secret',kind:'secret',ref:k,x:k.x});
@@ -2857,8 +2866,8 @@ function mapBuild(spawn){ const N=[{key:'home',kind:'home',x:0}];
   [MAPS.cx,MAPS.cy]=mapSam(); MAPS.free=false; MAPS.drag=null; mapClamp(); mapNewAbility(); }
 function mapNewAbility(){ if(EDIT_MODE) return; save.hintAb=save.hintAb||{};
   for(const ab of ['double','wall','dash','glide']){ if(!save.ab[ab]||save.hintAb[ab]) continue; save.hintAb[ab]=true; persist();
-    const ws=['uebung',9,10,1,5,2,6,3,7,4,8].filter(w=>(w==='uebung'?save.done.uebung||save.tutorialDone:save.done[w])&&mapStats(w).items.some(it=>!(it.star?save.stars[it.id]:save.crystals[it.id])&&REACH[`${w}:${it.cell}`]===ab));
-    if(ws.length) showMsg(`Mit ${AB_INFO[ab].name} neu erreichbar: ${ws.map(w=>w==='uebung'?'Übungswiese':WNO(w)).join(', ')} ✦`,4000); return; } }
+    const ws=[9,10,1,5,2,6,3,7,4,8].filter(w=>save.done[w]&&mapStats(w).items.some(it=>!(it.star?save.stars[it.id]:save.crystals[it.id])&&REACH[`${w}:${it.cell}`]===ab));
+    if(ws.length) showMsg(`Mit ${AB_INFO[ab].name} neu erreichbar: ${ws.map(w=>WNO(w)).join(', ')} ✦`,4000); return; } }
 const mapClosedGate=()=>MAPS.nodes.findIndex(n=>n.kind==='gate'&&!n.ref.open);
 function mapDone(n){ if(n.kind==='home') return !!(save.done.uebung||save.tutorialDone); if(n.bonus) return !!save.done[n.key]; if(n.kind==='door') return typeof n.key==='number'?!!save.done[n.key]:!!save.bosses[n.key]; if(n.kind==='secret') return !!n.ref.known; if(n.kind==='gate') return n.ref.open; return false; }
 function mapBlock(n){ if(n.kind==='door') return doorBlock(n.ref); if(n.kind==='secret') return save.ab.glide?null:`Braucht ${AB_INFO.glide.name}`; if(n.kind==='gate') return n.ref.open?null:`Krone: ${NAMES[n.ref.boss]} besiegen`; return null; }
@@ -2901,9 +2910,9 @@ function hintText(h){ if(!h.missing) return 'Alles gefunden'; const parts=[]; if
 // ---------- Medaillen ----------
 // Bronze: Welt geschafft · Silber: alle Diamanten und Sterne der Welt · Gold: Bestzeit höchstens die Goldzeit.
 // Goldzeit: im Level gesetzt (Editor: Level-Einstellungen) oder geschätzt aus Länge (≈ 100 px/s), Höhe (Klettern) und Barfuß-Strecke.
-const MEDAL_WORLDS=['uebung',9,10,1,5,2,6,3,7,4,8], MEDAL_COL={b:'#d08a4a',s:'#dfe4f0',g:'#ffd166'};
+const MEDAL_WORLDS=[9,10,1,5,2,6,3,7,4,8], MEDAL_COL={b:'#d08a4a',s:'#dfe4f0',g:'#ffd166'};
 function goldTime(w){ const d=origDef(w); if(!d) return 0; if(d.gold) return d.gold;
-  const est=d.w*TS/100*(1+Math.max(0,d.h-30)/40)*(w==='uebung'?1.3:1); return Math.round(est/5)*5; }
+  const est=d.w*TS/100*(1+Math.max(0,d.h-30)/40)*(w==='uebung'?1.3:w===9?1.2:1); return Math.round(est/5)*5; }   // gedrosselte Strecke ohne Schuhe
 function medals(w){ const st=mapStats(w), b=save.best[w], done=w==='uebung'?!!(save.done.uebung||save.tutorialDone):!!save.done[w];
   return {b:done, s:st.cr.every(id=>save.crystals[id])&&st.st.every(id=>save.stars[id]), g:!!(b&&b.time&&b.time<=goldTime(w)), gold:goldTime(w), best:b&&b.time}; }
 const fmtT=t=>`${Math.floor(t/60)}:${String(Math.floor(t%60)).padStart(2,'0')}`;
@@ -3849,7 +3858,6 @@ function openPause(){ syncVol(); state='pause'; clearInput(); document.getElemen
 function resume(){ pauseEl.hidden=true; state='play'; last=performance.now(); }
 document.getElementById('presume').addEventListener('click',resume);
 document.getElementById('phub').addEventListener('click',()=>{ const w=L.id; if(w==='uebung') tutEnd(); loadLevel('hub',w); resume(); });
-document.getElementById('ppractice').addEventListener('click',()=>{ startPractice(); resume(); });
 document.getElementById('pmain').addEventListener('click',()=>{ document.body?.classList.add('title'); if(TUT.on){ TUT.on=false; tutEl.hidden=true; zl.classList.remove('hint'); zr.classList.remove('hint'); } pauseEl.hidden=true; state='start'; document.getElementById('wipeinfo').hidden=true; startEl.hidden=false; });
 function openDebug(from){ debugFrom=from; if(from==='pause') pauseEl.hidden=true; else startEl.hidden=true; dbgOut.hidden=true; buildTunes(); debugEl.hidden=false; }
 // Debug ist versteckt: „Spielen“ bzw. „☰ Menü“ 1,5 Sekunden gedrückt halten

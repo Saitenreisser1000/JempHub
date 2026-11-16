@@ -292,7 +292,7 @@ function engineReady(){
     if(ok()) return; f.addEventListener('load',()=>{ const t=setInterval(()=>{ if(ok()) clearInterval(t); },50); }); });
 }
 const ARCHN={};
-function levelLabel(id){ const n=E.NAMES?.[id]; if(id==='uebung') return 'Übungswiese';
+function levelLabel(id){ const n=E.NAMES?.[id]; if(id==='uebung') return 'Archiv: Übungswiese';
   if(typeof id==='number') return `${E.WNO(id)} ${n||''}`; if(String(id).startsWith('archiv')){ try{ ARCHN[id]??=E.levelData(id).name; }catch(_){ ARCHN[id]=id; } return `Archiv: ${ARCHN[id]}`; } return String(id); }
 function hasDraft(id){ try{ return !!localStorage.getItem(DRAFT+id); }catch(_){ return false; } }
 function markSelect(){ for(const o of $('lv').options){ const id=JSON.parse(o.value), st=worldStatus(id); o.textContent=levelLabel(id)+(st.cls==='live'?'':'  '+st.icon); } }

@@ -16,7 +16,7 @@ const { src, html } = await gameSource();
 const STEPS = [[], ['double'], ['double', 'wall'], ['double', 'wall', 'dash'], ['double', 'wall', 'dash', 'glide']];
 const raw = process.argv.slice(2), jsonOut = raw.includes('--json'), args = raw.filter(a => a !== '--json'), onlyCheck = args[0] === '--pruefen', want = (onlyCheck ? args.slice(1) : args).map(a => isNaN(+a) ? a : +a);
 const E = engine(html);
-const worlds = want.length ? want : [...new Set(E.EDITABLE.filter(w => !String(w).startsWith('archiv') && !E.BONUS.includes(w)))];
+const worlds = want.length ? want : [...new Set(E.EDITABLE.filter(w => !String(w).startsWith('archiv') && w !== 'uebung' && !E.BONUS.includes(w)))];
 
 if (onlyCheck) {
   for (const w of worlds) { const D = E.levelData(w); const steps = E.BONUS_AB?.[w] ? [E.BONUS_AB[w], E.BONUS_AB[w].slice(0, -1)] : STEPS;   // Bonus: mit und ohne die jüngste Fähigkeit
