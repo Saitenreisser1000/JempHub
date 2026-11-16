@@ -126,6 +126,11 @@ Höhe (Klettern) und bei 1-1 der gedrosselten Strecke ohne Schuhe – derzeit 60
 - 1-1 Blumenwiese hat keine Abgründe mehr: Gräben, Teich und die Senken unter den Bröckelblöcken sind flach
   (1–2 Kacheln tief) – wer hineinfällt, springt wieder heraus.
 
+## Startbild
+
+Beim Laden erscheint knapp 3 Sekunden das Logo **on praehortus studios** (dasselbe wie bei Maxis Bierkiste:
+Gartentor mit Keimling, Schrift Barlow Condensed); Antippen überspringt es. Im Editor/Probespiel entfällt es.
+
 ## Abschluss-Bildschirm
 
 Nach einer Welt nur das Wesentliche: Name, Punkte (mit Rekord-Hinweis), drei Kacheln für Diamanten, Sterne

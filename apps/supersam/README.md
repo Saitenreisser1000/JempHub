@@ -15,6 +15,11 @@ einzelnen Teile steht in `apps/supersam-labor/README.md`.
 - `src/game.test.js`: dieselben Tests wie im Labor.
 - Kein Leveleditor auf der Hauptseite; der bleibt unter `/labor/editor/`.
 
+## Startbild
+
+Beim Laden erscheint knapp 3 Sekunden das Logo **on praehortus studios** (dasselbe wie bei Maxis Bierkiste:
+Gartentor mit Keimling, Schrift Barlow Condensed); Antippen überspringt es. Im Editor/Probespiel entfällt es.
+
 ## Entwicklung und Veröffentlichung
 
 ```bash
