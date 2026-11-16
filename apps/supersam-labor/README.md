@@ -44,9 +44,30 @@ node kamera.mjs --stellen 3 7   # zusätzlich die schlechtesten Stellen (Spalte,
 
 Suche und Abspielen teilen sich `pruefung.mjs` mit `erreichbar.mjs`.
 
+## Kapitel und Fähigkeiten
+
+Fähigkeiten gibt es nur von Endgegnern. Jeder Boss schenkt die Fähigkeit, die das nächste Kapitel braucht
+(`AB_OF` in `index.html`); Welten selbst geben keine Fähigkeit mehr (im Käfig am Ziel wartet ein Stern).
+
+| Kapitel | Welten | Endgegner | Belohnung |
+|---|---|---|---|
+| 1 Wiese | 1-1 Blumenwiese, 1-2 Bachtal (ohne Fähigkeit) | Käferkönig | Doppelsprung |
+| 2 Wald | 2-1 Wald, 2-2 Wipfelwald | Wespenkönigin | Wandsprung |
+| 3 Felsen | 3-1 Felsen, 3-2 Schlucht | Felsgolem | Dash |
+| 4 See | 4-1 See, 4-2 Lagune | Igelkönig | Gleiten |
+| 5 Gipfel | 5-1 Gipfel, 5-2 Sturmgrat | Sturmgeist | Finale |
+
+- Intern behalten die Welten ihre Nummern (Wald = 1 … Sturmgrat = 8, neu: Blumenwiese = 9, Bachtal = 10,
+  Käferkönig = `b4`); die Anzeige-Nummern kommen aus `WNO_TAB`.
+- **Käferkönig:** krabbelt heran, stürmt los und liegt nach dem Aufprall an der Wand benommen auf dem Rücken;
+  ab dem zweiten Treffer hüpft er und schickt Erdwellen über den Boden. Von oben reicht ein einfacher Sprung.
+- Ältere Spielstände: Ein Kronentor ist auch offen, wenn man die Fähigkeit seines Bosses schon hat – wer früher
+  den Doppelsprung im Wald bekommen hat, muss den Käferkönig nicht nachholen.
+- Die Bonuswelten öffnen jetzt bei ◆ 9 / 17 / 25, weil es mit der Wiese früher mehr Diamanten gibt.
+
 ## Hubwelt als Landkarte
 
-Die Hubwelt ist eine Inselkarte von oben: Wald im Westen, Felsen im Norden, See mit Lagune im Süden,
+Die Hubwelt ist eine Inselkarte von oben: Wiese ganz im Westen, daneben der Wald, Felsen im Norden, See mit Lagune im Süden,
 Gipfel im Osten. **Punkt antippen:** Sam läuft selbst über den Weg dorthin (nicht durch geschlossene
 Kronentore). Nochmal antippen oder **Los ▶** auf der Infokarte betritt die Welt. Am Rechner gehen auch
 ◀ ▶ und Springen. Die Karte ist näher herangezoomt (`MAP_ZOOM`) und folgt Sam; mit dem Finger
@@ -64,8 +85,8 @@ einer Welt steht Sam auf deren Punkt.
 
 **Bonuswelten** (`bonus1` Moosklippen, `bonus2` Glutschlot, `bonus3` Eisspalte): kurze, knifflige Welten ohne
 Punkteziel und Zeitlimit. Auf der Karte als Portale neben der Wespenkönigin, dem Felsgolem und dem Igelkönig,
-freigeschaltet durch Diamanten (◆ 6 / 14 / 22). Wer eine zum ersten Mal schafft, bekommt ein **Extraleben**.
-Jede braucht die jüngste Fähigkeit an dieser Stelle (Doppelsprung, Wandsprung, Dash) – mit `erreichbar.mjs`
+freigeschaltet durch Diamanten (◆ 9 / 17 / 25). Wer eine zum ersten Mal schafft, bekommt ein **Extraleben**.
+Jede ist um eine Fähigkeit herum gebaut (Doppelsprung, Wandsprung, Dash; `BONUS_AB`) – mit `erreichbar.mjs`
 geprüft: mit der Fähigkeit schaffbar, ohne nicht. Auch im Editor bearbeitbar.
 
 **Hinweise auf der Karte:** Über der Infokarte steht pro Welt, was noch fehlt und ab welcher Fähigkeit es
@@ -89,7 +110,7 @@ Editor verschoben, fehlt er in der Tabelle, bis neu gerechnet wird; die Karte z�
 
 ## Medaillen
 
-Pro Welt (Übungswiese und 1-1 bis 4-2) drei Medaillen: **Bronze** fürs Schaffen, **Silber** für alle Diamanten
+Pro Welt (Übungswiese und 1-1 bis 5-2) drei Medaillen: **Bronze** fürs Schaffen, **Silber** für alle Diamanten
 und Sterne der Welt, **Gold**, wenn die Bestzeit höchstens die Goldzeit ist. Sie stehen auf der Karte unter
 jedem Punkt und neben dem Namen auf der Infokarte; der Abschlussbildschirm meldet neue Medaillen. Im Level
 zeigt die Uhr darunter, wie viel Zeit bis Gold bleibt.
@@ -99,7 +120,7 @@ Höhe (Klettern) und bei der Übungswiese der Barfuß-Strecke – derzeit 60 bis
 
 ## Übungswiese: erste Welt, schnelle Schuhe
 
-Die Übungswiese ist die erste Welt: erster Punkt auf der Karte, 1-1 öffnet erst, wenn sie geschafft ist
+Die Übungswiese ist die erste Welt: erster Punkt auf der Karte, 1-1 (Blumenwiese) öffnet erst, wenn sie geschafft ist
 (oder die Einführung übersprungen wurde). Am Anfang läuft Sam gedrosselt (`SLOW_SHOES`, zwei Drittel des
 Tempos – Sprungweite dann rund 72 px, die Gräben sind 48 px). Am Anfang des letzten Drittels liegen die
 **schnellen Schuhe**; danach läuft er im vollen Tempo. Im Editor gibt es dafür das Objekt
