@@ -17,8 +17,8 @@ const { html } = await gameSource();
 const raw = process.argv.slice(2), spots = raw.includes('--stellen'), jsonOut = raw.includes('--json'), want = raw.filter(a => !a.startsWith('--')).map(a => isNaN(+a) ? a : +a);
 const E = engine(html);
 // Fähigkeiten, die man beim ersten Besuch der Welt hat
-const AB = { uebung: [], 1: [], 5: ['double'], 2: ['double'], 6: ['double', 'wall'], 3: ['double', 'wall'], 7: ['double', 'wall', 'dash'], 4: ['double', 'wall', 'dash'], 8: ['double', 'wall', 'dash', 'glide'], ...E.BONUS_AB };
-const worlds = want.length ? want : ['uebung', 1, 5, 2, 6, 3, 7, 4, 8, ...E.BONUS];
+const AB = { uebung: [], 9: [], 10: [], 1: ['double'], 5: ['double'], 2: ['double', 'wall'], 6: ['double', 'wall'], 3: ['double', 'wall', 'dash'], 7: ['double', 'wall', 'dash'], 4: ['double', 'wall', 'dash', 'glide'], 8: ['double', 'wall', 'dash', 'glide'], ...E.BONUS_AB };
+const worlds = want.length ? want : ['uebung', 9, 10, 1, 5, 2, 6, 3, 7, 4, 8, ...E.BONUS];
 const cacheDir = resolve(tmpdir(), 'supersam-kamera'); await mkdir(cacheDir, { recursive: true });
 
 async function pathFor(w) { const D = E.levelData(w), ab = AB[w] || [];

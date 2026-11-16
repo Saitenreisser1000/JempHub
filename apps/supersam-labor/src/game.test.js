@@ -223,7 +223,7 @@ test('Käfig am Ziel öffnet erst mit genug Punkten', () => {
     dz.addCoins(Math.ceil((dz.L.need - dz.score()) / 10) + 5);
     key('ArrowLeft', 1); run(20); key('ArrowLeft', 0); key('ArrowRight', 1); run(200); key('ArrowRight', 0); run(200);
     assert.equal(dz.cage.open, true, `Welt ${lv}: Käfig öffnet mit genug Punkten`);
-    assert.equal(dz.save.ab[['', 'double', 'wall', 'dash', 'glide'][lv]], true, `Welt ${lv}: Fähigkeit erhalten`);
+    assert.ok(!Object.values(dz.save.ab).some(Boolean), `Welt ${lv}: keine Fähigkeit – die gibt es nur von Endgegnern`);
   }
 });
 
@@ -262,12 +262,15 @@ test('Endgegner: ein Boss je Abschnitt, Kronentore, Bosse brauchen Fähigkeiten'
   dz.setState('play'); dz.loadLevel('hub');
   assert.equal(dz.L.coins.length, 0, 'keine Münzen in der Hubwelt');
   const bossDoors = dz.L.doors.filter(d => typeof d.world === 'string').map(d => d.world);
-  assert.equal(JSON.stringify(bossDoors), JSON.stringify(['b0', 'b2', 'b1', 'b3']), 'Boss-Reihenfolge Wald, Felsen, See, Gipfel');
-  assert.equal(JSON.stringify(dz.L.gates.map(g => [g.boss, g.open])), JSON.stringify([['b0', false], ['b2', false], ['b1', false]]), 'Kronentore zu');
+  assert.equal(JSON.stringify(bossDoors), JSON.stringify(['b4', 'b0', 'b2', 'b1', 'b3']), 'Boss-Reihenfolge Wiese, Wald, Felsen, See, Gipfel');
+  assert.equal(JSON.stringify(dz.L.gates.map(g => [g.boss, g.open])), JSON.stringify([['b4', false], ['b0', false], ['b2', false], ['b1', false]]), 'Kronentore zu');
   const gx = dz.L.gates[0].x / 16; assert.ok(dz.L.grid[0][gx] === 'K' && dz.L.grid[22][gx] === 'K', 'Kronentor sperrt die ganze Höhe');
-  dz.save.bosses.b0 = true; dz.loadLevel('hub');
-  assert.equal(dz.L.gates[0].open, true, 'Krone der Wespenkönigin öffnet das erste Tor'); assert.ok(dz.L.grid[22][gx] !== 'K', 'Durchgang frei');
-  delete dz.save.bosses.b0;
+  dz.save.bosses.b4 = true; dz.loadLevel('hub');
+  assert.equal(dz.L.gates[0].open, true, 'Krone des Käferkönigs öffnet das erste Tor'); assert.ok(dz.L.grid[22][gx] !== 'K', 'Durchgang frei');
+  delete dz.save.bosses.b4;
+  dz.save.ab.wall = true; dz.loadLevel('hub');
+  assert.equal(dz.L.gates[1].open, true, 'alter Spielstand: wer den Wandsprung schon hat, kommt durch das Tor der Wespenkönigin');
+  dz.save.ab.wall = false; dz.save.ab.double = true;
   // Wespenkönigin: einfacher Sprung reicht nicht, von oben (Doppelsprung) trifft
   dz.setState('play'); dz.loadLevel('b0'); run(80); let Q = dz.boss;
   dz.P.inv = 5; dz.P.x = Q.x + Q.w / 2 - 5; dz.P.y = 15 * 16 - 14; dz.P.vy = 0; run(3);
@@ -305,10 +308,34 @@ test('Endgegner: ein Boss je Abschnitt, Kronentore, Bosse brauchen Fähigkeiten'
   assert.equal(dz.save.bosses.b3, true, 'Sieg gespeichert');
 });
 
+test('Käferkönig: ohne Fähigkeit zu schaffen, schenkt den Doppelsprung', () => {
+  const { dz, listeners, run } = boot();
+  const key = (k, d) => d ? listeners.keydown({ key: k, preventDefault() {} }) : listeners.keyup({ key: k });
+  dz.save.done[10] = true;
+  dz.setState('play'); dz.loadLevel('b4'); run(80); const B = dz.boss;
+  assert.ok(!Object.values(dz.save.ab).some(Boolean), 'keine Fähigkeit vorher');
+  // Ansturm gegen die Wand: danach liegt er benommen auf dem Rücken
+  B.state = 'charge'; B.dir = 1; dz.P.inv = 5; for (let i = 0; i < 200 && B.state === 'charge'; i++) run(1);
+  assert.equal(B.state, 'dizzy', 'nach dem Aufprall benommen');
+  // ein einfacher Sprung reicht für den Treffer von oben
+  for (let k = 0; k < 3; k++) {
+    B.inv = 0; B.state = 'dizzy'; B.timer = 3; dz.P.inv = 0; dz.P.vy = 0; dz.P.x = B.x - 26; dz.P.y = 13 * 16 - 14; run(2);
+    key('ArrowRight', 1); key(' ', 1); let hit = false; for (let i = 0; i < 70 && !hit; i++) { run(1); hit = B.hp === 2 - k; } key(' ', 0); key('ArrowRight', 0);
+    assert.ok(hit, `Treffer ${k + 1} mit einfachem Sprung`);
+    for (let i = 0; i < 40; i++) { dz.P.inv = 5; run(1); }
+  }
+  for (let i = 0; i < 160; i++) { dz.P.inv = 5; run(1); }
+  assert.ok(B.trophy, 'Krone fällt');
+  dz.P.x = B.trophy.x - 5; dz.P.y = 13 * 16 - 14; dz.P.vy = 0; run(220);
+  assert.equal(dz.save.bosses.b4, true, 'Sieg gespeichert');
+  assert.equal(dz.save.ab.double, true, 'Doppelsprung erhalten');
+  assert.ok(!dz.save.ab.wall && !dz.save.ab.dash && !dz.save.ab.glide, 'nur diese eine Fähigkeit');
+});
+
 test('Nach dem letzten Endgegner kommt der Abschluss-Bildschirm', () => {
   const { dz, run } = boot();
   Object.assign(dz.save.ab, { double: true, wall: true, dash: true, glide: true });
-  dz.save.bosses.b0 = true; dz.save.bosses.b1 = true; dz.save.bosses.b2 = true;
+  dz.save.bosses.b4 = true; dz.save.bosses.b0 = true; dz.save.bosses.b1 = true; dz.save.bosses.b2 = true;
   dz.setState('play'); dz.loadLevel('b3'); run(60); const B = dz.boss;
   for (let k = 0; k < 3; k++) { B.inv = 0; dz.P.inv = 0; for (let i = 0; i < 4; i++) { dz.P.x = B.x + B.w / 2 - 5; dz.P.y = B.y - 16 + i * 3; dz.P.vy = 150; run(1); } for (let i = 0; i < 20; i++) { dz.P.inv = 5; run(1); } }
   for (let i = 0; i < 150; i++) { dz.P.inv = 5; run(1); }
@@ -384,8 +411,8 @@ test('Neue Welten: Türen in der Hubwelt und Abschluss ohne neue Fähigkeit', ()
   const { dz, run, warnings } = boot();
   dz.setState('play'); dz.loadLevel('hub');
   const worlds = dz.L.doors.map(d => String(d.world)).sort();
-  assert.equal(JSON.stringify(worlds), JSON.stringify(['1', '2', '3', '4', '5', '6', '7', '8', 'b0', 'b1', 'b2', 'b3']), 'alle Türen vorhanden');
-  for (const n of [5, 6, 7, 8]) {
+  assert.equal(JSON.stringify(worlds), JSON.stringify(['1', '10', '2', '3', '4', '5', '6', '7', '8', '9', 'b0', 'b1', 'b2', 'b3', 'b4']), 'alle Türen vorhanden');
+  for (const n of [5, 6, 7, 8, 9, 10]) {
     dz.setState('play'); dz.loadLevel(n); run(30);
     assert.ok(dz.L.goal, `Welt ${n} hat ein Ziel`);
     assert.ok(dz.L.crystals.length >= 3 && dz.L.stars.length >= 2, `Welt ${n} hat Diamanten und Sterne`);
@@ -400,7 +427,7 @@ test('Neue Welten: Türen in der Hubwelt und Abschluss ohne neue Fähigkeit', ()
 
 test('Weltnummern: Teil 1 und Teil 2 je Fähigkeitswelt, Summen aus allen Welten', () => {
   const { dz } = boot();
-  assert.equal([1, 5, 2, 6, 3, 7, 4, 8].map(dz.WNO).join(' '), '1-1 1-2 2-1 2-2 3-1 3-2 4-1 4-2');
+  assert.equal([9, 10, 1, 5, 2, 6, 3, 7, 4, 8].map(dz.WNO).join(' '), '1-1 1-2 2-1 2-2 3-1 3-2 4-1 4-2 5-1 5-2');
   const t = dz.totals();
   assert.equal(t.cr, Object.values(t.per).reduce((a, b) => a + b, 0), 'Gesamtsumme passt');
   assert.ok(t.per.hub >= 1, 'Hub-Diamant mitgezählt');
@@ -421,11 +448,12 @@ test('Hubwelt als Landkarte: Punkte in Reihenfolge, Laufen, Kronentor, Rückkehr
   const key = (k, d) => d ? listeners.keydown({ key: k, preventDefault() {} }) : listeners.keyup({ key: k });
   dz.save.tutorialDone = true;
   dz.setState('play'); dz.loadLevel('hub'); run(5);
-  assert.equal(dz.map.nodes.map(n => n.key).join(' '), 'home 1 5 b0 bonus1 g-b0 2 6 b2 bonus2 g-b2 3 7 b1 bonus3 g-b1 4 8 secret b3', 'Reihenfolge auf der Karte');
+  assert.equal(dz.map.nodes.map(n => n.key).join(' '), 'home 9 10 b4 g-b4 1 5 b0 bonus1 g-b0 2 6 b2 bonus2 g-b2 3 7 b1 bonus3 g-b1 4 8 secret b3', 'Reihenfolge auf der Karte');
   assert.equal(dz.map.i, 0, 'Start bei der Übungswiese');
   key('ArrowRight', 1); for (let i = 0; i < 400; i++) run(1); key('ArrowRight', 0); for (let i = 0; i < 120; i++) run(1);
-  assert.equal(dz.map.nodes[dz.map.i].key, 'g-b0', 'Kronentor der Wespenkönigin hält Sam auf');
-  dz.map.go(1); dz.map.enter(); run(2); assert.equal(dz.L.id, 1, 'Springen betritt 1-1');
+  assert.equal(dz.map.nodes[dz.map.i].key, 'g-b4', 'Kronentor des Käferkönigs hält Sam auf');
+  dz.save.ab.double = true;   // Welt 2-1 (Wald) braucht den Doppelsprung vom Käferkönig
+  dz.map.go(1); dz.map.enter(); run(2); assert.equal(dz.L.id, 1, 'Springen betritt 2-1');
   dz.loadLevel('hub', 1); assert.equal(dz.map.nodes[dz.map.i].key, 1, 'zurück auf dem Punkt der Welt');
   dz.save.bosses.b0 = true; dz.loadLevel('hub', 'b0'); run(5);
   key('ArrowRight', 1); for (let i = 0; i < 60; i++) run(1); key('ArrowRight', 0); for (let i = 0; i < 120; i++) run(1);
@@ -646,10 +674,10 @@ test('Übungswiese: erste Welt, gedrosseltes Tempo bis zu den schnellen Schuhen 
   const fast = speed(); assert.ok(fast >= dz.PH.max * 0.95, `mit Schuhen volles Tempo (${Math.round(fast)})`);
   // In anderen Welten ist das Tempo nie gedrosselt
   dz.loadLevel(1); dz.L.enemies.length = 0; assert.equal(dz.L.shoesItem, undefined);
-  // erste Welt: 1-1 öffnet erst nach der Übungswiese
+  // erste Welt: 1-1 (Blumenwiese) öffnet erst nach der Übungswiese
   dz.save.tutorialDone = false; delete dz.save.done.uebung; dz.loadLevel('hub'); run(3);
-  dz.map.go(1); dz.map.enter(); run(2); assert.equal(dz.L.id, 'hub', '1-1 noch zu');
-  dz.save.done.uebung = true; dz.map.enter(); run(2); assert.equal(dz.L.id, 1, 'nach der Übungswiese offen');
+  dz.map.go(9); dz.map.enter(); run(2); assert.equal(dz.L.id, 'hub', '1-1 noch zu');
+  dz.save.done.uebung = true; dz.map.enter(); run(2); assert.equal(dz.L.id, 9, 'nach der Übungswiese offen');
 });
 
 test('Bonuswelten: Diamanten-Schranke auf der Karte, Extraleben beim ersten Schaffen, Hinweise nach Fähigkeit', () => {
@@ -658,8 +686,8 @@ test('Bonuswelten: Diamanten-Schranke auf der Karte, Extraleben beim ersten Scha
   dz.setState('play'); dz.loadLevel('hub'); run(3);
   for (const w of ['bonus1', 'bonus2', 'bonus3']) assert.ok(dz.map.nodes.some(n => n.key === w), `${w} auf der Karte`);
   dz.map.go('bonus1'); dz.map.enter(); run(2); assert.equal(dz.L.id, 'hub', 'ohne Diamanten zu');
-  for (let i = 0; i < 6; i++) s.crystals['t' + i] = true;
-  dz.map.enter(); run(2); assert.equal(dz.L.id, 'bonus1', 'mit 6 Diamanten offen');
+  for (let i = 0; i < 9; i++) s.crystals['t' + i] = true;
+  dz.map.enter(); run(2); assert.equal(dz.L.id, 'bonus1', 'mit 9 Diamanten offen');
   assert.equal(dz.L.need || 0, 0, 'kein Punkteziel'); assert.ok(dz.L.goal, 'hat ein Ziel');
   const before = s.lives; dz.map.finish(); assert.equal(s.lives, before + 1, 'Extraleben');
   dz.setState('play'); dz.loadLevel('bonus1'); dz.map.finish(); assert.equal(s.lives, before + 1, 'nur beim ersten Mal');
