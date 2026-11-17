@@ -10,7 +10,7 @@
 <link rel="icon" href="icon.svg" type="image/svg+xml">
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Silkscreen:wght@400;700&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Silkscreen:wght@400;700&family=Barlow+Condensed:wght@400;600&display=swap">
 <style>
 /* Layout: Vollbild-Canvas, HUD in den Ecken, Touch-Hälften als Overlay. Bewusst nur ein Look (Pixel-Welt im SNES-Stil). */
 :root{
@@ -121,6 +121,11 @@ canvas{position:fixed;left:0;top:var(--gt,0px);width:100%;height:100vh;height:va
 .btn:focus-visible{outline:3px solid var(--cream);outline-offset:3px}
 .ability{border:2px solid var(--sky);padding:10px 16px;max-width:36em}
 .stats{font-size:13px;line-height:1.8}
+.tiles{display:flex;gap:10px;flex-wrap:wrap;justify-content:center}
+.tile{min-width:74px;padding:8px 12px;background:rgba(13,21,36,.6);border:2px solid rgba(246,234,210,.18);text-align:center}
+.tile b{display:block;font-size:20px;line-height:1.2}.tile span{font-size:9px;color:var(--dim);letter-spacing:.06em}
+.tile.full{border-color:var(--sky)}.big{font-size:clamp(26px,6vw,40px);color:var(--ember);text-shadow:3px 3px 0 var(--ink);line-height:1}
+.big small{display:block;font-size:11px;color:var(--gold,#ffd166);text-shadow:none;margin-top:4px}
 #start{background:linear-gradient(to top,rgba(13,21,36,.8),rgba(13,21,36,0) 38%);justify-content:flex-end;padding-bottom:calc(env(safe-area-inset-bottom,0px) + 22px)}
 #ending{background:radial-gradient(ellipse at 50% 40%,#3a2a6a 0%,#16233a 60%,#0d1524 100%);z-index:12;padding:0}
 #endcv{position:absolute;inset:0;width:100%;height:100%;image-rendering:pixelated}
@@ -142,14 +147,52 @@ body.title .hud,body.title .zone,body.title #msg,body.title #tut{display:none!im
 .phone{width:40px;height:66px;border:4px solid var(--cream);border-radius:8px;animation:turn 2s ease-in-out infinite}
 @keyframes turn{0%,30%{transform:rotate(0)}60%,100%{transform:rotate(-90deg)}}
 @media (prefers-reduced-motion:reduce){.phone{animation:none}}
+/* Startbild: on praehortus studios (lat. prae hortus, „vor dem Garten“): Gartentor mit Keimling */
+.splash{position:fixed;inset:0;z-index:50;display:grid;place-content:center;justify-items:center;gap:6px;background:radial-gradient(circle at 50% 42%,#22352a 0%,#141c17 62%);color:#f3e6c4;transition:opacity .55s ease;cursor:pointer}
+.splash.out{opacity:0;pointer-events:none}
+.ph-logo{width:140px;height:140px;margin-bottom:10px;overflow:visible}
+.ph-logo *{fill:none;stroke-linecap:round;stroke-linejoin:round}
+.ph-ring{stroke:#f3e6c4;stroke-width:3;stroke-dasharray:340;stroke-dashoffset:340;animation:phDraw 1s ease-out .1s forwards}
+.ph-fence{stroke:rgba(243,230,196,.55);stroke-width:2.5;opacity:0;animation:phFade .5s ease-out .7s forwards}
+.ph-gate{stroke:#e6b84a;stroke-width:3.5;stroke-linejoin:miter;stroke-linecap:square;stroke-dasharray:120;stroke-dashoffset:120;animation:phDraw .7s ease-out .5s forwards}
+.ph-ground{stroke:#f3e6c4;stroke-width:3;stroke-dasharray:90;stroke-dashoffset:90;animation:phDraw .5s ease-out .4s forwards}
+.ph-sprout{transform-origin:60px 88px;transform:scaleY(0);animation:phGrow .7s cubic-bezier(.3,1.4,.5,1) 1s forwards}
+.ph-stem{stroke:#8fca5c;stroke-width:3.5}
+.ph-leaf{fill:#8fca5c;stroke:#8fca5c;stroke-width:1}
+.ph-l2{fill:#a6dc72;stroke:#a6dc72}
+.ph-sun{fill:#e6b84a;stroke:none;opacity:0;animation:phFade .4s ease-out 1.5s forwards}
+.ph-word{font:600 40px/1 "Barlow Condensed","Arial Narrow",sans-serif;letter-spacing:.06em;opacity:0;transform:translateY(8px);animation:phUp .6s ease-out 1.2s forwards}
+.ph-on{font-weight:400;color:#e6b84a}
+.ph-sub{font:600 14px/1 "Barlow Condensed","Arial Narrow",sans-serif;letter-spacing:.62em;padding-left:.62em;text-transform:uppercase;color:#e6b84a;opacity:0;animation:phFade .6s ease-out 1.5s forwards}
+@keyframes phDraw{to{stroke-dashoffset:0}}
+@keyframes phFade{to{opacity:1}}
+@keyframes phGrow{to{transform:scaleY(1)}}
+@keyframes phUp{to{opacity:1;transform:none}}
+@media (prefers-reduced-motion:reduce){.splash *{animation-duration:.01s!important;animation-delay:0s!important}}
 </style>
 </head>
 <body>
+<div class="splash" id="splash" role="img" aria-label="on praehortus studios">
+  <svg class="ph-logo" viewBox="0 0 120 120" aria-hidden="true">
+    <circle class="ph-ring" cx="60" cy="60" r="54"/>
+    <path class="ph-fence" d="M21 88V73l3.5-4 3.5 4v15M31 88V69l3.5-4 3.5 4v19M82 88V69l3.5-4 3.5 4v19M92 88V73l3.5-4 3.5 4v15"/>
+    <path class="ph-gate" d="M44 88V62L60 45L76 62V88"/>
+    <path class="ph-ground" d="M15 88h90"/>
+    <g class="ph-sprout">
+      <path class="ph-stem" d="M60 88c0-9 0-17 0-27"/>
+      <path class="ph-leaf ph-l1" d="M60 73c-8 0-13-5-14-12 7 0 13 4 14 12z"/>
+      <path class="ph-leaf ph-l2" d="M60 66c8 0 13-5 14-12-7 0-13 4-14 12z"/>
+    </g>
+    <circle class="ph-sun" cx="60" cy="34" r="4"/>
+  </svg>
+  <div class="ph-word"><span class="ph-on">on</span> praehortus</div>
+  <div class="ph-sub">studios</div>
+</div>
 <canvas id="c"></canvas>
 <div class="zone l" id="zl"><span>◀</span></div>
 <div class="zone r" id="zr"><span>▶</span></div>
 <div class="hud" id="hl">
-  <button id="home" type="button" aria-label="Zurück zur Hubwelt" hidden>⌂ Hub</button>
+  <button id="home" type="button" aria-label="Zurück zur Karte" hidden>⌂ Karte</button>
   <button id="gear" type="button" aria-label="Menü öffnen">⌂</button>
 </div>
 <div class="hud" id="hc">
@@ -186,7 +229,7 @@ body.title .hud,body.title .zone,body.title #msg,body.title #tut{display:none!im
     <h1 id="endtitle">Glückwunsch!</h1>
     <p class="endsub">Sam hat alle drei Endgegner besiegt.</p>
     <div class="endstats" id="endstats"></div>
-    <button class="btn" id="endbtn" type="button">Zurück zur Hubwelt</button>
+    <button class="btn" id="endbtn" type="button">Zurück zur Karte</button>
   </div>
 </div>
 <div class="panel" id="done" hidden>
@@ -194,7 +237,7 @@ body.title .hud,body.title .zone,body.title #msg,body.title #tut{display:none!im
   <div class="stats" id="donestats"></div>
   <div class="ability" id="donenew" hidden><h2 id="newname"></h2><p id="newhow"></p></div>
   <p id="donehint"></p>
-  <button class="btn" id="donebtn" type="button">Zur Hubwelt</button>
+  <button class="btn" id="donebtn" type="button">Zur Karte</button>
 </div>
 
 <div class="panel" id="lifelost" hidden>
@@ -203,15 +246,14 @@ body.title .hud,body.title .zone,body.title #msg,body.title #tut{display:none!im
   <p id="lltext"></p>
   <div class="row" style="flex-direction:column;align-items:stretch;min-width:220px">
     <button class="btn" id="llagain" type="button">Nochmal</button>
-    <button class="btn ghost" id="llhub" type="button">Zur Hubwelt</button>
+    <button class="btn ghost" id="llhub" type="button">Zur Karte</button>
   </div>
 </div>
 <div class="panel" id="pause" hidden>
   <h1>Pause</h1>
   <div class="row" style="flex-direction:column;align-items:stretch;min-width:220px">
     <button class="btn" id="presume" type="button">Weiter</button>
-    <button class="btn ghost" id="phub" type="button">Zur Hubwelt</button>
-    <button class="btn ghost" id="ppractice" type="button">Übungswiese</button>
+    <button class="btn ghost" id="phub" type="button">Zur Karte</button>
     <button class="btn ghost" id="pmain" type="button">Hauptmenü</button>
   </div>
   <div class="stilwahl"><span>Auflösung</span><button type="button" data-res="2">Hoch</button><button type="button" data-res="1.5">Mittel</button><button type="button" data-res="1">Niedrig</button><span style="margin-left:10px">Licht</span><button type="button" data-fx="1">An</button><button type="button" data-fx="0">Aus</button></div>
@@ -265,16 +307,19 @@ const C={ember:'#f2a65a',cream:'#f6ead2',ink:'#0d1524',gold:'#ffd166',sky:'#7fe0
 
 // ---------- Speicherstand ----------
 const SAVE_KEY='supersam-v2';
-const blankSave=()=>({ab:{double:false,wall:false,dash:false,glide:false},crystals:{},stars:{},bosses:{},done:{},best:{},wallet:0,endingSeen:false,tutorialDone:false,lives:3});
+const blankSave=()=>({ab:{double:false,wall:false,dash:false,glide:false},crystals:{},stars:{},bosses:{},done:{},best:{},wallet:0,endingSeen:false,tutorialDone:false,lives:3,shoes:false});
 let save=blankSave();
-try{ const s=JSON.parse(localStorage.getItem(SAVE_KEY)||'null'); if(s){ save=Object.assign(blankSave(),s); save.ab=Object.assign(blankSave().ab,s.ab||{}); } }catch(_){}
+try{ const s=JSON.parse(localStorage.getItem(SAVE_KEY)||'null'); if(s){ save=Object.assign(blankSave(),s); save.ab=Object.assign(blankSave().ab,s.ab||{});
+  if(s.shoes===undefined) save.shoes=!!(s.tutorialDone||s.done?.uebung||Object.keys(s.done||{}).length); } }catch(_){}   // früher gab es die Schuhe in der Übungswiese
 function persist(){ if(EDIT_MODE) return; try{ localStorage.setItem(SAVE_KEY,JSON.stringify(save)); }catch(_){} }   // Probespiel aus dem Editor speichert nichts
 
-const NAMES={bonus1:'Moosklippen',bonus2:'Glutschlot',bonus3:'Eisspalte',0:'Hubwelt',1:'Wald',2:'Felsen',3:'See',4:'Gipfel',5:'Wipfelwald',6:'Schlucht',7:'Lagune',8:'Sturmgrat',b0:'Wespenkönigin',b1:'Igelkönig',b2:'Felsgolem',b3:'Sturmgeist'};
-const WORLD_COL={b0:'#ffd166',b1:'#9be06a',b2:'#e0884a',b3:'#b07aff',0:'#f6ead2',1:'#6aa84f',2:'#c69a6a',3:'#4fa3d9',4:'#b9a7ff',5:'#9be06a',6:'#e0a050',7:'#5fd0e0',8:'#d0c0ff'};
-const AB_OF={1:'double',2:'wall',3:'dash',4:'glide'};
-// Anzeige-Nummer: jede Fähigkeitswelt hat zwei Teile (Wald 1-1, Wipfelwald 1-2 …)
-const WNO=n=>typeof n==='string'?(n.startsWith('bonus')?'B'+n.slice(5):n):n>4?`${n-4}-2`:`${n}-1`;
+const NAMES={9:'Blumenwiese',10:'Bachtal',b4:'Käferkönig',bonus1:'Moosklippen',bonus2:'Glutschlot',bonus3:'Eisspalte',0:'Karte',1:'Wald',2:'Felsen',3:'See',4:'Gipfel',5:'Wipfelwald',6:'Schlucht',7:'Lagune',8:'Sturmgrat',b0:'Wespenkönigin',b1:'Igelkönig',b2:'Felsgolem',b3:'Sturmgeist'};
+const WORLD_COL={9:'#f2c14e',10:'#5fc0b0',b4:'#d84a4a',b0:'#ffd166',b1:'#9be06a',b2:'#e0884a',b3:'#b07aff',0:'#f6ead2',1:'#6aa84f',2:'#c69a6a',3:'#4fa3d9',4:'#b9a7ff',5:'#9be06a',6:'#e0a050',7:'#5fd0e0',8:'#d0c0ff'};
+// Fähigkeiten gibt es nur von Endgegnern: jeder Boss schenkt die Fähigkeit, die das nächste Kapitel braucht
+const AB_OF={b4:'double',b0:'wall',b2:'dash',b1:'glide'};
+// Anzeige-Nummer: Kapitel-Teil (Blumenwiese 1-1, Bachtal 1-2, Wald 2-1, Wipfelwald 2-2 …); die internen Nummern bleiben
+const WNO_TAB={9:'1-1',10:'1-2',1:'2-1',5:'2-2',2:'3-1',6:'3-2',3:'4-1',7:'4-2',4:'5-1',8:'5-2'};
+const WNO=n=>typeof n==='string'?(n.startsWith('bonus')?'B'+n.slice(5):n):WNO_TAB[n]||String(n);
 const AB_TIP={double:'In der Luft nochmal springen',wall:'An Wänden abstoßen und klettern',dash:'Laufdaumen zweimal tippen',glide:'Daumen halten und segeln'};
 const AB_INFO={
   double:{name:'Doppelsprung',short:'2×',how:'In der Luft den Sprungdaumen kurz heben und wieder aufsetzen. Damit erreichst du Kanten, die etwa doppelt so hoch liegen.'},
@@ -282,10 +327,10 @@ const AB_INFO={
   dash:{name:'Dash',short:'Dash',how:'Tipp den Laufdaumen schnell zweimal. Du schießt nach vorn, auch einmal pro Sprung in der Luft. Rissige Felsen zerbrechen dabei.'},
   glide:{name:'Gleiten',short:'Gleit',how:'Halte im Fallen einen Daumen als Sprungdaumen gedrückt, dann segelst du langsam. In hellen Aufwinden trägt dich das Blatt nach oben.'}
 };
-const NEED_FOR_DOOR={2:'double',3:'wall',4:'dash',5:'double',6:'wall',7:'dash',8:'glide',b0:'double',b2:'wall',b1:'dash',b3:'glide'};
-// Abschnitte der Hubwelt: Boss je Abschnitt, Kronentor zum nächsten Abschnitt
-const BOSS_ORDER=['b0','b2','b1','b3'];
-const BOSS_NEEDS_WORLD={b0:5,b2:6,b1:7,b3:8};   // Boss-Tür öffnet erst, wenn auch Welt X-2 geschafft ist
+const NEED_FOR_DOOR={1:'double',5:'double',2:'wall',6:'wall',3:'dash',7:'dash',4:'glide',8:'glide',b0:'double',b2:'wall',b1:'dash',b3:'glide'};
+// Abschnitte der Karte: Boss je Abschnitt, Kronentor zum nächsten Abschnitt
+const BOSS_ORDER=['b4','b0','b2','b1','b3'];
+const BOSS_NEEDS_WORLD={b4:10,b0:5,b2:6,b1:7,b3:8};   // Boss-Tür öffnet erst, wenn auch Welt X-2 geschafft ist
 
 // ---------- Sprites (SNES-Stil) ----------
 function mk(w,h){const c=document.createElement('canvas');c.width=w;c.height=h;return c;}
@@ -574,11 +619,12 @@ const T={
 // ---------- Welten ----------
 // Koordinaten in Kacheln; (c,r) ist die Zelle, in der ein Objekt steht (Unterkante = Zellenboden).
 const DEFS={
-  // Hubwelt in vier Abschnitten: je Abschnitt Welt X-1, X-2 und Boss; das Kronentor öffnet den nächsten Abschnitt
-  hub:{name:'Hubwelt',w:262,h:26,top:23,style:'meadow',zones:[{to:14,s:'meadow'},{to:74,s:'forest'},{to:136,s:'stone'},{to:200,s:'lake'},{to:262,s:'snow'}],build(b){
+  // Karte in vier Abschnitten: je Abschnitt Welt X-1, X-2 und Boss; das Kronentor öffnet den nächsten Abschnitt
+  hub:{name:'Karte',w:262,h:26,top:23,style:'meadow',zones:[{to:14,s:'meadow'},{to:74,s:'forest'},{to:136,s:'stone'},{to:200,s:'lake'},{to:262,s:'snow'}],build(b){
     b.ground(0,261); b.start(4,22);
-    b.hill(6,2,2,true);
-    // Wald – Doppelsprung
+    // Wiese – ohne Fähigkeit; der Käferkönig schenkt den Doppelsprung (auf der Weltkarte zählt nur die Reihenfolge)
+    b.door(8,22,9); b.door(10,22,10); b.door(12,22,'b4'); b.gate(14,'b4');
+    // Wald – mit Doppelsprung; die Wespenkönigin schenkt den Wandsprung
     b.door(18,22,1);
     b.plat(17,26,30); b.door(28,16,5);                                              // 1-2: Ast 6 Kacheln hoch – Doppelsprung
     b.hill(34,1,2,true); b.door(48,22,'b0');                                        // Wespenkönigin: braucht Doppelsprung
@@ -600,7 +646,8 @@ const DEFS={
     b.door(254,22,'b3');                                                            // Sturmgeist: braucht Gleiten
   }},
   // Übungswiese beim ersten Start: jede Station verlangt genau einen Handgriff, ohne Gegner und Abgründe
-  uebung:{name:'Übungswiese',w:300,h:26,top:17,style:'meadow',noReturn:true,build(b){
+  // Archiv: die frühere Übungswiese (bis Nov. 2026 erste Welt mit Einführung); nur noch im Editor
+  uebung:{name:'Übungswiese',archived:true,w:300,h:26,top:17,style:'meadow',noReturn:true,build(b){
     b.ground(0,299); b.rect(0,0,0,16); b.start(6,16); b.coins(16,9,14); b.coins(16,2,4);
     b.rect(26,16,27,16); b.coins(14,26,27);                                   // Station 3: Kiste – kurz springen
     b.rect(38,14,39,16); b.coins(12,38,39); b.star(39,10);                    // Station 4: Mauer – länger halten (★ 1)
@@ -629,6 +676,71 @@ const DEFS={
     b.cp(266,16); b.enemy(274,16); b.hill(278,1,2,true); b.coins(16,286,290);
     b.door(294,16,0,0,{stars:3});                                             // Tür öffnet erst mit allen 3 Sternen
   }},
+  // Kapitel 1 (Wiese): beide Welten ohne Fähigkeit schaffbar. Einige Sterne und ein Diamant liegen absichtlich zu hoch –
+  // die holt man später mit dem Doppelsprung.
+  9:{name:'Blumenwiese',need:800,timeLimit:200,w:280,h:26,top:20,style:'meadow',sky:.1,build(b){
+    // Abschnitt 1: Anlauf – kleine Gräben, ein sanfter Hügel, der erste Käfer
+    b.ground(0,279); b.start(3,19); b.coins(18,6,12);
+    b.clear(16,20,18,20); b.coins(17,15,19);                               // flache Gräben statt Abgründe: wer hineinfällt, springt wieder raus
+    b.hill(24,2,3,true); b.coins(17,26,29);
+    b.enemy(37,19); b.coins(18,34,40);
+    b.rect(44,18,45,19); b.coins(16,44,45);
+    b.clear(50,20,53,20); b.coins(17,49,54);
+    b.cp(58,19);
+    // Abschnitt 2: Bretter über dem Käferweg, eine Feder über die hohe Mauer, die erste Bröckelbrücke
+    b.plat(17,62,66); b.plat(15,69,73); b.plat(17,76,80); b.coins(16,62,66); b.coins(14,69,73); b.coins(16,76,80);
+    b.enemy(71,19); b.star(71,8);                                                           // ★ hoch über den Brettern: Doppelsprung
+    b.spring(86,19); b.rect(89,15,90,19); b.coins(13,86,90);
+    b.enemy(97,19); b.coins(18,94,100);
+    b.clear(104,20,112,21); b.crumb(20,104,112); b.coins(18,104,112); b.crystal(108,15);
+    b.cp(116,19);
+    // Abschnitt 3: fahrendes Brett über die Senke, Hügel, Treppe aus Brettern
+    b.clear(122,20,140,21); b.mover(123,18,12,0,3,3.4); b.coins(16,125,138); b.crystal(131,11);   // ◆ über dem Teich: Doppelsprung
+    b.enemy(146,19); b.hill(150,3,4,true); b.coins(16,153,156); b.star(155,12);
+    b.plat(17,176,180); b.plat(14,183,186); b.coins(16,176,180); b.coins(13,183,186); b.star(185,8);   // ★ ganz oben auf der Treppe
+    b.cp(192,19);
+    // Abschnitt 4: Hochebene mit Brettertreppe, Bröckelinseln über dem Graben, Endspurt
+    b.ramp(196,20,17,true); b.ground(202,220,17); b.ramp(221,17,20,true);
+    b.enemy(214,16); b.coins(16,203,219); b.plat(14,205,207); b.plat(11,209,212); b.crystal(211,10);
+    b.shoes(227,19);                                                          // schnelle Schuhe: ab hier volles Tempo (bis dahin gedrosselt)
+    b.clear(232,20,246,21); b.crumb(19,234,235); b.crumb(18,239,240); b.crumb(19,244,245); b.coins(17,233,246);
+    b.enemy(253,19); b.coins(18,250,256);
+    b.hill(259,1,2,true); b.coins(18,266,272);
+    b.goal(275,19);
+  }},
+  10:{name:'Bachtal',need:850,timeLimit:220,w:300,h:28,top:21,style:'meadow',sky:.2,build(b){
+    // Abschnitt 1: der erste Bach, ein Frosch, die Hochebene
+    b.ground(0,299); b.start(3,20); b.coins(19,6,12);
+    b.clear(16,21,19,27); b.water(16,19,23); b.coins(18,15,20);
+    b.enemy(27,20,'frosch'); b.coins(19,24,30);
+    b.ramp(34,21,18,true); b.ground(40,60,18); b.ramp(61,18,21,true);
+    b.enemy(48,17); b.coins(16,41,58); b.star(52,14);
+    b.cp(68,20);
+    // Abschnitt 2: Trittsteine im Bach, ein Fisch springt, Feder über den Felsen
+    b.clear(72,21,92,27); b.water(72,92,23); b.rect(76,21,77,27); b.rect(81,21,82,27); b.rect(86,21,87,27);
+    b.coins(19,76,77); b.coins(19,81,82); b.coins(19,86,87); b.enemy(84,23,'fisch'); b.star(84,12);   // ★ über dem Bach: Doppelsprung
+    b.cp(96,20);
+    b.spring(100,20); b.rect(103,15,105,20); b.coins(13,101,105);
+    b.enemy(113,16,'wespe',{range:3});
+    // Abschnitt 3: Bröckelbrücke über den breiten Bach, Aufzug auf den Felsen
+    b.clear(116,21,130,27); b.water(116,130,24); b.crumb(21,116,130); b.coins(19,117,129); b.crystal(123,17);
+    b.cp(134,20);
+    b.rect(140,13,150,20); b.mover(137,20,0,-7,2,3.2); b.coins(12,141,149); b.crystal(145,9); b.enemy(147,12);
+    b.enemy(158,20,'frosch'); b.dip(164,2,4,true); b.coins(21,166,171);
+    b.cp(178,20);
+    // Abschnitt 4: Floß über den dritten Bach, Stacheln, Treppe, letzter Bach
+    b.clear(182,21,198,27); b.water(182,198,24); b.mover(183,19,11,0,3,3.6); b.coins(17,184,197); b.crystal(190,11);   // ◆ über dem Floß: Doppelsprung
+    b.spikes(20,205,206); b.coins(17,204,207);
+    b.enemy(214,20); b.enemy(221,20); b.coins(19,212,224);
+    b.rect(228,19,231,20); b.rect(232,17,235,20); b.rect(236,15,239,20); b.coins(18,228,231); b.coins(16,232,235); b.coins(14,236,239); b.star(238,11);
+    b.clear(244,21,247,27); b.water(244,247,23); b.coins(18,243,248);
+    b.enemy(257,20,'frosch'); b.hill(262,2,3,true); b.coins(19,272,282);
+    b.goal(292,20);
+  }},
+  // Käferkönig: erster Endgegner, ohne Fähigkeit zu schaffen
+  b4:{name:'Käferkönig',w:36,h:16,top:13,style:'meadow',arena:{floor:13,left:1,right:35,bx:24,ceil:0,view:4},build(b){
+    b.ground(0,35); b.rect(0,0,0,15); b.rect(35,0,35,15); b.start(3,12);
+  }},
   b0:{name:'Wespenkönigin',w:38,h:18,top:15,style:'forest',arena:{floor:15,left:1,right:37,bx:19,by:6,range:9,ceil:0,view:5},build(b){
     b.ground(0,37); b.rect(0,0,0,17); b.rect(37,0,37,17); b.start(3,14);
   }},
@@ -642,7 +754,7 @@ const DEFS={
     b.ground(0,43); b.rect(0,0,0,19); b.rect(43,0,43,19); b.start(3,16);
     b.updraft(7,9,2,16); b.updraft(21,23,2,16); b.updraft(34,36,2,16); b.plat(14,13,16); b.plat(14,27,30);
   }},
-  // 1-1 Wald: auf Schwung gebaut – eine Ideallinie ohne Anhalten, wer sie verliert, läuft unten weiter
+  // 2-1 Wald (intern 1): auf Schwung gebaut – eine Ideallinie ohne Anhalten, wer sie verliert, läuft unten weiter
   1:{name:'Wald',need:1900,timeLimit:240,w:360,h:30,top:19,style:'forest',sky:.15,build(b){
     // Abschnitt 1: Anlauf – flache Mulden, ein Hügel, der erste Käfer zum Draufspringen
     b.ground(0,159); b.start(3,18); b.coins(18,7,13);
@@ -1012,12 +1124,17 @@ function totals(){ if(TOTALS) return TOTALS; const t={cr:0,st:0,per:{}};
 // Übernommene Editor-Levels: id → Daten (ersetzen den Bau-Code dieser Welt)
 const LEVEL_FILES={};
 // Ab welcher Fähigkeit ein Diamant/Stern erreichbar ist ('' = sofort, x = gar nicht gefunden) – berechnet von erreichbar.mjs, nicht von Hand ändern
-const REACH=/*erreichbar*/{"uebung:59,8":"","uebung:132,10":"","uebung:181,10":"","uebung:280,11":"","1:56,10":"","1:90,11":"double","1:121,3":"glide","1:184,20":"","1:228,10":"double","1:287,20":"double","1:346,9":"","1:355,4":"double","2:38,15":"double","2:72,5":"wall","2:118,22":"dash","2:186,22":"double","2:202,22":"dash","2:259,27":"double","2:306,7":"wall","2:324,16":"dash","3:40,9":"wall","3:88,22":"dash","3:123,3":"dash","3:176,4":"wall","3:229,22":"wall","3:283,5":"wall","3:299,11":"wall","3:354,30":"dash","4:57,19":"dash","4:77,3":"glide","4:102,7":"dash","4:200,14":"x","4:243,3":"glide","4:294,33":"dash","4:307,2":"glide","4:328,9":"dash","5:66,35":"dash","5:120,21":"double","5:166,3":"glide","5:195,10":"double","5:312,13":"wall","6:51,39":"","6:106,5":"wall","6:125,39":"dash","6:190,15":"wall","6:220,38":"wall","6:251,2":"glide","7:70,29":"wall","7:153,22":"dash","7:157,8":"wall","7:205,23":"wall","7:282,7":"dash","7:306,2":"glide","8:123,11":"glide","8:150,8":"x","8:159,4":"glide","8:204,15":"glide","8:268,37":"glide","8:312,5":"glide"}/*erreichbar*/;
+const REACH=/*erreichbar*/{"uebung:59,8":"","uebung:132,10":"","uebung:181,10":"","uebung:280,11":"","9:71,8":"double","9:108,15":"","9:131,11":"double","9:155,12":"","9:185,8":"","9:211,10":"","10:52,14":"","10:84,12":"double","10:123,17":"","10:145,9":"","10:190,11":"double","10:238,11":"","1:56,10":"","1:90,11":"double","1:121,3":"glide","1:184,20":"","1:228,10":"double","1:287,20":"double","1:346,9":"","1:355,4":"double","5:66,35":"dash","5:120,21":"double","5:166,3":"glide","5:195,10":"double","5:312,13":"wall","2:38,15":"double","2:72,5":"wall","2:118,22":"dash","2:186,22":"double","2:202,22":"dash","2:259,27":"double","2:306,7":"wall","2:324,16":"dash","6:51,39":"","6:106,5":"wall","6:125,39":"dash","6:190,15":"wall","6:220,38":"wall","6:251,2":"glide","3:40,9":"wall","3:88,22":"dash","3:123,3":"dash","3:176,4":"wall","3:229,22":"wall","3:283,5":"wall","3:299,11":"wall","3:354,30":"dash","7:70,29":"wall","7:153,22":"dash","7:157,8":"wall","7:205,23":"wall","7:282,7":"dash","7:306,2":"glide","4:57,19":"dash","4:77,3":"glide","4:102,7":"dash","4:200,14":"x","4:243,3":"glide","4:294,33":"dash","4:307,2":"glide","4:328,9":"dash","8:123,11":"glide","8:150,8":"x","8:159,4":"glide","8:204,15":"glide","8:268,37":"glide","8:312,5":"glide"}/*erreichbar*/;
 const EDIT_Q=(typeof URLSearchParams!=='undefined'&&typeof location!=='undefined')?new URLSearchParams(location.search):new Map(), EDIT_KEY='supersam-level-';
 let EDIT_ID=EDIT_Q.get('edit'), EDIT_DRAFT=null, EDIT_MODE=false;
 try{ if(EDIT_ID){ EDIT_DRAFT=JSON.parse(localStorage.getItem(EDIT_KEY+EDIT_ID)||'null'); EDIT_MODE=!!EDIT_DRAFT; } }catch(_){}
 const EDIT_ENGINE=EDIT_Q.has('engine'); if(EDIT_ENGINE) EDIT_MODE=true;   // vom Editor unsichtbar zum Rechnen geladen: keine Spielschleife, nichts speichern
-const EDITABLE=['uebung',1,5,2,6,3,7,4,8,'archiv1','archiv5'];
+// Startbild „on praehortus studios“ (wie bei Maxis Bierkiste): blendet nach knapp 3 s aus, Antippen überspringt
+{ const sp=document.getElementById('splash'); let gone=false;
+  const hide=()=>{ if(gone||!sp) return; gone=true; sp.classList.add('out'); setTimeout(()=>{ sp.hidden=true; },600); };
+  if(sp){ if(EDIT_MODE){ sp.hidden=true; gone=true; } else { sp.addEventListener('pointerdown',e=>{ e.stopPropagation(); hide(); });
+    setTimeout(hide,matchMedia('(prefers-reduced-motion: reduce)').matches?1400:2800); } } }
+const EDITABLE=[9,10,1,5,2,6,3,7,4,8,'archiv1','archiv5','uebung'];
 function levelDef(id){ if(EDIT_DRAFT&&String(id)===String(EDIT_ID)) return defFromData(EDIT_DRAFT); if(LEVEL_FILES[id]) return defFromData(LEVEL_FILES[id]); return DEFS[id]; }
 function defFromData(D){
   return {name:D.name,style:D.style,scene:D.scene,w:D.w,h:D.h,top:D.top,need:D.need||0,timeLimit:D.timeLimit||0,sky:D.sky,noReturn:D.noReturn,noDeco:!!D.noDeco,...(D.gold?{gold:+D.gold}:{}),build(b){
@@ -1056,8 +1173,8 @@ function levelData(id){
 // ---------- Bonuswelten ----------
 // Kurz und knifflig, ohne Punkteziel und Zeitlimit. Freigeschaltet durch Diamanten (Karte), beim ersten Schaffen gibt es ein Extraleben.
 const BONUS=['bonus1','bonus2','bonus3'];
-const BONUS_NEED={bonus1:6,bonus2:14,bonus3:22};
-const BONUS_AB={bonus1:['double'],bonus2:['double','wall'],bonus3:['double','wall','dash']};   // was man an der Stelle der Karte schon kann
+const BONUS_NEED={bonus1:9,bonus2:17,bonus3:25};   // Diamanten insgesamt; mit der Wiese gibt es früher mehr davon
+const BONUS_AB={bonus1:['double'],bonus2:['double','wall'],bonus3:['double','wall','dash']};   // Fähigkeiten, um die herum die Bonuswelt gebaut ist (an ihrer Stelle auf der Karte hat man sie schon)
 Object.assign(DEFS,{
   bonus1:{name:'Moosklippen',w:132,h:26,top:20,style:'forest',sky:.2,build(b){
     b.ground(0,13); b.start(3,19); b.coins(18,5,11);
@@ -1135,12 +1252,13 @@ function makeLevel(id,orig){
     cp:(c,r)=>L.checkpoints.push({x:c*TS,bottom:(r+1)*TS,on:false}),
     mover:(c,r,dc,dr,mw=3,period=3.5)=>L.movers.push({x0:c*TS,y0:r*TS,x1:(c+dc)*TS,y1:(r+dr)*TS,w:mw*TS,period,x:c*TS,y:r*TS,dx:0,dy:0}),
     start:(c,r)=>{ L.start={x:c*TS+3,y:(r+1)*TS-14}; },
-    shoes:(c,r)=>{ L.shoesItem={x:c*TS+8,y:(r+1)*TS-8,got:false}; },   // schnelle Schuhe (Übungswiese)
+    shoes:(c,r)=>{ L.shoesItem={x:c*TS+8,y:(r+1)*TS-8,got:!!save.shoes&&!EDIT_MODE}; },   // schnelle Schuhe (Ende von 1-1); einmal gefunden, gehören sie Sam
     deco:(c,r,n,len)=>{ if(n) L.manualDeco.push({c,r,n,...(len?{len}:{})}); },   // von Hand gesetzte Deko (Editor)
     goal:(c,r)=>{ L.goal={x:c*TS,bottom:(r+1)*TS}; },
     door:(c,r,world,need=0,o={})=>L.doors.push({x:c*TS,bottom:(r+1)*TS,world,need,stars:o.stars||0,t:0}),   // stars: so viele Sterne dieser Welt müssen gesammelt sein
     // Kronentor: Gitter über die ganze Höhe, verschwindet mit der Krone des Abschnitts-Bosses
-    gate:(c,boss)=>{ const open=!!save.bosses[boss]; if(!open) rect(c,0,c+1,d.top-1,'K'); (L.gates||(L.gates=[])).push({x:c*TS,bottom:d.top*TS,boss,open}); },
+    gate:(c,boss)=>{ const open=!!save.bosses[boss]||!!save.ab[AB_OF[boss]];   // offen auch mit der Fähigkeit des Bosses (Spielstände von früher)
+      if(!open) rect(c,0,c+1,d.top-1,'K'); (L.gates||(L.gates=[])).push({x:c*TS,bottom:d.top*TS,boss,open}); },
     // Hügel: h Kacheln hoch, flat Kacheln Plateau; gentle = sanfte Hänge
     hill:(c,hh,flat,gentle=false,base=d.top)=>{ let x=c; const down=(x,r)=>rect(x,r,x,h-1);
       for(let i=0;i<hh;i++){ const r=base-1-i; if(gentle){ set(x,r,'('); down(x,r+1); x++; set(x,r,')'); down(x,r+1); x++; } else { set(x,r,'/'); down(x,r+1); x++; } }
@@ -1213,7 +1331,8 @@ function addFlow(v){ flow=Math.max(0,Math.min(100,flow+v)); }
 // ---------- Spieler ----------
 const P={w:10,h:14,x:0,y:0,vx:0,vy:0,ground:false,face:1,coyote:0,buffer:0,squash:0,run:0,hold:0,rising:false,cut:false,plat:null,
   usedDouble:false,airDash:false,dashT:0,dashDir:1,dashCD:0,wallDir:0,kickT:0,glide:false};
-const SLOW_SHOES=.65;   // Übungswiese: Tempo ohne schnelle Schuhe (Sprungweite dann ~72 px, Gräben sind 48 px)
+const MOVER_SLOW=1.5;   // alle bewegten Plattformen: eine Runde dauert 1,5-mal so lang wie im Level eingetragen
+const SLOW_SHOES=.65;   // 1-1 Blumenwiese: Tempo ohne schnelle Schuhe (Sprungweite dann ~72 px)
 const PH={max:150,accG:700,accA:450,fricG:800,fricA:90,tierBonus:10,grav:1150,jump:300,airJump:270,fall:420,coyote:.1,buffer:.13,
   holdMax:.18,holdGrav:.3,cutGrav:2.0,spring:560,stomp:280,
   camLook:1.4,camSmooth:7,camSmoothY:12,camZoom:.28,camFrame:1,fxDark:1,fxBloom:1,kickX:95,kickY:330,kickT:.14,slide:70,dashSpeed:220,dashT:.2,glideFall:40,upLift:2000,upMax:220,upSpeed:45};
@@ -1246,7 +1365,7 @@ function loadLevel(id,spawnDoor){
   if(id==='hub'&&spawnDoor){ const d=L.doors.find(d=>d.world===spawnDoor); if(d) p={x:d.x+24,y:d.bottom-14}; }
   resetPlayer(p);
   if(id==='hub'){ L.map=true; mapBuild(spawnDoor); }
-  document.getElementById('home').hidden=true;   // Hubwelt erreicht man über das Menü (Haus-Knopf)
+  document.getElementById('home').hidden=true;   // Karte erreicht man über das Menü (Haus-Knopf)
   playSong(id);
   updateHud();
 }
@@ -1430,7 +1549,8 @@ function schedule(){
 SONGS.boss={bpm:152,root:50,scale:'minor',chords:[1,6,7,5],
   lead:["1-3-5-8-7-5-3-5-","6-8-1-8-6-5-3---","7-9-2-9-7-5-4---","5-7-5-4-3-2-1---"],
   bass:"R-R-O-R-R-F-O-F-",kick:"x...x...x...x.x.",snare:"....x.......x...",hat:"xxxxxxxxxxxxxxxx"};
-SONGS.b0=SONGS.b1=SONGS.b2=SONGS.b3=SONGS.boss;
+SONGS.b0=SONGS.b1=SONGS.b2=SONGS.b3=SONGS.b4=SONGS.boss;
+SONGS[9]={...SONGS.hub,bpm:124}; SONGS[10]={...SONGS.hub,bpm:130,scale:'lydian'};
 for(const [n,o] of [[5,1],[6,2],[7,3],[8,4]]) SONGS[n]={...SONGS[o],bpm:SONGS[o].bpm+8};
 function playSong(id){ if(!AU.ctx) return; const s=SONGS[id]||SONGS.hub; if(AU.song===s) return; AU.song=s; AU.step=0; AU.next=AU.ctx.currentTime+.15; }
 
@@ -1452,7 +1572,7 @@ const TUT_STEPS=[
   {t:'Aufzug: draufstellen, oben auf den Block springen.',zone:null},
   {t:'Feder: drauflaufen und über die Mauer fliegen.',zone:null},
   {t:'Bröckelbrücke: schnell rüber, nicht stehen bleiben.',zone:null},
-  {t:'Geschafft! Lauf zur Tür und bleib darin stehen – sie bringt dich in die Hubwelt.',zone:'r',end:true}];
+  {t:'Geschafft! Lauf zur Tür und bleib darin stehen – sie bringt dich zur Karte.',zone:'r',end:true}];
 const tutEl=document.getElementById('tut'), tutStep=document.getElementById('tstep'), tutText=document.getElementById('ttext');
 const TUT={on:false,i:0,ok:0,x0:0,y0:0,peak:0,air:false,endT:0};
 function startTutorial(){ TUT.on=true; TUT.i=0; tutShow(); }
@@ -1464,7 +1584,7 @@ function tutShow(){
 }
 function tutEnd(){ TUT.on=false; tutEl.hidden=true; zl.classList.remove('hint'); zr.classList.remove('hint'); save.tutorialDone=true; persist(); }
 function tutNext(){ sfx('checkpoint'); tutText.classList.add('ok'); TUT.ok=.7; }
-function tickTutorial(dt){
+function tickTutorial(dt){ tickHints(dt);
   if(!TUT.on||state!=='play') return;
   if(L.id!=='uebung'){ tutEnd(); return; }
   const st=TUT_STEPS[TUT.i];
@@ -1488,13 +1608,21 @@ function tickTutorial(dt){
     case 13: if(c>263&&P.ground&&feet<=17*TS+1) tutNext(); break;
   }
 }
-function startPractice(){ loadLevel('uebung'); state='play'; startTutorial(); }
+function startPractice(){ loadLevel('uebung'); state='play'; startTutorial(); }   // Archiv-Übungswiese (nur noch über den Editor)
+// Erster Start: kurze Hinweise am Anfang von 1-1 statt Übungswiese – erst laufen, dann springen
+const HINT={on:false,i:0,x0:0,t:0};
+function startHints(){ Object.assign(HINT,{on:true,i:0,x0:P.x,t:0}); zr.classList.add('hint'); showMsg('Rechte Hälfte halten: Sam läuft',3000); }
+function endHints(){ HINT.on=false; zl.classList.remove('hint'); zr.classList.remove('hint'); save.tutorialDone=true; persist(); }
+function tickHints(dt){ if(!HINT.on||state!=='play') return; if(L.id!==9){ endHints(); return; } HINT.t+=dt;
+  if(HINT.i===0&&P.x-HINT.x0>TS*4){ HINT.i=1; zl.classList.add('hint'); showMsg('Zweiter Daumen auf die andere Hälfte: springen – länger halten, höher',3500); }
+  else if(HINT.i===1&&!P.ground&&P.vy<0){ HINT.i=2; HINT.t=0; zl.classList.remove('hint'); zr.classList.remove('hint'); }
+  else if(HINT.i===2&&HINT.t>2.5) endHints(); }
 document.getElementById('tskip').addEventListener('pointerdown',e=>e.stopPropagation());
 document.getElementById('tskip').addEventListener('click',()=>{ tutEnd(); if(L.id==='uebung') loadLevel('hub'); showMsg('Übung übersprungen'); });
 function begin(){
   document.body?.classList.remove('title');
   audioInit(); startEl.hidden=true;
-  if(!save.tutorialDone) startPractice(); else { loadLevel('hub'); state='play'; }
+  if(!save.tutorialDone&&!save.done[9]){ loadLevel(9); state='play'; startHints(); } else { loadLevel('hub'); state='play'; }
   try{ const p=document.documentElement.requestFullscreen?.({navigationUI:'hide'}); p?.then(()=>screen.orientation?.lock?.('landscape').catch(()=>{})).catch(()=>{}); }catch(_){}
 }
 document.getElementById('wipe').addEventListener('click',()=>{ save=blankSave(); persist(); document.getElementById('wipeinfo').hidden=false; });
@@ -1531,7 +1659,7 @@ function drawCelebrate(){
   ctx.restore(); ctx.globalAlpha=1;
   const y=Math.round(cy-8-Math.max(0,1-celebT*2)*20+Math.sin(clock*4)*1.5);
   ctx.fillStyle=col; ctx.globalAlpha=.35; ctx.beginPath(); ctx.arc(cx,y+8,13,0,7); ctx.fill(); ctx.globalAlpha=1;
-  if(celebBoss) ctx.drawImage(CROWN,cx-12,y,24,16); else ctx.drawImage(ITEM[celebAb],cx-8,y);
+  if(celebAb) ctx.drawImage(ITEM[celebAb],cx-8,y); else ctx.drawImage(CROWN,cx-12,y,24,16);
 }
 function finishLevel(celebrated){
   const n=L.id; state='done'; clearInput(); doneWorld=n; AU.song=null; if(!celebrated) sfx('fanfare');
@@ -1539,25 +1667,26 @@ function finishLevel(celebrated){
   const bonusNew=BONUS.includes(n)&&!save.done[n]; if(bonusNew) save.lives=Math.min(9,(save.lives??LIVES)+1);   // Bonuswelt: beim ersten Mal ein Extraleben
   save.done[n]=true;
   const prev=save.best[n]||{};
-  const got=L.crystals.filter(k=>k.known).length;
   const sp=scoreParts(), total=sp.total;
   save.best[n]={time:prev.time?Math.min(prev.time,time):time,coins:Math.max(prev.coins||0,levelCoins),score:Math.max(prev.score||0,total)};
   const ab=AB_OF[n], isNew=!!ab&&!save.ab[ab];
   if(isNew) save.ab[ab]=true;
   persist();
-  document.getElementById('donetitle').textContent=BONUS.includes(n)?`Bonuswelt · ${NAMES[n]} geschafft`:`Welt ${WNO(n)} · ${NAMES[n]} geschafft`;
-  document.getElementById('donestats').innerHTML=
-    `<b style="font-size:20px;color:var(--ember)">${total} Punkte</b>${prev.score&&total>prev.score?' · neuer Rekord':''}<br>`+
-    `Münzen ${levelCoins}/${L.coins.length} = ${sp.coins} · Diamanten ${sp.nc}/${L.crystals.length} = ${sp.crystals} · Sterne ${sp.ns}/${L.stars.length} = ${sp.stars}<br>`+
-    `Gegner ${sp.nk} = +${sp.enemies} · Tode ${sp.nd} = ${sp.deaths} · Restzeit ${sp.nt} s = ${sp.time}<br>Zeit ${time.toFixed(1)} s · Höchster Schwung ×${bestTier+1}`;
-  const nw=document.getElementById('donenew'); nw.hidden=!isNew;
-  if(isNew){ document.getElementById('newname').textContent='Neu: '+AB_INFO[ab].name; document.getElementById('newhow').textContent=AB_INFO[ab].how+' Neues Outfit: '+OUTFIT_NAME[ab]+'.'; }
-  document.getElementById('donehint').textContent= got<L.crystals.length ? 'Einige Diamanten und Sterne erreichst du erst mit Fähigkeiten aus anderen Welten.' : 'Alle Diamanten dieser Welt gefunden.';
-  if(medBefore){ const m=medals(n), names={b:'Bronze',s:'Silber',g:'Gold'}, nw=['b','s','g'].filter(k=>m[k]&&!medBefore[k]);
-    document.getElementById('donestats').innerHTML+=`<br><span style="color:var(--dim)">Medaillen:</span> `+['b','s','g'].map(k=>`<span style="color:${m[k]?MEDAL_COL[k]:'rgba(255,255,255,.25)'}">● ${names[k]}</span>`).join(' ')+` · Gold ≤ ${fmtT(m.gold)}`;
-    if(nw.length) document.getElementById('donehint').textContent=`Neue Medaille: ${nw.map(k=>names[k]).join(', ')}!`+(m.s?'':' Für Silber fehlen noch Diamanten oder Sterne.'); }
-  if(BONUS.includes(n)){ document.getElementById('donestats').innerHTML=`Zeit ${time.toFixed(1)} s${prev.time&&time<prev.time?' · neue Bestzeit':''} · Münzen ${levelCoins}/${L.coins.length}`;
-    document.getElementById('donehint').textContent=bonusNew?`Extraleben! Du hast jetzt ${save.lives} ♥`:'Das Extraleben dieser Bonuswelt hast du schon bekommen.'; }
+  // Abschluss: nur das Wesentliche – Punkte, Sammelstücke, Zeit, Medaillen
+  const tile=(v,lab,full)=>`<div class="tile${full?' full':''}"><b>${v}</b><span>${lab}</span></div>`;
+  const best=prev.time&&time<prev.time, rec=prev.score&&total>prev.score;
+  document.getElementById('donetitle').textContent=BONUS.includes(n)?`${NAMES[n]} geschafft`:`${WNO(n)} ${NAMES[n]}`;
+  let html=`<div class="big">${total}<small>${rec?'★ neuer Rekord':'Punkte'}</small></div>`;
+  html+=`<div class="tiles">${tile(`◆ ${sp.nc}/${L.crystals.length}`,'DIAMANTEN',sp.nc===L.crystals.length)}${tile(`★ ${sp.ns}/${L.stars.length}`,'STERNE',sp.ns===L.stars.length)}${tile(fmtT(time),best?'NEUE BESTZEIT':'ZEIT',best)}</div>`;
+  let hint='';
+  if(medBefore){ const m=medals(n), nm=['b','s','g'].filter(k=>m[k]&&!medBefore[k]), names={b:'Bronze',s:'Silber',g:'Gold'};
+    html+=`<div class="tiles">`+['b','s','g'].map(k=>`<span style="font-size:22px;color:${m[k]?MEDAL_COL[k]:'rgba(255,255,255,.18)'}">●</span>`).join('')+`</div>`;
+    if(nm.length) hint=`Neue Medaille: ${nm.map(k=>names[k]).join(', ')}!`; }
+  if(BONUS.includes(n)){ html=`<div class="tiles">${tile(fmtT(time),best?'NEUE BESTZEIT':'ZEIT',best)}${tile(`${save.lives} ♥`,'LEBEN',bonusNew)}</div>`;
+    hint=bonusNew?'Extraleben!':''; }
+  document.getElementById('donestats').innerHTML=html;
+  document.getElementById('donenew').hidden=true;
+  document.getElementById('donehint').textContent=hint;
   doneEl.hidden=false;
 }
 const msgEl=document.getElementById('msg'); let msgTimer=0;
@@ -1640,7 +1769,7 @@ function update(dt){
   if(P.inv>0) P.inv=Math.max(0,P.inv-dt);
   if(L.timeLimit){ const tl=Math.ceil(timeLeft()); if(tl<=10&&tl>0&&tl!==lastTick){ lastTick=tl; sfx('tick'); } }
   if(livesCheck()){ loseLife(); return; }
-  for(const m of L.movers){ const s=(1-Math.cos(clock/m.period*Math.PI*2))/2;
+  for(const m of L.movers){ const s=(1-Math.cos(clock/(m.period*MOVER_SLOW)*Math.PI*2))/2;
     const nx=m.x0+(m.x1-m.x0)*s, ny=m.y0+(m.y1-m.y0)*s; m.dx=nx-m.x; m.dy=ny-m.y; m.x=nx; m.y=ny; }
   if(P.plat){ P.x+=P.plat.dx; P.y+=P.plat.dy; }
   P.wallDir=(!P.ground&&save.ab.wall)?wallContact():0;
@@ -1654,7 +1783,7 @@ function update(dt){
   const updraft=save.ab.glide&&!P.ground&&inUpdraft();
   const held=jumpSide!==0||(neutral&&(L_||R_))||keyJump;
   let maxS=PH.max+tier()*PH.tierBonus;
-  if(L.shoesItem&&!L.shoesItem.got) maxS*=SLOW_SHOES;   // Übungswiese: ohne schnelle Schuhe gemächlich
+  if(L.shoesItem&&!L.shoesItem.got) maxS*=SLOW_SHOES;   // 1-1: ohne schnelle Schuhe gemächlich
   if(updraft&&held) maxS=Math.min(maxS,PH.upSpeed);
 
   if(P.dashT>0){
@@ -1735,7 +1864,7 @@ function update(dt){
   if(L.boss&&updateBoss(dt)) return;
   // Münzen, Kristalle
   for(const k of L.coins) if(!k.got&&Math.abs(P.x+P.w/2-k.x)<10&&Math.abs(P.y+P.h/2-k.y)<12){ k.got=true; levelCoins++; sfx('coin'); save.wallet+=1+tier(); if(tier()>0) floaters.push({x:k.x,y:k.y-6,txt:'+'+(1+tier()),t:.7,col:'#ffd166'}); addFlow(1.5); burst(k.x,k.y,C.gold); }
-  const sh=L.shoesItem; if(sh&&!sh.got&&Math.abs(P.x+P.w/2-sh.x)<12&&Math.abs(P.y+P.h/2-sh.y)<13){ sh.got=true; sfx('unlock'); burst(sh.x,sh.y,'#ffd166',18,110); burst(sh.x,sh.y,'#ffffff',10,70);
+  const sh=L.shoesItem; if(sh&&!sh.got&&Math.abs(P.x+P.w/2-sh.x)<12&&Math.abs(P.y+P.h/2-sh.y)<13){ sh.got=true; if(!EDIT_MODE){ save.shoes=true; persist(); } sfx('unlock'); burst(sh.x,sh.y,'#ffd166',18,110); burst(sh.x,sh.y,'#ffffff',10,70);
     floaters.push({x:sh.x,y:sh.y-10,txt:'Schnelle Schuhe!',t:1.6,col:'#ffd166'}); showMsg('Schnelle Schuhe! Jetzt läufst du im vollen Tempo'); }
   for(const k of L.stars) if(!k.got&&Math.abs(P.x+P.w/2-k.x)<11&&Math.abs(P.y+P.h/2-k.y)<12){ k.got=true; sfx('secret'); addFlow(20); burst(k.x,k.y,'#ffe14d',14,90); floaters.push({x:k.x,y:k.y-8,txt:'+'+PTS.star,t:1.1,col:'#ffe14d'}); if(!k.known){ k.known=true; save.stars[k.id]=true; persist(); showMsg('Geheimnis gefunden!'); } }
   { const c0=Math.floor(P.x/TS), c1=Math.floor((P.x+P.w-.01)/TS), r0=Math.floor(P.y/TS), r1=Math.floor((P.y+P.h-.01)/TS);
@@ -1774,7 +1903,7 @@ function update(dt){
     const inside=d.armed&&over&&P.ground&&Math.abs(P.y+P.h-d.bottom)<4&&Math.abs(P.vx)<25;
     d.t=inside?d.t+dt:Math.max(0,d.t-dt*2);
     if(d.t>=.7){ const why=doorBlock(d); if(why){ d.t=0; d.armed=false; sfx('locked'); showMsg(why); continue; } }
-    if(d.t>=.7){ clearInput(); sfx('door'); const n=d.world; if(n===0){ const w=L.id; if(w==='uebung'){ tutEnd(); save.done.uebung=true; persist(); loadLevel('hub','home'); showMsg('Übungswiese geschafft – weiter zu Welt 1-1!'); } else { loadLevel('hub',w); showMsg('Hubwelt'); } } else { loadLevel(n); showMsg(typeof n==='number'?`Welt ${WNO(n)} · ${NAMES[n]}`:`Endgegner: ${NAMES[n]}`); } return; }
+    if(d.t>=.7){ clearInput(); sfx('door'); const n=d.world; if(n===0){ const w=L.id; if(w==='uebung'){ tutEnd(); save.done.uebung=true; persist(); loadLevel('hub','home'); showMsg('Übungswiese geschafft – weiter zu Welt 1-1!'); } else { loadLevel('hub',w); showMsg('Karte'); } } else { loadLevel(n); showMsg(typeof n==='number'?`Welt ${WNO(n)} · ${NAMES[n]}`:`Endgegner: ${NAMES[n]}`); } return; }
   }
 }
 // Warum eine Tür (noch) zu ist – null, wenn sie offen ist. Gilt für Türen im Level und Punkte auf der Karte.
@@ -1783,11 +1912,10 @@ function doorBlock(d){
   if(d.need&&crystalTotal()<d.need) return `Noch ${d.need-crystalTotal()} Diamanten nötig`;
   const w=BOSS_NEEDS_WORLD[d.world]; if(w&&!save.done[w]) return `Erst Welt ${WNO(w)} · ${NAMES[w]} schaffen`;
   const ab=NEED_FOR_DOOR[d.world]; if(ab&&!save.ab[ab]) return `Braucht ${AB_INFO[ab].name}`;
-  if(d.world===1&&!save.tutorialDone&&!save.done.uebung) return 'Erst die Übungswiese schaffen';
   return null; }
 let ribbon=[], floaters=[];
 // ---------- Endgegner ----------
-// Vier Arenen, je eine pro Abschnitt der Hubwelt. Jeder Boss hat 3 Leben und ist nur mit der Fähigkeit seines Abschnitts zu besiegen.
+// Vier Arenen, je eine pro Abschnitt der Karte. Jeder Boss hat 3 Leben und ist nur mit der Fähigkeit seines Abschnitts zu besiegen.
 const CROWN=spr([
   "k..kk..kk..k",
   "kyk.kyyk.kyk",
@@ -1798,6 +1926,7 @@ const CROWN=spr([
   "kYYYYYYYYYYk",
   "kkkkkkkkkkkk"],{k:'#8a4a00',y:'#ffd166',Y:'#e0a030',w:'#ffffff',r:'#d84a4a'});
 const BOSS_INFO={
+  b4:{name:'Käferkönig',tip:'Spring ihm auf den Panzer – über den Ansturm springen',col:'#d84a4a'},
   b0:{name:'Wespenkönigin',tip:'Doppelsprung – von oben auf sie drauf',col:'#ffd166'},
   b1:{name:'Igelkönig',tip:'Dash in den benommenen König',col:'#9be06a'},
   b2:{name:'Felsgolem',tip:'Spring ihm auf den Kopf',col:'#e0884a'},
@@ -1808,6 +1937,7 @@ function initBoss(id){
   const ar=DEFS[id].arena, fy=ar.floor*TS;
   const B={id,hp:3,max:3,inv:0,t:0,state:'intro',timer:1.2,dir:-1,dead:false,deathT:0,trophy:null,shake:0};
   if(id==='b1') Object.assign(B,{w:52,h:39,x:ar.bx*TS,y:fy-39,speed:170});
+  if(id==='b4') Object.assign(B,{w:42,h:30,x:ar.bx*TS,y:fy-30,vy:0,speed:150});
   if(id==='b2') Object.assign(B,{w:64,h:96,x:ar.bx*TS,y:fy-96,lift:0});
   if(id==='b0') Object.assign(B,{w:40,h:30,x:ar.bx*TS,y:fy-TS*5.7,cx:ar.bx*TS,hy:fy-TS*5.7,range:ar.range*TS,phase:0,drop:2.8,diveT:4.5,speedK:1});   // knapp über Einfachsprung-Höhe
   if(id==='b3') Object.assign(B,{w:46,h:46,x:ar.bx*TS,y:ar.by*TS,cx:ar.bx*TS,cy:ar.by*TS,range:ar.range*TS,phase:0,drop:1.4,speedK:1});
@@ -1834,7 +1964,7 @@ function updateBoss(dt){
     if(B.deathT>=1.8){ B.state='gone'; B.trophy={x:(ar.left+ar.right)/2*TS,y:fy-120,vy:0}; burst(B.x+B.w/2,B.y+B.h/2,'#ffffff',30,160); flash=.8; showMsg(BOSS_INFO[B.id].name+' besiegt!'); }
     return false; }
   if(B.state==='gone') return false;
-  if(B.state==='intro'){ B.timer-=dt; if(B.timer<=0){ B.state=B.id==='b2'?'walk':(B.id==='b3'||B.id==='b0')?'fly':'walk'; B.timer=1.4; } }
+  if(B.state==='intro'){ B.timer-=dt; if(B.timer<=0){ B.state=(B.id==='b3'||B.id==='b0')?'fly':'walk'; B.timer=1.4; } }
   const pcx=P.x+P.w/2;
 
   if(B.id==='b1'){ // Igelkönig: läuft, rollt gegen die Wand, ist dann benommen
@@ -1848,6 +1978,26 @@ function updateBoss(dt){
       if(B.state==='dizzy'&&P.dashT>0&&B.inv<=0){ hitBoss(B,false); if(!B.dead){ B.state='walk'; B.timer=1.5; B.x+=(B.x+B.w/2<pcx?-30:30); } }
       else if(B.inv<=0||B.state==='roll'){ if(hurtPlayer()) return true; }
     }
+  }
+
+  if(B.id==='b4'){ // Käferkönig: krabbelt heran, stürmt los und bleibt nach dem Aufprall benommen auf dem Rücken liegen;
+    // ab dem zweiten Treffer hüpft er auch und schickt Erdwellen über den Boden. Verwundbar von oben (einfacher Sprung reicht).
+    const k=3-B.hp;
+    if(B.state==='walk'){ B.dir=Math.sign(pcx-(B.x+B.w/2))||B.dir; B.x+=B.dir*(30+k*12)*dt; B.timer-=dt;
+      if(B.timer<=0){ if(k>0&&Math.random()<.45){ B.state='hop'; B.vy=-300; sfx('jump'); } else { B.state='wind'; B.timer=.75; sfx('locked'); } } }
+    else if(B.state==='wind'){ B.timer-=dt; if(B.timer<=0){ B.state='charge'; B.dir=Math.sign(pcx-(B.x+B.w/2))||B.dir; } }
+    else if(B.state==='charge'){ B.x+=B.dir*(B.speed+k*35)*dt;
+      if(B.x<=left||B.x+B.w>=right){ B.x=Math.max(left,Math.min(right-B.w,B.x)); B.state='dizzy'; B.timer=2; shake=.25; sfx('smash'); burst(B.dir>0?right:left,fy-14,'#e8c8a0',12,90); } }
+    else if(B.state==='hop'){ B.vy+=900*dt; B.y+=B.vy*dt; B.x+=B.dir*40*dt;
+      if(B.y>=fy-B.h){ B.y=fy-B.h; B.vy=0; B.state='walk'; B.timer=1.2+Math.random(); shake=.3; sfx('smash'); burst(B.x+B.w/2,fy-2,'#c69a6a',12,80);
+        for(const d of [-1,1]) bossFx.push({k:'wave',x:B.x+B.w/2+d*B.w/2,dir:d,sp:95+k*20}); } }
+    else if(B.state==='dizzy'){ B.timer-=dt; if(B.timer<=0){ B.state='walk'; B.timer=1.4+Math.random(); } }
+    B.x=Math.max(left,Math.min(right-B.w,B.x));
+    if(P.vy>0&&P.y+P.h<=B.y+12&&P.y+P.h>=B.y-6&&P.x+P.w>B.x+2&&P.x<B.x+B.w-2&&B.inv<=0){ hitBoss(B,true);
+      if(!B.dead&&B.state!=='hop'){ B.state='walk'; B.timer=1.3; } }
+    else if(overlapP(B.x+5,B.y+8,B.w-10,B.h-8)){
+      if(B.state==='dizzy'||B.inv>0){ P.x=pcx<B.x+B.w/2?B.x+5-P.w:B.x+B.w-5; P.vx=0; }   // benommen oder gerade getroffen: nur im Weg
+      else if(hurtPlayer()) return true; }
   }
 
   if(B.id==='b2'){ // Felsgolem: stampft, lässt Brocken regnen; Schwachstelle Kopf (nur von oben)
@@ -1886,6 +2036,7 @@ function updateBoss(dt){
 
   // Brocken und Splitter
   for(const f of bossFx){
+    if(f.k==='wave'){ f.x+=f.dir*f.sp*dt; if(f.x<left||f.x>right) f.done=true; else if(overlapP(f.x-5,fy-9,10,9)){ f.done=true; if(hurtPlayer()) return true; } continue; }
     if(f.warn>0){ f.warn-=dt; continue; }
     f.vy=Math.min(f.k==='rock'?320:260,f.vy+(f.k==='rock'?700:420)*dt); f.y+=f.vy*dt;
     const s=f.k==='rock'?12:f.k==='sting'?6:8;
@@ -1899,6 +2050,8 @@ function drawBoss(){
   const B=L.boss; if(!B) return;
   const ar=DEFS[L.id].arena, fy=ar.floor*TS;
   for(const f of bossFx){
+    if(f.k==='wave'){ const x=Math.round(f.x), h=6+Math.round(Math.sin(clock*20+f.x*.1)*1.5);
+      ctx.fillStyle='#1a1020'; ctx.fillRect(x-6,fy-h-1,12,h+1); ctx.fillStyle='#a8744a'; ctx.fillRect(x-5,fy-h,10,h); ctx.fillStyle='#7cc24e'; ctx.fillRect(x-5,fy-h,10,2); continue; }
     if(f.warn>0){ ctx.fillStyle='rgba(26,16,32,.35)'; const w=6+12*(1-f.warn/.9); ctx.fillRect(Math.round(f.x-w/2),fy-2,Math.round(w),2); continue; }
     if(f.k==='rock'){ ctx.fillStyle='#1a1020'; ctx.fillRect(f.x-7,f.y-13,14,14); ctx.fillStyle='#b8673e'; ctx.fillRect(f.x-6,f.y-12,12,12); ctx.fillStyle='#de9262'; ctx.fillRect(f.x-6,f.y-12,12,3); }
     else if(f.k==='sting'){ ctx.fillStyle='#1a1020'; ctx.fillRect(f.x-2,f.y-9,4,9); ctx.fillStyle='#ffd166'; ctx.fillRect(f.x-1,f.y-8,2,6); ctx.fillStyle='#1a1020'; ctx.fillRect(f.x-1,f.y-2,2,3); }
@@ -1906,7 +2059,7 @@ function drawBoss(){
   }
   if(B.trophy){ const T=B.trophy, bob=Math.sin(clock*4)*2;
     ctx.fillStyle=BOSS_INFO[B.id].col; ctx.globalAlpha=.35; ctx.beginPath(); ctx.arc(T.x,T.y+4+bob,14,0,7); ctx.fill(); ctx.globalAlpha=1;
-    ctx.drawImage(CROWN,Math.round(T.x-12),Math.round(T.y-4+bob),24,16); }
+    const ab=AB_OF[B.id]; if(ab) ctx.drawImage(ITEM[ab],Math.round(T.x-10),Math.round(T.y-6+bob),20,20); else ctx.drawImage(CROWN,Math.round(T.x-12),Math.round(T.y-4+bob),24,16); }   // Belohnung: die Fähigkeit (Finale: Krone)
   if(B.state==='gone') return;
   const blink=B.inv>0&&Math.floor(B.inv*14)%2;
   if(B.state==='dying') ctx.globalAlpha=Math.max(0,1-B.deathT/1.8);
@@ -1922,6 +2075,13 @@ function drawBoss(){
       ctx.drawImage(img,Math.round(B.x+sx),Math.round(B.y),B.w,B.h);
       ctx.drawImage(CROWN,Math.round(B.x+B.w*(B.dir>0?.55:.2)),Math.round(B.y-10),18,12);
       if(B.state==='dizzy'){ for(let i=0;i<3;i++){ const a=clock*5+i*2.1; ctx.fillStyle='#ffe14d'; ctx.fillRect(Math.round(B.x+B.w/2+Math.cos(a)*14),Math.round(B.y-14+Math.sin(a)*4),3,3); } } }
+  }
+  if(B.id==='b4'){ const img=(Math.floor(clock*(B.state==='charge'?14:B.state==='walk'?7:0))%2?BEETLE_B:BEETLE_A)[B.dir>0?'r':'l'], x=Math.round(B.x-3+sx), y=Math.round(B.y-6);
+    if(B.state==='dizzy'){ // auf dem Rücken, Beine zappeln
+      ctx.save(); ctx.translate(x,y+36); ctx.scale(1,-1); ctx.drawImage((Math.floor(clock*12)%2?BEETLE_B:BEETLE_A)[B.dir>0?'r':'l'],0,0,48,36); ctx.restore();
+      for(let i=0;i<3;i++){ const a=clock*5+i*2.1; ctx.fillStyle='#ffe14d'; ctx.fillRect(Math.round(B.x+B.w/2+Math.cos(a)*14),Math.round(B.y-4+Math.sin(a)*4),3,3); } }
+    else { ctx.drawImage(img,x,y,48,36); ctx.drawImage(CROWN,Math.round(B.x+B.w*(B.dir>0?.45:.15)),Math.round(B.y-14),20,13);
+      if(B.state==='charge'&&Math.random()<.5) particles.push({x:B.x+(B.dir>0?0:B.w),y:B.y+B.h-2,vx:-B.dir*40,vy:-20,t:.4,col:'#c69a6a'}); }
   }
   if(B.id==='b2'){ const x=Math.round(B.x+sx), y=Math.round(B.y-B.lift), w=B.w, h=B.h;
     ctx.fillStyle='#1a1020'; ctx.fillRect(x-1,y-1,w+2,h+2);
@@ -1950,10 +2110,11 @@ function drawBoss(){
 }
 function startBossWin(){
   const B=L.boss, info=BOSS_INFO[B.id];
-  state='celebrate'; clearInput(); celebT=0; celebAb=null; celebBoss=B.id; flash=1; AU.song=null; sfx('fanfare');
+  const ab=AB_OF[B.id];
+  state='celebrate'; clearInput(); celebT=0; celebAb=ab||null; celebBoss=B.id; flash=1; AU.song=null; sfx('fanfare');
   P.vx=0; P.vy=0;
-  document.getElementById('celebname').textContent='Sieg!';
-  document.getElementById('celebtip').textContent=info.name+' besiegt';
+  document.getElementById('celebname').textContent=ab?AB_INFO[ab].name+'!':'Sieg!';
+  document.getElementById('celebtip').textContent=ab?AB_TIP[ab]:info.name+' besiegt';
   celebEl.style.setProperty('--glow',info.col);
   celebEl.hidden=true; void celebEl.offsetWidth; celebEl.hidden=false;
   for(let i=0;i<50;i++){ const a=Math.random()*Math.PI*2, sp=60+Math.random()*140; particles.push({x:P.x+5,y:P.y-10,vx:Math.cos(a)*sp,vy:Math.sin(a)*sp-80,t:1+Math.random()*.6,col:['#ffd166','#ffffff',info.col,'#7fe0ff'][i%4]}); }
@@ -1961,11 +2122,15 @@ function startBossWin(){
 function finishBoss(){
   const id=L.id, info=BOSS_INFO[id], first=!save.bosses[id];
   state='done'; clearInput(); doneWorld=id; AU.song=null;
-  save.bosses[id]=true; const prev=save.best[id]||{}; save.best[id]={time:prev.time?Math.min(prev.time,time):time}; persist();
+  save.bosses[id]=true; const prev=save.best[id]||{}; save.best[id]={time:prev.time?Math.min(prev.time,time):time};
+  const ab=AB_OF[id], isNew=!!ab&&!save.ab[ab]; if(isNew) save.ab[ab]=true;   // Belohnung: die Fähigkeit fürs nächste Kapitel
+  persist();
   document.getElementById('donetitle').textContent=`${info.name} besiegt!`;
-  document.getElementById('donestats').innerHTML=`Zeit ${time.toFixed(1)} s${prev.time&&time<prev.time?' · neue Bestzeit':''}<br>Versuche ${bossDeaths+1}`;
-  document.getElementById('donenew').hidden=true;
-  document.getElementById('donehint').textContent=first?`${BOSS_ORDER.filter(b=>save.bosses[b]).length} von 4 Endgegnern besiegt.`:'Erneut gewonnen.';
+  { const best=prev.time&&time<prev.time, n=BOSS_ORDER.filter(b=>save.bosses[b]).length;
+    document.getElementById('donestats').innerHTML=`<div class="tiles"><div class="tile${best?' full':''}"><b>${fmtT(time)}</b><span>${best?'NEUE BESTZEIT':'ZEIT'}</span></div><div class="tile"><b>♛ ${n}/${BOSS_ORDER.length}</b><span>ENDGEGNER</span></div></div>`; }
+  const nw=document.getElementById('donenew'); nw.hidden=!isNew;
+  if(isNew){ document.getElementById('newname').textContent='Neu: '+AB_INFO[ab].name; document.getElementById('newhow').textContent=AB_INFO[ab].how; }
+  document.getElementById('donehint').textContent='';
   if(BOSS_ORDER.every(b=>save.bosses[b])&&!save.endingSeen){ save.endingSeen=true; persist(); showEnding(); return; }
   doneEl.hidden=false;
 }
@@ -1974,7 +2139,7 @@ const endEl=document.getElementById('ending'), endCv=document.getElementById('en
 let endParts=[], endT=0, endRaf=0, endLast=0;
 function showEnding(){
   const pts=Object.values(save.best).reduce((a,b)=>a+(b.score||0),0);
-  const cells=[['◆',Object.keys(save.crystals).length+'/'+totals().cr,'Diamanten'],['★',Object.keys(save.stars||{}).length+'/'+totals().st,'Sterne'],['♛','4/4','Endgegner'],['✦',pts,'Bestpunkte']];
+  const cells=[['◆',Object.keys(save.crystals).length+'/'+totals().cr,'Diamanten'],['★',Object.keys(save.stars||{}).length+'/'+totals().st,'Sterne'],['♛',BOSS_ORDER.length+'/'+BOSS_ORDER.length,'Endgegner'],['✦',pts,'Bestpunkte']];
   document.getElementById('endstats').innerHTML=cells.map(([i,v,l])=>`<div><span>${i}</span><b>${v}</b><span>${l}</span></div>`).join('');
   endEl.hidden=false; endParts=[]; endT=0; endLast=performance.now();
   sfx('fanfare'); setTimeout(()=>sfx('unlock'),900); setTimeout(()=>sfx('fanfare'),2100);
@@ -2671,7 +2836,7 @@ function drawDoors(){ for(const d of L.doors){
   ctx.fillStyle=col; ctx.globalAlpha=.55+.25*Math.sin(clock*3+d.world); ctx.fillRect(x+6,y+8,12,24); ctx.globalAlpha=1;
   if(save.done[d.world]){ ctx.fillStyle=C.gold; ctx.fillRect(x+10,y+3,4,3); }
   ctx.textAlign='center'; ctx.font='7px Silkscreen, monospace';
-  ctx.fillStyle='#1a1020'; const lbl=!d.world?'⌂ Hubwelt':typeof d.world==='number'?`${WNO(d.world)} ${NAMES[d.world]}`:NAMES[d.world]; ctx.fillText(lbl,d.x+9,y-13); ctx.fillStyle=C.cream; ctx.fillText(lbl,d.x+8,y-14);
+  ctx.fillStyle='#1a1020'; const lbl=!d.world?'⌂ Karte':typeof d.world==='number'?`${WNO(d.world)} ${NAMES[d.world]}`:NAMES[d.world]; ctx.fillText(lbl,d.x+9,y-13); ctx.fillStyle=C.cream; ctx.fillText(lbl,d.x+8,y-14);
   if(d.stars){ const have=starsGot(), open=have>=d.stars;
     if(!open){ ctx.fillStyle='rgba(13,21,36,.7)'; ctx.fillRect(x+5,y+7,14,25);
       ctx.fillStyle='#8a94a8'; for(let i=0;i<3;i++) ctx.fillRect(x+3,y+11+i*7,18,2);
@@ -2687,15 +2852,16 @@ function drawDoors(){ for(const d of L.doors){
   ctx.font='6px Silkscreen, monospace'; ctx.fillStyle=C.sky; ctx.fillText(`◆ ${total}/${totals().per[d.world]||0}`,d.x+8,y-5); }
   if(d.t>0){ ctx.strokeStyle=C.ember; ctx.lineWidth=2; ctx.beginPath(); ctx.arc(d.x+8,y+19,9,-Math.PI/2,-Math.PI/2+Math.PI*2*Math.min(1,d.t/.7)); ctx.stroke(); }
 } }
-// ---------- Hubwelt als Landkarte ----------
-// Die Hubwelt bleibt intern das Level 'hub' (Türen, Kronentore, Geheimdiamant – Spielstand und Sperren wie bisher),
+// ---------- Karte (Inselkarte von oben) ----------
+// Die Karte bleibt intern das Level 'hub' (Türen, Kronentore, Geheimdiamant – Spielstand und Sperren wie bisher),
 // wird aber als Inselkarte von oben gezeigt: Sam läuft mit ◀ ▶ von Punkt zu Punkt, Springen betritt die Welt.
-const MAPW=440, MAPH=200;
-const MAP_POS={home:[42,156],1:[68,133],5:[58,96],b0:[96,70],'g-b0':[124,61],2:[148,53],6:[186,37],b2:[216,61],'g-b2':[212,85],
-  3:[204,108],7:[246,135],b1:[280,109],'g-b1':[306,96],bonus1:[112,94],bonus2:[184,76],bonus3:[292,142],4:[332,82],8:[366,50],secret:[398,30],b3:[404,90]};
+const MAPW=540, MAPH=200, MAPX=100;   // MAPX: die Wiese (Kapitel 1) liegt links vor dem Wald
+const MAP_POS={home:[34,150],9:[64,118],10:[96,88],b4:[118,128],'g-b4':[140,146],1:[168,133],5:[158,96],b0:[196,70],'g-b0':[224,61],2:[248,53],6:[286,37],b2:[316,61],'g-b2':[312,85],
+  3:[304,108],7:[346,135],b1:[380,109],'g-b1':[406,96],bonus1:[212,94],bonus2:[284,76],bonus3:[392,142],4:[432,82],8:[466,50],secret:[498,30],b3:[504,90]};
 const MAPS={i:0,to:-1,t:0,face:1,walk:0,nodes:[],goal:-1,card:null,cx:0,cy:0,free:false,drag:null};
 const MAP_ZOOM=1.8;   // wie nah die Karte gezeigt wird (1 = ganze Insel)
-function mapView(){ const W=cv.width, H=cv.height, s=Math.min(W/MAPW,H/MAPH)*MAP_ZOOM; return {W,H,s,ox:Math.round(W/2-MAPS.cx*s),oy:Math.round(H/2-MAPS.cy*s)}; }
+// Maßstab wie vor der Erweiterung um die Wiese (MAPX), damit die Karte gleich nah wirkt
+function mapView(){ const W=cv.width, H=cv.height, s=Math.min(W/(MAPW-MAPX),H/MAPH)*MAP_ZOOM; return {W,H,s,ox:Math.round(W/2-MAPS.cx*s),oy:Math.round(H/2-MAPS.cy*s)}; }
 function mapClamp(){ const {W,H,s}=mapView(), hw=W/2/s, hh=H/2/s;
   MAPS.cx=hw*2>=MAPW?MAPW/2:Math.max(hw,Math.min(MAPW-hw,MAPS.cx)); MAPS.cy=hh*2>=MAPH?MAPH/2:Math.max(hh,Math.min(MAPH-hh,MAPS.cy)); }
 function mapSam(){ const N=MAPS.nodes, a=N[MAPS.i]; if(!a) return [MAPW/2,MAPH/2]; if(MAPS.to<0) return [a.mx,a.my-8]; const b=N[MAPS.to]; return [a.mx+(b.mx-a.mx)*MAPS.t,a.my-8+(b.my-a.my)*MAPS.t]; }
@@ -2706,10 +2872,10 @@ const mapVn=(x,y)=>{ const xi=Math.floor(x),yi=Math.floor(y),xf=x-xi,yf=y-yi,u=x
 const mapFbm=(x,y)=>mapVn(x,y)*.5+mapVn(x*2,y*2)*.25+mapVn(x*4,y*4)*.125+mapVn(x*8,y*8)*.0625;
 const mapIsl=(x,y)=>{ const nx=(x-MAPW/2)/(MAPW*.47), ny=(y-MAPH/2-4)/(MAPH*.44); return 1-(nx*nx+ny*ny)+(mapFbm(x*.03,y*.03)-.5)*.9; };
 const mapReg=(x0,y0)=>{ const x=x0+(mapFbm(x0*.025+7,y0*.025)-.5)*70, y=y0+(mapFbm(x0*.03,y0*.03+9)-.5)*50;
-  if(x<MAPW*.36) return 'forest'; if(x>MAPW*.7) return 'snow'; return y<MAPH*.5?'stone':'lake'; };
+  if(x<MAPX+28) return 'meadow'; if(x<MAPX+158) return 'forest'; if(x>MAPX+308) return 'snow'; return y<MAPH*.5?'stone':'lake'; };
 function mapImage(){ if(MAPIMG) return MAPIMG;
   const c=mk(MAPW,MAPH), g=c.getContext('2d'), id=g.createImageData(MAPW,MAPH), D=id.data;
-  const COL={forest:['#3e8a40','#2e6a34','#4f9a4a'],stone:['#c88a4a','#a86a34','#dca262'],lake:['#d8c890','#c4b078','#e8d8a0'],snow:['#e8eef6','#c8d4e4','#ffffff']};
+  const COL={meadow:['#7cc24e','#64a83c','#9ad660'],forest:['#3e8a40','#2e6a34','#4f9a4a'],stone:['#c88a4a','#a86a34','#dca262'],lake:['#d8c890','#c4b078','#e8d8a0'],snow:['#e8eef6','#c8d4e4','#ffffff']};
   const hx=h=>[parseInt(h.slice(1,3),16),parseInt(h.slice(3,5),16),parseInt(h.slice(5,7),16)];
   const set=(x,y,h)=>{ const k=(y*MAPW+x)*4, v=hx(h); D[k]=v[0]; D[k+1]=v[1]; D[k+2]=v[2]; D[k+3]=255; };
   const isl=[]; for(let y=0;y<MAPH;y++) for(let x=0;x<MAPW;x++) isl[y*MAPW+x]=mapIsl(x,y);
@@ -2719,18 +2885,19 @@ function mapImage(){ if(MAPIMG) return MAPIMG;
     if(v<.06){ set(x,y,'#f0dc9c'); continue; }
     const cc=COL[mapReg(x,y)], n=mapFbm(x*.15,y*.15); set(x,y,n>.62?cc[2]:n<.38?cc[1]:cc[0]); }
   // Lagune
-  for(let y=0;y<MAPH;y++) for(let x=0;x<MAPW;x++){ const dx=(x-MAPW*.53)/34, dy=(y-MAPH*.77)/16, d=dx*dx+dy*dy+(mapFbm(x*.08,y*.08)-.5)*.6; if(d<1) set(x,y,d>.8?'#7ac8e8':'#4aa0d8'); }
+  for(let y=0;y<MAPH;y++) for(let x=0;x<MAPW;x++){ const dx=(x-MAPX-233)/34, dy=(y-MAPH*.77)/16, d=dx*dx+dy*dy+(mapFbm(x*.08,y*.08)-.5)*.6; if(d<1) set(x,y,d>.8?'#7ac8e8':'#4aa0d8'); }
   g.putImageData(id,0,0);
   const F=(x,y,col,w=1,h=1)=>{ g.fillStyle=col; g.fillRect(Math.round(x),Math.round(y),w,h); };
   // Fluss vom Gipfel zur Lagune
-  for(let t=0;t<1;t+=.002){ const x=MAPW*.74-t*MAPW*.17+Math.sin(t*9)*8, y=MAPH*.32+t*MAPH*.42; F(x,y,'#4aa0d8',3,2); }
+  for(let t=0;t<1;t+=.002){ const x=MAPX+326-t*75+Math.sin(t*9)*8, y=MAPH*.32+t*MAPH*.42; F(x,y,'#4aa0d8',3,2); }
   // Bäume, Felsen, Berge, Schilf
-  for(let i=0;i<260;i++){ const x=mapHash(i,1)*MAPW, y=mapHash(i,2)*MAPH; if(mapIsl(x,y)<.12) continue; const r=mapReg(x,y);
+  for(let i=0;i<320;i++){ const x=mapHash(i,1)*MAPW, y=mapHash(i,2)*MAPH; if(mapIsl(x,y)<.12) continue; const r=mapReg(x,y);
     if(Object.values(MAP_POS).some(([px,py])=>Math.abs(px-x)<9&&Math.abs(py-y)<9)) continue;   // Punkte frei halten
     if(r==='forest'){ F(x-2,y-3,'#24502a',5,4); F(x-1,y-4,'#2e6a34',3,1); F(x-1,y-3,'#4f9a4a',2,2); F(x,y+1,'#5a3a2a',1,2); }
     else if(r==='stone'&&i%3===0){ for(let k=0;k<5;k++) F(x-k,y+k-4,'#8a4a22',1+k*2,1); F(x-1,y-4,'#f0c08a',2,2); }
     else if(r==='snow'&&i%2===0){ for(let k=0;k<7;k++) F(x-k,y+k-6,k<3?'#ffffff':'#8a98b8',1+k*2,1); }
-    else if(r==='lake'&&i%4===0){ F(x,y,'#3e8a40',1,3); F(x-2,y-1,'#4f9a4a',5,1); } }
+    else if(r==='lake'&&i%4===0){ F(x,y,'#3e8a40',1,3); F(x-2,y-1,'#4f9a4a',5,1); }
+    else if(r==='meadow'){ const fc=['#f2c14e','#f28fad','#ffffff','#b07aff'][i%4]; F(x,y,'#4f9a4a',1,2); F(x-1,y-1,fc,3,1); F(x,y-2,fc,1,1); } }
   // Wellen fürs Meer (bewegen sich beim Zeichnen)
   MAPWAVES=[]; for(let i=0;i<90;i++){ const x=mapHash(i,11)*MAPW, y=mapHash(i,12)*MAPH; if(mapIsl(x,y)<-.08) MAPWAVES.push([x,y,mapHash(i,13)*6]); }
   return MAPIMG=c; }
@@ -2738,8 +2905,8 @@ function mapFog(fx){ if(MAPFOG[fx]) return MAPFOG[fx]; const c=mk(MAPW,MAPH), g=
   for(let y=0;y<MAPH;y++) for(let x=Math.max(0,fx-24);x<MAPW;x++){ const n=mapFbm(x*.04+3,y*.05), ramp=Math.min(1,(x-fx+24)/40), a=Math.max(.35,Math.min(.92,.35+(n-.3)*1.6))*ramp, k=(y*MAPW+x)*4;
     D[k]=240; D[k+1]=244; D[k+2]=250; D[k+3]=Math.round(a*255); }
   g.putImageData(id,0,0); return MAPFOG[fx]=c; }
-// Knoten: Übungswiese, dann Türen, Kronentore und Geheimdiamant der Hubwelt in Reihenfolge von links nach rechts
-function mapBuild(spawn){ const N=[{key:'home',kind:'home',x:0}];
+// Knoten: Türen, Kronentore und Geheimdiamant der Karte in Reihenfolge von links nach rechts
+function mapBuild(spawn){ const N=[];
   for(const d of L.doors) N.push({key:d.world,kind:'door',ref:d,x:d.x});
   for(const g of L.gates||[]) N.push({key:'g-'+g.boss,kind:'gate',ref:g,x:g.x});
   for(const k of L.crystals) N.push({key:'secret',kind:'secret',ref:k,x:k.x});
@@ -2751,8 +2918,8 @@ function mapBuild(spawn){ const N=[{key:'home',kind:'home',x:0}];
   [MAPS.cx,MAPS.cy]=mapSam(); MAPS.free=false; MAPS.drag=null; mapClamp(); mapNewAbility(); }
 function mapNewAbility(){ if(EDIT_MODE) return; save.hintAb=save.hintAb||{};
   for(const ab of ['double','wall','dash','glide']){ if(!save.ab[ab]||save.hintAb[ab]) continue; save.hintAb[ab]=true; persist();
-    const ws=['uebung',1,5,2,6,3,7,4,8].filter(w=>(w==='uebung'?save.done.uebung||save.tutorialDone:save.done[w])&&mapStats(w).items.some(it=>!(it.star?save.stars[it.id]:save.crystals[it.id])&&REACH[`${w}:${it.cell}`]===ab));
-    if(ws.length) showMsg(`Mit ${AB_INFO[ab].name} neu erreichbar: ${ws.map(w=>w==='uebung'?'Übungswiese':WNO(w)).join(', ')} ✦`,4000); return; } }
+    const ws=[9,10,1,5,2,6,3,7,4,8].filter(w=>save.done[w]&&mapStats(w).items.some(it=>!(it.star?save.stars[it.id]:save.crystals[it.id])&&REACH[`${w}:${it.cell}`]===ab));
+    if(ws.length) showMsg(`Mit ${AB_INFO[ab].name} neu erreichbar: ${ws.map(w=>WNO(w)).join(', ')} ✦`,4000); return; } }
 const mapClosedGate=()=>MAPS.nodes.findIndex(n=>n.kind==='gate'&&!n.ref.open);
 function mapDone(n){ if(n.kind==='home') return !!(save.done.uebung||save.tutorialDone); if(n.bonus) return !!save.done[n.key]; if(n.kind==='door') return typeof n.key==='number'?!!save.done[n.key]:!!save.bosses[n.key]; if(n.kind==='secret') return !!n.ref.known; if(n.kind==='gate') return n.ref.open; return false; }
 function mapBlock(n){ if(n.kind==='door') return doorBlock(n.ref); if(n.kind==='secret') return save.ab.glide?null:`Braucht ${AB_INFO.glide.name}`; if(n.kind==='gate') return n.ref.open?null:`Krone: ${NAMES[n.ref.boss]} besiegen`; return null; }
@@ -2795,9 +2962,9 @@ function hintText(h){ if(!h.missing) return 'Alles gefunden'; const parts=[]; if
 // ---------- Medaillen ----------
 // Bronze: Welt geschafft · Silber: alle Diamanten und Sterne der Welt · Gold: Bestzeit höchstens die Goldzeit.
 // Goldzeit: im Level gesetzt (Editor: Level-Einstellungen) oder geschätzt aus Länge (≈ 100 px/s), Höhe (Klettern) und Barfuß-Strecke.
-const MEDAL_WORLDS=['uebung',1,5,2,6,3,7,4,8], MEDAL_COL={b:'#d08a4a',s:'#dfe4f0',g:'#ffd166'};
+const MEDAL_WORLDS=[9,10,1,5,2,6,3,7,4,8], MEDAL_COL={b:'#d08a4a',s:'#dfe4f0',g:'#ffd166'};
 function goldTime(w){ const d=origDef(w); if(!d) return 0; if(d.gold) return d.gold;
-  const est=d.w*TS/100*(1+Math.max(0,d.h-30)/40)*(w==='uebung'?1.3:1); return Math.round(est/5)*5; }
+  const est=d.w*TS/100*(1+Math.max(0,d.h-30)/40)*(w==='uebung'?1.3:w===9?1.2:1); return Math.round(est/5)*5; }   // gedrosselte Strecke ohne Schuhe
 function medals(w){ const st=mapStats(w), b=save.best[w], done=w==='uebung'?!!(save.done.uebung||save.tutorialDone):!!save.done[w];
   return {b:done, s:st.cr.every(id=>save.crystals[id])&&st.st.every(id=>save.stars[id]), g:!!(b&&b.time&&b.time<=goldTime(w)), gold:goldTime(w), best:b&&b.time}; }
 const fmtT=t=>`${Math.floor(t/60)}:${String(Math.floor(t%60)).padStart(2,'0')}`;
@@ -2847,7 +3014,7 @@ function drawMap(){
       ctx.fillStyle='#bff4ff'; ctx.fillRect(Math.round(x+5),Math.round(yy),1,5); ctx.fillRect(Math.round(x+3),Math.round(yy+2),5,1); ctx.globalAlpha=.5+.5*Math.sin(t*1.7); ctx.fillStyle='#ffffff'; ctx.fillRect(Math.round(x+5),Math.round(yy+2),1,1); ctx.globalAlpha=1; }
     if(sel){ ctx.strokeStyle='rgba(255,255,255,'+(.5+.5*Math.sin(clock*5))+')'; ctx.lineWidth=1; ctx.strokeRect(Math.round(x)-8.5,Math.round(y)-7.5,17,15); } });
   // Gebietsnamen
-  ctx.font='6px Silkscreen, monospace'; for(const [t,x,y,col] of [['Wald',30,108,'#f6ead2'],['Felsen',262,40,'#f6ead2'],['See',222,160,'#f6ead2'],['Gipfel',372,148,'#5a6a88']]){ ctx.fillStyle='rgba(26,16,32,.45)'; ctx.fillText(t,x+.6,y+.6); ctx.fillStyle=col; ctx.fillText(t,x,y); }
+  ctx.font='6px Silkscreen, monospace'; for(const [t,x,y,col] of [['Wiese',40,70,'#f6ead2'],['Wald',138,108,'#f6ead2'],['Felsen',362,40,'#f6ead2'],['See',322,160,'#f6ead2'],['Gipfel',472,148,'#5a6a88']]){ ctx.fillStyle='rgba(26,16,32,.45)'; ctx.fillText(t,x+.6,y+.6); ctx.fillStyle=col; ctx.fillText(t,x,y); }
   // Sam
   let sx=N[MAPS.i].mx, sy=N[MAPS.i].my; if(MAPS.to>=0){ const b=N[MAPS.to]; sx+=(b.mx-sx)*MAPS.t; sy+=(b.my-sy)*MAPS.t; }
   const FR=HF(null), walking=MAPS.to>=0, fr=walking?[FR.runA,FR.idle,FR.runB,FR.idle][Math.floor(MAPS.walk*10)%4]:((clock%3.2)<.12?FR.blink:FR.idle);
@@ -3323,7 +3490,7 @@ function skDoors(){ const label=(t,x,y,col,s)=>{ ctx.font=`${s}px Silkscreen, mo
     let lock=false; if(d.stars) lock=starsGot()<d.stars; if(d.need) lock=crystalTotal()<d.need;
     const pf=Math.floor(clock*4+(+d.world||0))%6; blit(sprite(`portal|${col}|${pf}`,()=>portalImg(col,pf)),cx,b);
     blit(sprite(`door|${lock?1:0}`,()=>vox(30,36,15,34,doorPrims(lock))),cx,b);
-    const y=b-32, lbl=!d.world?'⌂ Hubwelt':typeof d.world==='number'?`${WNO(d.world)} ${NAMES[d.world]}`:NAMES[d.world];
+    const y=b-32, lbl=!d.world?'⌂ Karte':typeof d.world==='number'?`${WNO(d.world)} ${NAMES[d.world]}`:NAMES[d.world];
     label(lbl,cx,y-14,C.cream,7);
     if(d.stars){ const have=starsGot(); label(`★ ${Math.min(have,d.stars)}/${d.stars}`,cx,y-5,have>=d.stars?C.gold:'#ff8a8a',6); }
     if(d.need){ const have=crystalTotal(); label(`◆ ${Math.min(have,d.need)}/${d.need}`,cx,y-5,have>=d.need?C.sky:'#ff8a8a',6); if(save.bosses&&save.bosses[d.world]) ctx.drawImage(CROWN,d.x,y-30,16,11); }
@@ -3457,7 +3624,7 @@ function drawTitle(){
   ctx.globalAlpha=Math.max(0,Math.min(1,(clock-1.4)/.5));
   ctx.fillText('Ein Daumen läuft · zwei springen',W/2,y+size*.78);
   const nd=Object.keys(save.crystals).length, nb=BOSS_ORDER.filter(b=>save.bosses?.[b]).length;
-  if(nd||nb){ ctx.font=`${Math.max(7,Math.round(size/6))}px Silkscreen, monospace`; ctx.fillStyle='#7fe0ff'; ctx.fillText(`◆ ${nd}/${totals().cr}`+(nb?`   ♛ ${nb}/4`:''),W/2,y+size*1.2); }
+  if(nd||nb){ ctx.font=`${Math.max(7,Math.round(size/6))}px Silkscreen, monospace`; ctx.fillStyle='#7fe0ff'; ctx.fillText(`◆ ${nd}/${totals().cr}`+(nb?`   ♛ ${nb}/${BOSS_ORDER.length}`:''),W/2,y+size*1.2); }
   ctx.globalAlpha=1; ctx.textBaseline='alphabetic';
 }
 let titleHop=0;
@@ -3743,7 +3910,6 @@ function openPause(){ syncVol(); state='pause'; clearInput(); document.getElemen
 function resume(){ pauseEl.hidden=true; state='play'; last=performance.now(); }
 document.getElementById('presume').addEventListener('click',resume);
 document.getElementById('phub').addEventListener('click',()=>{ const w=L.id; if(w==='uebung') tutEnd(); loadLevel('hub',w); resume(); });
-document.getElementById('ppractice').addEventListener('click',()=>{ startPractice(); resume(); });
 document.getElementById('pmain').addEventListener('click',()=>{ document.body?.classList.add('title'); if(TUT.on){ TUT.on=false; tutEl.hidden=true; zl.classList.remove('hint'); zr.classList.remove('hint'); } pauseEl.hidden=true; state='start'; document.getElementById('wipeinfo').hidden=true; startEl.hidden=false; });
 function openDebug(from){ debugFrom=from; if(from==='pause') pauseEl.hidden=true; else startEl.hidden=true; dbgOut.hidden=true; buildTunes(); debugEl.hidden=false; }
 // Debug ist versteckt: „Spielen“ bzw. „☰ Menü“ 1,5 Sekunden gedrückt halten
@@ -3908,7 +4074,7 @@ function updateHud(){
   if(lv){ lv.hidden=!showLv; if(showLv){ const h=heartsHtml(save.lives??LIVES); if(lv.innerHTML!==h) lv.innerHTML=h; } }
   if(dbg.info) dbgInfo.textContent=`vx ${P.vx.toFixed(0)} · vy ${P.vy.toFixed(0)} · max ${(PH.max+tier()*PH.tierBonus).toFixed(0)} · Schwung ${flow.toFixed(0)}`;
   bossBar.hidden=!L.boss;
-  if(L.boss){ scoreBox.hidden=true; const B=L.boss; bossName.textContent=B.state==='gone'?'Sieg! Hol dir die Krone':BOSS_INFO[B.id].name;
+  if(L.boss){ scoreBox.hidden=true; const B=L.boss; bossName.textContent=B.state==='gone'?(AB_OF[B.id]?`Sieg! Hol dir: ${AB_INFO[AB_OF[B.id]].name}`:'Sieg! Hol dir die Krone'):BOSS_INFO[B.id].name;
     bFill.style.width=(Math.max(0,B.hp)/B.max*100)+'%'; bFill.style.background=BOSS_INFO[B.id].col;
     hcol.textContent=B.state==='intro'?BOSS_INFO[B.id].tip:''; const bp=bossScore();
     hr.innerHTML=`<span style="font-size:16px;color:${bp<=BOSS_HIT?'#ff6a6a':'var(--cream)'}">${bp} Punkte</span>`; }
