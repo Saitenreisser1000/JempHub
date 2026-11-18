@@ -143,6 +143,11 @@ html,body{height:100%;margin:0;background:var(--night);color:var(--cream);overfl
 .ladenbuy .btn:disabled{opacity:.45}
 .ladenbuy small{grid-column:1 / -1;font:500 14px/1.3 var(--f-ui);opacity:.85;margin-top:4px}
 .ladenbuy small:empty{display:none}
+.farmmode{grid-column:1 / -1;display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-top:6px}
+.farmmode[hidden]{display:none}
+.farmmode button{font:700 16px var(--f-ui);padding:8px;border-radius:10px;border:2px solid var(--hop);background:transparent;color:var(--hop)}
+.farmmode button[aria-checked="true"]{background:var(--hop);color:var(--cream)}
+.farmmode button:disabled{opacity:.45}
 .ladenbuy span:empty{display:none}
 .taler{font:700 18px var(--f-ui);margin:0 0 10px}
 .shoplist{list-style:none;margin:0 0 12px;padding:0;display:grid;gap:8px;text-align:left}
@@ -423,7 +428,7 @@ html,body{height:100%;margin:0;background:var(--night);color:var(--cream);overfl
 
 <div class="ladenui" id="farmUi" hidden>
   <div class="ladentop" id="farmTop"><button class="btn" id="farmOut" type="button">‹ Raus</button><span class="ladentaler" id="farmTaler"></span></div>
-  <div class="ladenbuy" id="farmBuy" role="group" aria-live="polite" hidden><b id="farmName"></b><span id="farmFx"></span><button class="btn" id="farmBtn" type="button"></button><small id="farmInfo"></small></div>
+  <div class="ladenbuy" id="farmBuy" role="group" aria-live="polite" hidden><b id="farmName"></b><span id="farmFx"></span><button class="btn" id="farmBtn" type="button"></button><div class="farmmode" id="farmMode" role="radiogroup" aria-label="Was mälzen?" hidden><button type="button" data-m="malz" role="radio">Malz</button><button type="button" data-m="malzP" role="radio">Edelmalz ★</button></div><small id="farmInfo"></small></div>
 </div>
 <div class="ladenui" id="ladenUi" hidden>
   <div class="ladentop" id="ladenTop"><button class="btn" id="ladenOut" type="button">‹ Raus</button><span class="ladentaler" id="ladenTaler"></span></div>
@@ -2689,7 +2694,10 @@ function farm(){ if (!ECO.farm) ECO.farm = { fields: [{ t0: 0, s: 0, c: 0 }], ge
 const growK = f => f.t0 ? Math.min(1, (nowMs() - f.t0)*FARM.speed/FARM.GROW) : 0;
 const fieldRipe = f => !!(f && f.t0 && f.s && growK(f) >= 1);
 const bits = m => { let n = 0; while (m){ n += m & 1; m >>>= 1; } return n; };
-const kilnK = () => { const k = farm().kiln; return k ? Math.min(1, (nowMs() - k.t0)*FARM.speed/FARM.MALT) : 0; };
+// Edelmalz: gleich viel Gerste, aber doppelt so lange auf der Darre und nur mit Thermometer
+const MALTS = { malz: { n: 'Malz', dur: 1 }, malzP: { n: 'Edelmalz', dur: 2 } };
+const kilnDur = k => FARM.MALT*(MALTS[k && k.m || 'malz'].dur);
+const kilnK = () => { const k = farm().kiln; return k ? Math.min(1, (nowMs() - k.t0)*FARM.speed/kilnDur(k)) : 0; };
 function fmtLeft(ms){ ms = Math.max(0, ms/FARM.speed); const s = Math.ceil(ms/1000), h = Math.floor(s/3600), m = Math.floor(s % 3600/60);
   return h ? (m ? `${h} h ${m} min` : `${h} h`) : m ? `${m} min ${s % 60 ? (s % 60) + ' s' : ''}`.trim() : `${s} s`; }
 function farmNews(){ // für die Karte: was ist fertig?
@@ -2742,8 +2750,8 @@ function farmAct(){
     else if (!f.t0 && U.saer){ if (taler < FARM.SOW) return; FARM.mach = { i: s.i, k: 'saer', t: 0 }; }
     else if (fieldRipe(f) && U.drescher){ FARM.mach = { i: s.i, k: 'drescher', t: 0 }; }
   } else if (s.k === 'kiln'){
-    if (F.kiln && kilnK() >= 1){ const n = F.kiln.n; ECO.malz += n; F.kiln = null; sCash(); farmFlash('kiln', `+${n} Malz ins Lager`); }
-    else if (!F.kiln && F.gerste > 0){ const n = Math.min(FARM.KILN, F.gerste); F.gerste -= n; F.kiln = { t0: nowMs(), n }; beep(330, .12, 'triangle', .08); }
+    if (F.kiln && kilnK() >= 1){ const n = F.kiln.n, m = F.kiln.m || 'malz'; ECO[m] += n; F.kiln = null; sCash(); farmFlash('kiln', `+${n} ${MALTS[m].n} ins Lager`); }
+    else if (!F.kiln && F.gerste > 0){ const m = FARM.mode === 'malzP' && U.thermo ? 'malzP' : 'malz', n = Math.min(FARM.KILN, F.gerste); F.gerste -= n; F.kiln = { t0: nowMs(), n, m }; beep(330, .12, 'triangle', .08); }
   }
   saveEco(); saveShop(); farmSync();
 }
@@ -2759,12 +2767,18 @@ function farmSync(){
     else if (!fieldRipe(f)){ const sown = bits(f.s); fx = `${sown}/${FARM.ROWS*FARM.COLS} gesät · noch ${fmtLeft(FARM.GROW - (nowMs() - f.t0)*FARM.speed)}`; lab = '⏳'; info = growK(f) <= .2 && sown < FARM.ROWS*FARM.COLS ? 'Lücken? Jetzt kannst du noch nachsäen.' : 'Die Gerste wächst auch, wenn das Spiel zu ist.'; }
     else { const left = bits(f.s & ~f.c); fx = `reif! ${left} Büschel stehen`; lab = U.drescher ? '🚜 Ernten' : '✋ von Hand'; can = !!U.drescher; info = U.drescher ? 'Der Mähdrescher erntet das ganze Feld.' : `Mäh mit der Sichel: Wisch über die Ähren. Je ${FARM.PER} Büschel geben 1 Gerste.`; }
   } else {
-    name = 'Mälzerei'; const k = F.kiln;
-    if (k && kilnK() >= 1){ fx = `${k.n} Malz fertig`; lab = 'Ins Lager'; can = true; info = 'Das Malz kommt ins Sudhaus-Lager.'; }
-    else if (k){ fx = `${k.n} Gerste keimt · noch ${fmtLeft(FARM.MALT - (nowMs() - k.t0)*FARM.speed)}`; lab = 'Mälzen'; info = 'Gerste keimt und wird auf der Darre getrocknet.'; }
-    else { fx = `${F.gerste} Gerste da`; lab = F.gerste ? `Mälzen ${Math.min(FARM.KILN, F.gerste)}` : 'Mälzen'; can = F.gerste > 0; info = F.gerste ? `Aus jeder Gerste wird ein Malz (bis ${FARM.KILN} auf einmal, ${fmtLeft(FARM.MALT)}).` : 'Erst Gerste ernten.'; }
+    name = 'Mälzerei'; const k = F.kiln, kn = k ? MALTS[k.m || 'malz'].n : '';
+    if (!U.thermo) FARM.mode = 'malz';
+    const m = FARM.mode === 'malzP' ? 'malzP' : 'malz';
+    if (k && kilnK() >= 1){ fx = `${k.n} ${kn} fertig`; lab = 'Ins Lager'; can = true; info = `Das ${kn} kommt ins Sudhaus-Lager.`; }
+    else if (k){ fx = `${k.n} Gerste → ${kn} · noch ${fmtLeft(kilnDur(k) - (nowMs() - k.t0)*FARM.speed)}`; lab = 'Mälzen'; info = k.m === 'malzP' ? 'Edelmalz wird langsam und genau auf der Darre getrocknet.' : 'Gerste keimt und wird auf der Darre getrocknet.'; }
+    else { fx = `${F.gerste} Gerste da`; lab = F.gerste ? `Mälzen ${Math.min(FARM.KILN, F.gerste)}` : 'Mälzen'; can = F.gerste > 0;
+      info = !F.gerste ? 'Erst Gerste ernten.' : m === 'malzP' ? `Edelmalz für ★★★★ und mehr: aus jeder Gerste ein Edelmalz, dauert ${fmtLeft(FARM.MALT*2)}.` : `Aus jeder Gerste wird ein Malz (bis ${FARM.KILN} auf einmal, ${fmtLeft(FARM.MALT)}).${U.thermo ? '' : ' Edelmalz geht erst mit dem Thermometer aus dem Laden.'}`; }
   }
   $('farmName').textContent = name; $('farmFx').textContent = fx; bt.textContent = lab; bt.disabled = !can; $('farmInfo').textContent = info;
+  // Auswahl Malz / Edelmalz nur, wenn die Mälzerei frei ist
+  const md = $('farmMode'); md.hidden = !(s.k === 'kiln' && !F.kiln);
+  for (const b of md.children){ const on = (FARM.mode || 'malz') === b.dataset.m; b.setAttribute('aria-checked', on); b.disabled = b.dataset.m === 'malzP' && !U.thermo; b.textContent = b.dataset.m === 'malzP' ? (U.thermo ? 'Edelmalz ★' : '🔒 Edelmalz') : 'Malz'; }
 }
 function farmHit(x, y){
   const g = farmGeo(); let hit = null;
@@ -2851,10 +2865,11 @@ function drawKiln(r, sel){
   ctx.fillStyle = '#2f5d3a'; rr(bx + bw/2 - 44, by - bh - 4, 88, 18, 4); ctx.fill(); ctx.fillStyle = C.gold; ctx.font = '700 12px "Barlow Condensed", sans-serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillText('MÄLZEREI', bx + bw/2, by - bh + 5);
   // Gerste-Säcke davor
   const nS = Math.min(6, Math.ceil(F.gerste/2)); for (let i = 0; i < nS; i++){ const sx = bx - 30 + (i % 3)*14, sy = by - 2 - Math.floor(i/3)*14; ctx.fillStyle = '#e6d39a'; rr(sx - 7, sy - 16, 14, 16, 5); ctx.fill(); ctx.fillStyle = '#b89a50'; ctx.fillRect(sx - 5, sy - 13, 10, 2); }
-  if (done){ ctx.fillStyle = '#c8955a'; rr(bx + bw + 18, by - 30, 30, 30, 8); ctx.fill(); ctx.fillStyle = C.ink; ctx.font = '700 11px "Barlow Condensed", sans-serif'; ctx.fillText('MALZ', bx + bw + 33, by - 15); }
+  if (done){ const pre = k.m === 'malzP'; ctx.fillStyle = '#c8955a'; rr(bx + bw + 14, by - 30, 38, 30, 8); ctx.fill(); if (pre){ ctx.fillStyle = '#c22a22'; ctx.fillRect(bx + bw + 14, by - 26, 38, 4); ctx.fillStyle = C.gold; ctx.font = '700 12px sans-serif'; ctx.fillText('★', bx + bw + 33, by - 36); }
+    ctx.fillStyle = C.ink; ctx.font = '700 10px "Barlow Condensed", sans-serif'; ctx.fillText(pre ? 'EDELMALZ' : 'MALZ', bx + bw + 33, by - 12); }
   if (sel){ ctx.strokeStyle = `rgba(230,184,74,${.6 + Math.sin(tTotal*5)*.3})`; ctx.lineWidth = 3; rr(r.x, r.y - 40, r.w, r.h + 46, 14); ctx.stroke(); }
   // Fortschritt
-  const lab = done ? `${k.n} Malz fertig!` : k ? `${k.n} Gerste · ${fmtLeft(FARM.MALT - (nowMs() - k.t0)*FARM.speed)}` : F.gerste ? `${F.gerste} Gerste bereit` : 'wartet auf Gerste';
+  const lab = done ? `${k.n} ${MALTS[k.m || 'malz'].n} fertig!` : k ? `${k.n} Gerste → ${MALTS[k.m || 'malz'].n} · ${fmtLeft(kilnDur(k) - (nowMs() - k.t0)*FARM.speed)}` : F.gerste ? `${F.gerste} Gerste bereit` : 'wartet auf Gerste';
   ctx.font = '700 13px "Barlow Condensed", sans-serif'; const tw = ctx.measureText(lab).width + 16;
   ctx.fillStyle = done ? C.gold : 'rgba(20,26,36,.8)'; rr(W/2 - tw/2, by + 12, tw, 22, 11); ctx.fill(); ctx.fillStyle = done ? C.ink : C.cream; ctx.fillText(lab, W/2, by + 23);
   if (k && !done){ ctx.fillStyle = 'rgba(0,0,0,.35)'; rr(W/2 - 60, by + 40, 120, 6, 3); ctx.fill(); ctx.fillStyle = '#d9a441'; rr(W/2 - 60, by + 40, 120*kk, 6, 3); ctx.fill(); }
@@ -2869,9 +2884,9 @@ function renderFarm(){
   g.fields.forEach((r, i) => drawField(r, F.fields[i], i, FARM.sel && FARM.sel.k === 'field' && FARM.sel.i === i));
   drawKiln(g.kiln, FARM.sel && FARM.sel.k === 'kiln');
   // Lagerleiste: Gerste und Malz
-  const ly = g.kiln.y + g.kiln.h + 58; ctx.fillStyle = 'rgba(20,26,36,.7)'; rr(W/2 - 120, ly, 240, 30, 15); ctx.fill();
+  const ly = g.kiln.y + g.kiln.h + 58; ctx.fillStyle = 'rgba(20,26,36,.7)'; rr(W/2 - 160, ly, 320, 30, 15); ctx.fill();
   ctx.fillStyle = C.cream; ctx.font = '700 15px "Barlow Condensed", sans-serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
-  ctx.fillText(`🌾 ${F.gerste} Gerste     ·     Malz im Lager: ${ECO.malz}`, W/2, ly + 15);
+  ctx.fillText(`🌾 ${F.gerste} Gerste   ·   Lager: ${ECO.malz} Malz, ${ECO.malzP} Edelmalz`, W/2, ly + 15);
   // Rückmeldungen
   FARM.flash = FARM.flash.filter(f => tTotal - f.t < 1.6);
   for (const f of FARM.flash){ const a = 1 - (tTotal - f.t)/1.6, r = f.x === 'kiln' ? { x: W/2, y: g.kiln.y } : { x: g.fields[f.x].x + g.fields[f.x].w/2, y: g.fields[f.x].y + 20 };
@@ -4298,7 +4313,7 @@ for (const el of document.querySelectorAll('[data-legal]')) el.addEventListener(
 $('legalClose').onclick = closeLegal;
 // Spielstand zurücksetzen: erster Tipp fragt nach, zweiter löscht alles außer dem Namen für die Bestenliste
 // Versionsnummer: bei jeder Veröffentlichung erhöhen (Hauptversion.Neue Funktionen.Korrekturen)
-const VERSION = '2.0.0';
+const VERSION = '2.1.0';
 $('verTag').textContent = `v${VERSION}`;
 $('resetBtn').onclick = () => {
   const b = $('resetBtn');
@@ -4393,6 +4408,7 @@ for (const b of document.querySelectorAll('[data-board]')) b.addEventListener('c
 $('boardClose').onclick = closeBoard;
 $('ladenOut').onclick = leaveShop;
 $('farmOut').onclick = leaveFarm; $('farmBtn').onclick = farmAct;
+for (const b of $('farmMode').children) b.onclick = () => { if (b.disabled) return; FARM.mode = b.dataset.m; beep(700, .04, 'triangle', .05); farmSync(); };
 $('buyBtn').onclick = ladenBuy;
 let tipNext = null;
 function showTip(brand, title, nodes, next){
