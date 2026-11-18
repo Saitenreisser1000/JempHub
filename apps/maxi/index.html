@@ -2711,8 +2711,12 @@ function farmGeo(){
   return { top, fields, kiln: { x: 40, y: ky, w: W - 80, h: kh } };
 }
 function cellXY(r, j, c){ return { x: r.x + 12 + c*(r.w - 28)/(FARM.COLS - 1) + (j % 2)*4, y: r.y + (j + 1)*r.h/(FARM.ROWS + 1) + 4 }; }
-function openFarm(){ state = 'farm'; $('career').hidden = true; $('farmUi').hidden = false; FARM.sel = null; FARM.drag = null; farm(); farmSync(); $('farmOut').focus({ preventScroll: true }); }
-function leaveFarm(){ state = 'menu'; $('farmUi').hidden = true; FARM.drag = null; FARM.mach = null; saveEco(); openCareer(); }
+function openFarm(hops){ if (!hops) FARM.view = 'hof'; state = 'farm'; $('career').hidden = true; $('farmUi').hidden = false; FARM.sel = null; FARM.drag = null; farm(); farmSync(); $('farmOut').focus({ preventScroll: true }); }
+function leaveFarm(){
+  // eine laufende Hopfenernte zählt beim Verlassen mit dem, was schon geerntet ist
+  const G = FARM.game; if (G && !G.done){ ECO.hopfen += Math.floor(G.cones/HOP.PER); ECO.hopfenP += G.gold; farm().hop.t0 = nowMs(); }
+  FARM.game = null; state = 'menu'; $('farmUi').hidden = true; FARM.drag = null; FARM.mach = null; saveEco(); openCareer();
+}
 function farmFlash(x, txt){ FARM.flash.push({ t: tTotal, x, txt }); }
 // ein Feldkästchen säen oder mähen; gibt true zurück, wenn sich etwas getan hat
 function sowCell(i, b){
@@ -2743,6 +2747,7 @@ function brush(i, x0, y0, x1, y1, mode){
   if (harvest && n >= 4) farmFlash(i, 'Schwung!');
 }
 function farmAct(){
+  if (FARM.view === 'hopfen'){ hopAct(); return; }
   const F = farm(), s = FARM.sel; if (!s || FARM.mach) return;
   if (s.k === 'field'){
     const f = F.fields[s.i];
@@ -2756,6 +2761,7 @@ function farmAct(){
   saveEco(); saveShop(); farmSync();
 }
 function farmSync(){
+  if (FARM.view === 'hopfen'){ hopSync(); return; }
   const F = farm(); $('farmTaler').textContent = `🪙 ${taler}`;
   const s = FARM.sel, box = $('farmBuy'), bt = $('farmBtn');
   if (!s){ box.hidden = true; return; } box.hidden = false;
@@ -2787,6 +2793,7 @@ function farmHit(x, y){
   return hit;
 }
 function farmPointer(e){
+  if (FARM.view === 'hopfen'){ hopPointer(e); return; }
   const x = toLogical(e.clientX), y = e.clientY / S, hit = farmHit(x, y);
   if (!hit){ FARM.sel = null; farmSync(); return; }
   if (!FARM.sel || FARM.sel.k !== hit.k || FARM.sel.i !== hit.i){ FARM.sel = hit; beep(700, .04, 'triangle', .05); }
@@ -2794,9 +2801,10 @@ function farmPointer(e){
   if (hit.k === 'field' && farm().fields[hit.i] && !FARM.mach){ const mode = fieldRipe(farm().fields[hit.i]) ? 'cut' : 'sow'; FARM.drag = { i: hit.i, x, y, id: e.pointerId, mode }; brush(hit.i, x, y, x, y, mode); }
   farmSync();
 }
-function farmMove(e){ const d = FARM.drag; if (!d || d.id !== e.pointerId) return; const x = toLogical(e.clientX), y = e.clientY / S; brush(d.i, d.x, d.y, x, y, d.mode); d.x = x; d.y = y; }
-function farmUp(e){ if (FARM.drag && FARM.drag.id === e.pointerId){ FARM.drag = null; saveEco(); saveShop(); farmSync(); } }
+function farmMove(e){ if (FARM.view === 'hopfen'){ hopMove(e); return; } const d = FARM.drag; if (!d || d.id !== e.pointerId) return; const x = toLogical(e.clientX), y = e.clientY / S; brush(d.i, d.x, d.y, x, y, d.mode); d.x = x; d.y = y; }
+function farmUp(e){ if (FARM.view === 'hopfen'){ hopUp(e); return; } if (FARM.drag && FARM.drag.id === e.pointerId){ FARM.drag = null; saveEco(); saveShop(); farmSync(); } }
 function farmTick(dt){
+  hopTick(dt);
   for (const p of FARM.seeds){ p.t += dt; p.x += p.vx*dt; p.y += p.vy*dt; p.vy += 500*dt; if (p.to && p.y >= p.to){ p.vy = 0; p.vx = 0; p.y = p.to; } }
   FARM.seeds = FARM.seeds.filter(p => p.t < .7);
   const m = FARM.mach; if (!m) return;
@@ -2876,6 +2884,7 @@ function drawKiln(r, sel){
 }
 function renderFarm(){
   const now = performance.now(), dt = Math.min(.05, (now - (FARM.tPrev || now))/1000); FARM.tPrev = now; farmTick(dt);
+  if (FARM.view === 'hopfen'){ renderHops(); if (Math.floor(tTotal) !== FARM.sec){ FARM.sec = Math.floor(tTotal); farmSync(); } return; }
   const g = farmGeo(), F = farm();
   const sky = ctx.createLinearGradient(0, 0, 0, H); sky.addColorStop(0, '#9ccbe8'); sky.addColorStop(.25, '#d8ecd0'); sky.addColorStop(.26, '#5f9a4a'); sky.addColorStop(1, '#3f7a3c');
   ctx.fillStyle = sky; ctx.fillRect(XL, 0, XR - XL, H);
@@ -2899,6 +2908,129 @@ function renderFarm(){
     ctx.restore(); }
   if (Math.floor(tTotal) !== FARM.sec){ FARM.sec = Math.floor(tTotal); farmSync(); }
 }
+/* ---------- Hopfengarten: Hopfen wächst in echter Zeit nach, geerntet wird im Wisch-Spiel ---------- */
+const HOP = { COST: 150, GROW: 6*3600e3, N: 30, PER: 4 };
+const hopK = () => { const h = farm().hop; return h ? Math.min(1, (nowMs() - h.t0)*FARM.speed/HOP.GROW) : 0; };
+const hopRipe = () => !!farm().hop && hopK() >= 1;
+function hopNews(){ const h = farm().hop; return !h ? '' : hopRipe() ? '🌿 reif!' : '⏳'; }
+function openHops(){ FARM.view = 'hopfen'; openFarm(true); }
+function hopGeo(){ const top = ($('farmTop').getBoundingClientRect().bottom || 60)/S + 30; return { x: 20, y: top, w: W - 40, h: Math.max(220, H - top - 250) }; }
+function hopAct(){
+  const F = farm();
+  if (!F.hop){ if (taler < HOP.COST) return; taler -= HOP.COST; F.hop = { t0: nowMs() }; sCash(); saveEco(); saveShop(); farmSync(); return; }
+  if (hopRipe()) hopStart();
+}
+function hopSync(){
+  const F = farm(), box = $('farmBuy'), bt = $('farmBtn'); $('farmTaler').textContent = `🪙 ${taler}`; $('farmMode').hidden = true;
+  if (FARM.game || !FARM.sel){ box.hidden = true; return; } box.hidden = false;
+  let fx, lab, can = false, info;
+  if (!F.hop){ fx = 'noch nicht angelegt'; lab = `Anlegen ${HOP.COST} 🪙`; can = taler >= HOP.COST; info = 'Hopfen ist mehrjährig: einmal anlegen, er wächst nach jeder Ernte von selbst nach.'; }
+  else if (!hopRipe()){ fx = `wächst · noch ${fmtLeft(HOP.GROW - (nowMs() - F.hop.t0)*FARM.speed)}`; lab = '⏳'; info = 'Die Ranken klettern auch, wenn das Spiel zu ist.'; }
+  else { fx = 'reif! Die Dolden hängen voll'; lab = '✋ Ernten'; can = true; info = `Wisch durch die fliegenden Dolden, aber nicht durch die Bienen. Je ${HOP.PER} Dolden geben 1 Hopfen, goldene Dolden sind Aromahopfen.`; }
+  $('farmName').textContent = 'Hopfengarten'; $('farmFx').textContent = fx; bt.textContent = lab; bt.disabled = !can; $('farmInfo').textContent = info;
+}
+function hopPointer(e){
+  const x = toLogical(e.clientX), y = e.clientY / S;
+  if (FARM.game){ const G = FARM.game; if (G.done){ if (tTotal - G.doneT > .8) hopEnd(); return; } G.last = [x, y]; G.id = e.pointerId; G.trail.push({ x, y, life: 1 }); return; }
+  const g = hopGeo(); FARM.sel = x >= g.x && x <= g.x + g.w && y >= g.y - 20 && y <= g.y + g.h + 30 ? { k: 'hop' } : null; if (FARM.sel) beep(700, .04, 'triangle', .05); farmSync();
+}
+function hopMove(e){ const G = FARM.game; if (!G || !G.last || G.id !== e.pointerId || G.done) return; const x = toLogical(e.clientX), y = e.clientY / S; hopSlash(G.last[0], G.last[1], x, y); G.last = [x, y]; G.trail.push({ x, y, life: 1 }); }
+function hopUp(e){ const G = FARM.game; if (G && G.id === e.pointerId) G.last = null; }
+function hopStart(){ FARM.game = { t: 0, items: [], trail: [], left: HOP.N, cones: 0, gold: 0, stings: 0, spawnT: .8, texts: [], done: false }; FARM.sel = null; farmSync(); beep(523, .1, 'triangle', .07); }
+function hopText(x, y, t, c){ FARM.game.texts.push({ x, y, t, c: c || C.gold, life: 1.2 }); }
+function hopSlash(x0, y0, x1, y1){
+  const G = FARM.game; let hit = 0;
+  for (const it of G.items){
+    if (it.cut) continue;
+    const dx = x1 - x0, dy = y1 - y0, l2 = dx*dx + dy*dy || 1, t = Math.max(0, Math.min(1, ((it.x - x0)*dx + (it.y - y0)*dy)/l2));
+    if (Math.hypot(x0 + dx*t - it.x, y0 + dy*t - it.y) > 26) continue;
+    it.cut = true; it.vx += dx*2; it.vy = Math.min(it.vy, -120);
+    if (it.kind === 'bee'){ G.stings++; const lost = Math.min(3, G.cones); G.cones -= lost; hopText(it.x, it.y - 30, lost ? `Autsch! −${lost} Dolden` : 'Autsch!', '#ff8a6a'); beep(150, .18, 'sawtooth', .07);
+      for (let i = 0; i < 8; i++) FARM.seeds.push({ x: it.x, y: it.y, vx: (Math.random() - .5)*200, vy: -Math.random()*200, t: 0, c: '#f2c230' }); }
+    else { hit++; if (it.kind === 'gold'){ G.gold++; hopText(it.x, it.y - 30, '✨ Aromahopfen'); } else G.cones++;
+      for (let i = 0; i < 8; i++) FARM.seeds.push({ x: it.x, y: it.y, vx: (Math.random() - .5)*240, vy: -Math.random()*200, t: 0, c: it.kind === 'gold' ? '#f2d060' : (i % 2 ? '#8cc152' : '#d6e88a') }); }
+  }
+  if (hit){ sClink(); if (hit >= 3){ G.cones++; hopText(x1, y1 - 40, `${hit}er-Schnitt! +1`); } }
+}
+function hopTick(dt){
+  const G = FARM.game; if (!G) return; G.t += dt;
+  for (const p of G.trail) p.life -= dt*4; G.trail = G.trail.filter(p => p.life > 0);
+  for (const t of G.texts){ t.life -= dt*.8; t.y -= 24*dt; } G.texts = G.texts.filter(t => t.life > 0);
+  if (G.done) return;
+  G.spawnT -= dt;
+  if (G.spawnT <= 0 && G.left > 0){
+    const n = Math.min(G.left, 1 + (Math.random() < Math.min(.55, G.t/25) ? 1 : 0) + (G.t > 15 && Math.random() < .25 ? 1 : 0));
+    for (let i = 0; i < n; i++){
+      const r = Math.random(), kind = r < .08 ? 'gold' : r < .8 ? 'cone' : 'bee', x = 70 + Math.random()*260, top = hopGeo().y + 20 + Math.random()*120, vy = -Math.sqrt(2*900*(H + 30 - top));
+      G.items.push({ kind, x, y: H + 30, vx: (W/2 - x)*.35*(.5 + Math.random()), vy, rot: Math.random()*6, vr: (Math.random() - .5)*4, cut: false });
+      if (kind !== 'bee') G.left--;
+    }
+    G.spawnT = Math.max(.5, 1.25 - G.t*.02)*(.7 + Math.random()*.6);
+  }
+  for (const it of G.items){ it.vy += 900*dt; it.x += it.vx*dt; it.y += it.vy*dt; it.rot += it.vr*dt; }
+  G.items = G.items.filter(it => it.y < H + 60 || it.vy < 0);
+  if (G.left <= 0 && !G.items.length){
+    G.done = true; G.doneT = tTotal; G.hop = Math.floor(G.cones/HOP.PER);
+    ECO.hopfen += G.hop; ECO.hopfenP += G.gold; farm().hop.t0 = nowMs(); saveEco();
+    [523, 659, 784].forEach((f, i) => setTimeout(() => beep(f, .12, 'triangle', .07), i*110));
+  }
+}
+function hopEnd(){ FARM.game = null; FARM.sel = { k: 'hop' }; farmSync(); }
+function drawHopPole(x, y0, y1, k, ripe, ph){
+  // Stange mit Ranke, Blättern und (reif) Dolden
+  ctx.fillStyle = '#7a5a3a'; ctx.fillRect(x - 3, y0, 6, y1 - y0);
+  if (k <= 0) return;
+  const top = y1 - (y1 - y0 - 6)*k;
+  ctx.strokeStyle = '#4f8a3a'; ctx.lineWidth = 3; ctx.beginPath(); for (let y = y1; y >= top; y -= 5) ctx.lineTo(x + Math.sin(y/13 + ph)*7, y); ctx.stroke();
+  for (let y = y1 - 16; y > top; y -= 22){ const lx = x + Math.sin(y/13 + ph)*7; ctx.fillStyle = '#5f9a48'; ctx.beginPath(); ctx.ellipse(lx + 8, y, 9, 5, .5, 0, Math.PI*2); ctx.ellipse(lx - 8, y - 9, 9, 5, -.5, 0, Math.PI*2); ctx.fill();
+    if (ripe && (y | 0) % 44 < 22){ ctx.save(); ctx.translate(lx + 12, y + 8); drawIng('hopfen', 0, 0, .9); ctx.restore(); } }
+}
+function renderHops(){
+  const F = farm(), g = hopGeo(), G = FARM.game;
+  const sky = ctx.createLinearGradient(0, 0, 0, H); sky.addColorStop(0, '#8fc4e8'); sky.addColorStop(.55, '#cfe6c0'); sky.addColorStop(1, '#6a9a4a'); ctx.fillStyle = sky; ctx.fillRect(XL, 0, XR - XL, H);
+  ctx.fillStyle = '#4a7a3a'; ctx.fillRect(XL, g.y + g.h, XR - XL, H - g.y - g.h);
+  const k = F.hop ? (G ? 1 : hopK()) : 0, ripe = !!F.hop && (G ? !G.done : hopRipe());
+  // Gerüst: Draht über die Stangen
+  ctx.strokeStyle = '#5a4a3a'; ctx.lineWidth = 1.5; ctx.beginPath(); ctx.moveTo(g.x, g.y + 4); ctx.lineTo(g.x + g.w, g.y + 4); ctx.stroke();
+  if (!F.hop){ ctx.fillStyle = '#7a5434'; rr(g.x, g.y + g.h - 60, g.w, 60, 10); ctx.fill(); }
+  for (let i = 0; i < 6; i++) drawHopPole(g.x + 14 + i*(g.w - 28)/5, g.y, g.y + g.h, G ? (G.done ? .25 : 1) : k, ripe && !G, i*1.7);
+  if (!G){
+    if (FARM.sel){ ctx.strokeStyle = `rgba(230,184,74,${.6 + Math.sin(tTotal*5)*.3})`; ctx.lineWidth = 3; rr(g.x - 6, g.y - 14, g.w + 12, g.h + 28, 14); ctx.stroke(); }
+    const lab = !F.hop ? `🔒 ${HOP.COST} 🪙 · anlegen` : ripe ? '✋ ernten!' : fmtLeft(HOP.GROW - (nowMs() - F.hop.t0)*FARM.speed);
+    ctx.font = '700 14px "Barlow Condensed", sans-serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; const tw = ctx.measureText(lab).width + 18;
+    ctx.fillStyle = ripe ? C.gold : 'rgba(20,26,36,.8)'; rr(W/2 - tw/2, g.y + g.h + 10, tw, 24, 12); ctx.fill(); ctx.fillStyle = ripe ? C.ink : C.cream; ctx.fillText(lab, W/2, g.y + g.h + 22);
+    if (F.hop && !ripe){ ctx.fillStyle = 'rgba(0,0,0,.35)'; rr(W/2 - 80, g.y + g.h + 40, 160, 6, 3); ctx.fill(); ctx.fillStyle = '#8cc152'; rr(W/2 - 80, g.y + g.h + 40, 160*k, 6, 3); ctx.fill(); }
+    ctx.fillStyle = 'rgba(20,26,36,.7)'; rr(W/2 - 140, g.y + g.h + 56, 280, 28, 14); ctx.fill(); ctx.fillStyle = C.cream; ctx.font = '700 15px "Barlow Condensed", sans-serif';
+    ctx.fillText(`Lager: ${ECO.hopfen} Hopfen, ${ECO.hopfenP} Aromahopfen`, W/2, g.y + g.h + 70);
+  } else {
+    for (const it of G.items){ ctx.save(); ctx.translate(it.x, it.y); ctx.rotate(it.rot); if (it.cut) ctx.globalAlpha = .45;
+      if (it.kind === 'bee'){ ctx.fillStyle = 'rgba(255,255,255,.75)'; ctx.beginPath(); ctx.ellipse(-5, -10, 7, 10, -.4, 0, Math.PI*2); ctx.ellipse(6, -10, 7, 10, .4, 0, Math.PI*2); ctx.fill();
+        ctx.fillStyle = '#f2c230'; ctx.beginPath(); ctx.ellipse(0, 0, 15, 11, 0, 0, Math.PI*2); ctx.fill(); ctx.fillStyle = '#20232a'; ctx.fillRect(-5, -11, 4, 22); ctx.fillRect(4, -10, 4, 20); ctx.beginPath(); ctx.arc(15, 0, 5, 0, Math.PI*2); ctx.fill(); }
+      else { if (it.kind === 'gold'){ ctx.fillStyle = 'rgba(255,214,80,.6)'; ctx.beginPath(); ctx.arc(0, -8, 24 + Math.sin(tTotal*10)*3, 0, Math.PI*2); ctx.fill(); }
+        drawIng('hopfen', 0, 0, 1.7); if (it.kind === 'gold'){ ctx.font = '14px sans-serif'; ctx.textAlign = 'center'; ctx.fillText('✨', 14, -22); } }
+      ctx.restore(); }
+    for (const p of FARM.seeds){ ctx.globalAlpha = Math.max(0, 1 - p.t/.7); ctx.fillStyle = p.c; ctx.beginPath(); ctx.arc(p.x, p.y, 3, 0, Math.PI*2); ctx.fill(); } ctx.globalAlpha = 1;
+    if (G.trail.length > 1){ ctx.lineCap = 'round'; for (let i = 1; i < G.trail.length; i++){ const a = G.trail[i - 1], b = G.trail[i]; ctx.strokeStyle = `rgba(255,255,255,${b.life*.8})`; ctx.lineWidth = 2 + b.life*6; ctx.beginPath(); ctx.moveTo(a.x, a.y); ctx.lineTo(b.x, b.y); ctx.stroke(); } }
+    for (const t of G.texts){ ctx.globalAlpha = Math.max(0, Math.min(1, t.life)); ctx.font = '18px "Alfa Slab One", Georgia, serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.strokeStyle = 'rgba(0,0,0,.55)'; ctx.lineWidth = 4; ctx.strokeText(t.t, t.x, t.y); ctx.fillStyle = t.c; ctx.fillText(t.t, t.x, t.y); } ctx.globalAlpha = 1;
+    // Zähler oben
+    ctx.fillStyle = 'rgba(20,26,36,.75)'; rr(W/2 - 150, g.y - 22, 300, 30, 15); ctx.fill(); ctx.fillStyle = C.cream; ctx.font = '700 16px "Barlow Condensed", sans-serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+    ctx.fillText(`🌿 ${G.cones} Dolden · ✨ ${G.gold} Aroma · noch ${G.left}`, W/2, g.y - 7);
+    if (G.done){ const a = Math.min(1, (tTotal - G.doneT)/.4); ctx.globalAlpha = a; ctx.fillStyle = 'rgba(30,36,48,.9)'; rr(W/2 - 150, H*.32, 300, 150, 16); ctx.fill();
+      ctx.fillStyle = C.gold; ctx.font = '26px "Alfa Slab One", Georgia, serif'; ctx.fillText('Ernte fertig!', W/2, H*.32 + 32);
+      ctx.fillStyle = C.cream; ctx.font = '700 18px "Barlow Condensed", sans-serif'; ctx.fillText(`${G.cones} Dolden → +${G.hop} Hopfen`, W/2, H*.32 + 68); ctx.fillText(`+${G.gold} Aromahopfen${G.stings ? ` · ${G.stings}× gestochen` : ''}`, W/2, H*.32 + 94);
+      ctx.font = '600 14px "Barlow Condensed", sans-serif'; ctx.globalAlpha = a*(.6 + Math.sin(tTotal*4)*.4); ctx.fillText('Tippen zum Weiter · wächst in 6 h nach', W/2, H*.32 + 128); ctx.globalAlpha = 1; }
+  }
+}
+function drawHopMap(){
+  // Hopfengarten auf der Karte: drei Stangen mit Draht, Ranken je nach Wachstum
+  const h = farm().hop, k = h ? hopK() : 0, ripe = hopRipe();
+  ctx.fillStyle = 'rgba(10,30,15,.25)'; ctx.beginPath(); ctx.ellipse(0, 0, 34, 7, 0, 0, Math.PI*2); ctx.fill();
+  ctx.strokeStyle = '#5a4a3a'; ctx.lineWidth = 1; ctx.beginPath(); ctx.moveTo(-26, -66); ctx.lineTo(26, -66); ctx.stroke();
+  for (let i = 0; i < 3; i++){ const x = -24 + i*24; ctx.fillStyle = '#7a5a3a'; ctx.fillRect(x - 1.5, -68, 3, 68);
+    if (k > 0){ const top = -64*k; ctx.strokeStyle = '#4f8a3a'; ctx.lineWidth = 2.5; ctx.beginPath(); for (let y = 0; y >= top; y -= 4) ctx.lineTo(x + Math.sin(y/8 + i)*4, y); ctx.stroke();
+      for (let y = -8; y > top; y -= 12){ ctx.fillStyle = ripe && (i + y) % 2 ? '#c8e07a' : '#5f9a48'; ctx.beginPath(); ctx.ellipse(x + Math.sin(y/8 + i)*4 + 4, y, 4.5, 3, .5, 0, Math.PI*2); ctx.fill(); } } }
+}
+
 function drawHofMap(){
   // Bauernhof auf der Karte: kleine Mälzerei mit Darre, daneben zwei Gerstenstreifen
   const F = farm();
@@ -2921,9 +3053,10 @@ const LOCS = {
   halle: { u: .74, v: .3,  c: [.68, .5],  name: 'Abfüllhalle', sub: 'Förderband', lv: 2, need: 1, desc: () => `Flaschen sortieren: ${lohn2()} 🪙 Lohn je voller Kiste.` },
   bar:   { u: .25, v: .79, c: [.3, .6],   name: 'Braustüberl', sub: 'Braustüberl', lv: 1, need: 0, desc: () => hasOwnBeer() ? `Im Keller: ${Object.keys(ECO.keller).map(n => `${n} ${fmtF(ECO.keller[n].f)}`).join(', ')} Fass. Zapfen oder Flaschen fangen (${lohn1()} 🪙 Lohn je Kiste).` : `Flaschen fangen: ${lohn1()} 🪙 Lohn je voller Kiste.` },
   hof:   { u: .5,  v: 1.0, c: [.5, .8],   name: 'Bauernhof', sub: 'Gerste und Mälzerei', farm: true, desc: () => { const F = farm(), n = farmNews(); return `${F.fields.length} ${F.fields.length === 1 ? 'Gerstenfeld' : 'Gerstenfelder'}, ${F.gerste} Gerste.` + (n === '🌾 fertig!' ? ' Es gibt etwas zu ernten!' : ' Hier wächst dein eigenes Malz, auch wenn das Spiel zu ist.'); } },
+  hopfen: { u: .19, v: .5, c: [.34, .52], name: 'Hopfengarten', sub: 'Hopfen', hops: true, desc: () => !farm().hop ? 'Hier kann Maxi einen Hopfengarten anlegen. Er wächst nach jeder Ernte von selbst nach.' : hopRipe() ? 'Der Hopfen ist reif! Ernten heißt: durch die Dolden wischen.' : `Der Hopfen wächst, noch ${fmtLeft(HOP.GROW - (nowMs() - farm().hop.t0)*FARM.speed)}.` },
   laden: { u: .76, v: .82, c: [.7, .7],   name: 'Brauerei-Laden', sub: 'Laden', shop: true, desc: () => ECO.ownSud ? 'Zutaten, Ersatzteile und Ausbauten: alles gibt es nur hier.' : 'Ausbauten für Braustüberl und Abfüllhalle und Hilfen für alle Spiele.' }
 };
-const LOCK = ['sud', 'halle', 'bar', 'laden', 'hof'];
+const LOCK = ['sud', 'halle', 'bar', 'laden', 'hof', 'hopfen'];
 const MAP = { at: 'plaza', x: 0, y: 0, pts: [], dest: null, placed: false, dust: [], last: 0 };
 let mapA = null, mapAT = -1;
 function mapArea(){
@@ -2943,7 +3076,7 @@ function curve(k){
   for (let i=0;i<=18;i++){ const t = i/18, m = 1 - t; out.push({ x: m*m*a.x + 2*m*t*c.x + t*t*b.x, y: m*m*a.y + 2*m*t*c.y + t*t*(b.y + 4) }); }
   return out;
 }
-function locked(k){ const L = LOCS[k], all = typeof UNLOCK_ALL !== 'undefined' && UNLOCK_ALL; if (all) return false; if (ECO.story < 3) return k !== 'bar'; if (k === 'hof') return !ECO.ownSud || rank < 2; if (k === 'sud') return !ECO.ownSud; return L.need != null && rank < L.need; }
+function locked(k){ const L = LOCS[k], all = typeof UNLOCK_ALL !== 'undefined' && UNLOCK_ALL; if (all) return false; if (ECO.story < 3) return k !== 'bar'; if (k === 'hof' || k === 'hopfen') return !ECO.ownSud || rank < 2; if (k === 'sud') return !ECO.ownSud; return L.need != null && rank < L.need; }
 function mapInfo(){
   const L = LOCS[MAP.at], go = $('mapGo'); go.disabled = false; $('mapGo2').hidden = true;
   $('mapPrice').style.visibility = 'hidden';
@@ -2962,7 +3095,7 @@ function mapInfo(){
     go.textContent = taler >= KESSEL ? `Sudkessel kaufen (${KESSEL} 🪙)` : `Noch ${KESSEL - taler} 🪙 sparen`; go.style.visibility = 'visible'; go.disabled = taler < KESSEL; return;
   }
   if (locked(MAP.at)){
-    $('mapDesc').textContent = ECO.story < 3 ? '🔒 Das ist erst der Anfang … Hier geht es später weiter.' : MAP.at === 'hof' ? '🔒 Den Bauernhof gibt es ab der Stufe Brauer.' : MAP.at === 'sud' ? '🔒 Das alte Sudhaus steht leer.' : `🔒 Ab ${RANKS[L.need].t}: erledige die Errungenschaften (🏅 oben).`; go.style.visibility = 'hidden'; return;
+    $('mapDesc').textContent = ECO.story < 3 ? '🔒 Das ist erst der Anfang … Hier geht es später weiter.' : MAP.at === 'hof' ? '🔒 Den Bauernhof gibt es ab der Stufe Brauer.' : MAP.at === 'hopfen' ? '🔒 Den Hopfengarten gibt es ab der Stufe Brauer.' : MAP.at === 'sud' ? '🔒 Das alte Sudhaus steht leer.' : `🔒 Ab ${RANKS[L.need].t}: erledige die Errungenschaften (🏅 oben).`; go.style.visibility = 'hidden'; return;
   }
   const pre = usePre();
   const st = MAP.at === 'sud' && ECO.ownSud ? `Lager: ${pre ? ECO.malzP : ECO.malz} Malz, ${pre ? ECO.hopfenP : ECO.hopfen} Hopfen${pre ? ' (Premium)' : ''}. Reicht für ${availRecipes().map(r => `${r.n} ${sudCount(r)}×`).join(', ')}.` : '';
@@ -2974,7 +3107,7 @@ function mapInfo(){
     const br = document.createElement('span'); br.className = 'ibreak'; md.append(br);
     for (const r of availRecipes()){ const t = iconTile('glas', `${r.n} ${sudCount(r)}×`, r.col, r.n); if (!sudCount(r)) t.classList.add('none'); md.append(t); }
   }
-  go.textContent = L.shop ? 'Laden betreten' : L.farm ? 'Hof betreten' : 'Spielen'; go.style.visibility = 'visible';
+  go.textContent = L.shop ? 'Laden betreten' : L.farm ? 'Hof betreten' : L.hops ? 'Garten betreten' : 'Spielen'; go.style.visibility = 'visible';
   if (MAP.at === 'bar' && hasOwnBeer()){ go.textContent = 'Zapfen'; $('mapGo2').hidden = false; }
   const sm = stockMsg(MAP.at);
   if (sm){ $('mapDesc').textContent = '⚠ ' + sm; go.textContent = 'Zum Laden: Zutaten kaufen'; }
@@ -3266,6 +3399,7 @@ function enterLoc(k){
   const L = LOCS[k];
   if (L.shop){ openShop(); return; }
   if (L.farm){ openFarm(); return; }
+  if (L.hops){ openHops(); return; }
   if (L.lv === 3) start3(); else if (L.lv === 2) start2(); else if (k === 'bar' && hasOwnBeer()) start4(); else start();
 }
 function updateMap(dt){
@@ -3307,6 +3441,7 @@ function drawLoc(k, p){
   if (sel){ ctx.strokeStyle = `rgba(230,184,74,${.55 + Math.sin(tTotal*5)*.35})`; ctx.lineWidth = 4; ctx.beginPath(); ctx.ellipse(4, 4, 72, 17, 0, 0, Math.PI*2); ctx.stroke(); }
   if (lk) ctx.globalAlpha = k === 'sud' && rank >= 1 ? .85 : .5;
   if (k === 'hof') drawHofMap();
+  if (k === 'hopfen') drawHopMap();
   if (k === 'bar'){
     bshadow(-50, 0, 100, 74);
     obox(-50, 0, 100, 50, 14, 10, '#a85e3c', '#7e4229');
@@ -3396,8 +3531,8 @@ function drawLoc(k, p){
 }
 function drawLocLabel(k, p){
   const L = LOCS[k], lk = locked(k), sel = MAP.at === k;
-  const name = k === 'hof' ? 'Bauernhof' : k === 'bar' ? 'Braustüberl' : k === 'laden' ? 'Laden' : k === 'halle' ? 'Abfüllhalle' : ECO.ownSud ? 'Sudhaus' : 'Altes Sudhaus';
-  const sub = lk && ECO.story < 3 ? 'später' : k === 'hof' ? (lk ? 'ab Brauer' : farmNews()) : k === 'sud' && !ECO.ownSud ? (rank >= 1 ? `${KESSEL} 🪙` : '') : lk ? `ab ${RANKS[L.need].s}` : '';
+  const name = k === 'hopfen' ? 'Hopfengarten' : k === 'hof' ? 'Bauernhof' : k === 'bar' ? 'Braustüberl' : k === 'laden' ? 'Laden' : k === 'halle' ? 'Abfüllhalle' : ECO.ownSud ? 'Sudhaus' : 'Altes Sudhaus';
+  const sub = lk && ECO.story < 3 ? 'später' : k === 'hof' ? (lk ? 'ab Brauer' : farmNews()) : k === 'hopfen' ? (lk ? 'ab Brauer' : hopNews()) : k === 'sud' && !ECO.ownSud ? (rank >= 1 ? `${KESSEL} 🪙` : '') : lk ? `ab ${RANKS[L.need].s}` : '';
   ctx.save(); ctx.translate(p.x, p.y); ctx.scale(p.k, p.k);
   ctx.font = '700 14px "Barlow Condensed", sans-serif'; const tw = ctx.measureText(name).width;
   ctx.font = '600 11px "Barlow Condensed", sans-serif'; const sw = sub ? ctx.measureText(sub).width + 8 : 0;
@@ -3469,7 +3604,7 @@ function renderMap(){
       ctx.fillStyle = i ? '#2f5d3a' : '#f3e6c4'; ctx.beginPath(); ctx.moveTo(-18, -26); ctx.quadraticCurveTo(0, -38, 18, -26); ctx.closePath(); ctx.fill();
       ctx.restore(); } }); }
   // Bäume am Rand
-  [[.0, .04], [.54, .0], [1.0, .06], [1.0, .6], [.0, .52], [.0, .98]].forEach(([u, v], i) => { const q = mapUV(u, v); stuff.push({ y: q.y, f: () => tree(q.x, q.y, k, i) }); });
+  [[.0, .04], [.54, .0], [1.0, .06], [1.0, .6], [.0, .98]].forEach(([u, v], i) => { const q = mapUV(u, v); stuff.push({ y: q.y, f: () => tree(q.x, q.y, k, i) }); });
   // Gebäude, Maxi und Kleinkram von hinten nach vorne
   LOCK.forEach(kk => { const q = locPos(kk); stuff.push({ y: q.y, f: () => drawLoc(kk, q) }); });
   stuff.push({ y: MAP.y + .5, f: () => {
@@ -4313,7 +4448,7 @@ for (const el of document.querySelectorAll('[data-legal]')) el.addEventListener(
 $('legalClose').onclick = closeLegal;
 // Spielstand zurücksetzen: erster Tipp fragt nach, zweiter löscht alles außer dem Namen für die Bestenliste
 // Versionsnummer: bei jeder Veröffentlichung erhöhen (Hauptversion.Neue Funktionen.Korrekturen)
-const VERSION = '2.1.0';
+const VERSION = '2.2.0';
 $('verTag').textContent = `v${VERSION}`;
 $('resetBtn').onclick = () => {
   const b = $('resetBtn');
