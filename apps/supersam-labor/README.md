@@ -33,6 +33,10 @@ für einen vollen Sprung) und bleibt bei normalen Sprüngen ruhig. Dazu kommt:
   weit), bis Sam und Landestelle gemeinsam ins Bild passen.
 - **Ruhe:** Das senkrechte Ziel wird vorgeglättet, damit Wechsel zwischen den Grenzen keine Rucke ergeben.
 
+- **Sichthöhe:** Grundwert 138 px Welthöhe (`VIEW_H`, vorher 120) – seit Sam 20 % größer ist, 15 % mehr Sicht.
+  Gemessen über 10 Welten: Landungen ohne Sicht 17,7 % → 13,5 %, Gefahren zu spät 36,9 % → 27,2 %,
+  Sam am Rand 7,8 % → 6,8 %. Das Aufzoomen am Levelanfang bleibt.
+
 **Messen statt schätzen:** `kamera.mjs` sucht pro Welt mit der echten Spielphysik einen Weg zum Ziel, spielt
 ihn mit laufender Kamera ab und misst den Bildausschnitt: Vorlauf in Laufrichtung, Sam am Bildrand,
 Landungen ohne Sicht, Gefahren, die zu spät ins Bild kommen, Richtungswechsel, Rucke und Zoomwechsel.

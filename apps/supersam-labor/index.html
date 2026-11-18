@@ -300,7 +300,7 @@ body.title .hud,body.title .zone,body.title #msg,body.title #tut{display:none!im
 (()=>{
 const cv=document.getElementById('c'); let ctx=cv.getContext('2d');
 const bgCanvas=document.createElement('canvas'), bgCtx=bgCanvas.getContext('2d');
-const TS=16, SKY_H=270; let VIEW_H=120; // VIEW_H: sichtbare Welthöhe (kleiner = näher dran)
+const TS=16, SKY_H=270; let VIEW_H=138; // VIEW_H: sichtbare Welthöhe (kleiner = näher dran); seit Sam 20 % größer ist, 15 % mehr als früher (120)
 const C={ember:'#f2a65a',cream:'#f6ead2',ink:'#0d1524',gold:'#ffd166',sky:'#7fe0ff',
   grassD:'#457a3a',earthD:'#523726',stoneD:'#5b6372',stoneL:'#98a1b0',water:'#3f7fb0',waterL:'#7fb8dc',waterD:'#2e5f88',
   pine:'#2f5e3f',pineD:'#234a31',leaf:'#4f8a43',bark:'#5a3b26',beetle:'#d84a4a',crumble:'#c69a6a'};
@@ -3845,7 +3845,7 @@ function camera(dt){
 }
 
 // ---------- Debug ----------
-const PH_DEFAULT={...PH}, VIEW_DEFAULT=120, TUNE_KEY='supersam-labor-tune';
+const PH_DEFAULT={...PH}, VIEW_DEFAULT=138, TUNE_KEY='supersam-labor-tune';
 const dbg={info:false,hitbox:false,god:false,fx:true,nolock:false};
 const TUNES=[
   ['max','Höchsttempo Laufen',20,150,1],
@@ -3870,7 +3870,8 @@ const TUNES=[
   ['camFrame','Kamera: Auszoomen für hohe/tiefe Plattformen',0,1.5,0.05],
   ['fxDark','Licht: Stärke der Dunkelheit',0,1.5,0.05],
   ['fxBloom','Licht: Überstrahlen',0,1.5,0.05]];
-try{ const t=JSON.parse(localStorage.getItem(TUNE_KEY)||'null'); if(t){ Object.assign(PH,t.ph||{}); if(t.viewH) VIEW_H=t.viewH; Object.assign(dbg,t.dbg||{}); } }catch(_){}
+// gespeicherte Feineinstellungen; 120 war der alte Grundwert der Sichthöhe und soll die neue nicht überdecken
+try{ const t=JSON.parse(localStorage.getItem(TUNE_KEY)||'null'); if(t){ Object.assign(PH,t.ph||{}); if(t.viewH&&t.viewH!==120) VIEW_H=t.viewH; Object.assign(dbg,t.dbg||{}); } }catch(_){}
 function tuneValues(){ const ph={}; for(const [k] of TUNES) if(k!=='viewH') ph[k]=PH[k]; return {ph,viewH:VIEW_H}; }
 function saveTune(){ try{ localStorage.setItem(TUNE_KEY,JSON.stringify({...tuneValues(),dbg})); }catch(_){} }
 const fmt=(v,step)=>step<1?(+v).toFixed(2):String(Math.round(v));

@@ -203,7 +203,7 @@ test('Kamera zoomt aus, wenn die nächste Plattform hoch oder tief liegt', () =>
     dz.setState('play'); dz.loadLevel(lv); dz.L.enemies.length = 0;
     dz.P.x = col * 16 + 3; dz.P.y = (row + 1) * 16 - 14; dz.P.face = 1; run(240);
     const c = dz.cam, ty = targetRow * 16;
-    assert.ok(c.zoom > 1.3, `Welt ${lv} Spalte ${col}: Zoom ${c.zoom.toFixed(2)}`);
+    assert.ok(c.viewH > 156, `Welt ${lv} Spalte ${col}: sichtbare Höhe ${c.viewH.toFixed(0)} (Grundwert 138)`);   // ausgezoomt wie früher mit 1,3 × 120
     assert.ok(ty >= c.camY + 8 && ty <= c.camY + c.viewH - 4, `Welt ${lv} Spalte ${col}: Ziel Reihe ${targetRow} nicht im Bild`);
     assert.ok(dz.P.y >= c.camY && dz.P.y + 14 <= c.camY + c.viewH, `Welt ${lv} Spalte ${col}: Sam nicht im Bild`);
   }
