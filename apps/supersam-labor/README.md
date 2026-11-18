@@ -135,6 +135,13 @@ Höhe (Klettern) und bei 1-1 der gedrosselten Strecke ohne Schuhe – derzeit 60
 Beim Laden erscheint knapp 3 Sekunden das Logo **on praehortus studios** (dasselbe wie bei Maxis Bierkiste:
 Gartentor mit Keimling, Schrift Barlow Condensed); Antippen überspringt es. Im Editor/Probespiel entfällt es.
 
+## HUD
+
+Oben eine schmale Leiste statt gestapelter Kästen: **Menü** (Pixel-Haus) links, in der Mitte
+Herzen | Punkte mit Ziel-Balken und darunter der Schwung-Linie | Diamanten, rechts Zeit und Goldzeit
+(auf der Karte die Fähigkeiten, im Bosskampf die Punkte). Trennstriche nur zwischen sichtbaren Teilen;
+im Bosskampf sitzt die Lebensleiste des Bosses in derselben Leiste.
+
 ## Abschluss-Bildschirm
 
 Nach einer Welt nur das Wesentliche: Name, Punkte (mit Rekord-Hinweis), drei Kacheln für Diamanten, Sterne
