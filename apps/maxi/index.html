@@ -1666,7 +1666,7 @@ function scoreAch(){
 function goalInfo(){
   // Ziel im HUD: in der Einführung das Kapitel, danach eine offene Punkte-Errungenschaft
   if (stage >= 4) return null;
-  if (stage === 1 && ECO.story === 0) return { hud: `Kapitel 1 · ${Math.min(st().crates, 5)} / 5 Kisten`, head: 'Kapitel 1: Fülle 5 Kisten', sub: 'Fang die Flaschen und bring volle Kisten zur Abgabe. Das ist erst der Anfang …' };
+  if (stage === 1 && ECO.story === 0) return { hud: `Kapitel 1 · ${Math.min(st().crates, KAP1)} / ${KAP1} Kisten`, head: `Kapitel 1: Fülle ${KAP1} Kisten`, sub: 'Fang die Flaschen und bring volle Kisten zur Abgabe. Das ist erst der Anfang …' };
   if (stage === 2 && ECO.story === 1) return { hud: `Kapitel 2 · ${Math.min(L2.sorted, STORY_SORT)} / ${STORY_SORT} sortiert`, head: `${STORY_SORT} Flaschen sortieren`, sub: 'Dann holt dich der Braumeister ins Sudhaus.' };
   if (stage === 3 && L3.trial) return { hud: `Kapitel 3 · Probe ${Math.min(2, L3.brews)} / 2 Sude` };
   const a = scoreAch(); if (!a) return null;
@@ -1907,8 +1907,9 @@ function drawMedal(x, y, lv, s = 1){
    Eine Stufe macht Dinge im Laden kaufbar, bezahlt wird mit Talern. Übersicht: apps/maxi/docs/progression.md */
 const medalCount = (lv = 1) => Object.values(ECO.medals).filter(v => v >= lv).length;
 const st = () => ECO.stats;
+const KAP1 = 3; // volle Kisten bis zum Ende von Kapitel 1
 const KAPITEL = [
-  { t: 'Braustüberl', goal: 'Fülle 5 Kisten', p: () => [st().crates, 5] },
+  { t: 'Braustüberl', goal: `Fülle ${KAP1} Kisten`, p: () => [st().crates, KAP1] },
   { t: 'Förderband', goal: 'Sortiere die Flaschen am Band', p: () => [0, 1] },
   { t: 'Sudhaus', goal: 'Braue zwei Probesude', p: () => [0, 1] }
 ];
@@ -1916,7 +1917,7 @@ const topOf = s => Math.max(s === 1 ? best : s === 2 ? best2 : 0, (st().top || {
 const UPG5 = [['seal', 'Dichtung'], ['thermo', 'Thermometer'], ['copper', 'Politur'], ['lauter', 'Läuterbottich'], ['cellar', 'Gärtank']];
 // je Stufe die Errungenschaften für die nächste; st/pts: Punkteziel in einem Spiel (zeigt das HUD)
 const ACH = [
-  [ { id: 'l-kisten', t: '20 Kisten im Braustüberl', p: () => [st().crates, 20] },
+  [ { id: 'l-kisten', t: '10 Kisten im Braustüberl', p: () => [st().crates, 10] },
     { id: 'l-1500', t: '1500 Punkte im Braustüberl', st: 1, pts: 1500, p: () => [topOf(1), 1500] },
     { id: 'l-mult', t: 'Multiplikator ×4 im Braustüberl', p: () => [st().mult1 || 1, 4] } ],
   [ { id: 'm-sud', t: 'Sudhaus gekauft', p: () => [ECO.ownSud ? 1 : 0, 1] },
@@ -1938,7 +1939,7 @@ function progInit(){
   if (v >= 2) return;
   // alte Spielstände: Produktionsmitarbeiter und Vorarbeiter gibt es nicht mehr, schon Erreichtes zählt still
   rank = ECO.story >= 3 && rank >= 1 ? 1 : 0;
-  if (ECO.story >= 1) ECO.stats.crates = Math.max(ECO.stats.crates, 5);
+  if (ECO.story >= 1) ECO.stats.crates = Math.max(ECO.stats.crates, KAP1);
   for (const [n, k] of Object.entries(ECO.keller || {})){ ECO.stats.byName[n] = Math.max(ECO.stats.byName[n] || 0, k.f); ECO.stats.fass = Math.max(ECO.stats.fass, ECO.fass >= 1 ? 1 : 0); }
   if (ECO.story >= 3) while (rank < 3 && achAll(rank)) rank++;
   ECO.achSeen = ACH.flat().filter(achOk).map(a => a.id);
@@ -3628,9 +3629,9 @@ function renderMap(){
 }
 
 function checkPromo(){
-  // Punkte-Errungenschaft im laufenden Spiel erreicht; Kapitel 1 endet nach 5 Kisten
+  // Punkte-Errungenschaft im laufenden Spiel erreicht; Kapitel 1 endet nach KAP1 Kisten
   if (state !== 'play') return;
-  if (stage === 1 && ECO.story === 0 && st().crates >= 5){ storyHall(); return; }
+  if (stage === 1 && ECO.story === 0 && st().crates >= KAP1){ storyHall(); return; }
   if (Math.floor(tTotal*2) !== checkPromo.k){ checkPromo.k = Math.floor(tTotal*2); achWatch(); }
   if (goalHit) return; const a = scoreAch(); if (!a || score < a.pts) return;
   goalHit = true; st().top[stage] = Math.max(st().top[stage] || 0, score); saveEco();
@@ -3711,7 +3712,7 @@ function renderDress(){
    ECO.story: 0 Bar, 1 Förderband, 2 Schnuppertag im Sudhaus, 3 Karte offen */
 const SCENES = {
   hall: [
-    { bg: 'nice', who: 'bm', text: 'Maxi! Fünf volle Kisten und kaum eine Flasche kaputt. Saubere Arbeit!' },
+    { bg: 'nice', who: 'bm', text: 'Maxi! Drei volle Kisten und kaum eine Flasche kaputt. Saubere Arbeit!' },
     { bg: 'nice', who: 'maxi', text: 'Danke, Chef! Das macht richtig Spaß.' },
     { bg: 'nice', who: 'bm', text: 'Dann komm mit in die Abfüllhalle. Heute zeig ich dir das Förderband.' }
   ],
@@ -4448,7 +4449,7 @@ for (const el of document.querySelectorAll('[data-legal]')) el.addEventListener(
 $('legalClose').onclick = closeLegal;
 // Spielstand zurücksetzen: erster Tipp fragt nach, zweiter löscht alles außer dem Namen für die Bestenliste
 // Versionsnummer: bei jeder Veröffentlichung erhöhen (Hauptversion.Neue Funktionen.Korrekturen)
-const VERSION = '2.2.0';
+const VERSION = '2.2.1';
 $('verTag').textContent = `v${VERSION}`;
 $('resetBtn').onclick = () => {
   const b = $('resetBtn');

@@ -1,14 +1,14 @@
-# Progression · Ausgangsbasis (Stand v2.0.0)
+# Progression · Ausgangsbasis (Stand v2.2.1)
 
 Diese Übersicht ist die verbindliche Grundlage für Maxis Bierkiste. Neue Funktionen werden hier eingeordnet, bevor sie gebaut werden.
 
-![Progression v2.0.0](progression.png)
+![Progression v2.2.1](progression.png)
 
 ## Einführung: 3 Kapitel
 
 | Kapitel | Spiel | Ende |
 |---|---|---|
-| 1 Braustüberl | Flaschen fangen, 5 Kisten. Ohne Animation; auf der Karte ist alles außer dem Braustüberl gesperrt („Das ist erst der Anfang …“) | 🎬 Lob vom Braumeister, ab in die Halle |
+| 1 Braustüberl | Flaschen fangen, 3 Kisten. Ohne Animation; auf der Karte ist alles außer dem Braustüberl gesperrt („Das ist erst der Anfang …“) | 🎬 Lob vom Braumeister, ab in die Halle |
 | 2 Förderband | Teaser: 20 Flaschen sortieren | 🎬 Einladung zum Schnuppertag |
 | 3 Sudhaus | Teaser: 2 Probesude | 🎬 Angebot für den alten Kessel, Karte offen |
 
@@ -26,8 +26,8 @@ Alle Kapitel außer dem ersten beginnen mit einer Animation.
 
 | Stufe | Gewand (Animation bei der Beförderung) | Errungenschaften für die nächste Stufe | danach kaufbar |
 |---|---|---|---|
-| Brauereilakai | Leiberl + Kapperl | 20 Kisten im Braustüberl · 1500 Punkte im Braustüberl · Multiplikator ×4 im Braustüberl | Abfüllhalle, altes Sudhaus, eigener Bierpreis |
-| Mitarbeiter | Arbeitsjacke + Handschuhe | Sudhaus gekauft · erstes Fass · 20 Gläser · 2000 Punkte am Förderband · Dichtung | Bauernhof, Läuterbottich, Gärtank, Thermometer, Politur, größerer Kessel, Sämaschine, Mähdrescher |
+| Brauereilakai | Leiberl + Kapperl | 10 Kisten im Braustüberl · 1500 Punkte im Braustüberl · Multiplikator ×4 im Braustüberl | Abfüllhalle, altes Sudhaus, eigener Bierpreis |
+| Mitarbeiter | Arbeitsjacke + Handschuhe | Sudhaus gekauft · erstes Fass · 20 Gläser · 2000 Punkte am Förderband · Dichtung | Bauernhof, Hopfengarten, Läuterbottich, Gärtank, Thermometer, Politur, größerer Kessel, Sämaschine, Mähdrescher |
 | Brauer | Brauerschürze + Gummistiefel | Medaille in allen 5 Sorten + alle 5 Sudhaus-Ausbauten | Titel Braumeister |
 | Braumeister | Braumeisterkappe + Gilet mit Abzeichen | – | später: Angestellte, Kutsche, Markt |
 

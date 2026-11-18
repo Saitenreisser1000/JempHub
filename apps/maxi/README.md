@@ -12,14 +12,14 @@ Handyspiel im Hochformat für die Freetown Brewery: Maximilian Weichl steht vor 
 
 Übersicht mit Grafik: [docs/progression.md](docs/progression.md).
 
-**Einführung in 3 Kapiteln:** Kapitel 1 beginnt ohne Animation auf der Karte: Alles außer dem Braustüberl ist gesperrt („später“, „Das ist erst der Anfang …“). Nach 5 vollen Kisten lobt der Braumeister Maxi (Bilderszene) und holt ihn ans Förderband (Kapitel 2, Teaser: 20 Flaschen sortieren). Danach folgt der Schnuppertag im Sudhaus (Kapitel 3, Teaser: 2 Probesude) und das Angebot für den alten Kessel; dann ist die Karte offen (`ftb-eco` → `story` 0 bis 3).
+**Einführung in 3 Kapiteln:** Kapitel 1 beginnt ohne Animation auf der Karte: Alles außer dem Braustüberl ist gesperrt („später“, „Das ist erst der Anfang …“). Nach 3 vollen Kisten lobt der Braumeister Maxi (Bilderszene) und holt ihn ans Förderband (Kapitel 2, Teaser: 20 Flaschen sortieren). Danach folgt der Schnuppertag im Sudhaus (Kapitel 3, Teaser: 2 Probesude) und das Angebot für den alten Kessel; dann ist die Karte offen (`ftb-eco` → `story` 0 bis 3).
 
 **Zwei Systeme:** Errungenschaften (nur Leistung, bringen kein Geld) führen zur nächsten Berufsstufe; Taler (Lohn, Bierverkauf, Preisgeld) kaufen alles im Laden. Eine Stufe macht Dinge kaufbar, bezahlt wird mit Talern. Erfahrungspunkte, Rundenziele in jeder Runde, die Chronik mit 13 Kapiteln und die Sterne an Gebäuden gibt es nicht mehr.
 
 | Stufe | Errungenschaften für die nächste Stufe | danach kaufbar | Gewand |
 |---|---|---|---|
-| Brauereilakai | 20 Kisten im Braustüberl · 1500 Punkte im Braustüberl · Multiplikator ×4 im Braustüberl | Abfüllhalle, altes Sudhaus, eigener Bierpreis | Leiberl und Kapperl |
-| Mitarbeiter | Sudhaus gekauft · erstes Fass · 20 Gläser gezapft · 2000 Punkte am Förderband · Dichtung | Bauernhof, Läuterbottich, Gärtank, Thermometer, Politur, größerer Kessel, Sämaschine, Mähdrescher | Arbeitsjacke und Handschuhe |
+| Brauereilakai | 10 Kisten im Braustüberl · 1500 Punkte im Braustüberl · Multiplikator ×4 im Braustüberl | Abfüllhalle, altes Sudhaus, eigener Bierpreis | Leiberl und Kapperl |
+| Mitarbeiter | Sudhaus gekauft · erstes Fass · 20 Gläser gezapft · 2000 Punkte am Förderband · Dichtung | Bauernhof, Hopfengarten, Läuterbottich, Gärtank, Thermometer, Politur, größerer Kessel, Sämaschine, Mähdrescher | Arbeitsjacke und Handschuhe |
 | Brauer | Medaille in allen 5 Sorten · alle 5 Sudhaus-Ausbauten (Dichtung, Thermometer, Politur, Läuterbottich, Gärtank) | – | Brauerschürze und Gummistiefel |
 | Braumeister | – | – | Braumeisterkappe und Gilet |
 
@@ -117,6 +117,7 @@ Zu Beginn jeder Runde zeigt eine Karte das aktuelle Ziel (bis zum Produktionsmit
 
 Die Versionsnummer steht im Startmenü unten neben „Spielstand zurücksetzen“ (`VERSION` in `index.html`). Schema: Hauptversion.Neue Funktionen.Korrekturen; bei jeder Veröffentlichung erhöhen.
 
+- **2.2.1** – Kapitel 1 endet nach 3 Kisten, Lakai braucht 10 Kisten statt 20
 - **2.2.0** – Hopfengarten mit Ernte im Wisch-Spiel
 - **2.1.0** – Edelmalz aus der eigenen Mälzerei (mit Thermometer)
 - **2.0.0** – Progression neu: Einführung in 3 Kapiteln, Berufsstufen über Errungenschaften mit Gewand-Animation, ein Balken, Bauernhof, Qualitätspreis
