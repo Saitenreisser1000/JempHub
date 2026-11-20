@@ -117,6 +117,7 @@ Zu Beginn jeder Runde zeigt eine Karte das aktuelle Ziel (bis zum Produktionsmit
 
 Die Versionsnummer steht im Startmenü unten neben „Spielstand zurücksetzen“ (`VERSION` in `index.html`). Schema: Hauptversion.Neue Funktionen.Korrekturen; bei jeder Veröffentlichung erhöhen.
 
+- **2.3.0** – Karte füllt den Bildschirm, das Infofeld schwebt als Sprechblase am Gebäude
 - **2.2.1** – Kapitel 1 endet nach 3 Kisten, Lakai braucht 10 Kisten statt 20
 - **2.2.0** – Hopfengarten mit Ernte im Wisch-Spiel
 - **2.1.0** – Edelmalz aus der eigenen Mälzerei (mit Thermometer)
