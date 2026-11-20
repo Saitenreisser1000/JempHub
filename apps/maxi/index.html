@@ -250,7 +250,14 @@ html,body{height:100%;margin:0;background:var(--night);color:var(--cream);overfl
 .mapbtns .btn{flex:1;min-width:0}
 .mapbtns .btn.sec{flex:0 0 auto;padding-inline:12px;font-size:17px}
 .sr{position:absolute!important;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
-.rankmini{display:grid;grid-template-columns:auto 1fr auto;align-items:center;gap:9px;flex:1;min-width:0;background:none;border:0;padding:0;text-align:left;cursor:pointer;color:var(--ink)}
+.rankmini{flex:1;min-width:0;color:var(--ink)}
+/* Stufenleiste direkt in der Kopfzeile neben dem Geld */
+.rankmini .ranks{margin:0}
+.rankmini .ranks .nm{font-size:12px;overflow-wrap:normal;white-space:nowrap;max-width:100%;overflow:hidden;text-overflow:ellipsis}
+@media (max-width:370px){.rankmini .ranks .nm{font-size:10.5px}.headrow .coin{padding:5px 8px;font-size:14px}.headrow{gap:6px}}
+.rankmini .ranks .pt{font-size:10px;line-height:1}
+.rankmini .ranks .dot{width:22px;height:22px}
+.rankmini .ranks li::before{top:10px}
 .rm-badge{width:30px;height:30px;border-radius:50%;display:grid;place-items:center;background:var(--gold);border:2px solid var(--hop);font:700 16px var(--f-ui);color:var(--ink)}
 .rm-txt{display:grid;gap:4px;min-width:0}
 .rm-txt b{font:400 18px/1 var(--f-display);color:var(--crate);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
@@ -374,17 +381,15 @@ html,body{height:100%;margin:0;background:var(--night);color:var(--cream);overfl
 <div class="overlay titlescreen" id="career" hidden>
   <div class="label titlecard">
     <div class="headrow">
-      <button type="button" class="rankmini" id="rankMini" aria-expanded="false" aria-controls="rankMore">
-        <span class="rm-badge" id="rmBadge">1</span>
-        <span class="rm-txt"><b id="rmName"></b></span>
-        <span class="rm-more" aria-hidden="true">▾</span>
-      </button>
+      <div class="rankmini" id="rankMini" role="group" aria-label="Maxis Laufbahn">
+        <span class="sr" id="rmBadge">1</span><span class="sr"><b id="rmName"></b></span>
+        <ol class="ranks" id="rankSteps" aria-label="Maxis Beförderungsstufen"></ol>
+      </div>
       <div class="coin" id="ecoBar"><span id="ecoStock"></span></div>
     </div>
     <div class="ecometa" id="ecoMeta" hidden><span id="ecoDay"></span></div>
     <div id="rankMore" hidden>
       <h2 id="careerTitle">Maxis Laufbahn</h2>
-      <ol class="ranks" id="rankSteps" aria-label="Maxis Beförderungsstufen"></ol>
       <p class="nextrank" id="nextRank"></p>
       <p class="records" id="bestStart"></p>
     </div>
@@ -4575,7 +4580,7 @@ for (const el of document.querySelectorAll('[data-legal]')) el.addEventListener(
 $('legalClose').onclick = closeLegal;
 // Spielstand zurücksetzen: erster Tipp fragt nach, zweiter löscht alles außer dem Namen für die Bestenliste
 // Versionsnummer: bei jeder Veröffentlichung erhöhen (Hauptversion.Neue Funktionen.Korrekturen)
-const VERSION = '2.4.1';
+const VERSION = '2.4.2';
 $('verTag').textContent = `v${VERSION}`;
 $('resetBtn').onclick = () => {
   const b = $('resetBtn');
@@ -4719,7 +4724,7 @@ $('startBtn').onclick = () => {
   if (ECO.story === 2){ start3(); return; }
   openCareer();
 };
-$('rankMini').onclick = () => { const m = $('rankMore'), open = m.hidden; m.hidden = !open; $('rankMini').setAttribute('aria-expanded', open ? 'true' : 'false'); };
+
 $('tipOk').onclick = () => { $('tip').hidden = true; const f = tipNext; tipNext = null; if (f) f(); else openCareer(); };
  $('chronBtn').onclick = openChron;
 $('chronClose').onclick = () => { $('chron').hidden = true; openCareer(); };

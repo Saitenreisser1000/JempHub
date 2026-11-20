@@ -123,6 +123,7 @@ Zu Beginn jeder Runde zeigt eine Karte das aktuelle Ziel (bis zum Produktionsmit
 
 Die Versionsnummer steht im Startmenü unten neben „Spielstand zurücksetzen“ (`VERSION` in `index.html`). Schema: Hauptversion.Neue Funktionen.Korrekturen; bei jeder Veröffentlichung erhöhen.
 
+- **2.4.2** – Stufenleiste (Lakai → Braumeister) direkt in der Kopfzeile neben dem Geld, ohne Aufklappen
 - **2.4.1** – Hauptseite: Sudhaus und Laden hinten, Braustüberl vorne; Wege gepflastert mit Rand, Blumen und Laternen
 - **2.4.0** – Karte in drei Seiten: Brauerei (Sudhaus, Braustüberl, Laden), links Abfüllung (Abfüllhalle), rechts Landwirtschaft (Bauernhof, Hopfengarten); Wechsel über Wegweiser am Rand. Ausbauten sind an den Gebäuden zu sehen
 - **2.3.0** – Karte füllt den Bildschirm, das Infofeld schwebt als Sprechblase am Gebäude
