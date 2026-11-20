@@ -3057,17 +3057,17 @@ function drawHofMap(){
 
 /* ---------- Karte: Maxi geht über das Brauereigelände ---------- */
 const LOCS = {
-  plaza: { u: .52, v: .5, pg: 0, hub: 1 }, plazaL: { u: .45, v: .7, pg: -1, hub: 1 }, plazaR: { u: .48, v: .55, pg: 1, hub: 1 },
+  plaza: { u: .5, v: .5, pg: 0, hub: 1 }, plazaL: { u: .45, v: .7, pg: -1, hub: 1 }, plazaR: { u: .48, v: .55, pg: 1, hub: 1 },
   gL:  { u: .02, v: .5,  c: [.22, .52], pg: 0,  gate: 'gLb', name: 'Abfüllhalle', arrow: -1 },
   gR:  { u: .98, v: .5,  c: [.8, .48],  pg: 0,  gate: 'gRb', name: 'Landwirtschaft', arrow: 1 },
   gLb: { u: .98, v: .7,  c: [.75, .74], pg: -1, gate: 'gL',  name: 'Brauerei', arrow: 1 },
   gRb: { u: .02, v: .55, c: [.25, .58], pg: 1,  gate: 'gR',  name: 'Brauerei', arrow: -1 },
-  sud:   { u: .36, v: .2,  c: [.42, .38], pg: 0, name: 'Maxis Sudhaus', sub: 'Sudhaus', lv: 3, need: 1, desc: () => `Jeder Sud ergibt ${fmtF(1 + .5*(U.kettle || 0))} Fass. Ausgeschenkt wird im Braustüberl.` },
+  sud:   { u: .27, v: .2,  c: [.34, .4],  pg: 0, name: 'Maxis Sudhaus', sub: 'Sudhaus', lv: 3, need: 1, desc: () => `Jeder Sud ergibt ${fmtF(1 + .5*(U.kettle || 0))} Fass. Ausgeschenkt wird im Braustüberl.` },
   halle: { u: .5,  v: .36, c: [.5, .55],  pg: -1, name: 'Abfüllhalle', sub: 'Förderband', lv: 2, need: 1, desc: () => `Flaschen sortieren: ${lohn2()} 🪙 Lohn je voller Kiste.` },
-  bar:   { u: .28, v: .8,  c: [.34, .64], pg: 0, name: 'Braustüberl', sub: 'Braustüberl', lv: 1, need: 0, desc: () => hasOwnBeer() ? `Im Keller: ${Object.keys(ECO.keller).map(n => `${n} ${fmtF(ECO.keller[n].f)}`).join(', ')} Fass. Zapfen oder Flaschen fangen (${lohn1()} 🪙 Lohn je Kiste).` : `Flaschen fangen: ${lohn1()} 🪙 Lohn je voller Kiste.` },
+  bar:   { u: .5,  v: .86, c: [.47, .7],  pg: 0, name: 'Braustüberl', sub: 'Braustüberl', lv: 1, need: 0, desc: () => hasOwnBeer() ? `Im Keller: ${Object.keys(ECO.keller).map(n => `${n} ${fmtF(ECO.keller[n].f)}`).join(', ')} Fass. Zapfen oder Flaschen fangen (${lohn1()} 🪙 Lohn je Kiste).` : `Flaschen fangen: ${lohn1()} 🪙 Lohn je voller Kiste.` },
   hof:   { u: .6,  v: .82, c: [.54, .68], pg: 1, name: 'Bauernhof', sub: 'Gerste und Mälzerei', farm: true, desc: () => { const F = farm(), n = farmNews(); return `${F.fields.length} ${F.fields.length === 1 ? 'Gerstenfeld' : 'Gerstenfelder'}, ${F.gerste} Gerste.` + (n === '🌾 fertig!' ? ' Es gibt etwas zu ernten!' : ' Hier wächst dein eigenes Malz, auch wenn das Spiel zu ist.'); } },
   hopfen: { u: .34, v: .3, c: [.38, .45], pg: 1, name: 'Hopfengarten', sub: 'Hopfen', hops: true, desc: () => !farm().hop ? 'Hier kann Maxi einen Hopfengarten anlegen. Er wächst nach jeder Ernte von selbst nach.' : hopRipe() ? 'Der Hopfen ist reif! Ernten heißt: durch die Dolden wischen.' : `Der Hopfen wächst, noch ${fmtLeft(HOP.GROW - (nowMs() - farm().hop.t0)*FARM.speed)}.` },
-  laden: { u: .76, v: .76, c: [.68, .62], pg: 0, name: 'Brauerei-Laden', sub: 'Laden', shop: true, desc: () => ECO.ownSud ? 'Zutaten, Ersatzteile und Ausbauten: alles gibt es nur hier.' : 'Ausbauten für Braustüberl und Abfüllhalle und Hilfen für alle Spiele.' }
+  laden: { u: .75, v: .22, c: [.68, .4],  pg: 0, name: 'Brauerei-Laden', sub: 'Laden', shop: true, desc: () => ECO.ownSud ? 'Zutaten, Ersatzteile und Ausbauten: alles gibt es nur hier.' : 'Ausbauten für Braustüberl und Abfüllhalle und Hilfen für alle Spiele.' }
 };
 const LOCK = ['sud', 'halle', 'bar', 'laden', 'hof', 'hopfen'];
 const MAP = { at: 'plaza', x: 0, y: 0, pts: [], dest: null, placed: false, dust: [], last: 0, page: 0, slide: null, after: null };
@@ -3585,6 +3585,27 @@ function drawLoc(k, p){
   if (lk && !(k === 'sud' && rank >= 1 && ECO.story >= 3)){ ctx.globalAlpha = 1; ctx.fillStyle = 'rgba(20,26,36,.82)'; ctx.beginPath(); ctx.arc(0, -46, 19, 0, Math.PI*2); ctx.fill(); ctx.strokeStyle = C.gold; ctx.lineWidth = 2; ctx.stroke(); ctx.font = '20px serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillText('🔒', 0, -45); }
   ctx.restore();
 }
+function decorateWay(pts, k, seed, lamps){
+  // Pflaster: Steine quer über den Weg, am Rand Blumenbüschel und auf der Hauptseite Laternen
+  let acc = 0, n = 0;
+  for (let i = 1; i < pts.length; i++){
+    const a = pts[i - 1], b = pts[i], dx = b.x - a.x, dy = b.y - a.y, d = Math.hypot(dx, dy) || 1, nx = -dy/d, ny = dx/d;
+    for (let t = (7*k - acc)/d; t < 1; t += 7*k/d){
+      const x = a.x + dx*t, y = a.y + dy*t; n++;
+      for (let j = -1; j <= 1; j++){ const o = j*6.5*k + ((n % 2) ? 3*k : 0) - 1.5*k; if (Math.abs(o) > 9*k) continue;
+        ctx.fillStyle = hsh(seed*97 + n*3 + j) > .5 ? '#cdb98c' : '#e6d6ab'; ctx.beginPath(); ctx.ellipse(x + nx*o, y + ny*o, 2.8*k, 2*k, Math.atan2(dy, dx), 0, Math.PI*2); ctx.fill(); }
+      if (n % 9 === 4 && i > 3 && i < pts.length - 2){ const side = (n % 18 === 4) ? 1 : -1, fx = x + nx*side*18*k, fy = y + ny*side*18*k;
+        ctx.fillStyle = '#3f7a3c'; ctx.beginPath(); ctx.ellipse(fx, fy, 6*k, 3.5*k, 0, 0, Math.PI*2); ctx.fill();
+        for (let f = 0; f < 3; f++){ ctx.fillStyle = ['#f3e6c4', '#e6b84a', '#d98ab0', '#c22a22'][(seed + n + f) % 4]; ctx.beginPath(); ctx.arc(fx - 3*k + f*3*k, fy - 1.5*k - (f % 2)*1.5*k, 1.4*k, 0, Math.PI*2); ctx.fill(); } }
+      if (lamps && n === 11){ const lx = x + nx*16*k, ly = y + ny*16*k;
+        ctx.fillStyle = 'rgba(10,30,15,.25)'; ctx.beginPath(); ctx.ellipse(lx + 2*k, ly + 1*k, 4*k, 1.5*k, 0, 0, Math.PI*2); ctx.fill();
+        ctx.fillStyle = '#2a2a2a'; ctx.fillRect(lx - .9*k, ly - 22*k, 1.8*k, 22*k); ctx.fillRect(lx - 3*k, ly - 24*k, 6*k, 2*k);
+        ctx.fillStyle = `rgba(255,214,120,${.85 + Math.sin(tTotal*6 + seed)*.12})`; ctx.beginPath(); ctx.arc(lx, ly - 27*k, 3*k, 0, Math.PI*2); ctx.fill();
+        ctx.fillStyle = 'rgba(255,214,120,.18)'; ctx.beginPath(); ctx.arc(lx, ly - 27*k, 8*k, 0, Math.PI*2); ctx.fill(); }
+    }
+    acc = (acc + d) % (7*k);
+  }
+}
 function drawGate(g, p){
   // Wegweiser am Kartenrand: Pfosten mit Pfeilschild
   const L = LOCS[g], d = L.arrow, lk = locked(g), sel = MAP.at === g || MAP.dest === g;
@@ -3687,8 +3708,10 @@ function drawMapPage(pg, a, k, x0, y0, w, h){
   // Wege mit Pflaster
   const ways = pageWays(pg).map(curve), pl = locPos(hubOf(pg));
   const strokeWay = (pts, wd, col) => { ctx.strokeStyle = col; ctx.lineWidth = wd; ctx.lineCap = 'round'; ctx.lineJoin = 'round'; ctx.beginPath(); pts.forEach((q, i) => i ? ctx.lineTo(q.x, q.y) : ctx.moveTo(q.x, q.y)); ctx.stroke(); };
-  for (const wy of ways) strokeWay(wy, 26*k, '#a8956f');
-  for (const wy of ways) strokeWay(wy, 20*k, '#d2bf94');
+  for (const wy of ways) strokeWay(wy.map(q => ({ x: q.x + 2*k, y: q.y + 3*k })), 30*k, 'rgba(10,30,15,.18)');
+  for (const wy of ways) strokeWay(wy, 28*k, '#8f7b58');
+  for (const wy of ways) strokeWay(wy, 23*k, '#dcc89c');
+  ways.forEach((wy, wi) => decorateWay(wy, k, wi + (pg + 2)*20, pg === 0));
   ctx.lineCap = 'butt';
   // Platz mit Pflasterringen und Brunnen aus Fässern (auf den Nebenseiten eine kleine Kreuzung)
   const pr = pg ? .55 : 1;
@@ -3699,7 +3722,7 @@ function drawMapPage(pg, a, k, x0, y0, w, h){
   for (const [bx, by] of [[-11, 0], [11, 0], [0, -14]]){ ctx.fillStyle = '#8a5a2c'; rr(bx - 9, by - 18, 18, 20, 6); ctx.fill(); ctx.fillStyle = '#4a3a2a'; ctx.fillRect(bx - 9, by - 14, 18, 2.5); ctx.fillRect(bx - 9, by - 4, 18, 2.5); ctx.fillStyle = 'rgba(255,255,255,.18)'; ctx.fillRect(bx - 6, by - 17, 2, 18); }
   ctx.restore();
   ctx.globalAlpha = 1;
-  const bg2 = mapUV(.47, .9);
+  const bg2 = mapUV(.72, .84);
   const stuff = [];
   const TP = [[0, 0], [34, 8], [17, -20], [51, -12], [68, 16]];
   for (let i=0;i<(pg ? 0 : Math.min(3, U.tables || 0));i++){ const tx = bg2.x + TP[i][0]*k, ty = bg2.y + TP[i][1]*k;
@@ -3712,7 +3735,7 @@ function drawMapPage(pg, a, k, x0, y0, w, h){
       ctx.fillStyle = i ? '#2f5d3a' : '#f3e6c4'; ctx.beginPath(); ctx.moveTo(-18, -26); ctx.quadraticCurveTo(0, -38, 18, -26); ctx.closePath(); ctx.fill();
       ctx.restore(); } }); }
   // Bäume am Rand
-  ({ '-1': [[.04, .04], [.92, .02], [.06, .5], [.9, .95], [.12, .96]], 0: [[.04, .04], [.96, .06], [.98, .3], [.02, .96], [.96, .98]], 1: [[.92, .04], [.04, .08], [.96, .45], [.9, .98], [.06, .95]] })[pg]
+  ({ '-1': [[.04, .04], [.92, .02], [.06, .5], [.9, .95], [.12, .96]], 0: [[.04, .3], [.96, .72], [.04, .96], [.97, .98], [.08, .72]], 1: [[.92, .04], [.04, .08], [.96, .45], [.9, .98], [.06, .95]] })[pg]
     .forEach(([u, v], i) => { const q = mapUV(u, v); stuff.push({ y: q.y, f: () => tree(q.x, q.y, k, i + pg*7) }); });
   if (pg < 0) stuff.push(...mapTrucks(k));
   // Gebäude, Wegweiser, Maxi und Kleinkram von hinten nach vorne
@@ -4552,7 +4575,7 @@ for (const el of document.querySelectorAll('[data-legal]')) el.addEventListener(
 $('legalClose').onclick = closeLegal;
 // Spielstand zurücksetzen: erster Tipp fragt nach, zweiter löscht alles außer dem Namen für die Bestenliste
 // Versionsnummer: bei jeder Veröffentlichung erhöhen (Hauptversion.Neue Funktionen.Korrekturen)
-const VERSION = '2.4.0';
+const VERSION = '2.4.1';
 $('verTag').textContent = `v${VERSION}`;
 $('resetBtn').onclick = () => {
   const b = $('resetBtn');
