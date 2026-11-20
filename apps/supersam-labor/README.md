@@ -148,6 +148,15 @@ Nach einer Welt nur das Wesentliche: Name, Punkte (mit Rekord-Hinweis), drei Kac
 und Zeit (blau umrandet, wenn vollständig bzw. neue Bestzeit), die drei Medaillen und ggf. „Neue Medaille“.
 Nach einem Boss: Zeit, Zahl der besiegten Endgegner und die neue Fähigkeit.
 
+## Musik (Test in 1-1)
+
+1-1 Blumenwiese hat ein Lied mit **Teilen** statt einer 4-Takt-Schleife: Vorspiel, Strophe, Variation mit
+Gegenstimme, Mittelteil in Moll-Akkorden, ruhige Pause, Schluss-Strophe – rund 1:25 bis zur Wiederholung
+(danach ohne Vorspiel). Dazu weiche Akkordflächen, Bass mit Terz/Quinte/Oktave, Melodie mit Vibrato und Echo,
+kleine Trommelwirbel an den Übergängen und leichte Schwankungen in Zeit und Lautstärke. Der Schwung schaltet
+wie bisher Schichten dazu (Schlagzeug, Arpeggio, Oktave). Format: `SONGS[9]` mit `parts` und `form`,
+abgespielt von `playStep2`; die übrigen Welten nutzen noch die alten Schleifen.
+
 ## Erster Start und schnelle Schuhe
 
 Die frühere Übungswiese ist raus (Level bleibt als „Archiv: Übungswiese“ im Editor). Beim ersten Start geht
