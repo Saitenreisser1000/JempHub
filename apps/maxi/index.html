@@ -223,11 +223,16 @@ html,body{height:100%;margin:0;background:var(--night);color:var(--cream);overfl
 @media (max-height:740px){#career .nextrank,#career .records{display:none}#career h2{font-size:24px}.mapcard{padding:8px 12px}.mapcard .btn{padding:8px;font-size:19px}}
 .mapcard{gap:4px;padding:10px 14px;text-align:center}
 /* Infofeld als Sprechblase direkt am Gebäude auf der Karte */
-#mapCard{position:fixed;left:0;top:0;z-index:4;width:min(290px,calc(100vw - 32px));box-shadow:0 10px 28px rgba(0,0,0,.5);transition:opacity .15s}
-#mapCard::after{content:"";position:absolute;left:var(--ax,50%);width:16px;height:16px;background:var(--cream);transform:translateX(-50%) rotate(45deg)}
-#mapCard.below::after{top:-7px}
-#mapCard.above::after{bottom:-7px}
-#mapCard .mapdesc{height:auto;max-height:3.8em}
+/* Infoleiste unten in der Karte: schmal, damit Wege und Gebäude oben frei bleiben */
+#mapCard{position:fixed;left:0;top:0;z-index:4;box-shadow:0 8px 22px rgba(0,0,0,.45);display:grid;grid-template-columns:minmax(0,1fr) auto;column-gap:10px;row-gap:2px;align-items:center;text-align:left;padding:8px 10px 8px 14px}
+#mapCard[hidden]{display:none}
+#mapCard .mapname{grid-column:1;font-size:17px;line-height:1.1}
+#mapCard .mapdesc{grid-column:1;height:auto;max-height:2.6em;font-size:13px}
+#mapCard .mapdesc.stock{justify-content:flex-start;height:auto;max-height:none;font-size:14px}
+#mapCard .mapprice{grid-column:1 / -1}
+#mapCard .mapbtns{grid-column:2;grid-row:1 / span 2;flex-direction:column;gap:6px}
+#mapCard .mapbtns .btn{margin:0;padding:8px 14px;font-size:18px;white-space:nowrap}
+#mapCard .mapbtns .btn.sec{font-size:15px;padding:6px 12px}
 .mapname{font:400 19px var(--f-display);color:var(--crate)}
 .mapdesc{font:600 14px/1.25 var(--f-ui);color:var(--ink);height:2.5em;overflow:hidden;opacity:.85}
 .mapdesc.stock{display:flex;flex-wrap:wrap;justify-content:center;align-items:center;gap:0 12px;opacity:1;height:3.6em;font-size:15px}
@@ -3071,8 +3076,8 @@ const LOCS = {
   gRb: { u: .02, v: .55, c: [.25, .58], pg: 1,  gate: 'gR',  name: 'Brauerei', arrow: -1 },
   sud:   { u: .27, v: .2,  c: [.34, .4],  pg: 0, name: 'Maxis Sudhaus', sub: 'Sudhaus', lv: 3, need: 1, desc: () => `Jeder Sud ergibt ${fmtF(1 + .5*(U.kettle || 0))} Fass. Ausgeschenkt wird im Braustüberl.` },
   halle: { u: .5,  v: .36, c: [.5, .55],  pg: -1, name: 'Abfüllhalle', sub: 'Förderband', lv: 2, need: 1, desc: () => `Flaschen sortieren: ${lohn2()} 🪙 Lohn je voller Kiste.` },
-  bar:   { u: .5,  v: .86, c: [.47, .7],  pg: 0, name: 'Braustüberl', sub: 'Braustüberl', lv: 1, need: 0, desc: () => hasOwnBeer() ? `Im Keller: ${Object.keys(ECO.keller).map(n => `${n} ${fmtF(ECO.keller[n].f)}`).join(', ')} Fass. Zapfen oder Flaschen fangen (${lohn1()} 🪙 Lohn je Kiste).` : `Flaschen fangen: ${lohn1()} 🪙 Lohn je voller Kiste.` },
-  hof:   { u: .6,  v: .82, c: [.54, .68], pg: 1, name: 'Bauernhof', sub: 'Gerste und Mälzerei', farm: true, desc: () => { const F = farm(), n = farmNews(); return `${F.fields.length} ${F.fields.length === 1 ? 'Gerstenfeld' : 'Gerstenfelder'}, ${F.gerste} Gerste.` + (n === '🌾 fertig!' ? ' Es gibt etwas zu ernten!' : ' Hier wächst dein eigenes Malz, auch wenn das Spiel zu ist.'); } },
+  bar:   { u: .5,  v: .76, c: [.47, .66], pg: 0, name: 'Braustüberl', sub: 'Braustüberl', lv: 1, need: 0, desc: () => hasOwnBeer() ? `Im Keller: ${Object.keys(ECO.keller).map(n => `${n} ${fmtF(ECO.keller[n].f)}`).join(', ')} Fass. Zapfen oder Flaschen fangen (${lohn1()} 🪙 Lohn je Kiste).` : `Flaschen fangen: ${lohn1()} 🪙 Lohn je voller Kiste.` },
+  hof:   { u: .6,  v: .74, c: [.54, .64], pg: 1, name: 'Bauernhof', sub: 'Gerste und Mälzerei', farm: true, desc: () => { const F = farm(), n = farmNews(); return `${F.fields.length} ${F.fields.length === 1 ? 'Gerstenfeld' : 'Gerstenfelder'}, ${F.gerste} Gerste.` + (n === '🌾 fertig!' ? ' Es gibt etwas zu ernten!' : ' Hier wächst dein eigenes Malz, auch wenn das Spiel zu ist.'); } },
   hopfen: { u: .34, v: .3, c: [.38, .45], pg: 1, name: 'Hopfengarten', sub: 'Hopfen', hops: true, desc: () => !farm().hop ? 'Hier kann Maxi einen Hopfengarten anlegen. Er wächst nach jeder Ernte von selbst nach.' : hopRipe() ? 'Der Hopfen ist reif! Ernten heißt: durch die Dolden wischen.' : `Der Hopfen wächst, noch ${fmtLeft(HOP.GROW - (nowMs() - farm().hop.t0)*FARM.speed)}.` },
   laden: { u: .75, v: .22, c: [.68, .4],  pg: 0, name: 'Brauerei-Laden', sub: 'Laden', shop: true, desc: () => ECO.ownSud ? 'Zutaten, Ersatzteile und Ausbauten: alles gibt es nur hier.' : 'Ausbauten für Braustüberl und Abfüllhalle und Hilfen für alle Spiele.' }
 };
@@ -3142,14 +3147,10 @@ function mapInfo(){
 function mapCardPos(){
   // Sprechblase über oder unter dem Gebäude, innerhalb der Karte
   const c = $('mapCard'); if (c.hidden || !MAP.at || !LOCS[MAP.at]) return;
-  const p = locPos(MAP.at), a = mapArea(), h = c.offsetHeight, w = c.offsetWidth, vw = innerWidth;
-  const bx = OX + p.x*S, topB = (p.y - 112*p.k)*S, botB = (p.y + 42*p.k)*S, mapT = a.top*S, mapB = a.bot*S;
-  const above = (p.y - a.top)/(a.bot - a.top) > .45 && topB - h - 14 >= mapT;
-  let y = above ? topB - h - 12 : botB + 12; y = Math.max(mapT + 4, Math.min(mapB - h - 4, y));
-  const x = Math.max(16, Math.min(vw - 16 - w, bx - w/2)), ax = Math.max(18, Math.min(w - 18, bx - x));
-  const key = `${Math.round(x)},${Math.round(y)},${above},${Math.round(ax)}`; if (mapCardPos.k === key) return; mapCardPos.k = key;
-  c.style.transform = `translate(${Math.round(x)}px,${Math.round(y)}px)`; c.style.setProperty('--ax', `${Math.round(ax)}px`);
-  c.classList.toggle('above', above); c.classList.toggle('below', !above);
+  // als schmale Leiste unten in der Karte, über die ganze Kartenbreite
+  const a = mapArea(), x = OX + 18*S, w = (W - 36)*S, h = c.offsetHeight, y = (a.bot + 4)*S - h - 8;
+  const key = `${Math.round(x)},${Math.round(y)},${Math.round(w)}`; if (mapCardPos.k === key) return; mapCardPos.k = key;
+  c.style.width = `${Math.round(w)}px`; c.style.transform = `translate(${Math.round(x)}px,${Math.round(y)}px)`;
 }
 function mapTap(k){
   if (!LOCS[k] || MAP.slide) return;
@@ -3729,7 +3730,7 @@ function drawMapPage(pg, a, k, x0, y0, w, h){
   for (const [bx, by] of [[-11, 0], [11, 0], [0, -14]]){ ctx.fillStyle = '#8a5a2c'; rr(bx - 9, by - 18, 18, 20, 6); ctx.fill(); ctx.fillStyle = '#4a3a2a'; ctx.fillRect(bx - 9, by - 14, 18, 2.5); ctx.fillRect(bx - 9, by - 4, 18, 2.5); ctx.fillStyle = 'rgba(255,255,255,.18)'; ctx.fillRect(bx - 6, by - 17, 2, 18); }
   ctx.restore();
   ctx.globalAlpha = 1;
-  const bg2 = mapUV(.72, .84);
+  const bg2 = mapUV(.74, .74);
   const stuff = [];
   const TP = [[0, 0], [34, 8], [17, -20], [51, -12], [68, 16]];
   for (let i=0;i<(pg ? 0 : Math.min(3, U.tables || 0));i++){ const tx = bg2.x + TP[i][0]*k, ty = bg2.y + TP[i][1]*k;
@@ -4582,7 +4583,7 @@ for (const el of document.querySelectorAll('[data-legal]')) el.addEventListener(
 $('legalClose').onclick = closeLegal;
 // Spielstand zurücksetzen: erster Tipp fragt nach, zweiter löscht alles außer dem Namen für die Bestenliste
 // Versionsnummer: bei jeder Veröffentlichung erhöhen (Hauptversion.Neue Funktionen.Korrekturen)
-const VERSION = '2.4.3';
+const VERSION = '2.4.4';
 $('verTag').textContent = `v${VERSION}`;
 $('resetBtn').onclick = () => {
   const b = $('resetBtn');

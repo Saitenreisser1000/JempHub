@@ -45,7 +45,7 @@ Hat Maxi Bier im Keller, bietet die Karte beim Braustüberl „Zapfen“ (und �
 
 ## Karte
 
-Die Karte hat drei Seiten, verbunden über Wege mit Wegweisern am Rand: in der Mitte die **Brauerei** (hinten Sudhaus und Laden, vorne das Braustüberl; gepflasterte Wege mit Blumen und Laternen), links die **Abfüllung** (Abfüllhalle mit Laderampe), rechts die **Landwirtschaft** (Bauernhof, Hopfengarten). Tippt man einen Wegweiser an, geht Maxi hin und die Karte gleitet zur nächsten Seite; ein Ziel auf einer anderen Seite erreicht Maxi über den Wegweiser von selbst. Das Infofeld erscheint als Sprechblase am Gebäude.
+Die Karte hat drei Seiten, verbunden über Wege mit Wegweisern am Rand: in der Mitte die **Brauerei** (hinten Sudhaus und Laden, vorne das Braustüberl; gepflasterte Wege mit Blumen und Laternen), links die **Abfüllung** (Abfüllhalle mit Laderampe), rechts die **Landwirtschaft** (Bauernhof, Hopfengarten). Tippt man einen Wegweiser an, geht Maxi hin und die Karte gleitet zur nächsten Seite; ein Ziel auf einer anderen Seite erreicht Maxi über den Wegweiser von selbst. Das Infofeld erscheint als schmale Leiste unten in der Karte (Name, Info, Knöpfe), damit Wege und Gebäude frei bleiben.
 
 **Sichtbare Ausbauten:** Breite Kiste (Kistenstapel am Braustüberl), Stammgäste (Tische im Biergarten), Ruhiges Band (Förderband vor der Halle), Akkordprämie (Tanks neben der Halle, mehr Lkw an der Rampe), Kessel abdichten (das Leck unter dem Sudhaus verschwindet, neue Leitung), Thermometer (Zifferblatt über der Tür), Kupfer (glänzende Kuppel), Läuterbottich, Gärkeller, größerer Kessel (Kupfertanks), Ersatzbier (Kisten vor dem Laden), Sämaschine und Mähdrescher (parken am Bauernhof).
 
@@ -123,6 +123,7 @@ Zu Beginn jeder Runde zeigt eine Karte das aktuelle Ziel (bis zum Produktionsmit
 
 Die Versionsnummer steht im Startmenü unten neben „Spielstand zurücksetzen“ (`VERSION` in `index.html`). Schema: Hauptversion.Neue Funktionen.Korrekturen; bei jeder Veröffentlichung erhöhen.
 
+- **2.4.4** – Infofeld als schmale Leiste unten in der Karte, Wege und Gebäude oben bleiben frei
 - **2.4.3** – Erklärung und Ziel-Schild erscheinen nacheinander statt übereinander
 - **2.4.2** – Stufenleiste (Lakai → Braumeister) direkt in der Kopfzeile neben dem Geld, ohne Aufklappen
 - **2.4.1** – Hauptseite: Sudhaus und Laden hinten, Braustüberl vorne; Wege gepflastert mit Rand, Blumen und Laternen
