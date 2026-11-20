@@ -1255,6 +1255,8 @@ function unlock(kind){
   if (kind === 'red') forceRed = true; else if (kind === 'nana') nanaT = 1.2;
   if (seen[kind]) return;
   seen[kind] = true; saveSeen(); introKind = kind; introT = 0; state = 'intro'; touchX = null;
+  // eine Erklärung verdrängt das Ziel-Schild; es kommt nach der Erklärung noch einmal
+  if (!$('goalBanner').hidden){ $('goalBanner').hidden = true; clearTimeout(showGoal.h); goalShown = false; }
   $('introTitle').textContent = INTRO[kind].title; $('introText').textContent = INTRO[kind].text;
   $('introGo').style.visibility = 'hidden'; $('intro').hidden = kind === 'move'; $('toast').hidden = true;
   $('introGo').textContent = kind === 'catch' ? 'Tippen zum Weiterspielen' : 'Tippen zum Weiterspielen';
@@ -4580,7 +4582,7 @@ for (const el of document.querySelectorAll('[data-legal]')) el.addEventListener(
 $('legalClose').onclick = closeLegal;
 // Spielstand zurücksetzen: erster Tipp fragt nach, zweiter löscht alles außer dem Namen für die Bestenliste
 // Versionsnummer: bei jeder Veröffentlichung erhöhen (Hauptversion.Neue Funktionen.Korrekturen)
-const VERSION = '2.4.2';
+const VERSION = '2.4.3';
 $('verTag').textContent = `v${VERSION}`;
 $('resetBtn').onclick = () => {
   const b = $('resetBtn');
