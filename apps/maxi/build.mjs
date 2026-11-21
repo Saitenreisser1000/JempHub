@@ -5,8 +5,10 @@ import { resolve } from 'node:path';
 const root = import.meta.dirname;
 const files = ['index.html', 'icon.svg', 'manifest.webmanifest', 'og.jpg', 'apple-touch-icon.png', 'icon-192.png', 'icon-512.png', 'favicon-32.png'];
 
-await Promise.all(files.map(file => access(resolve(root, file))));
+await Promise.all([...files, 'grafik'].map(file => access(resolve(root, file))));
 await rm(resolve(root, 'dist'), { recursive: true, force: true });
 await mkdir(resolve(root, 'dist'), { recursive: true });
 for (const file of files) await cp(resolve(root, file), resolve(root, 'dist', file));
+// Grafik im Diorama-Stil (Bilder, die das Spiel nachlädt)
+await cp(resolve(root, 'grafik'), resolve(root, 'dist', 'grafik'), { recursive: true });
 console.log('maxi: dist/ gebaut');

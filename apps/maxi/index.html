@@ -36,6 +36,8 @@
   color-scheme:dark;
 }
 [hidden]{display:none!important}
+img.ico{height:1.1em;width:auto;vertical-align:-.2em;display:inline-block;margin:0 .02em}
+body.bild .hud{background:linear-gradient(rgba(36,30,24,.72),rgba(36,30,24,.35) 75%,rgba(36,30,24,0));padding-bottom:18px}
 html,body{height:100%;margin:0;background:var(--night);color:var(--cream);overflow:hidden;
   font-family:var(--f-ui);-webkit-user-select:none;user-select:none;touch-action:none;overscroll-behavior:none}
 #c{position:fixed;inset:0;width:100%;height:100%;display:block}
@@ -824,9 +826,148 @@ function resize(){
 let rzF = 0, rzW = 0, rzH = 0;
 addEventListener('resize', () => { cancelAnimationFrame(rzF); rzF = requestAnimationFrame(() => { if (innerWidth === rzW && innerHeight === rzH) return; rzW = innerWidth; rzH = innerHeight; resize(); mapA = null; }); });
 
+/* ================= Grafik: Bilder im Diorama-Stil aus grafik/ (fehlt ein Bild, bleibt die gezeichnete Grafik) ================= */
+const GFXS = { diorama: { dir: 'grafik/', name: 'Diorama', img: {}, ok: false, mh: 146.9, extra: null } };
+let GFX = 'diorama', RX = {};
+const RXFILES = ['maxi0_stand','maxi0_gehen_01','maxi0_gehen_02','maxi0_gehen_03','maxi1_stand','maxi1_gehen_01','maxi1_gehen_02','maxi1_gehen_03','maxi2_stand','maxi2_gehen_01','maxi2_gehen_02','maxi2_gehen_03','maxi3_stand','maxi3_gehen_01','maxi3_gehen_02','maxi3_gehen_03',
+  'obj_bierflasche_gruen','obj_bierflasche_rot','obj_bananenschale','obj_bierkiste_gruen','obj_malzsack','obj_hopfendolde','obj_hefe','obj_fass','obj_masskrug','obj_bierglas','obj_kronkorken','obj_gerstenaehre',
+  'kar_braustueberl','kar_laden','kar_sudhaus_alt','kar_sudhaus_renoviert','kar_abfuellhalle','kar_bauernhof_maelzerei','kar_hopfengarten',
+  'gae_gast_01_alpenhut','gae_gast_02_kleid','gae_gast_03_brille','gae_gast_04_schuerze','gae_gast_05_schnurrbart','gae_gast_06_zopf'].map(n => n + '.webp').concat(['bg_braustueberl.jpg','bg_abfuellhalle.jpg','bg_sudhaus.jpg','bg_schankraum.jpg']);
+// Posen, Ausbauten, Szenen, Bauernhof, Schank, Symbole …: laden nach, das Spiel startet schon mit den Grundbildern
+const DXFILES = ["aus_abfuellhalle_lkw.webp", "aus_abfuellhalle_palette.webp", "aus_biergarten_tisch.webp", "aus_laden_stufe2.webp", "aus_laden_stufe3.webp", "aus_maehdrescher.webp", "aus_saemaschine.webp", "aus_sudhaus_gaertanks.webp", "aus_sudhaus_kupfer_glanz.webp", "aus_sudhaus_laeuterbottich.webp", "bg_bauernhof.jpg", "bg_hopfengarten.jpg", "bg_szene_brauereihof.jpg", "bg_szene_sudhaus_alt.jpg", "deko_baum_1.webp", "deko_baum_2.webp", "deko_busch.webp", "deko_laterne.webp", "deko_wegweiser_links.webp", "deko_wegweiser_rechts.webp", "fb_rutsche_gruen.webp", "feld_gesaet.webp", "feld_keimt.webp", "feld_leer.webp", "feld_reif.webp", "feld_stoppeln.webp", "feld_waechst.webp", "fig_braumeister_freundlich.webp", "fig_braumeister_lobend.webp", "fig_braumeister_streng.webp", "fig_maxi_freundlich.webp", "fig_maxi_staunend.webp", "fig_maxi_stolz.webp", "gae_gast_01_alpenhut_gluecklich.webp", "gae_gast_01_alpenhut_ungeduldig.webp", "gae_gast_02_kleid_gluecklich.webp", "gae_gast_02_kleid_ungeduldig.webp", "gae_gast_03_brille_gluecklich.webp", "gae_gast_03_brille_ungeduldig.webp", "gae_gast_04_schuerze_gluecklich.webp", "gae_gast_04_schuerze_ungeduldig.webp", "gae_gast_05_schnurrbart_gluecklich.webp", "gae_gast_05_schnurrbart_ungeduldig.webp", "gae_gast_06_zopf_gluecklich.webp", "gae_gast_06_zopf_ungeduldig.webp", "hopfen_geerntet.webp", "hopfen_jung.webp", "hopfen_reif.webp", "hopfen_waechst.webp", "ico_fass_klein.webp", "ico_medaille_bronze.webp", "ico_medaille_gold.webp", "ico_medaille_silber.webp", "ico_muenze.webp", "ico_schloss.webp", "ico_stern_leer.webp", "ico_stern_voll.webp", "ico_uhr.webp", "maxi0_ausrutschen.webp", "maxi0_frei_gehen_01.webp", "maxi0_frei_gehen_02.webp", "maxi0_frei_gehen_03.webp", "maxi0_frei_stand.webp", "maxi0_jubeln.webp", "maxi0_ruehren.webp", "maxi1_ausrutschen.webp", "maxi1_frei_gehen_01.webp", "maxi1_frei_gehen_02.webp", "maxi1_frei_gehen_03.webp", "maxi1_frei_stand.webp", "maxi1_jubeln.webp", "maxi1_ruehren.webp", "maxi2_ausrutschen.webp", "maxi2_frei_gehen_01.webp", "maxi2_frei_gehen_02.webp", "maxi2_frei_gehen_03.webp", "maxi2_frei_stand.webp", "maxi2_jubeln.webp", "maxi2_ruehren.webp", "maxi3_ausrutschen.webp", "maxi3_frei_gehen_01.webp", "maxi3_frei_gehen_02.webp", "maxi3_frei_gehen_03.webp", "maxi3_frei_stand.webp", "maxi3_jubeln.webp", "maxi3_ruehren.webp", "obj_karamellmalz.webp", "obj_scherben.webp", "obj_wasser.webp", "pass1_1.webp", "pass1_2.webp", "pass2_1.webp", "pass2_2.webp", "pass3_1.webp", "pass3_2.webp", "pass4_1.webp", "pass4_2.webp"];
+function gfxLoad(k){
+  const st = GFXS[k]; if (!st || st.ld) return; st.ld = true; let n = 0, bad = 0, nx = 0; const ex = st.extra || DXFILES;
+  for (const f of RXFILES){ const im = new Image(); im.decoding = 'async';
+    im.onload = () => { st.img[f.replace(/\.\w+$/, '')] = im; if (++n === RXFILES.length && !bad){ st.ok = true; if (GFX === k){ RX = st.img; try { resize(); } catch(e) {} setTimeout(() => icoize(document.body), 0); } } };
+    im.onerror = () => { bad++; n++; };
+    im.src = st.dir + f; }
+  for (const f of ex){ const im = new Image(); im.decoding = 'async';
+    im.onload = im.onerror = ev => { if (ev.type === 'load') st.img[f.replace(/\.\w+$/, '')] = im; if (++nx === ex.length && st.ok && GFX === k){ try { resize(); } catch(e) {} icoize(document.body); } };
+    im.src = st.dir + f; }
+}
+gfxLoad(GFX);
+const rxOn = () => !!(GFXS[GFX] && GFXS[GFX].ok);
+setInterval(() => document.body.classList.toggle('bild', rxOn()), 500);
+function rxImg(name, x, y, h, rot, ax, ay){
+  // Bild mit Höhe h; (ax, ay) = Ankerpunkt im Bild (0..1), dort liegt (x, y)
+  const im = RX[name]; if (!im) return false; const w = h*im.width/im.height;
+  ctx.save(); ctx.translate(x, y); if (rot) ctx.rotate(rot); ctx.imageSmoothingQuality = 'high';
+  ctx.drawImage(im, -w*(ax ?? .5), -h*(ay ?? .5), w, h); ctx.restore(); return true;
+}
+function drawManRetro(x, base){
+  // Maxi als Bild: stehen oder drei Gehbilder, Gewand je Berufsstufe; mit Kiste, mit freien Händen oder in einer Sonderpose
+  const r = dressRank ?? (ECO.story < 3 ? 0 : rank), moving = Math.abs(P.vx) > 30, m = `maxi${r}_`;
+  const fr = moving ? ['gehen_01', 'gehen_02', 'gehen_03', 'gehen_02'][Math.floor(P.walk/(Math.PI/2)) & 3] : 'stand';
+  let name = m + fr, tip = 0;
+  if (P.pose && RX[m + P.pose]) name = m + P.pose;
+  else if (P.trip > 0 && !P.noCrate && RX[m + 'ausrutschen']) name = m + 'ausrutschen';
+  else if (P.noCrate && RX[m + 'frei_stand']) name = m + 'frei_' + fr;
+  else if (P.noCrate && P.slim) return false;
+  else tip = P.trip ? Math.sin(Math.min(1, P.trip)*Math.PI)*.25 : 0;
+  ctx.save(); ctx.fillStyle = 'rgba(0,0,0,.22)'; ctx.beginPath(); ctx.ellipse(x, base + 1, 34, 6, 0, 0, Math.PI*2); ctx.fill(); ctx.restore();
+  rxImg(name, x, base + 3, GFXS[GFX].mh, tip, .5, 1); return true;
+}
+function rxBg(b, name){
+  // Kulisse füllend, unten bündig (der Boden bleibt unter Maxi)
+  const im = RX[name], sc = Math.max((XR - XL)/im.width, H/im.height), w = im.width*sc, h = im.height*sc;
+  b.imageSmoothingQuality = 'high'; b.drawImage(im, W/2 - w/2, H - h, w, h);
+}
+const RXLOC = { bar: ['kar_braustueberl', 128], laden: ['kar_laden', 118], halle: ['kar_abfuellhalle', 160], hof: ['kar_bauernhof_maelzerei', 150], hopfen: ['kar_hopfengarten', 122] };
+function rxPut(n, x, y, w, ax, ay){
+  // Bild mit Breite w, (ax, ay) = Ankerpunkt (Standard: unten Mitte)
+  const im = RX[n]; if (!im) return false; const h = w*im.height/im.width;
+  ctx.imageSmoothingQuality = 'high'; ctx.drawImage(im, x - w*(ax ?? .5), y - h*(ay ?? 1), w, h); return true;
+}
+function rxLoc(k){
+  // Gebäude auf der Karte als Bild, gekaufte Ausbauten sichtbar daneben; true = gezeichnet
+  let d = RXLOC[k];
+  if (k === 'sud') d = [!ECO.ownSud ? 'kar_sudhaus_alt' : U.copper && RX.aus_sudhaus_kupfer_glanz ? 'aus_sudhaus_kupfer_glanz' : 'kar_sudhaus_renoviert', 130];
+  if (k === 'laden'){ const n = (U.life || 0) + (U.mult || 0); if (n >= 4 && RX.aus_laden_stufe3) d = ['aus_laden_stufe3', 118]; else if (n >= 2 && RX.aus_laden_stufe2) d = ['aus_laden_stufe2', 118]; }
+  if (!d || !RX[d[0]]) return false;
+  const w = d[1];
+  ctx.fillStyle = 'rgba(10,30,15,.25)'; ctx.beginPath(); ctx.ellipse(4, 4, w*.48, 9, 0, 0, Math.PI*2); ctx.fill();
+  if (k === 'sud' && U.lauter) rxPut('aus_sudhaus_laeuterbottich', -w*.46, 2, w*.5);
+  rxPut(d[0], 0, 8, w);
+  if (k === 'sud' && U.cellar) rxPut('aus_sudhaus_gaertanks', w*.5, 14, w*.4);
+  if (k === 'halle' && U.belt) rxPut('aus_abfuellhalle_palette', -w*.5, 16, w*.26);
+  if (k === 'halle' && U.filler) rxPut('fb_rutsche_gruen', w*.52, 16, w*.24);
+  if (k === 'hof' && U.saer) rxPut('aus_saemaschine', -w*.5, 16, w*.3);
+  if (k === 'hof' && U.drescher) rxPut('aus_maehdrescher', w*.52, 16, w*.34);
+  if (k === 'bar' && medalCount()) drawMedal(w*.18, -w*.42, Math.max(...Object.values(ECO.medals)), .6);
+  return true;
+}
+const rxDeko = (n, x, y, w) => rxOn() && rxPut(n, x, y, w);
+/* ---------- Diorama: Szenen, Schank, Bauernhof, Passanten, Scherben ---------- */
+const GAST = ['gast_01_alpenhut', 'gast_02_kleid', 'gast_03_brille', 'gast_04_schuerze', 'gast_05_schnurrbart', 'gast_06_zopf'];
+function rxGuest(gu, x, y){
+  if (gu.img == null){ const used = new Set(L4.guests.map(o => o.img)), free = [0, 1, 2, 3, 4, 5].filter(i => !used.has(i)); gu.img = gu.ty === 'stamm' && !used.has(0) ? 0 : free[Math.floor(Math.random()*free.length)] ?? 0; }
+  const g = 'gae_' + GAST[gu.img]; if (!RX[g]) return false;
+  const md = gu.st === 'happy' || gu.st === 'getting' ? '_gluecklich' : gu.st === 'angry' || gu.pat < gu.pm*.3 ? '_ungeduldig' : '';
+  return rxImg(RX[g + md] ? g + md : g, x, y + 10, 150, 0, .5, 1);
+}
+function rxCover(name, sy0, sy1, y0, y1){
+  // Ausschnitt sy0..sy1 (Anteil der Bildhöhe) füllt die Fläche y0..y1 in voller Breite
+  const im = RX[name]; if (!im) return false; const sh = (sy1 - sy0)*im.height, w = XR - XL, h = y1 - y0, sc = Math.max(w/im.width, h/sh), dw = im.width*sc, dh = sh*sc;
+  ctx.imageSmoothingQuality = 'high'; ctx.save(); ctx.beginPath(); ctx.rect(XL, y0, w, h); ctx.clip();
+  ctx.drawImage(im, 0, sy0*im.height, im.width, sh, W/2 - dw/2, y0 + h/2 - dh/2, dw, dh); ctx.restore(); return true;
+}
+const RXSH = [];
+function rxShards(){
+  for (let i = RXSH.length - 1; i >= 0; i--){ const s = RXSH[i], a = 1 - (tTotal - s.t)/1.4; if (a <= 0 || s.t > tTotal){ RXSH.splice(i, 1); continue; }
+    ctx.globalAlpha = Math.min(1, a*1.5); rxImg('obj_scherben', s.x, s.y + 4, 26, 0, .5, 1); ctx.globalAlpha = 1; }
+}
+const RXP = { list: [], t: 0, next: 2 };
+function rxPassers(y){
+  // Leute gehen hinten über den Platz (nur Diorama)
+  if (!RX.pass1_1) return; const dt = Math.max(0, Math.min(.05, tTotal - RXP.t)); RXP.t = tTotal; RXP.next -= dt;
+  if (RXP.next <= 0 && RXP.list.length < 2){ const d = Math.random() < .5 ? 1 : -1; RXP.list.push({ k: 1 + Math.floor(Math.random()*4), d, x: d > 0 ? XL - 30 : XR + 30, v: 26 + Math.random()*14, w: 0 }); RXP.next = 4 + Math.random()*6; }
+  for (let i = RXP.list.length - 1; i >= 0; i--){ const p = RXP.list[i]; p.x += p.d*p.v*dt; p.w += dt*4; if (p.x < XL - 40 || p.x > XR + 40){ RXP.list.splice(i, 1); continue; }
+    ctx.save(); ctx.translate(p.x, y); if (p.d < 0) ctx.scale(-1, 1); rxImg(`pass${p.k}_${1 + (Math.floor(p.w) & 1)}`, 0, 0, 58, 0, .5, 1); ctx.restore(); }
+}
+function rxKiln(bx, by, bw){ return rxPut('kar_bauernhof_maelzerei', bx + bw/2, by + 14, bw*1.3); }
+const FIELDK = ['feld_gesaet', 'feld_keimt', 'feld_waechst'];
+function rxField(r, f, k, ripe){
+  // Gerstenfeld als Bild: ganze Flächen als ein Bild, sonst Erde und einzelne Pflanzen darüber; true = Pflanzen sind schon im Bild
+  const all = (1 << (FARM.ROWS*FARM.COLS)) - 1; let n, full = false;
+  if (!f.t0 && !f.s) n = 'feld_leer';
+  else if (f.s === all && !f.c && f.t0){ full = true; n = ripe ? 'feld_reif' : FIELDK[k < .04 ? 0 : k < .35 ? 1 : 2]; }
+  else n = f.c ? 'feld_stoppeln' : 'feld_leer';
+  if (!RX[n]) return null;
+  ctx.fillStyle = 'rgba(10,30,15,.25)'; ctx.beginPath(); ctx.ellipse(r.x + r.w/2 + 4, r.y + r.h*.62, r.w*.5, r.h*.4, 0, 0, Math.PI*2); ctx.fill();
+  rxPut(n, r.x + r.w/2, r.y + r.h, r.w + 6); return full;
+}
+const isoField = () => rxOn() && !!RX.feld_leer;
+/* ---------- Symbole: Emoji in Leisten, Menüs und Karten werden zu Bild-Icons ---------- */
+const ICO = { '🪙': 'muenze', '★': 'stern_voll', '☆': 'stern_leer', '🔒': 'schloss', '⏳': 'uhr', '🏅': 'medaille_gold', '🥇': 'medaille_gold', '🥈': 'medaille_silber', '🥉': 'medaille_bronze', '🛢': 'fass_klein', '🍺': 'obj_masskrug' };
+const ICO_SPLIT = /((?:🪙|★|☆|🔒|⏳|🏅|🥇|🥈|🥉|🛢|🍺)\uFE0F?)/, ICO_TEST = /🪙|★|☆|🔒|⏳|🏅|🥇|🥈|🥉|🛢|🍺/;
+const icoOn = () => rxOn() && !!RX.ico_muenze;
+function icoize(root){
+  if (!root || !icoOn()) return;
+  if (root.nodeType === 3) root = root.parentNode; if (!root || !root.closest || root.closest('script,style,title,textarea')) return;
+  const w = document.createTreeWalker(root, NodeFilter.SHOW_TEXT), list = [];
+  while (w.nextNode()){ const n = w.currentNode; if (ICO_TEST.test(n.nodeValue) && !n.parentNode.closest('script,style,title,textarea')) list.push(n); }
+  for (const n of list){ const f = document.createDocumentFragment();
+    for (const part of n.nodeValue.split(ICO_SPLIT)){ if (!part) continue; const k = ICO[part.replace('\uFE0F', '')];
+      if (k){ const im = document.createElement('img'); im.src = GFXS[GFX].dir + (k.startsWith('obj_') ? k : 'ico_' + k) + '.webp'; im.className = 'ico'; im.alt = part; im.draggable = false; f.append(im); } else f.append(part); }
+    n.replaceWith(f); }
+}
+new MutationObserver(ms => { if (!icoOn()) return; for (const m of ms){ if (m.type === 'characterData') icoize(m.target); else for (const a of m.addedNodes) icoize(a); } })
+  .observe(document.body, { childList: true, subtree: true, characterData: true });
+function rxHops(g, k, ripe, done){
+  // Hopfen als Bild: zwei Reihen Stangen auf dem Acker
+  const n = done ? 'hopfen_geerntet' : k <= 0 ? null : ripe ? 'hopfen_reif' : k < .4 ? 'hopfen_jung' : 'hopfen_waechst';
+  if (!RX.hopfen_jung) return false; if (!n) return true;
+  const yb = g.y + g.h, hh = Math.min(g.h*.9, 230);
+  for (const [row, sc, dy] of [[0, .78, -46], [1, 1, 0]]) for (let i = 0; i < 5; i++){
+    const x = g.x + (i + (row ? .5 : .75))*(g.w/5.25);
+    rxImg(n, x, yb + dy, hh*sc, 0, .5, 1); }
+  return true;
+}
+const RXING = { malz: 'obj_malzsack', hopfen: 'obj_hopfendolde', hefe: 'obj_hefe', gerste: 'obj_gerstenaehre', karamell: 'obj_karamellmalz', wasser: 'obj_wasser' };
 function buildBg(){
   bg.width = cv.width; bg.height = cv.height;
   const b = bg.getContext('2d'); b.setTransform(dpr*S,0,0,dpr*S,dpr*OX,0);
+  if (rxOn()){ rxBg(b, 'bg_braustueberl'); return; }
   const gb = backY();
   const g = b.createLinearGradient(0,0,0,gb); g.addColorStop(0,C.skyTop); g.addColorStop(1,C.skyBot);
   b.fillStyle = g; b.fillRect(XL,0,XR-XL,gb);
@@ -961,6 +1102,7 @@ function buildBg(){
 /* ---------- drawing ---------- */
 function rr(x,y,w,h,r){ ctx.beginPath(); ctx.roundRect ? ctx.roundRect(x,y,w,h,r) : ctx.rect(x,y,w,h); }
 function drawBottle(x, y, rot, red){
+  if (rxOn()){ rxImg(red ? 'obj_bierflasche_rot' : 'obj_bierflasche_gruen', x, y, 48, rot, .5, .55); return; }
   const capC = red ? C.capR : C.capG, labC = red ? C.labelR : C.labelG;
   ctx.save(); ctx.translate(x,y); ctx.rotate(rot);
   // braune 0,5-l-Flasche mit langem Hals
@@ -1020,6 +1162,7 @@ function drawCrate(cx, topY, count, w=70, h=35, sty){
   ctx.fillStyle = sty?.s || C.labelR; ctx.fillRect(cx - 4*k, py + ph - 3*k, 8*k, 1.6*k);
 }
 function drawBanana(x, y, rot, onGround){
+  if (rxOn()){ rxImg('obj_bananenschale', x, y, onGround ? 18 : 24, onGround ? 0 : rot, .5, .6); return; }
   // Bananenschale: in der Luft hängen die Lappen nach unten, am Boden liegen sie flach
   ctx.save(); ctx.translate(x, y); ctx.rotate(rot); ctx.lineJoin = 'round'; ctx.lineCap = 'round';
   const petal = (len, wid, a, flat, bend) => {
@@ -1118,6 +1261,7 @@ function drawBrows(m){
   }
 }
 function drawMan(x, base){
+  if (rxOn() && drawManRetro(x, base)) return;
   const moving = Math.min(1, Math.abs(P.vx)/200), sw = Math.sin(P.walk)*6*moving, bob = Math.abs(Math.sin(P.walk))*2*moving;
   ctx.save(); ctx.translate(x, base);
   const bk = P.slim ? .78 : 1; // Level 2: Maxi etwas schlanker
@@ -1760,7 +1904,7 @@ function update(dt){
       } else { b.bounced = true; b.vy = -Math.abs(b.vy)*.45; b.vx = (b.x < P.x ? -1 : 1) * (90 + Math.random()*60); b.spin = 8; sClink(); }
     }
     if (bottom >= base){
-      bottles.splice(i,1); burst(b.x, base - 6, true); sBreak(); missed++; breakStreak(); setMood('shock', .9); shake = .25;
+      bottles.splice(i,1); burst(b.x, base - 6, true); RXSH.push({ x: b.x, y: base, t: tTotal }); sBreak(); missed++; breakStreak(); setMood('shock', .9); shake = .25;
       floatText(b.x, base - 30, 'Bruch!', '#ff8a6a'); updateHud();
       if (missed >= MAXMISS) return gameOver();
     }
@@ -1816,8 +1960,10 @@ function render(){
     return;
   }
 
+  if (rxOn()) rxPassers(backY() - 10);
   for (const v of visitors) drawVisitor(v);
   drawZone();
+  if (rxOn()) rxShards();
   drawStork();
   for (const p of poops) drawPoop(p.x, p.y, p.ground > 0);
   for (const h of hearts) drawHeart(h.x, h.y, 1 + Math.sin(tTotal*6)*.06, Math.max(0, h.fade));
@@ -2184,6 +2330,7 @@ function drawGlass(x, yb, w, h, lvl, col){
 function drawPatron(x, y, gu){
   const rise = gu.st === 'in' ? Math.min(1, gu.t/.4) : 1, fade = gu.st === 'happy' ? Math.max(0, 1 - Math.max(0, gu.t - .6)/.5) : gu.st === 'angry' ? Math.max(0, 1 - gu.t) : 1;
   ctx.save(); ctx.translate(x, y + (1 - rise)*70); ctx.globalAlpha = fade;
+  if (rxOn() && rxGuest(gu, 0, 0)){ ctx.restore(); } else {
   ctx.fillStyle = gu.shirt; rr(-28, -64, 56, 70, 16); ctx.fill();
   ctx.fillStyle = 'rgba(0,0,0,.15)'; ctx.fillRect(-1, -58, 2, 50);
   ctx.strokeStyle = gu.shirt; ctx.lineWidth = 11; ctx.lineCap = 'round'; ctx.beginPath(); ctx.moveTo(-22, -52); ctx.lineTo(-30, -6); ctx.moveTo(22, -52); ctx.lineTo(30, -6); ctx.stroke();
@@ -2207,7 +2354,7 @@ function drawPatron(x, y, gu){
   if (mood > 0) ctx.arc(0, -82, 7, .2, Math.PI - .2); else if (mood < 0) ctx.arc(0, -73, 7, Math.PI + .3, -.3); else { ctx.moveTo(-5, -79); ctx.lineTo(5, -79); }
   ctx.stroke();
   if (mood < 0){ ctx.beginPath(); ctx.moveTo(-11, -97); ctx.lineTo(-4, -94); ctx.moveTo(11, -97); ctx.lineTo(4, -94); ctx.stroke(); }
-  ctx.restore();
+  ctx.restore(); }
   // Sprechblase: die gewünschte Sorte, darunter die Geduld
   if (gu.st === 'in' && rise < 1) return;
   const T = GTYPE[gu.ty || 'normal'], sp = T.label && gu.st !== 'happy' && gu.st !== 'getting' && gu.st !== 'angry', by = y - (gu.sty === 4 ? 172 : 160) - (sp ? 14 : 0); ctx.save(); ctx.globalAlpha = fade;
@@ -2235,6 +2382,7 @@ function render4(){
   ctx.fillStyle = '#5a321f'; ctx.fillRect(XL, g.cy - 70, XR - XL, 70); ctx.fillStyle = 'rgba(0,0,0,.15)'; for (let x = Math.floor(XL/40)*40; x < XR; x += 40) ctx.fillRect(x, g.cy - 70, 2, 70);
   for (const wx of [W*.12, W*.88]){ ctx.fillStyle = '#3a2418'; rr(wx - 30, g.top + 10, 60, 74, 4); ctx.fill(); ctx.fillStyle = '#d9a66a'; ctx.fillRect(wx - 25, g.top + 15, 23, 31); ctx.fillRect(wx + 2, g.top + 15, 23, 31); ctx.fillRect(wx - 25, g.top + 50, 23, 29); ctx.fillRect(wx + 2, g.top + 50, 23, 29); }
   ctx.fillStyle = 'rgba(255,214,120,.08)'; ctx.beginPath(); ctx.moveTo(W/2, g.top - 10); ctx.lineTo(W/2 - 150, g.cy); ctx.lineTo(W/2 + 150, g.cy); ctx.fill();
+  if (rxOn()) rxCover('bg_schankraum', 0, .6, 0, g.cy);
   { const ms = RECIPES.filter(r => ECO.medals[r.n]); if (ms.length){ const mw = ms.length*30 + 16, my = g.top + 26;
       ctx.fillStyle = '#4a2a1a'; rr(W/2 - mw/2, my - 22, mw, 50, 6); ctx.fill(); ctx.strokeStyle = '#9b6438'; ctx.lineWidth = 3; ctx.stroke();
       ms.forEach((r, i) => drawMedal(W/2 - mw/2 + 23 + i*30, my, ECO.medals[r.n], .95)); } }
@@ -2443,6 +2591,7 @@ function update2(dt){
 function buildBg2(){
   bg2.width = cv.width; bg2.height = cv.height;
   const b = bg2.getContext('2d'); b.setTransform(dpr*S,0,0,dpr*S,dpr*OX,0);
+  if (rxOn() && RX.bg_abfuellhalle){ rxBg(b, 'bg_abfuellhalle'); return; }
   const floorY = H - 128;
   // Fliesenwand: oben weiß, unten grüner Sockel
   b.fillStyle = '#e9eee6'; b.fillRect(XL, 0, XR-XL, floorY);
@@ -2724,12 +2873,22 @@ function farmNews(){ // für die Karte: was ist fertig?
   return ripe || malt ? '🌾 fertig!' : F.fields.some(f => f.t0) || F.kiln ? '⏳' : '';
 }
 function farmGeo(){
-  const top = ($('farmTop').getBoundingClientRect().bottom || 60)/S + 8, fw = (W - 40)/3, fh = Math.min(200, (H - top - 330)*.62);
+  const top = ($('farmTop').getBoundingClientRect().bottom || 60)/S + 8, fw = (W - 40)/3, fh = isoField() ? fw*.81 : Math.min(200, (H - top - 330)*.62);
+  if (isoField()){
+    // Bild-Felder: zwei oben, eines darunter in der Mitte, größer als die gezeichneten
+    const w2 = Math.min(178, (W - 34)/2), h2 = w2*.81, y0 = top + 30;
+    const fields = [{ x: W/2 - w2 - 3, y: y0, w: w2, h: h2 }, { x: W/2 + 3, y: y0, w: w2, h: h2 }, { x: W/2 - w2/2, y: y0 + h2 + 26, w: w2, h: h2 }];
+    const ky = y0 + h2*2 + 26 + 96, kh = Math.min(200, H - ky - 150);
+    return { top, fields, kiln: { x: 40, y: ky, w: W - 80, h: kh } };
+  }
   const fields = [0, 1, 2].map(i => ({ x: 14 + i*(fw + 6), y: top + 36, w: fw, h: fh }));
   const ky = top + 36 + fh + 70, kh = Math.min(210, H - ky - 190);
   return { top, fields, kiln: { x: 40, y: ky, w: W - 80, h: kh } };
 }
-function cellXY(r, j, c){ return { x: r.x + 12 + c*(r.w - 28)/(FARM.COLS - 1) + (j % 2)*4, y: r.y + (j + 1)*r.h/(FARM.ROWS + 1) + 4 }; }
+function cellXY(r, j, c){
+  if (isoField()){ const u = c/(FARM.COLS - 1), v = j/(FARM.ROWS - 1), hw = r.w*.36, hh = r.h*.3, cx = r.x + r.w/2 + 3, cy = r.y + r.h*.5;
+    return { x: cx + (u - v)*hw, y: cy + (u + v - 1)*hh + 6 }; }
+  return { x: r.x + 12 + c*(r.w - 28)/(FARM.COLS - 1) + (j % 2)*4, y: r.y + (j + 1)*r.h/(FARM.ROWS + 1) + 4 }; }
 function openFarm(hops){ if (!hops) FARM.view = 'hof'; state = 'farm'; $('career').hidden = true; $('farmUi').hidden = false; FARM.sel = null; FARM.drag = null; farm(); farmSync(); $('farmOut').focus({ preventScroll: true }); }
 function leaveFarm(){
   // eine laufende Hopfenernte zählt beim Verlassen mit dem, was schon geerntet ist
@@ -2843,10 +3002,16 @@ function gerstePlant(x, y, h, ripe, ph){
   if (ripe){ ctx.strokeStyle = 'rgba(230,194,90,.8)'; ctx.lineWidth = .8; ctx.beginPath(); ctx.moveTo(x + sw + lean, y - h - 2); ctx.lineTo(x + sw + lean + 3, y - h - 12); ctx.stroke(); }
 }
 function drawField(r, f, i, sel){
-  const k = f ? growK(f) : 0, ripe = fieldRipe(f);
-  ctx.fillStyle = 'rgba(10,30,15,.3)'; rr(r.x + 4, r.y + 6, r.w, r.h, 10); ctx.fill();
-  ctx.fillStyle = f ? '#7a5434' : '#5a6a3a'; rr(r.x, r.y, r.w, r.h, 10); ctx.fill();
-  if (f){ ctx.strokeStyle = '#5e3e24'; ctx.lineWidth = 3; for (let j = 0; j < FARM.ROWS; j++){ const yy = cellXY(r, j, 0).y; ctx.beginPath(); ctx.moveTo(r.x + 8, yy); ctx.lineTo(r.x + r.w - 8, yy); ctx.stroke(); }
+  const k = f ? growK(f) : 0, ripe = fieldRipe(f), iso = f && isoField() ? rxField(r, f, k, ripe) : null;
+  if (iso === null){ ctx.fillStyle = 'rgba(10,30,15,.3)'; rr(r.x + 4, r.y + 6, r.w, r.h, 10); ctx.fill();
+  ctx.fillStyle = f ? '#7a5434' : '#5a6a3a'; rr(r.x, r.y, r.w, r.h, 10); ctx.fill(); }
+  if (iso === true){} else if (f && iso === false){
+    for (let j = 0; j < FARM.ROWS; j++) for (let c = 0; c < FARM.COLS; c++){ const b = 1 << (j*FARM.COLS + c), q = cellXY(r, j, c);
+      if (!(f.s & b)){ if (!f.t0 || k <= .2){ ctx.fillStyle = 'rgba(0,0,0,.22)'; ctx.beginPath(); ctx.arc(q.x, q.y - 2, 2.4, 0, Math.PI*2); ctx.fill(); } continue; }
+      if (f.c & b) continue;
+      if (k < .04){ ctx.fillStyle = '#e6cf98'; ctx.beginPath(); ctx.arc(q.x - 2, q.y - 2, 1.6, 0, Math.PI*2); ctx.arc(q.x + 2, q.y - 1, 1.6, 0, Math.PI*2); ctx.fill(); }
+      else gerstePlant(q.x, q.y, 6 + k*24, ripe, i*7 + j + c*1.7); }
+  } else if (f){ ctx.strokeStyle = '#5e3e24'; ctx.lineWidth = 3; for (let j = 0; j < FARM.ROWS; j++){ const yy = cellXY(r, j, 0).y; ctx.beginPath(); ctx.moveTo(r.x + 8, yy); ctx.lineTo(r.x + r.w - 8, yy); ctx.stroke(); }
     for (let j = 0; j < FARM.ROWS; j++) for (let c = 0; c < FARM.COLS; c++){ const b = 1 << (j*FARM.COLS + c), q = cellXY(r, j, c);
       if (!(f.s & b)){ if (!f.t0 || k <= .2){ ctx.fillStyle = 'rgba(0,0,0,.18)'; ctx.beginPath(); ctx.arc(q.x, q.y - 2, 3, 0, Math.PI*2); ctx.fill(); } continue; }
       if (f.c & b){ ctx.strokeStyle = '#b89a50'; ctx.lineWidth = 1.5; ctx.beginPath(); ctx.moveTo(q.x - 3, q.y); ctx.lineTo(q.x - 2, q.y - 4); ctx.moveTo(q.x + 1, q.y); ctx.lineTo(q.x + 2, q.y - 5); ctx.stroke(); continue; }
@@ -2854,8 +3019,8 @@ function drawField(r, f, i, sel){
       else gerstePlant(q.x, q.y, 6 + k*30, ripe, i*7 + j + c*1.7); } }
   else { ctx.fillStyle = 'rgba(255,255,255,.08)'; for (let j = 0; j < 14; j++){ ctx.beginPath(); ctx.arc(r.x + hsh(j + i*30)*r.w, r.y + hsh(j + 90 + i*30)*r.h, 2, 0, Math.PI*2); ctx.fill(); } }
   // Zaun
-  ctx.strokeStyle = '#8a6a44'; ctx.lineWidth = 2.5; ctx.beginPath(); ctx.moveTo(r.x - 2, r.y - 6); ctx.lineTo(r.x + r.w + 2, r.y - 6); ctx.stroke();
-  for (let j = 0; j <= 4; j++){ ctx.fillStyle = '#6b4c2e'; ctx.fillRect(r.x + j*r.w/4 - 2, r.y - 14, 4, 14); }
+  if (iso === null){ ctx.strokeStyle = '#8a6a44'; ctx.lineWidth = 2.5; ctx.beginPath(); ctx.moveTo(r.x - 2, r.y - 6); ctx.lineTo(r.x + r.w + 2, r.y - 6); ctx.stroke();
+  for (let j = 0; j <= 4; j++){ ctx.fillStyle = '#6b4c2e'; ctx.fillRect(r.x + j*r.w/4 - 2, r.y - 14, 4, 14); } }
   if (sel){ ctx.strokeStyle = `rgba(230,184,74,${.6 + Math.sin(tTotal*5)*.3})`; ctx.lineWidth = 3; rr(r.x - 3, r.y - 18, r.w + 6, r.h + 24, 12); ctx.stroke(); }
   // Schild
   ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
@@ -2882,6 +3047,8 @@ function drawKiln(r, sel){
   const F = farm(), k = F.kiln, kk = kilnK(), done = k && kk >= 1;
   const bx = r.x + r.w*.5 - 90, by = r.y + r.h, bw = 180, bh = r.h*.62;
   ctx.fillStyle = 'rgba(10,30,15,.3)'; ctx.beginPath(); ctx.ellipse(bx + bw/2 + 14, by + 4, bw*.6, 10, 0, 0, Math.PI*2); ctx.fill();
+  const kimg = rxOn() && rxKiln(bx, by, bw);
+  if (!kimg){
   obox(bx, by, bw, bh, 18, 12, '#e8d7b0', '#c8b48a', null);
   // Satteldach und Darre-Turm mit Haube
   ctx.fillStyle = '#9a3a28'; ctx.beginPath(); ctx.moveTo(bx - 8, by - bh); ctx.lineTo(bx + bw/2, by - bh - 40); ctx.lineTo(bx + bw + 8, by - bh); ctx.fill();
@@ -2889,7 +3056,7 @@ function drawKiln(r, sel){
   const tx = bx + bw - 44; ctx.fillStyle = '#d9c6a0'; ctx.fillRect(tx, by - bh - 58, 26, 40); ctx.fillStyle = '#5a5a62'; ctx.beginPath(); ctx.moveTo(tx - 6, by - bh - 58); ctx.lineTo(tx + 13, by - bh - 76); ctx.lineTo(tx + 32, by - bh - 58); ctx.fill();
   if (k && !done){ for (let i = 0; i < 3; i++){ const t = (tTotal*.6 + i/3) % 1; ctx.fillStyle = `rgba(230,230,230,${.5*(1 - t)})`; ctx.beginPath(); ctx.arc(tx + 13 + Math.sin(t*6 + i)*5, by - bh - 80 - t*30, 5 + t*8, 0, Math.PI*2); ctx.fill(); } }
   ctx.fillStyle = '#6b4325'; rr(bx + bw/2 - 18, by - 44, 36, 44, 4); ctx.fill(); win(bx + 22, by - bh + 16, 22, 20, !!k); win(bx + bw - 44, by - bh + 16, 22, 20, !!k);
-  ctx.fillStyle = '#2f5d3a'; rr(bx + bw/2 - 44, by - bh - 4, 88, 18, 4); ctx.fill(); ctx.fillStyle = C.gold; ctx.font = '700 12px "Barlow Condensed", sans-serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillText('MÄLZEREI', bx + bw/2, by - bh + 5);
+  ctx.fillStyle = '#2f5d3a'; rr(bx + bw/2 - 44, by - bh - 4, 88, 18, 4); ctx.fill(); ctx.fillStyle = C.gold; ctx.font = '700 12px "Barlow Condensed", sans-serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillText('MÄLZEREI', bx + bw/2, by - bh + 5); }
   // Gerste-Säcke davor
   const nS = Math.min(6, Math.ceil(F.gerste/2)); for (let i = 0; i < nS; i++){ const sx = bx - 30 + (i % 3)*14, sy = by - 2 - Math.floor(i/3)*14; ctx.fillStyle = '#e6d39a'; rr(sx - 7, sy - 16, 14, 16, 5); ctx.fill(); ctx.fillStyle = '#b89a50'; ctx.fillRect(sx - 5, sy - 13, 10, 2); }
   if (done){ const pre = k.m === 'malzP'; ctx.fillStyle = '#c8955a'; rr(bx + bw + 14, by - 30, 38, 30, 8); ctx.fill(); if (pre){ ctx.fillStyle = '#c22a22'; ctx.fillRect(bx + bw + 14, by - 26, 38, 4); ctx.fillStyle = C.gold; ctx.font = '700 12px sans-serif'; ctx.fillText('★', bx + bw + 33, by - 36); }
@@ -2907,7 +3074,8 @@ function renderFarm(){
   const g = farmGeo(), F = farm();
   const sky = ctx.createLinearGradient(0, 0, 0, H); sky.addColorStop(0, '#9ccbe8'); sky.addColorStop(.25, '#d8ecd0'); sky.addColorStop(.26, '#5f9a4a'); sky.addColorStop(1, '#3f7a3c');
   ctx.fillStyle = sky; ctx.fillRect(XL, 0, XR - XL, H);
-  ctx.fillStyle = '#6aa04a'; ctx.beginPath(); ctx.ellipse(W*.2, H*.25, 160, 40, 0, Math.PI, 0); ctx.ellipse(W*.85, H*.26, 140, 34, 0, Math.PI, 0); ctx.fill();
+  if (rxOn() && RX.bg_bauernhof) rxCover('bg_bauernhof', .5, .84, 0, H); else {
+  ctx.fillStyle = '#6aa04a'; ctx.beginPath(); ctx.ellipse(W*.2, H*.25, 160, 40, 0, Math.PI, 0); ctx.ellipse(W*.85, H*.26, 140, 34, 0, Math.PI, 0); ctx.fill(); }
   for (let i = 0; i < 30; i++){ ctx.strokeStyle = 'rgba(30,60,30,.4)'; ctx.lineWidth = 1; const gx = XL + hsh(i + 50)*(XR - XL), gy = H*.3 + hsh(i + 70)*H*.7; ctx.beginPath(); ctx.moveTo(gx, gy); ctx.lineTo(gx - 1.5, gy - 4); ctx.moveTo(gx, gy); ctx.lineTo(gx + 1.5, gy - 4); ctx.stroke(); }
   g.fields.forEach((r, i) => drawField(r, F.fields[i], i, FARM.sel && FARM.sel.k === 'field' && FARM.sel.i === i));
   drawKiln(g.kiln, FARM.sel && FARM.sel.k === 'kiln');
@@ -3009,10 +3177,12 @@ function renderHops(){
   const sky = ctx.createLinearGradient(0, 0, 0, H); sky.addColorStop(0, '#8fc4e8'); sky.addColorStop(.55, '#cfe6c0'); sky.addColorStop(1, '#6a9a4a'); ctx.fillStyle = sky; ctx.fillRect(XL, 0, XR - XL, H);
   ctx.fillStyle = '#4a7a3a'; ctx.fillRect(XL, g.y + g.h, XR - XL, H - g.y - g.h);
   const k = F.hop ? (G ? 1 : hopK()) : 0, ripe = !!F.hop && (G ? !G.done : hopRipe());
+  const himg = rxOn() && RX.bg_hopfengarten && RX.hopfen_jung;
+  if (himg){ rxCover('bg_hopfengarten', .3, .9, 0, H); rxHops(g, k, ripe && !G, G && G.done); }
   // Gerüst: Draht über die Stangen
-  ctx.strokeStyle = '#5a4a3a'; ctx.lineWidth = 1.5; ctx.beginPath(); ctx.moveTo(g.x, g.y + 4); ctx.lineTo(g.x + g.w, g.y + 4); ctx.stroke();
-  if (!F.hop){ ctx.fillStyle = '#7a5434'; rr(g.x, g.y + g.h - 60, g.w, 60, 10); ctx.fill(); }
-  for (let i = 0; i < 6; i++) drawHopPole(g.x + 14 + i*(g.w - 28)/5, g.y, g.y + g.h, G ? (G.done ? .25 : 1) : k, ripe && !G, i*1.7);
+  if (!himg){ ctx.strokeStyle = '#5a4a3a'; ctx.lineWidth = 1.5; ctx.beginPath(); ctx.moveTo(g.x, g.y + 4); ctx.lineTo(g.x + g.w, g.y + 4); ctx.stroke(); }
+  if (!F.hop && !himg){ ctx.fillStyle = '#7a5434'; rr(g.x, g.y + g.h - 60, g.w, 60, 10); ctx.fill(); }
+  if (!himg) for (let i = 0; i < 6; i++) drawHopPole(g.x + 14 + i*(g.w - 28)/5, g.y, g.y + g.h, G ? (G.done ? .25 : 1) : k, ripe && !G, i*1.7);
   if (!G){
     if (FARM.sel){ ctx.strokeStyle = `rgba(230,184,74,${.6 + Math.sin(tTotal*5)*.3})`; ctx.lineWidth = 3; rr(g.x - 6, g.y - 14, g.w + 12, g.h + 28, 14); ctx.stroke(); }
     const lab = !F.hop ? `🔒 ${HOP.COST} 🪙 · anlegen` : ripe ? '✋ ernten!' : fmtLeft(HOP.GROW - (nowMs() - F.hop.t0)*FARM.speed);
@@ -3494,9 +3664,10 @@ function drawLoc(k, p){
   ctx.save(); ctx.translate(p.x, p.y); ctx.scale(p.k, p.k);
   if (sel){ ctx.strokeStyle = `rgba(230,184,74,${.55 + Math.sin(tTotal*5)*.35})`; ctx.lineWidth = 4; ctx.beginPath(); ctx.ellipse(4, 4, 72, 17, 0, 0, Math.PI*2); ctx.stroke(); }
   if (lk) ctx.globalAlpha = k === 'sud' && rank >= 1 ? .85 : .5;
-  if (k === 'hof') drawHofMap();
-  if (k === 'hopfen') drawHopMap();
-  if (k === 'bar'){
+  const rxd = rxOn() && rxLoc(k);
+  if (!rxd && k === 'hof') drawHofMap();
+  if (!rxd && k === 'hopfen') drawHopMap();
+  if (rxd){} else if (k === 'bar'){
     bshadow(-50, 0, 100, 74);
     obox(-50, 0, 100, 50, 14, 10, '#a85e3c', '#7e4229');
     ctx.fillStyle = 'rgba(0,0,0,.13)'; for (let r=0;r<6;r++) for (let c=0;c<7;c++) ctx.fillRect(-50 + c*15 + (r%2)*7, -48 + r*8, 7, 1.5);
@@ -3605,6 +3776,7 @@ function decorateWay(pts, k, seed, lamps){
       if (n % 9 === 4 && i > 3 && i < pts.length - 2){ const side = (n % 18 === 4) ? 1 : -1, fx = x + nx*side*18*k, fy = y + ny*side*18*k;
         ctx.fillStyle = '#3f7a3c'; ctx.beginPath(); ctx.ellipse(fx, fy, 6*k, 3.5*k, 0, 0, Math.PI*2); ctx.fill();
         for (let f = 0; f < 3; f++){ ctx.fillStyle = ['#f3e6c4', '#e6b84a', '#d98ab0', '#c22a22'][(seed + n + f) % 4]; ctx.beginPath(); ctx.arc(fx - 3*k + f*3*k, fy - 1.5*k - (f % 2)*1.5*k, 1.4*k, 0, Math.PI*2); ctx.fill(); } }
+      if (lamps && n === 11 && rxDeko('deko_laterne', x + nx*16*k, y + ny*16*k, 13*k)) continue;
       if (lamps && n === 11){ const lx = x + nx*16*k, ly = y + ny*16*k;
         ctx.fillStyle = 'rgba(10,30,15,.25)'; ctx.beginPath(); ctx.ellipse(lx + 2*k, ly + 1*k, 4*k, 1.5*k, 0, 0, Math.PI*2); ctx.fill();
         ctx.fillStyle = '#2a2a2a'; ctx.fillRect(lx - .9*k, ly - 22*k, 1.8*k, 22*k); ctx.fillRect(lx - 3*k, ly - 24*k, 6*k, 2*k);
@@ -3618,6 +3790,8 @@ function drawGate(g, p){
   // Wegweiser am Kartenrand: Pfosten mit Pfeilschild
   const L = LOCS[g], d = L.arrow, lk = locked(g), sel = MAP.at === g || MAP.dest === g;
   ctx.save(); ctx.translate(p.x + d*-6, p.y); ctx.scale(p.k, p.k); if (lk) ctx.globalAlpha = .55;
+  if (rxOn() && RX.deko_wegweiser_links){ if (sel){ ctx.fillStyle = `rgba(230,184,74,${.5 + Math.sin(tTotal*5)*.3})`; ctx.beginPath(); ctx.ellipse(0, 2, 22, 6, 0, 0, Math.PI*2); ctx.fill(); }
+    rxPut(d < 0 ? 'deko_wegweiser_links' : 'deko_wegweiser_rechts', 0, 4, 46); ctx.restore(); return; }
   ctx.fillStyle = 'rgba(10,30,15,.25)'; ctx.beginPath(); ctx.ellipse(2, 2, 12, 4, 0, 0, Math.PI*2); ctx.fill();
   ctx.fillStyle = '#6b4a2e'; ctx.fillRect(-2, -46, 4, 46);
   ctx.fillStyle = sel ? C.gold : '#e8d7b0'; ctx.beginPath(); ctx.moveTo(-18*d, -48); ctx.lineTo(14*d, -48); ctx.lineTo(24*d, -40); ctx.lineTo(14*d, -32); ctx.lineTo(-18*d, -32); ctx.closePath(); ctx.fill();
@@ -3634,7 +3808,7 @@ function drawGateLabel(g, p){
 function mapTrucks(k){
   // Abfüllseite: Laderampe mit Lkw, je Ausbau der Halle mehr Betrieb
   const out = [], n = 1 + Math.min(2, (U.belt || 0) + (U.filler || 0) > 2 ? 2 : (U.belt || 0) + (U.filler || 0) > 0 ? 1 : 0);
-  for (let i = 0; i < n; i++){ const q = mapUV(.18 + i*.24, .86); out.push({ y: q.y, f: () => { ctx.save(); ctx.translate(q.x, q.y); ctx.scale(k*.9, k*.9);
+  for (let i = 0; i < n; i++){ const q = mapUV(.18 + i*.24, .86); out.push({ y: q.y, f: () => { if (rxDeko('aus_abfuellhalle_lkw', q.x, q.y + 4*k, 66*k)) return; ctx.save(); ctx.translate(q.x, q.y); ctx.scale(k*.9, k*.9);
     ctx.fillStyle = 'rgba(10,30,15,.25)'; ctx.beginPath(); ctx.ellipse(4, 2, 34, 6, 0, 0, Math.PI*2); ctx.fill();
     ctx.fillStyle = '#e8e4da'; rr(-30, -30, 42, 26, 3); ctx.fill(); ctx.fillStyle = '#2f5d3a'; ctx.fillRect(-30, -20, 42, 6); ctx.fillStyle = C.gold; ctx.font = '700 6px sans-serif'; ctx.textAlign = 'center'; ctx.fillText('FREETOWN', -9, -15);
     ctx.fillStyle = '#2f5d3a'; rr(12, -24, 18, 20, 3); ctx.fill(); ctx.fillStyle = '#bfe0f0'; ctx.fillRect(20, -21, 8, 7);
@@ -3658,6 +3832,7 @@ function drawLocLabel(k, p){
   ctx.restore();
 }
 function tree(x, y, k, i){
+  if (rxDeko(['deko_baum_1', 'deko_baum_2', 'deko_busch'][i % 3], x, y + 3*k, (i % 3 === 2 ? 30 : 40)*k)) return;
   const s = k*(.85 + hsh(i)*.35), sw = Math.sin(tTotal*1.3 + i)*1.2*s;
   ctx.fillStyle = 'rgba(10,30,15,.3)'; ctx.beginPath(); ctx.ellipse(x + 8*s, y + 2, 18*s, 6*s, 0, 0, Math.PI*2); ctx.fill();
   ctx.fillStyle = '#5a3a24'; ctx.fillRect(x - 2.5*s, y - 14*s, 5*s, 16*s);
@@ -3734,7 +3909,7 @@ function drawMapPage(pg, a, k, x0, y0, w, h){
   const stuff = [];
   const TP = [[0, 0], [34, 8], [17, -20], [51, -12], [68, 16]];
   for (let i=0;i<(pg ? 0 : Math.min(3, U.tables || 0));i++){ const tx = bg2.x + TP[i][0]*k, ty = bg2.y + TP[i][1]*k;
-    stuff.push({ y: ty, f: () => { ctx.save(); ctx.translate(tx, ty); ctx.scale(k, k);
+    stuff.push({ y: ty, f: () => { if (rxDeko('aus_biergarten_tisch', tx, ty + 6*k, 40*k)) return; ctx.save(); ctx.translate(tx, ty); ctx.scale(k, k);
       ctx.fillStyle = 'rgba(10,30,15,.25)'; ctx.beginPath(); ctx.ellipse(4, 2, 16, 5, 0, 0, Math.PI*2); ctx.fill();
       ctx.fillStyle = '#7a5a3a'; ctx.fillRect(-12, -6, 24, 4); ctx.fillRect(-10, -2, 2, 4); ctx.fillRect(8, -2, 2, 4);
       tinyGuest(-15, 0, i ? '#3d6fa8' : '#9a2a20', i); tinyGuest(15, 0, i ? '#c9a640' : '#2f5d3a', i + 2);
@@ -3813,9 +3988,9 @@ function renderDress(){
   // Lichtkegel und Maxi
   ctx.fillStyle = 'rgba(255,240,200,.55)'; ctx.beginPath(); ctx.moveTo(W/2 - 40, 0); ctx.lineTo(W/2 + 40, 0); ctx.lineTo(W/2 + 120, floor + 6); ctx.lineTo(W/2 - 120, floor + 6); ctx.closePath(); ctx.fill();
   ctx.fillStyle = 'rgba(122,90,58,.35)'; ctx.beginPath(); ctx.ellipse(W/2, floor + 6, 110, 16, 0, 0, Math.PI*2); ctx.fill();
-  const keep = [P.noCrate, P.vx, P.trip, P.slim]; P.noCrate = true; P.vx = 0; P.trip = 0; P.slim = false;
+  const keep = [P.noCrate, P.vx, P.trip, P.slim]; P.noCrate = true; P.vx = 0; P.trip = 0; P.slim = false; P.pose = t > 2.3 ? 'jubeln' : null;
   ctx.save(); ctx.translate(W/2, floor + 4); ctx.scale(1.7, 1.7); drawMan(0, 0); ctx.restore();
-  [P.noCrate, P.vx, P.trip, P.slim] = keep;
+  [P.noCrate, P.vx, P.trip, P.slim] = keep; P.pose = null;
   // Vorhang zu, Gewand fliegt hinein, Vorhang auf
   const c = t < .5 ? t/.5 : t < 1.9 ? 1 : t < 2.5 ? 1 - (t - 1.9)/.6 : 0, half = (XR - XL)/2;
   for (const s of [-1, 1]){ const w = half*c, x0 = s < 0 ? XL : XR - w;
@@ -3920,6 +4095,7 @@ function sceneKettle(x, y, s, shiny){
 function renderScene(){
   ctx.setTransform(dpr*S, 0, 0, dpr*S, dpr*OX, 0);
   const p = scene.panels[scene.i], nice = p.bg === 'nice', floor = H*.74;
+  if (rxOn() && RX.fig_braumeister_freundlich && RX[nice ? 'bg_szene_brauereihof' : 'bg_szene_sudhaus_alt']){ rxScene(p, nice); return; }
   // Hintergrund
   ctx.fillStyle = nice ? '#efe3c8' : '#3a2c22'; ctx.fillRect(XL, 0, XR - XL, floor);
   if (nice){ ctx.fillStyle = 'rgba(160,130,90,.18)'; for (let y=0;y<floor;y+=22) for (let x=Math.floor(XL/22)*22;x<XR;x+=22) ctx.fillRect(x + ((y/22)%2)*11, y, 21, 1); for (let x=Math.floor(XL/22)*22;x<XR;x+=22) ctx.fillRect(x, 0, 1, floor); }
@@ -3959,6 +4135,29 @@ function renderScene(){
   // Fortschritt und Hinweis
   for (let i=0;i<scene.panels.length;i++){ ctx.fillStyle = i === scene.i ? C.gold : 'rgba(243,230,196,.45)'; ctx.beginPath(); ctx.arc(W/2 + (i - (scene.panels.length - 1)/2)*16, H - 54, 5, 0, Math.PI*2); ctx.fill(); }
   if (tTotal - scene.t0 > .45){ ctx.globalAlpha = .6 + Math.sin(tTotal*4)*.4; ctx.fillStyle = C.cream; ctx.font = '700 15px "Barlow Condensed", sans-serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillText('Tippen zum Weiter', W/2, H - 30); ctx.globalAlpha = 1; }
+}
+function rxScene(p, nice){
+  // Zwischenszene mit Kulisse und Oberkörpern; die Sprechblase zeigt auf den, der spricht
+  rxCover(nice ? 'bg_szene_brauereihof' : 'bg_szene_sudhaus_alt', 0, 1, 0, H);
+  const sh = ctx.createLinearGradient(0, H*.55, 0, H); sh.addColorStop(0, 'rgba(15,20,30,0)'); sh.addColorStop(1, 'rgba(15,20,30,.55)'); ctx.fillStyle = sh; ctx.fillRect(XL, H*.55, XR - XL, H*.45);
+  const talkBM = p.who === 'bm', bmX = W*.3, mxX = W*.72, fy = H - 66, fh = Math.min(230, H*.3);
+  const bmF = talkBM ? (nice ? 'lobend' : 'freundlich') : nice ? 'freundlich' : 'streng', mxF = talkBM ? (nice ? 'staunend' : 'freundlich') : 'stolz';
+  const bob = t => Math.abs(Math.sin(tTotal*6))*2*(t ? 1 : 0);
+  ctx.globalAlpha = talkBM ? 1 : .9; rxImg('fig_braumeister_' + bmF, bmX, fy - bob(talkBM), fh*(talkBM ? 1.04 : 1), 0, .5, 1);
+  ctx.globalAlpha = !talkBM ? 1 : .9; rxImg('fig_maxi_' + mxF, mxX, fy - bob(!talkBM), fh*(!talkBM ? 1.04 : 1)*.94, 0, .5, 1); ctx.globalAlpha = 1;
+  const a = Math.min(1, (tTotal - scene.t0)/.3); ctx.globalAlpha = a;
+  ctx.font = '600 17px "Barlow Condensed", sans-serif';
+  const bw = Math.min(W - 24, 360), lines = wrapLines(p.text, bw - 28), bh = 40 + lines.length*22, bx = W/2 - bw/2, by = Math.min(H*.3, fy - fh - bh - 30), tx = talkBM ? bmX : mxX;
+  ctx.fillStyle = '#fffaf0'; rr(bx, by, bw, bh, 12); ctx.fill();
+  ctx.beginPath(); ctx.moveTo(tx - 12, by + bh - 1); ctx.lineTo(tx + 12, by + bh - 1); ctx.lineTo(tx, by + bh + 22); ctx.closePath(); ctx.fill();
+  ctx.strokeStyle = '#2f5d3a'; ctx.lineWidth = 2.5; rr(bx, by, bw, bh, 12); ctx.stroke();
+  ctx.fillStyle = '#9a2a20'; ctx.font = '15px "Alfa Slab One", Georgia, serif'; ctx.textAlign = 'left'; ctx.textBaseline = 'top';
+  ctx.fillText(talkBM ? 'Braumeister' : 'Maxi', bx + 14, by + 10);
+  ctx.fillStyle = '#20232a'; ctx.font = '600 17px "Barlow Condensed", sans-serif';
+  lines.forEach((l, i) => ctx.fillText(l, bx + 14, by + 32 + i*22));
+  ctx.globalAlpha = 1;
+  for (let i=0;i<scene.panels.length;i++){ ctx.fillStyle = i === scene.i ? C.gold : 'rgba(243,230,196,.6)'; ctx.beginPath(); ctx.arc(W/2 + (i - (scene.panels.length - 1)/2)*16, H - 46, 5, 0, Math.PI*2); ctx.fill(); }
+  if (tTotal - scene.t0 > .45){ ctx.globalAlpha = .6 + Math.sin(tTotal*4)*.4; ctx.fillStyle = C.cream; ctx.font = '700 15px "Barlow Condensed", sans-serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillText('Tippen zum Weiter', W/2, H - 24); ctx.globalAlpha = 1; }
 }
 function storyHall(){
   // Kapitel 1 geschafft: Lob vom Braumeister, dann Kapitel 2 am Förderband
@@ -4269,6 +4468,7 @@ let bg3 = document.createElement('canvas');
 function buildBg3(){
   bg3.width = cv.width; bg3.height = cv.height;
   const b = bg3.getContext('2d'); b.setTransform(dpr*S,0,0,dpr*S,dpr*OX,0);
+  if (rxOn() && RX.bg_sudhaus){ rxBg(b, 'bg_sudhaus'); b.fillStyle = 'rgba(20,14,10,.35)'; b.fillRect(XL, 0, XR - XL, H); return; }
   const floorY = H - 128;
   // warme Holzvertäfelung
   b.fillStyle = '#6b4a2e'; b.fillRect(XL, 0, XR-XL, floorY);
@@ -4288,6 +4488,7 @@ function buildBg3(){
   b.fillStyle = 'rgba(0,0,0,.2)'; b.fillRect(XL, floorY, XR-XL, 4);
 }
 function drawIng(ing, x, y, sc){
+  if (rxOn() && RXING[ing] && RX[RXING[ing]]){ rxImg(RXING[ing], x, y + 1*sc, 27*sc, 0, .5, .5); return; }
   ctx.save(); ctx.translate(x, y); ctx.scale(sc, sc); ctx.lineJoin = 'round';
   if (ing === 'malz' || ing === 'karamell'){
     const c = ing === 'malz' ? '#e3c58a' : '#9a6232', d = ing === 'malz' ? '#b89456' : '#6e4220';
@@ -4517,7 +4718,7 @@ function render3(){
   // Maxi läuft zur Zutat
   P.noCrate = true; P.slim = true;
   const tx = L3.maxiX, cur = P.x3 ?? 200; P.x3 = cur + (tx - cur) * .18; P.vx = (tx - cur) * 8; P.walk += Math.abs(tx - cur) * .05;
-  ctx.save(); ctx.translate(P.x3, g.binTop - 6); ctx.scale(.72, .72); drawMan(0, 0); ctx.restore();
+  P.pose = L3.paddle ? 'ruehren' : null; ctx.save(); ctx.translate(P.x3, g.binTop - 6); ctx.scale(.72, .72); drawMan(0, 0); ctx.restore(); P.pose = null;
   if (L3.trial) drawBraumeister(XL + 34, g.binTop - 8, .55, false);
   drawBins(g, state === 'intro' && introKind === 'l3karamell' ? 'karamell' : null);
   // fliegende Zutaten
@@ -4583,7 +4784,7 @@ for (const el of document.querySelectorAll('[data-legal]')) el.addEventListener(
 $('legalClose').onclick = closeLegal;
 // Spielstand zurücksetzen: erster Tipp fragt nach, zweiter löscht alles außer dem Namen für die Bestenliste
 // Versionsnummer: bei jeder Veröffentlichung erhöhen (Hauptversion.Neue Funktionen.Korrekturen)
-const VERSION = '2.4.4';
+const VERSION = '2.5.0';
 $('verTag').textContent = `v${VERSION}`;
 $('resetBtn').onclick = () => {
   const b = $('resetBtn');
