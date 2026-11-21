@@ -123,6 +123,7 @@ Zu Beginn jeder Runde zeigt eine Karte das aktuelle Ziel (bis zum Produktionsmit
 
 Die Versionsnummer steht im Startmenü unten neben „Spielstand zurücksetzen“ (`VERSION` in `index.html`). Schema: Hauptversion.Neue Funktionen.Korrekturen; bei jeder Veröffentlichung erhöhen.
 
+- **2.5.1** – Braustüberl: Gäste im neuen Stil stehen von vorne hinter einem Biergartenzaun und werfen die Flaschen darüber; der Storch sitzt im Nest auf dem Schornstein des neuen Bildes
 - **2.5.0** – Neue Grafik im Diorama-Stil (Bilder in `grafik/`): Maxi in vier Gewändern mit und ohne Kiste, Ausrutschen, Rühren und Jubeln; Gebäude auf der Karte mit sichtbaren Ausbauten, Bäume, Laternen und Wegweiser; Zwischenszenen mit Braumeister und Maxi; Gäste in der Schank mit Mienen; Bauernhof mit Bild-Feldern und Hopfengarten; Symbole statt Emoji in Leisten und Menüs. Fehlt ein Bild, bleibt die gezeichnete Grafik
 - **2.4.2** – Stufenleiste (Lakai → Braumeister) direkt in der Kopfzeile neben dem Geld, ohne Aufklappen
 - **2.4.1** – Hauptseite: Sudhaus und Laden hinten, Braustüberl vorne; Wege gepflastert mit Rand, Blumen und Laternen

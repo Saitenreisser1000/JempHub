@@ -822,7 +822,7 @@ let rzF = 0, rzW = 0, rzH = 0;
 addEventListener('resize', () => { cancelAnimationFrame(rzF); rzF = requestAnimationFrame(() => { if (innerWidth === rzW && innerHeight === rzH) return; rzW = innerWidth; rzH = innerHeight; resize(); mapA = null; }); });
 
 /* ================= Grafik: Bilder im Diorama-Stil aus grafik/ (fehlt ein Bild, bleibt die gezeichnete Grafik) ================= */
-const GFXS = { diorama: { dir: 'grafik/', name: 'Diorama', img: {}, ok: false, mh: 146.9, extra: null } };
+const GFXS = { diorama: { dir: 'grafik/', name: 'Diorama', img: {}, ok: false, mh: 146.9, extra: null, chim: [593, 330, true] } };
 let GFX = 'diorama', RX = {};
 const RXFILES = ['maxi0_stand','maxi0_gehen_01','maxi0_gehen_02','maxi0_gehen_03','maxi1_stand','maxi1_gehen_01','maxi1_gehen_02','maxi1_gehen_03','maxi2_stand','maxi2_gehen_01','maxi2_gehen_02','maxi2_gehen_03','maxi3_stand','maxi3_gehen_01','maxi3_gehen_02','maxi3_gehen_03',
   'obj_bierflasche_gruen','obj_bierflasche_rot','obj_bananenschale','obj_bierkiste_gruen','obj_malzsack','obj_hopfendolde','obj_hefe','obj_fass','obj_masskrug','obj_bierglas','obj_kronkorken','obj_gerstenaehre',
@@ -868,6 +868,42 @@ function rxBg(b, name){
   b.imageSmoothingQuality = 'high'; b.drawImage(im, W/2 - w/2, H - h, w, h);
 }
 const RXLOC = { bar: ['kar_braustueberl', 128], laden: ['kar_laden', 118], halle: ['kar_abfuellhalle', 160], hof: ['kar_bauernhof_maelzerei', 150], hopfen: ['kar_hopfengarten', 122] };
+function rxChim(){
+  // Schornstein im Braustüberl-Bild (Bildpunkte → Spielfeld), dort sitzt der Storch
+  const st = GFXS[GFX], im = RX.bg_braustueberl; if (!rxOn() || !st.chim || !im) return null;
+  const sc = Math.max((XR - XL)/im.width, H/im.height), w = im.width*sc, h = im.height*sc;
+  return { x: W/2 - w/2 + st.chim[0]*sc, y: H - h + st.chim[1]*sc };
+}
+function rxNest(b){
+  // Storchennest auf den Schornstein setzen, wenn das Bild keines hat
+  const st = GFXS[GFX], c = rxChim(); if (!c || !st.chim[2]) return;
+  b.fillStyle = 'rgba(0,0,0,.25)'; b.beginPath(); b.ellipse(c.x + 1, c.y - 5, 20, 5, 0, 0, Math.PI*2); b.fill();
+  b.fillStyle = '#6b4a28'; b.beginPath(); b.ellipse(c.x, c.y - 8, 20, 6.5, 0, 0, Math.PI*2); b.fill();
+  b.strokeStyle = '#a07a40'; b.lineWidth = 1.5;
+  for (let k = 0; k < 16; k++){ const a = k/16*Math.PI*2, r1 = 13 + (k % 3)*3; b.beginPath(); b.moveTo(c.x + Math.cos(a)*7, c.y - 8 + Math.sin(a)*2.5); b.lineTo(c.x + Math.cos(a)*r1*1.45, c.y - 9 + Math.sin(a)*r1*.5); b.stroke(); }
+}
+function rxVisitor(v){
+  // Gast im Biergarten: von vorne, hinter dem Zaun, holt mit der Flasche über dem Kopf aus
+  if (v.gimg == null){ const used = new Set(visitors.map(o => o.gimg)), free = [0, 1, 2, 3, 4, 5].filter(i => !used.has(i)); v.gimg = free.length ? free[Math.floor(Math.random()*free.length)] : Math.floor(Math.random()*6); }
+  const g = 'gae_' + GAST[v.gimg]; if (!RX[g]) return false;
+  const walking = v.state === 'in' || v.state === 'out', fy = backY() + 4;
+  let p = 0; if (v.throwT > 0) p = 1 - v.throwT/THROW_WIND; else if (v.back > 0) p = v.back/.3;
+  const bob = walking ? Math.abs(Math.sin(v.walk))*3 : Math.sin(tTotal*1.6 + v.phase)*1, md = p > 0 ? '_gluecklich' : '';
+  ctx.save(); ctx.translate(v.x, fy - bob - p*5); ctx.rotate(-v.side*p*.06);
+  rxImg(RX[g + md] ? g + md : g, 0, 0, 82, 0, .5, 1);
+  if (v.throwT > 0 && v.pending){ // Flasche über dem Kopf
+    ctx.save(); ctx.translate(v.side*(16 - 8*p), -64 - 14*p); ctx.rotate(-v.side*(.3 + p*.5)); ctx.scale(.8, .8);
+    if (v.pending === 'nana') drawBanana(0, 4, 0, false); else drawBottle(0, 0, 0, v.pending === 'red');
+    ctx.restore(); }
+  ctx.restore(); return true;
+}
+function rxFence(y){
+  // Biergartenzaun quer über den Platz, die Gäste stehen dahinter
+  const im = RX.deko_zaun, h = 30;
+  if (im){ const w = h*im.width/im.height*.94; for (let x = XL - 8; x < XR + 8; x += w) ctx.drawImage(im, x, y - h + 8, w/.94, h); return; }
+  ctx.fillStyle = '#7a4f2c'; ctx.fillRect(XL, y - 18, XR - XL, 5); ctx.fillRect(XL, y - 4, XR - XL, 5);
+  for (let x = XL + 6; x < XR; x += 22){ ctx.fillStyle = '#8a5a32'; ctx.fillRect(x, y - 24, 6, 28); }
+}
 function rxPut(n, x, y, w, ax, ay){
   // Bild mit Breite w, (ax, ay) = Ankerpunkt (Standard: unten Mitte)
   const im = RX[n]; if (!im) return false; const h = w*im.height/im.width;
@@ -962,7 +998,7 @@ const RXING = { malz: 'obj_malzsack', hopfen: 'obj_hopfendolde', hefe: 'obj_hefe
 function buildBg(){
   bg.width = cv.width; bg.height = cv.height;
   const b = bg.getContext('2d'); b.setTransform(dpr*S,0,0,dpr*S,dpr*OX,0);
-  if (rxOn()){ rxBg(b, 'bg_braustueberl'); return; }
+  if (rxOn()){ rxBg(b, 'bg_braustueberl'); rxNest(b); return; }
   const gb = backY();
   const g = b.createLinearGradient(0,0,0,gb); g.addColorStop(0,C.skyTop); g.addColorStop(1,C.skyBot);
   b.fillStyle = g; b.fillRect(XL,0,XR-XL,gb);
@@ -1315,9 +1351,9 @@ function drawMan(x, base){
   ctx.restore();
 }
 let zoneSignY = 0;
-function chimneyX(){ return W - 72; }
+function chimneyX(){ const c = rxChim(); if (c) return c.x; return W - 72; }
 function backY(){ return groundY - Math.min(90, Math.max(50, (groundY - 520)*.5 + 50)); }
-function chimneyTop(){ return Math.max(175, backY() - 370); }
+function chimneyTop(){ const c = rxChim(); if (c) return c.y; return Math.max(175, backY() - 370); }
 function zoneX(){ return zone === 'left' ? 38 : W-38; }
 function drawZone(){
   const zx = zoneX(), full = P.count >= CAP, pulse = full ? (Math.sin(tTotal*8)+1)/2 : 0;
@@ -1753,6 +1789,7 @@ function updateVisitors(dt){
   }
 }
 function drawVisitor(v){
+  if (rxOn() && rxVisitor(v)) return;
   const fy = backY() - 2;
   ctx.save(); ctx.translate(v.x, fy); ctx.scale(VS, VS);
   const walking = v.state === 'in' || v.state === 'out';
@@ -1944,6 +1981,7 @@ function render(){
   if (state === 'menu' && !$('career').hidden){ shake = 0; ctx.setTransform(dpr*S,0,0,dpr*S, dpr*OX, 0); renderMap(); return; } // Karte nie wackeln lassen
   if (state === 'menu'){
     for (const v of visitors) drawVisitor(v);
+    if (rxOn() && RX.gae_gast_01_alpenhut) rxFence(backY() + 6);
     // Titelbild: Maxi groß im Vordergrund, Flaschen fliegen um ihn herum
     const sc = Math.min(2.2, Math.max(1.4, (groundY - 330) / 150)), fy = groundY - 52;
     ctx.fillStyle = 'rgba(15,20,30,.35)'; ctx.fillRect(XL, 0, XR - XL, H);
@@ -1955,6 +1993,7 @@ function render(){
 
   if (rxOn()) rxPassers(backY() - 10);
   for (const v of visitors) drawVisitor(v);
+  if (rxOn() && RX.gae_gast_01_alpenhut) rxFence(backY() + 6);
   drawZone();
   if (rxOn()) rxShards();
   drawStork();
@@ -4781,7 +4820,7 @@ for (const el of document.querySelectorAll('[data-legal]')) el.addEventListener(
 $('legalClose').onclick = closeLegal;
 // Spielstand zurücksetzen: erster Tipp fragt nach, zweiter löscht alles außer dem Namen für die Bestenliste
 // Versionsnummer: bei jeder Veröffentlichung erhöhen (Hauptversion.Neue Funktionen.Korrekturen)
-const VERSION = '2.5.0';
+const VERSION = '2.5.1';
 $('verTag').textContent = `v${VERSION}`;
 $('resetBtn').onclick = () => {
   const b = $('resetBtn');
