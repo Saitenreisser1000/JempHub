@@ -557,7 +557,7 @@ function applyUpg(){
   MAXMISS = 5 + (U.life || 0); baseMult = 1 + (U.mult || 0); mult = baseMult; streak = 0; serieT = 0; roundPaid = false; setMultUI(null);
   if (typeof ECO !== 'undefined') ECO.round = ecoRound0();
 }
-function catchW(){ return 38 + 6*(U.catch || 0); }
+function catchW(){ return (38 + 6*(U.catch || 0))*mk(); }
 
 /* ---------- Wirtschaft: Lager, Warenfluss und Spieltage ----------
    Sudhaus braut aus Malz und Hopfen Fässer, die Abfüllhalle füllt Fässer in Kisten (4 je Fass),
@@ -816,6 +816,7 @@ function resize(){
   // Spielfeld ist 400 breit; bei breiten Fenstern nach Höhe skalieren und mittig setzen
   S = Math.min(w / W, h / 560); OX = (w - W*S) / 2; H = h / S; groundY = H - 78;
   XL = -OX / S; XR = W + OX / S;
+  brLayout();
   buildBg(); buildBg2(); buildBg3();
 }
 let rzF = 0, rzW = 0, rzH = 0;
@@ -827,7 +828,7 @@ let GFX = 'diorama', RX = {};
 const RXFILES = ['maxi0_stand','maxi0_gehen_01','maxi0_gehen_02','maxi0_gehen_03','maxi1_stand','maxi1_gehen_01','maxi1_gehen_02','maxi1_gehen_03','maxi2_stand','maxi2_gehen_01','maxi2_gehen_02','maxi2_gehen_03','maxi3_stand','maxi3_gehen_01','maxi3_gehen_02','maxi3_gehen_03',
   'obj_bierflasche_gruen','obj_bierflasche_rot','obj_bananenschale','obj_bierkiste_gruen','obj_malzsack','obj_hopfendolde','obj_hefe','obj_fass','obj_masskrug','obj_bierglas','obj_kronkorken','obj_gerstenaehre',
   'kar_braustueberl','kar_laden','kar_sudhaus_alt','kar_sudhaus_renoviert','kar_abfuellhalle','kar_bauernhof_maelzerei','kar_hopfengarten',
-  'gae_gast_01_alpenhut','gae_gast_02_kleid','gae_gast_03_brille','gae_gast_04_schuerze','gae_gast_05_schnurrbart','gae_gast_06_zopf'].map(n => n + '.webp').concat(['bg_braustueberl.jpg','bg_abfuellhalle.jpg','bg_sudhaus.jpg','bg_schankraum.jpg']);
+  'gae_gast_01_alpenhut','gae_gast_02_kleid','gae_gast_03_brille','gae_gast_04_schuerze','gae_gast_05_schnurrbart','gae_gast_06_zopf'].map(n => n + '.webp').concat(['bg_braustueberl_v2.jpg','bg_abfuellhalle.jpg','bg_sudhaus.jpg','bg_schankraum.jpg']);
 // Posen, Ausbauten, Szenen, Bauernhof, Schank, Symbole …: laden nach, das Spiel startet schon mit den Grundbildern
 const DXFILES = ["aus_abfuellhalle_lkw.webp", "aus_abfuellhalle_palette.webp", "aus_biergarten_tisch.webp", "aus_laden_stufe2.webp", "aus_laden_stufe3.webp", "aus_maehdrescher.webp", "aus_saemaschine.webp", "aus_sudhaus_gaertanks.webp", "aus_sudhaus_kupfer_glanz.webp", "aus_sudhaus_laeuterbottich.webp", "bg_bauernhof.jpg", "bg_hopfengarten.jpg", "bg_szene_brauereihof.jpg", "bg_szene_sudhaus_alt.jpg", "deko_baum_1.webp", "deko_baum_2.webp", "deko_busch.webp", "deko_laterne.webp", "deko_wegweiser_links.webp", "deko_wegweiser_rechts.webp", "fb_rutsche_gruen.webp", "feld_gesaet.webp", "feld_keimt.webp", "feld_leer.webp", "feld_reif.webp", "feld_stoppeln.webp", "feld_waechst.webp", "fig_braumeister_freundlich.webp", "fig_braumeister_lobend.webp", "fig_braumeister_streng.webp", "fig_maxi_freundlich.webp", "fig_maxi_staunend.webp", "fig_maxi_stolz.webp", "gae_gast_01_alpenhut_gluecklich.webp", "gae_gast_01_alpenhut_ungeduldig.webp", "gae_gast_02_kleid_gluecklich.webp", "gae_gast_02_kleid_ungeduldig.webp", "gae_gast_03_brille_gluecklich.webp", "gae_gast_03_brille_ungeduldig.webp", "gae_gast_04_schuerze_gluecklich.webp", "gae_gast_04_schuerze_ungeduldig.webp", "gae_gast_05_schnurrbart_gluecklich.webp", "gae_gast_05_schnurrbart_ungeduldig.webp", "gae_gast_06_zopf_gluecklich.webp", "gae_gast_06_zopf_ungeduldig.webp", "hopfen_geerntet.webp", "hopfen_jung.webp", "hopfen_reif.webp", "hopfen_waechst.webp", "ico_fass_klein.webp", "ico_medaille_bronze.webp", "ico_medaille_gold.webp", "ico_medaille_silber.webp", "ico_muenze.webp", "ico_schloss.webp", "ico_stern_leer.webp", "ico_stern_voll.webp", "ico_uhr.webp", "maxi0_ausrutschen.webp", "maxi0_frei_gehen_01.webp", "maxi0_frei_gehen_02.webp", "maxi0_frei_gehen_03.webp", "maxi0_frei_stand.webp", "maxi0_jubeln.webp", "maxi0_ruehren.webp", "maxi1_ausrutschen.webp", "maxi1_frei_gehen_01.webp", "maxi1_frei_gehen_02.webp", "maxi1_frei_gehen_03.webp", "maxi1_frei_stand.webp", "maxi1_jubeln.webp", "maxi1_ruehren.webp", "maxi2_ausrutschen.webp", "maxi2_frei_gehen_01.webp", "maxi2_frei_gehen_02.webp", "maxi2_frei_gehen_03.webp", "maxi2_frei_stand.webp", "maxi2_jubeln.webp", "maxi2_ruehren.webp", "maxi3_ausrutschen.webp", "maxi3_frei_gehen_01.webp", "maxi3_frei_gehen_02.webp", "maxi3_frei_gehen_03.webp", "maxi3_frei_stand.webp", "maxi3_jubeln.webp", "maxi3_ruehren.webp", "obj_karamellmalz.webp", "obj_scherben.webp", "obj_wasser.webp", "pass1_1.webp", "pass1_2.webp", "pass2_1.webp", "pass2_2.webp", "pass3_1.webp", "pass3_2.webp", "pass4_1.webp", "pass4_2.webp"];
 function gfxLoad(k){
@@ -859,13 +860,54 @@ function drawManRetro(x, base){
   else if (P.noCrate && RX[m + 'frei_stand']) name = m + 'frei_' + fr;
   else if (P.noCrate && P.slim) return false;
   else tip = P.trip ? Math.sin(Math.min(1, P.trip)*Math.PI)*.25 : 0;
-  ctx.save(); ctx.fillStyle = 'rgba(0,0,0,.22)'; ctx.beginPath(); ctx.ellipse(x, base + 1, 34, 6, 0, 0, Math.PI*2); ctx.fill(); ctx.restore();
-  rxImg(name, x, base + 3, GFXS[GFX].mh, tip, .5, 1); return true;
+  const k = mk();
+  ctx.save(); ctx.fillStyle = 'rgba(0,0,0,.22)'; ctx.beginPath(); ctx.ellipse(x, base + 1, 34*k, 6*k, 0, 0, Math.PI*2); ctx.fill(); ctx.restore();
+  rxImg(name, x, base + 3*k, GFXS[GFX].mh*k, tip, .5, 1); return true;
 }
 function rxBg(b, name){
   // Kulisse füllend, unten bündig (der Boden bleibt unter Maxi)
   const im = RX[name], sc = Math.max((XR - XL)/im.width, H/im.height), w = im.width*sc, h = im.height*sc;
   b.imageSmoothingQuality = 'high'; b.drawImage(im, W/2 - w/2, H - h, w, h);
+}
+/* Braustüberl-Kulisse (v2): Theke, Markise, Nest und ABGABE-Schild sind im Bild. Das ganze Bild bleibt sichtbar,
+   und alles im Fangspiel (Gäste, Maxi, Fanghöhe, Abgabe, Storch) hängt am Bildrechteck BR (Anteile der Bildgröße). */
+const BG1 = 'bg_braustueberl_v2';
+const BRP = { foot: .905, guest: .47, guestH: .135, counter: .386, maxiH: .24, nestX: .857, nestY: .022,
+  sign: [.83, .835, .99, .945], signC: [.906, .883], slot0: .2, slotD: .1 };
+let BR = null, manK = 1, brSky = null;
+function brLayout(){
+  BR = null; manK = 1;
+  const im = RX[BG1]; if (!rxOn() || !im) return;
+  const Wv = XR - XL, vis = .94, iw = im.width, ih = im.height;
+  // hochkant: Breite füllen, seitlich höchstens 3 % abschneiden (das Schild bleibt lesbar), oben wird Himmel ergänzt;
+  // breit (Tablet, Desktop): ganzes Bild in voller Höhe, daneben ein ruhiger dunkler Rand
+  const sc = Wv <= W + .5 ? Math.min(Math.max(Wv/iw, H/ih), Wv/(iw*vis)) : H/ih;
+  const w = iw*sc, h = ih*sc;
+  BR = { x: W/2 - w/2, y: H - h, w, h };
+  manK = BRP.maxiH*h / (GFXS[GFX].mh*.977); // Maxi-Bild: 97,7 % der Höhe sind deckend
+  groundY = BR.y + BRP.foot*h - 3*manK;
+  try { for (const v of visitors) if (v.state === 'stand' || v.state === 'in'){ v.tx = slotX(v.slot); if (v.state === 'stand') v.x = v.tx; } } catch(e) {}
+}
+const brX = f => BR.x + f*BR.w, brY = f => BR.y + f*BR.h;
+const mk = () => BR && stage === 1 && state !== 'menu' ? manK : 1;
+const crateY = () => groundY - 66*mk();
+function brSample(im){
+  // Himmelsfarbe am oberen Bildrand (Mitte), damit die Ergänzung oben nahtlos anschließt
+  // dazu dunkle Töne von Hauswand und Pflaster für den Rand auf breiten Bildschirmen
+  const avg = (sy, def) => { try { const c = document.createElement('canvas'); c.width = 64; c.height = 1; const x = c.getContext('2d'); x.drawImage(im, 0, sy*im.height, im.width, 2, 0, 0, 64, 1);
+    const d = x.getImageData(0, 0, 64, 1).data; let n = 0, sr = 0, sg = 0, sb = 0;
+    for (let i = 16; i < 48; i++){ sr += d[i*4]; sg += d[i*4 + 1]; sb += d[i*4 + 2]; n++; } return [sr/n, sg/n, sb/n].map(Math.round); } catch(e) { return def; } };
+  const [r, g, bl] = avg(0, [67, 62, 107]), m = avg(.4, [120, 90, 70]), p = avg(.8, [120, 95, 95]), dk = (c, k) => `rgb(${c.map(v => Math.round(v*k)).join(',')})`;
+  return [`rgb(${Math.round(r*.55)},${Math.round(g*.55)},${Math.round(bl*.62)})`, `rgb(${r},${g},${bl})`, `rgba(${r},${g},${bl},0)`, dk(m, .35), dk(p, .4)];
+}
+function rxBgBr(b){
+  const im = RX[BG1], Wv = XR - XL;
+  b.imageSmoothingQuality = 'high';
+  if (!brSky) brSky = brSample(im);
+  if (BR.w < Wv - .5){ const g = b.createLinearGradient(0, 0, 0, H); g.addColorStop(0, brSky[0]); g.addColorStop(.45, brSky[3]); g.addColorStop(1, brSky[4]); b.fillStyle = g; b.fillRect(XL, 0, Wv, H); }
+  if (BR.y > 0){ const g = b.createLinearGradient(0, 0, 0, BR.y + 1); g.addColorStop(0, brSky[0]); g.addColorStop(1, brSky[1]); b.fillStyle = g; b.fillRect(XL, 0, Wv, BR.y + 1); }
+  b.drawImage(im, BR.x, BR.y, BR.w, BR.h);
+  if (BR.y > 0){ const f = b.createLinearGradient(0, BR.y, 0, BR.y + 18); f.addColorStop(0, brSky[1]); f.addColorStop(1, brSky[2]); b.fillStyle = f; b.fillRect(XL, BR.y - .5, Wv, 18.5); }
 }
 const RXLOC = { bar: ['kar_braustueberl', 128], laden: ['kar_laden', 118], halle: ['kar_abfuellhalle', 160], hof: ['kar_bauernhof_maelzerei', 150], hopfen: ['kar_hopfengarten', 122] };
 function rxPut(n, x, y, w, ax, ay){
@@ -962,7 +1004,7 @@ const RXING = { malz: 'obj_malzsack', hopfen: 'obj_hopfendolde', hefe: 'obj_hefe
 function buildBg(){
   bg.width = cv.width; bg.height = cv.height;
   const b = bg.getContext('2d'); b.setTransform(dpr*S,0,0,dpr*S,dpr*OX,0);
-  if (rxOn()){ rxBg(b, 'bg_braustueberl'); return; }
+  if (BR){ rxBgBr(b); return; }
   const gb = backY();
   const g = b.createLinearGradient(0,0,0,gb); g.addColorStop(0,C.skyTop); g.addColorStop(1,C.skyBot);
   b.fillStyle = g; b.fillRect(XL,0,XR-XL,gb);
@@ -1315,11 +1357,12 @@ function drawMan(x, base){
   ctx.restore();
 }
 let zoneSignY = 0;
-function chimneyX(){ return W - 72; }
-function backY(){ return groundY - Math.min(90, Math.max(50, (groundY - 520)*.5 + 50)); }
-function chimneyTop(){ return Math.max(175, backY() - 370); }
-function zoneX(){ return zone === 'left' ? 38 : W-38; }
+function chimneyX(){ return BR ? brX(BRP.nestX) : W - 72; }
+function backY(){ if (BR) return brY(BRP.guest) + 2; return groundY - Math.min(90, Math.max(50, (groundY - 520)*.5 + 50)); }
+function chimneyTop(){ return BR ? (brY(BRP.nestY) > 6 ? brY(BRP.nestY) + 4 : 40) : Math.max(175, backY() - 370); }
+function zoneX(){ return BR ? brX(BRP.signC[0]) : zone === 'left' ? 38 : W-38; }
 function drawZone(){
+  if (BR) return drawZoneBr();
   const zx = zoneX(), full = P.count >= CAP, pulse = full ? (Math.sin(tTotal*8)+1)/2 : 0;
   // Palette
   ctx.fillStyle = '#9a7246'; ctx.fillRect(zx-32, groundY-8, 64, 8); ctx.fillStyle = '#6f5030'; ctx.fillRect(zx-28, groundY-3, 8, 3); ctx.fillRect(zx+20, groundY-3, 8, 3);
@@ -1345,11 +1388,24 @@ function drawZone(){
   }
   zoneSignY = sy;
 }
+function drawZoneBr(){
+  // Das ABGABE-Schild ist im Hintergrund; bei voller Kiste blinkt sein Rahmen und der Finger zeigt darauf
+  const [x0, y0, x1, y1] = BRP.sign, l = brX(x0), t = brY(y0), r = brX(x1), bt = brY(y1), cx = (l + r)/2, cy = (t + bt)/2;
+  zoneSignY = cy;
+  if (P.count < CAP || state !== 'play') return;
+  const pulse = (Math.sin(tTotal*8) + 1)/2;
+  ctx.save(); ctx.globalAlpha = .18 + pulse*.25; ctx.fillStyle = C.gold;
+  ctx.beginPath(); ctx.ellipse(cx, cy, (r - l)*.62 + pulse*6, (bt - t)*.62 + pulse*6, 0, 0, Math.PI*2); ctx.fill();
+  ctx.globalAlpha = 1; ctx.strokeStyle = Math.floor(tTotal*4) % 2 ? C.gold : '#fff6dc'; ctx.lineWidth = 3; rr(l - 3, t - 3, r - l + 6, bt - t + 6, 7); ctx.stroke();
+  ctx.translate(cx - 22, bt - 14 + Math.abs(Math.sin(tTotal*6))*6);
+  ctx.font = '30px "Apple Color Emoji","Segoe UI Emoji","Noto Color Emoji",sans-serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'top'; ctx.fillText('👆', 0, 0);
+  ctx.restore();
+}
 function drawHint(){
   if (P.count < CAP || state !== 'play') return;
   const dir = zone === 'left' ? -1 : 1, a = (Math.sin(tTotal*7)+1)/2;
   ctx.save(); ctx.globalAlpha = .7 + a*.3;
-  const y = groundY - 175;
+  const y = BR ? brY(.6) : groundY - 175;
   ctx.fillStyle = C.gold; rr(W/2-115, y-16, 230, 32, 8); ctx.fill();
   ctx.fillStyle = C.ink; ctx.font = '18px "Alfa Slab One", Georgia, serif'; ctx.textAlign='center'; ctx.textBaseline='middle';
   ctx.fillText(dir < 0 ? '◀ Tipp auf ABGABE' : 'Tipp auf ABGABE ▶', W/2, y+1);
@@ -1419,10 +1475,10 @@ function drawIntro(){
     drawBottle(b.x, b.y, b.rot, false);
     ctx.strokeStyle = C.gold; ctx.lineWidth = 3; ctx.beginPath(); ctx.arc(b.x, b.y - 2, 26 + pr*6, 0, Math.PI*2); ctx.stroke();
     // gestrichelter Pfeil zur Kiste
-    const tx = P.x, ty = groundY - 76, sy = b.y + 34;
+    const tx = P.x, ty = crateY() - 10, sy = b.y + 34;
     ctx.setLineDash([7, 6]); ctx.lineDashOffset = -introT*30; ctx.beginPath(); ctx.moveTo(b.x, sy); ctx.quadraticCurveTo((b.x + tx)/2, (sy + ty)/2 - 20, tx, ty); ctx.stroke(); ctx.setLineDash([]);
     ctx.fillStyle = C.gold; ctx.beginPath(); ctx.moveTo(tx, ty + 8); ctx.lineTo(tx - 8, ty - 6); ctx.lineTo(tx + 8, ty - 6); ctx.closePath(); ctx.fill();
-    ctx.globalAlpha = .5 + pr*.4; ctx.strokeStyle = C.gold; ctx.lineWidth = 3; rr(P.x - 40, groundY - 70, 80, 42, 6); ctx.stroke(); ctx.globalAlpha = 1;
+    ctx.globalAlpha = .5 + pr*.4; ctx.strokeStyle = C.gold; ctx.lineWidth = 3; { const k = mk(); rr(P.x - 40*k, crateY() - 4*k, 80*k, 42*k, 6); } ctx.stroke(); ctx.globalAlpha = 1;
     return;
   }
   if (introKind === 'move'){
@@ -1455,7 +1511,9 @@ function drawIntro(){
 }
 /* Stapler: holt die volle Kiste ab und bringt eine leere */
 let FL = null;
-function nearZone(fx, fy){ return P.count >= CAP && Math.abs(fx - zoneX()) < 58 && fy > zoneSignY - 60 && fy < groundY + 20; }
+function nearZone(fx, fy){
+  if (BR){ const [x0, y0, x1, y1] = BRP.sign; return P.count >= CAP && fx > brX(x0) - 14 && fx < brX(x1) + 14 && fy > brY(y0) - 14 && fy < brY(y1) + 14; }
+  return P.count >= CAP && Math.abs(fx - zoneX()) < 58 && fy > zoneSignY - 60 && fy < groundY + 20; }
 function startForklift(){
   if (state !== 'play' || P.count < CAP) return;
   state = 'forklift'; touchX = null; P.vx = 0; P.trip = 0;
@@ -1467,12 +1525,12 @@ function moveTo(target, sp, dt){ const d = target - FL.fx; FL.fx += Math.sign(d)
 function updateForklift(dt){
   const sp = 430;
   FL.t += dt; FL.bob = Math.sin(FL.t*30)*.6;
-  if (FL.phase === 0){ if (moveTo(P.x - FL.face*FORK, sp, dt)) { FL.phase = 1; FL.t = 0; } }
+  if (FL.phase === 0){ if (moveTo(P.x - FL.face*FORK*mk(), sp, dt)) { FL.phase = 1; FL.t = 0; } }
   else if (FL.phase === 1){
     if (FL.t > .2 && FL.carry === 'empty'){ FL.carry = 'full'; P.count = 0; P.extra = 0; setMood('happy', 1.4); beep(700, .08, 'triangle', .15); floatText(P.x, groundY - 140, 'Leere Kiste!', C.cream); }
     if (FL.t > .55){ FL.phase = 2; FL.t = 0; }
   } else if (FL.phase === 2){
-    if (moveTo(zoneX() - FL.face*FORK, sp, dt)){
+    if (moveTo(zoneX() - FL.face*FORK*mk(), sp, dt)){
       crates++; stack++; const used = mult, pts = 100 * level() * used; score += pts; FL.carry = null;
       if (missed > 0){ missed = 0; floatText(W/2, groundY - 260, 'Bruch zurückgesetzt', '#9fe0a8'); }
       floatText(zoneX(), groundY - 130, used > 1 ? `+${pts} (×${used})` : `+${pts}`, C.gold); sCash();
@@ -1489,7 +1547,7 @@ function updateForklift(dt){
 const FORK = 84, FLK = 1.4;
 function drawForklift(){
   if (!FL) return;
-  ctx.save(); ctx.translate(FL.fx, groundY + (FL.bob || 0)); ctx.scale(FL.face, 1);
+  ctx.save(); ctx.translate(FL.fx, groundY + (FL.bob || 0)); ctx.scale(FL.face*mk(), mk());
   // Gabeln in Originalgröße, damit sie genau auf Kistenhöhe sitzen
   ctx.fillStyle = '#2f3237'; ctx.fillRect(41, -100, 7, 72); ctx.fillRect(41, -31, FORK + 34 - 41, 5);
   if (FL.carry){ ctx.save(); ctx.translate(FORK, 0); ctx.scale(FL.face, 1); drawCrate(0, -66, FL.carry === 'full' ? CAP : 0); ctx.restore(); }
@@ -1593,7 +1651,7 @@ function updateStork(dt){
       if (ST.mode === 'gone'){ ST.mode = 'nest'; ST.x = XL - 80; } // wartet unsichtbar außerhalb
     }
   }
-  const crateTop = groundY - 66;
+  const crateTop = crateY();
   for (let i = poops.length-1; i >= 0; i--){
     const p = poops[i];
     if (p.ground){ p.ground -= dt; if (p.ground <= 0) poops.splice(i,1); continue; }
@@ -1680,6 +1738,8 @@ function reset(){
 }
 /* Barbesucher: stehen mit dem Rücken zu uns und werfen die Flaschen über die Schulter */
 const VS = .68;
+const vsc = () => BR ? BRP.guestH*BR.h/115 : VS; // Gast etwa 13,5 % der Bildhöhe
+const slotX = i => BR ? brX(BRP.slot0 + i*BRP.slotD) : SLOTS[i];
 /* Gäste kommen und gehen; am Anfang sind wenige da, mit dem Spielverlauf werden es mehr */
 const SLOTS = [74, 116, 158, 200, 242, 284, 326];
 const LOOKS = {
@@ -1692,7 +1752,7 @@ const pick = a => a[Math.floor(Math.random()*a.length)];
 let visitors = [], guestT = 0;
 function makeGuest(slot, standing){
   const fromLeft = Math.random() < .5;
-  return { slot, x: standing ? SLOTS[slot] : (fromLeft ? XL - 30 : XR + 30), tx: SLOTS[slot],
+  return { slot, x: standing ? slotX(slot) : (fromLeft ? XL - 30 : XR + 30), tx: slotX(slot),
     state: standing ? 'stand' : 'in', stay: 16 + Math.random()*26, walk: 0,
     shirt: pick(LOOKS.shirt), hair: pick(LOOKS.hair), pants: pick(LOOKS.pants), cap: pick(LOOKS.cap),
     side: Math.random() < .5 ? -1 : 1, throwT: 0, back: 0, pending: null, phase: Math.random()*6 };
@@ -1708,11 +1768,14 @@ function wantedGuests(){ return Math.min(SLOTS.length, 2 + Math.floor(caught / 6
 seedGuests(3);
 const THROW_WIND = .38;
 function throwFrom(v, kind){
-  const lv = level(), g = 430;
-  const x0 = v.x + v.side * 9, y0 = backY() - 4 - 108*VS;
+  const lv = level(); let g = 430;
+  // Start an der Wurfhand (gleiche Stelle wie die Flasche in der Hand beim Ausholen)
+  const vs = vsc(), x0 = BR ? v.x + v.side*9*vs : v.x + v.side * 9, y0 = BR ? backY() - 2 - 120*vs : backY() - 4 - 108*VS;
   const tx = 30 + Math.random()*(W - 60);
   const T = Math.max(1.15, 2.7 - lv*.13) * (0.88 + Math.random()*.24) * (kind === 'red' ? 1.1 : 1);
-  const crateTop = groundY - 66, yc = kind === 'nana' ? crateTop - 6 : crateTop - 18;
+  const crateTop = crateY(), yc = kind === 'nana' ? crateTop - 6 : crateTop - 18;
+  // Braustüberl: flacher Bogen über den Hof (Scheitel knapp über der Wurfhand, nicht über dem Dach), gleiche Flugzeit
+  if (BR){ const a = .07*BR.h, dy = Math.max(1, yc - y0); g = Math.pow((Math.sqrt(2*a) + Math.sqrt(2*a + 2*dy))/T, 2); }
   const vy = (yc - y0 - .5*g*T*T) / T, vx = (tx - x0) / T;
   if (kind === 'nana') nanas.push({ x: x0, y: y0 + 12, vx, vy, g, rot: 0, spin: (Math.random()-.5)*6, ground: 0 });
   else bottles.push({ x: x0, y: y0, vx, vy, g, rot: Math.random()*6, spin: (Math.random()-.5)*7, bounced: false, red: kind === 'red' });
@@ -1753,8 +1816,10 @@ function updateVisitors(dt){
   }
 }
 function drawVisitor(v){
-  const fy = backY() - 2;
-  ctx.save(); ctx.translate(v.x, fy); ctx.scale(VS, VS);
+  const fy = backY() - 2, vs = vsc();
+  // Hände liegen auf der Thekenplatte (im Braustüberl-Bild), sonst hängen die Arme
+  const rest = BR ? Math.max(42, (fy - brY(BRP.counter))/vs) : 42;
+  ctx.save(); ctx.translate(v.x, fy); ctx.scale(vs, vs);
   const walking = v.state === 'in' || v.state === 'out';
   const sway = walking ? 0 : Math.sin(tTotal*1.6 + v.phase) * 1.5, ls = walking ? Math.sin(v.walk)*5 : 0, bob = walking ? Math.abs(Math.sin(v.walk))*2.5 : 0;
   ctx.translate(sway, -bob);
@@ -1766,13 +1831,13 @@ function drawVisitor(v){
   // Arme: ruhender Arm hängt, Wurfarm holt über die Schulter aus
   let p = 0; if (v.throwT > 0) p = 1 - v.throwT/THROW_WIND; else if (v.back > 0) p = v.back/.3;
   const sx = v.side * 15, sy = -78;
-  const hx = v.side * (19 - 10*p), hy = -40 - 74*p;
+  const hx = v.side * (19 - 10*p), hy = -(rest - 2) - (116 - rest)*p;
   ctx.strokeStyle = v.shirt; ctx.lineWidth = 9; ctx.lineCap = 'round';
-  ctx.beginPath(); ctx.moveTo(-sx, sy); ctx.lineTo(-v.side*19, -42); ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(-sx, sy); ctx.lineTo(-v.side*19, -rest); ctx.stroke();
   ctx.beginPath(); ctx.moveTo(sx, sy); ctx.lineTo(hx, hy); ctx.stroke();
-  ctx.fillStyle = '#e9bd98'; ctx.beginPath(); ctx.arc(-v.side*19, -40, 4.5, 0, Math.PI*2); ctx.arc(hx, hy, 4.5, 0, Math.PI*2); ctx.fill();
+  ctx.fillStyle = '#e9bd98'; ctx.beginPath(); ctx.arc(-v.side*19, -(rest - 2), 4.5, 0, Math.PI*2); ctx.arc(hx, hy, 4.5, 0, Math.PI*2); ctx.fill();
   if (v.throwT > 0 && v.pending){ // Flasche in der Hand
-    ctx.save(); ctx.translate(hx, hy - 6); ctx.scale(1/VS*.8, 1/VS*.8); ctx.rotate(-v.side*.4);
+    ctx.save(); ctx.translate(hx, hy - 6); ctx.scale(1/vs*.8, 1/vs*.8); ctx.rotate(-v.side*.4);
     if (v.pending === 'nana') drawBanana(0, 4, 0, false); else drawBottle(0, 0, 0, v.pending === 'red');
     ctx.restore();
   }
@@ -1872,7 +1937,7 @@ function update(dt){
   // Flaschen
   spawnT -= dt;
   if (spawnT <= 0){ if (!spawn()) { spawnT = .15; } else spawnT = Math.max(.42, 1.75 - level()*.13) * (0.8 + Math.random()*.4) / barRush(); }
-  const crateTop = groundY - 66, base = groundY;
+  const crateTop = crateY(), base = groundY;
   for (let i = bottles.length-1; i >= 0; i--){
     const b = bottles[i];
     b.vy += (b.g || 120)*dt; b.y += b.vy*dt; b.x += b.vx*dt; b.rot += b.spin*dt;
@@ -1903,7 +1968,7 @@ function update(dt){
     }
   }
   updateVisitors(dt);
-  updateHearts(dt, groundY - 66);
+  updateHearts(dt, crateY());
   updateStork(dt);
   if (state !== 'play') return;
   if (!seen.catch){ const fb = bottles.find(b => !b.red && !b.flicked && b.vy > 40 && b.y < groundY - 190); if (fb){ introTarget = fb; unlock('catch'); return; } }
@@ -1921,7 +1986,7 @@ function update(dt){
     }
     n.vy += (n.g || 120)*dt; n.y += n.vy*dt; n.x += (n.vx || 0)*dt; n.rot += n.spin*dt;
     const nb = n.y + 6;
-    if (P.trip <= 0 && n.vy > 0 && nb >= crateTop && nb <= crateTop + 22 && Math.abs(n.x - P.x) < 38){ nanas.splice(i,1); tripMaxi(n.x < P.x ? 1 : -1); updateHud(); continue; }
+    if (P.trip <= 0 && n.vy > 0 && nb >= crateTop && nb <= crateTop + 22 && Math.abs(n.x - P.x) < 38*mk()){ nanas.splice(i,1); tripMaxi(n.x < P.x ? 1 : -1); updateHud(); continue; }
     if (nb >= base){ n.vx = 0; n.ground = 1.8; n.y = base - 2; n.rot = 0; }
   }
   for (let i = parts.length-1; i >= 0; i--){ const p = parts[i]; p.vy += 600*dt; p.x += p.vx*dt; p.y += p.vy*dt; p.life -= dt; if (p.y > base) { p.y = base; p.vy *= -.3; p.vx *= .6; } if (p.life <= 0) parts.splice(i,1); }
@@ -1953,7 +2018,7 @@ function render(){
     return;
   }
 
-  if (rxOn()) rxPassers(backY() - 10);
+  if (rxOn() && !BR) rxPassers(backY() - 10); // im neuen Braustüberl stehen die Gäste direkt an der Theke, hinten ist kein Platz
   for (const v of visitors) drawVisitor(v);
   drawZone();
   if (rxOn()) rxShards();
@@ -4781,7 +4846,7 @@ for (const el of document.querySelectorAll('[data-legal]')) el.addEventListener(
 $('legalClose').onclick = closeLegal;
 // Spielstand zurücksetzen: erster Tipp fragt nach, zweiter löscht alles außer dem Namen für die Bestenliste
 // Versionsnummer: bei jeder Veröffentlichung erhöhen (Hauptversion.Neue Funktionen.Korrekturen)
-const VERSION = '2.5.0';
+const VERSION = '2.5.1';
 $('verTag').textContent = `v${VERSION}`;
 $('resetBtn').onclick = () => {
   const b = $('resetBtn');
