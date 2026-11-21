@@ -4468,7 +4468,7 @@ let bg3 = document.createElement('canvas');
 function buildBg3(){
   bg3.width = cv.width; bg3.height = cv.height;
   const b = bg3.getContext('2d'); b.setTransform(dpr*S,0,0,dpr*S,dpr*OX,0);
-  if (rxOn() && RX.bg_sudhaus){ rxBg(b, 'bg_sudhaus'); b.fillStyle = 'rgba(20,14,10,.35)'; b.fillRect(XL, 0, XR - XL, H); return; }
+  if (rxOn() && RX.bg_sudhaus){ rxBg(b, 'bg_sudhaus'); b.fillStyle = 'rgba(20,14,10,.18)'; b.fillRect(XL, 0, XR - XL, H); return; }
   const floorY = H - 128;
   // warme Holzvertäfelung
   b.fillStyle = '#6b4a2e'; b.fillRect(XL, 0, XR-XL, floorY);
