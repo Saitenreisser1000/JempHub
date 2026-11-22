@@ -830,7 +830,7 @@ const RXFILES = ['maxi0_stand','maxi0_gehen_01','maxi0_gehen_02','maxi0_gehen_03
   'kar_braustueberl','kar_laden','kar_sudhaus_alt','kar_sudhaus_renoviert','kar_abfuellhalle','kar_bauernhof_maelzerei','kar_hopfengarten',
   'gae_gast_01_alpenhut','gae_gast_02_kleid','gae_gast_03_brille','gae_gast_04_schuerze','gae_gast_05_schnurrbart','gae_gast_06_zopf'].map(n => n + '.webp').concat(['bg_braustueberl_v2.jpg','bg_abfuellhalle.jpg','bg_sudhaus.jpg','bg_schankraum.jpg']);
 // Posen, Ausbauten, Szenen, Bauernhof, Schank, Symbole …: laden nach, das Spiel startet schon mit den Grundbildern
-const DXFILES = ["aus_abfuellhalle_lkw.webp", "aus_abfuellhalle_palette.webp", "aus_biergarten_tisch.webp", "aus_laden_stufe2.webp", "aus_laden_stufe3.webp", "aus_maehdrescher.webp", "aus_saemaschine.webp", "aus_sudhaus_gaertanks.webp", "aus_sudhaus_kupfer_glanz.webp", "aus_sudhaus_laeuterbottich.webp", "bg_bauernhof.jpg", "bg_hopfengarten.jpg", "bg_szene_brauereihof.jpg", "bg_szene_sudhaus_alt.jpg", "deko_baum_1.webp", "deko_baum_2.webp", "deko_busch.webp", "deko_laterne.webp", "deko_wegweiser_links.webp", "deko_wegweiser_rechts.webp", "fb_rutsche_gruen.webp", "feld_gesaet.webp", "feld_keimt.webp", "feld_leer.webp", "feld_reif.webp", "feld_stoppeln.webp", "feld_waechst.webp", "fig_braumeister_freundlich.webp", "fig_braumeister_lobend.webp", "fig_braumeister_streng.webp", "fig_maxi_freundlich.webp", "fig_maxi_staunend.webp", "fig_maxi_stolz.webp", "gae_gast_01_alpenhut_gluecklich.webp", "gae_gast_01_alpenhut_ungeduldig.webp", "gae_gast_02_kleid_gluecklich.webp", "gae_gast_02_kleid_ungeduldig.webp", "gae_gast_03_brille_gluecklich.webp", "gae_gast_03_brille_ungeduldig.webp", "gae_gast_04_schuerze_gluecklich.webp", "gae_gast_04_schuerze_ungeduldig.webp", "gae_gast_05_schnurrbart_gluecklich.webp", "gae_gast_05_schnurrbart_ungeduldig.webp", "gae_gast_06_zopf_gluecklich.webp", "gae_gast_06_zopf_ungeduldig.webp", "hopfen_geerntet.webp", "hopfen_jung.webp", "hopfen_reif.webp", "hopfen_waechst.webp", "ico_fass_klein.webp", "ico_medaille_bronze.webp", "ico_medaille_gold.webp", "ico_medaille_silber.webp", "ico_muenze.webp", "ico_schloss.webp", "ico_stern_leer.webp", "ico_stern_voll.webp", "ico_uhr.webp", "maxi0_ausrutschen.webp", "maxi0_frei_gehen_01.webp", "maxi0_frei_gehen_02.webp", "maxi0_frei_gehen_03.webp", "maxi0_frei_stand.webp", "maxi0_jubeln.webp", "maxi0_ruehren.webp", "maxi1_ausrutschen.webp", "maxi1_frei_gehen_01.webp", "maxi1_frei_gehen_02.webp", "maxi1_frei_gehen_03.webp", "maxi1_frei_stand.webp", "maxi1_jubeln.webp", "maxi1_ruehren.webp", "maxi2_ausrutschen.webp", "maxi2_frei_gehen_01.webp", "maxi2_frei_gehen_02.webp", "maxi2_frei_gehen_03.webp", "maxi2_frei_stand.webp", "maxi2_jubeln.webp", "maxi2_ruehren.webp", "maxi3_ausrutschen.webp", "maxi3_frei_gehen_01.webp", "maxi3_frei_gehen_02.webp", "maxi3_frei_gehen_03.webp", "maxi3_frei_stand.webp", "maxi3_jubeln.webp", "maxi3_ruehren.webp", "obj_karamellmalz.webp", "obj_scherben.webp", "obj_wasser.webp", "pass1_1.webp", "pass1_2.webp", "pass2_1.webp", "pass2_2.webp", "pass3_1.webp", "pass3_2.webp", "pass4_1.webp", "pass4_2.webp"];
+const DXFILES = ["aus_abfuellhalle_lkw.webp", "aus_abfuellhalle_palette.webp", "aus_biergarten_tisch.webp", "aus_laden_stufe2.webp", "aus_laden_stufe3.webp", "aus_maehdrescher.webp", "aus_saemaschine.webp", "aus_sudhaus_gaertanks.webp", "aus_sudhaus_kupfer_glanz.webp", "aus_sudhaus_laeuterbottich.webp", "bg_bauernhof.jpg", "bg_hopfengarten.jpg", "bg_szene_brauereihof.jpg", "bg_szene_sudhaus_alt.jpg", "deko_baum_1.webp", "deko_baum_2.webp", "deko_busch.webp", "deko_laterne.webp", "deko_wegweiser_links.webp", "deko_wegweiser_rechts.webp", "fb_rutsche_gruen.webp", "feld_gesaet.webp", "feld_keimt.webp", "feld_leer.webp", "feld_reif.webp", "feld_stoppeln.webp", "feld_waechst.webp", "fig_braumeister_freundlich.webp", "fig_braumeister_lobend.webp", "fig_braumeister_streng.webp", "fig_maxi_freundlich.webp", "fig_maxi_staunend.webp", "fig_maxi_stolz.webp", "gae_gast_01_alpenhut_gluecklich.webp", "gae_gast_01_alpenhut_ungeduldig.webp", "gae_gast_02_kleid_gluecklich.webp", "gae_gast_02_kleid_ungeduldig.webp", "gae_gast_03_brille_gluecklich.webp", "gae_gast_03_brille_ungeduldig.webp", "gae_gast_04_schuerze_gluecklich.webp", "gae_gast_04_schuerze_ungeduldig.webp", "gae_gast_05_schnurrbart_gluecklich.webp", "gae_gast_05_schnurrbart_ungeduldig.webp", "gae_gast_06_zopf_gluecklich.webp", "gae_gast_06_zopf_ungeduldig.webp", "hinten1_ausholen.webp", "hinten1_gehen_01.webp", "hinten1_gehen_02.webp", "hinten1_stehen.webp", "hinten1_werfen.webp", "hinten2_ausholen.webp", "hinten2_gehen_01.webp", "hinten2_gehen_02.webp", "hinten2_stehen.webp", "hinten2_werfen.webp", "hinten3_ausholen.webp", "hinten3_gehen_01.webp", "hinten3_gehen_02.webp", "hinten3_stehen.webp", "hinten3_werfen.webp", "hinten4_ausholen.webp", "hinten4_gehen_01.webp", "hinten4_gehen_02.webp", "hinten4_stehen.webp", "hinten4_werfen.webp", "hopfen_geerntet.webp", "hopfen_jung.webp", "hopfen_reif.webp", "hopfen_waechst.webp", "ico_fass_klein.webp", "ico_medaille_bronze.webp", "ico_medaille_gold.webp", "ico_medaille_silber.webp", "ico_muenze.webp", "ico_schloss.webp", "ico_stern_leer.webp", "ico_stern_voll.webp", "ico_uhr.webp", "maxi0_ausrutschen.webp", "maxi0_frei_gehen_01.webp", "maxi0_frei_gehen_02.webp", "maxi0_frei_gehen_03.webp", "maxi0_frei_stand.webp", "maxi0_jubeln.webp", "maxi0_ruehren.webp", "maxi1_ausrutschen.webp", "maxi1_frei_gehen_01.webp", "maxi1_frei_gehen_02.webp", "maxi1_frei_gehen_03.webp", "maxi1_frei_stand.webp", "maxi1_jubeln.webp", "maxi1_ruehren.webp", "maxi2_ausrutschen.webp", "maxi2_frei_gehen_01.webp", "maxi2_frei_gehen_02.webp", "maxi2_frei_gehen_03.webp", "maxi2_frei_stand.webp", "maxi2_jubeln.webp", "maxi2_ruehren.webp", "maxi3_ausrutschen.webp", "maxi3_frei_gehen_01.webp", "maxi3_frei_gehen_02.webp", "maxi3_frei_gehen_03.webp", "maxi3_frei_stand.webp", "maxi3_jubeln.webp", "maxi3_ruehren.webp", "obj_karamellmalz.webp", "obj_scherben.webp", "obj_wasser.webp", "pass1_1.webp", "pass1_2.webp", "pass2_1.webp", "pass2_2.webp", "pass3_1.webp", "pass3_2.webp", "pass4_1.webp", "pass4_2.webp", "st_klecks.webp", "st_storch_fliegt_01.webp", "st_storch_fliegt_02.webp", "st_storch_sitzt.webp"];
 function gfxLoad(k){
   const st = GFXS[k]; if (!st || st.ld) return; st.ld = true; let n = 0, bad = 0, nx = 0; const ex = st.extra || DXFILES;
   for (const f of RXFILES){ const im = new Image(); im.decoding = 'async';
@@ -1675,6 +1675,7 @@ function splat(){
   floatText(P.x, groundY - 140, 'Igitt!', '#fff6dc'); shake = .25; beep(160, .3, 'sawtooth', .1, .5);
 }
 function drawPoop(x, y, ground){
+  if (ground && rxOn() && RX.st_klecks){ rxImg('st_klecks', x, y + 4, 16, 0, .5, 1); return; }
   ctx.save(); ctx.translate(x, y); ctx.scale(1.9, 1.9);
   if (ground){ ctx.fillStyle = '#f4f2ea'; ctx.beginPath(); ctx.ellipse(0, 1, 9, 3, 0, 0, Math.PI*2); ctx.fill(); ctx.fillStyle = '#9aa0a6'; ctx.beginPath(); ctx.ellipse(1, 0, 3, 1.5, 0, 0, Math.PI*2); ctx.fill(); }
   else { ctx.fillStyle = '#f4f2ea'; ctx.beginPath(); ctx.moveTo(0, -8); ctx.quadraticCurveTo(6, 2, 0, 6); ctx.quadraticCurveTo(-6, 2, 0, -8); ctx.fill();
@@ -1686,6 +1687,11 @@ function drawStork(){
   const flying = ST.mode === 'fly' || ST.mode === 'flee';
   if (!flying && ST.x < XL) return;
   const x = flying ? ST.x : chimneyX(), y = flying ? ST.y : chimneyTop() - 14;
+  if (rxOn() && RX.st_storch_sitzt){
+    const k = BR ? BR.h/844 : 1; ctx.save(); ctx.translate(x, y);
+    if (flying){ if (ST.face > 0) ctx.scale(-1, 1); rxImg('st_storch_fliegt_0' + (1 + (Math.floor(tTotal*(ST.mode === 'flee' ? 14 : 6)) & 1)), 0, 0, 62*k, 0, .5, .5); }
+    else rxImg('st_storch_sitzt', 0, 18 + Math.sin(tTotal*2)*.4, 46*k, 0, .5, 1);
+    ctx.restore(); return; }
   ctx.save(); ctx.translate(x, y); ctx.scale(flying ? ST.face : -1, 1);
   ctx.lineCap = 'round';
   if (flying){
@@ -1719,6 +1725,9 @@ function drawStork(){
 function drawSplats(){
   if (blindT <= 0) return;
   const a = Math.min(1, blindT / 1.2);
+  if (rxOn() && RX.st_klecks){ ctx.save(); ctx.globalAlpha = a;
+    for (const sp of splats){ const r = sp.blobs[0].r; rxImg('st_klecks', sp.x, sp.y + (4 - blindT)*3, r*2.4, sp.x*.01, .5, .5); }
+    ctx.restore(); return; }
   ctx.save(); ctx.globalAlpha = a;
   for (const sp of splats){
     ctx.fillStyle = '#f2f0e6';
@@ -1770,7 +1779,7 @@ const THROW_WIND = .38;
 function throwFrom(v, kind){
   const lv = level(); let g = 430;
   // Start an der Wurfhand (gleiche Stelle wie die Flasche in der Hand beim Ausholen)
-  const vs = vsc(), x0 = BR ? v.x + v.side*9*vs : v.x + v.side * 9, y0 = BR ? backY() - 2 - 120*vs : backY() - 4 - 108*VS;
+  const vs = vsc(), x0 = BR ? v.x + v.side*9*vs : v.x + v.side * 9, y0 = BR ? backY() - 2 - (RX.hinten1_stehen ? 106 : 120)*vs : backY() - 4 - 108*VS;
   const tx = 30 + Math.random()*(W - 60);
   const T = Math.max(1.15, 2.7 - lv*.13) * (0.88 + Math.random()*.24) * (kind === 'red' ? 1.1 : 1);
   const crateTop = crateY(), yc = kind === 'nana' ? crateTop - 6 : crateTop - 18;
@@ -1815,7 +1824,22 @@ function updateVisitors(dt){
     }
   }
 }
+function rxVisitor(v){
+  // Gast von hinten als Bild: geht heran, steht an der Theke, holt mit der Flasche aus, wirft über die Schulter
+  if (!RX.hinten1_stehen) return false;
+  if (v.gimg == null){ const used = new Set(visitors.map(o => o.gimg)), free = [1, 2, 3, 4].filter(i => !used.has(i)); v.gimg = free.length ? free[Math.floor(Math.random()*free.length)] : 1 + Math.floor(Math.random()*4); }
+  const walking = v.state === 'in' || v.state === 'out', d = Math.sign(v.x - (v.px ?? v.x)) || v.dir || 1; v.dir = d; v.px = v.x;
+  let pose = 'stehen', flip = false;
+  if (v.throwT > 0){ pose = 'ausholen'; flip = v.side > 0; }
+  else if (v.back > 0){ pose = 'werfen'; flip = v.side > 0; }
+  else if (walking){ pose = Math.floor(v.walk/Math.PI) & 1 ? 'gehen_02' : 'gehen_01'; flip = d < 0; }
+  const vs = vsc(), n = `hinten${v.gimg}_${pose}`;
+  ctx.save(); ctx.translate(v.x, backY() - 2); if (flip) ctx.scale(-1, 1);
+  ctx.fillStyle = 'rgba(0,0,0,.2)'; ctx.beginPath(); ctx.ellipse(0, 0, 16*vs, 4*vs, 0, 0, Math.PI*2); ctx.fill();
+  rxImg(RX[n] ? n : `hinten${v.gimg}_stehen`, 0, 1, 117*vs, 0, .5, 1); ctx.restore(); return true;
+}
 function drawVisitor(v){
+  if (rxOn() && rxVisitor(v)) return;
   const fy = backY() - 2, vs = vsc();
   // Hände liegen auf der Thekenplatte (im Braustüberl-Bild), sonst hängen die Arme
   const rest = BR ? Math.max(42, (fy - brY(BRP.counter))/vs) : 42;
@@ -4846,7 +4870,7 @@ for (const el of document.querySelectorAll('[data-legal]')) el.addEventListener(
 $('legalClose').onclick = closeLegal;
 // Spielstand zurücksetzen: erster Tipp fragt nach, zweiter löscht alles außer dem Namen für die Bestenliste
 // Versionsnummer: bei jeder Veröffentlichung erhöhen (Hauptversion.Neue Funktionen.Korrekturen)
-const VERSION = '2.5.1';
+const VERSION = '2.5.2';
 $('verTag').textContent = `v${VERSION}`;
 $('resetBtn').onclick = () => {
   const b = $('resetBtn');
