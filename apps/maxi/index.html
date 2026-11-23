@@ -230,6 +230,12 @@ html,body{height:100%;margin:0;background:var(--night);color:var(--cream);overfl
 #mapCard.below::after{top:-7px}
 #mapCard.above::after{bottom:-7px}
 #mapCard .mapdesc{height:auto;max-height:3.8em}
+#mapCard.compact{display:flex;align-items:center;gap:10px;width:auto;max-width:calc(100vw - 32px);padding:6px 6px 6px 14px;border-radius:12px;box-shadow:0 0 0 3px var(--hop),0 8px 20px rgba(0,0,0,.45)}
+#mapCard.compact .mapname,#mapCard.compact .mapprice{display:none}
+#mapCard.compact .mapdesc{height:auto;max-height:none;font:700 19px var(--f-ui);white-space:nowrap;opacity:1}
+#mapCard.compact .mapbtns{flex:0 0 auto}
+#mapCard.compact .btn{margin:0;padding:6px 14px;font-size:18px}
+#mapCard.compact .btn.sec{font-size:16px}
 .mapname{font:400 19px var(--f-display);color:var(--crate)}
 .mapdesc{font:600 14px/1.25 var(--f-ui);color:var(--ink);height:2.5em;overflow:hidden;opacity:.85}
 .mapdesc.stock{display:flex;flex-wrap:wrap;justify-content:center;align-items:center;gap:0 12px;opacity:1;height:3.6em;font-size:15px}
@@ -975,8 +981,8 @@ function rxField(r, f, k, ripe){
 }
 const isoField = () => rxOn() && !!RX.feld_leer;
 /* ---------- Symbole: Emoji in Leisten, Menüs und Karten werden zu Bild-Icons ---------- */
-const ICO = { '🪙': 'muenze', '★': 'stern_voll', '☆': 'stern_leer', '🔒': 'schloss', '⏳': 'uhr', '🏅': 'medaille_gold', '🥇': 'medaille_gold', '🥈': 'medaille_silber', '🥉': 'medaille_bronze', '🛢': 'fass_klein', '🍺': 'obj_masskrug' };
-const ICO_SPLIT = /((?:🪙|★|☆|🔒|⏳|🏅|🥇|🥈|🥉|🛢|🍺)\uFE0F?)/, ICO_TEST = /🪙|★|☆|🔒|⏳|🏅|🥇|🥈|🥉|🛢|🍺/;
+const ICO = { '🪙': 'muenze', '★': 'stern_voll', '☆': 'stern_leer', '🔒': 'schloss', '⏳': 'uhr', '🏅': 'medaille_gold', '🥇': 'medaille_gold', '🥈': 'medaille_silber', '🥉': 'medaille_bronze', '🛢': 'fass_klein', '🍺': 'obj_masskrug', '📦': 'obj_bierkiste_gruen' };
+const ICO_SPLIT = /((?:🪙|★|☆|🔒|⏳|🏅|🥇|🥈|🥉|🛢|🍺|📦)\uFE0F?)/, ICO_TEST = /🪙|★|☆|🔒|⏳|🏅|🥇|🥈|🥉|🛢|🍺|📦/;
 const icoOn = () => rxOn() && !!RX.ico_muenze;
 function icoize(root){
   if (!root || !icoOn()) return;
@@ -3339,8 +3345,8 @@ const LOCS = {
   gLb: { u: .98, v: .7,  c: [.75, .74], pg: -1, gate: 'gL',  name: 'Brauerei', arrow: 1 },
   gRb: { u: .02, v: .55, c: [.25, .58], pg: 1,  gate: 'gR',  name: 'Brauerei', arrow: -1 },
   sud:   { u: .27, v: .2,  c: [.34, .4],  pg: 0, name: 'Maxis Sudhaus', sub: 'Sudhaus', lv: 3, need: 1, desc: () => `Jeder Sud ergibt ${fmtF(1 + .5*(U.kettle || 0))} Fass. Ausgeschenkt wird im Braustüberl.` },
-  halle: { u: .5,  v: .36, c: [.5, .55],  pg: -1, name: 'Abfüllhalle', sub: 'Förderband', lv: 2, need: 1, desc: () => `Flaschen sortieren: ${lohn2()} 🪙 Lohn je voller Kiste.` },
-  bar:   { u: .5,  v: .86, c: [.47, .7],  pg: 0, name: 'Braustüberl', sub: 'Braustüberl', lv: 1, need: 0, desc: () => hasOwnBeer() ? `Im Keller: ${Object.keys(ECO.keller).map(n => `${n} ${fmtF(ECO.keller[n].f)}`).join(', ')} Fass. Zapfen oder Flaschen fangen (${lohn1()} 🪙 Lohn je Kiste).` : `Flaschen fangen: ${lohn1()} 🪙 Lohn je voller Kiste.` },
+  halle: { u: .5,  v: .36, c: [.5, .55],  pg: -1, name: 'Abfüllhalle', sub: 'Förderband', lv: 2, need: 1, desc: () => `Flaschen sortieren: ${lohn2()} 🪙 Lohn je voller Kiste.`, short: () => `${lohn2()} 🪙 / 📦` },
+  bar:   { u: .5,  v: .86, c: [.47, .7],  pg: 0, name: 'Braustüberl', sub: 'Braustüberl', lv: 1, need: 0, desc: () => hasOwnBeer() ? `Im Keller: ${Object.keys(ECO.keller).map(n => `${n} ${fmtF(ECO.keller[n].f)}`).join(', ')} Fass. Zapfen oder Flaschen fangen (${lohn1()} 🪙 Lohn je Kiste).` : `Flaschen fangen: ${lohn1()} 🪙 Lohn je voller Kiste.` , short: () => (hasOwnBeer() ? `🛢 ${fmtF(Object.values(ECO.keller).reduce((a, k) => a + k.f, 0))} · ` : '') + `${lohn1()} 🪙 / 📦` },
   hof:   { u: .6,  v: .82, c: [.54, .68], pg: 1, name: 'Bauernhof', sub: 'Gerste und Mälzerei', farm: true, desc: () => { const F = farm(), n = farmNews(); return `${F.fields.length} ${F.fields.length === 1 ? 'Gerstenfeld' : 'Gerstenfelder'}, ${F.gerste} Gerste.` + (n === '🌾 fertig!' ? ' Es gibt etwas zu ernten!' : ' Hier wächst dein eigenes Malz, auch wenn das Spiel zu ist.'); } },
   hopfen: { u: .34, v: .3, c: [.38, .45], pg: 1, name: 'Hopfengarten', sub: 'Hopfen', hops: true, desc: () => !farm().hop ? 'Hier kann Maxi einen Hopfengarten anlegen. Er wächst nach jeder Ernte von selbst nach.' : hopRipe() ? 'Der Hopfen ist reif! Ernten heißt: durch die Dolden wischen.' : `Der Hopfen wächst, noch ${fmtLeft(HOP.GROW - (nowMs() - farm().hop.t0)*FARM.speed)}.` },
   laden: { u: .75, v: .22, c: [.68, .4],  pg: 0, name: 'Brauerei-Laden', sub: 'Laden', shop: true, desc: () => ECO.ownSud ? 'Zutaten, Ersatzteile und Ausbauten: alles gibt es nur hier.' : 'Ausbauten für Braustüberl und Abfüllhalle und Hilfen für alle Spiele.' }
@@ -3384,6 +3390,7 @@ function mapInfo(){
   // die Sprechblase gibt es nur, wenn Maxi an einem Gebäude steht
   const show = !!MAP.at && !isHub(MAP.at) && !isGate(MAP.at) && !MAP.pts.length && !MAP.slide; $('mapCard').hidden = !show; mapCardPos.k = '';
   if (!show){ go.style.visibility = 'hidden'; return; }
+  $('mapCard').classList.remove('compact');
   $('mapName').textContent = L.name;
   if (MAP.at === 'sud' && !ECO.ownSud && rank >= 1 && ECO.story >= 3){
     $('mapName').textContent = 'Das alte Sudhaus';
@@ -3407,14 +3414,18 @@ function mapInfo(){
   if (MAP.at === 'bar' && hasOwnBeer()){ go.textContent = 'Zapfen'; $('mapGo2').hidden = false; }
   const sm = stockMsg(MAP.at);
   if (sm){ $('mapDesc').textContent = '⚠ ' + sm; go.textContent = 'Zum Laden: Zutaten kaufen'; }
+  // Fangspiele: nur eine kleine Leiste unter dem Gebäude, der Lohn als Symbole
+  if (L.short && !sm){ $('mapDesc').textContent = L.short(); $('mapCard').classList.add('compact'); }
 }
 function mapCardPos(){
   // Sprechblase über oder unter dem Gebäude, innerhalb der Karte
   const c = $('mapCard'); if (c.hidden || !MAP.at || !LOCS[MAP.at]) return;
   const p = locPos(MAP.at), a = mapArea(), h = c.offsetHeight, w = c.offsetWidth, vw = innerWidth;
   const bx = OX + p.x*S, topB = (p.y - 112*p.k)*S, botB = (p.y + 42*p.k)*S, mapT = a.top*S, mapB = a.bot*S;
-  const above = (p.y - a.top)/(a.bot - a.top) > .45 && topB - h - 14 >= mapT;
+  const compact = c.classList.contains('compact');
+  const above = !compact && (p.y - a.top)/(a.bot - a.top) > .45 && topB - h - 14 >= mapT;
   let y = above ? topB - h - 12 : botB + 12; y = Math.max(mapT + 4, Math.min(mapB - h - 4, y));
+  if (compact) y = Math.min(innerHeight - h - 8, (p.y + 36*p.k)*S + 12);   // direkt unter dem Namensschild
   const x = Math.max(16, Math.min(vw - 16 - w, bx - w/2)), ax = Math.max(18, Math.min(w - 18, bx - x));
   const key = `${Math.round(x)},${Math.round(y)},${above},${Math.round(ax)}`; if (mapCardPos.k === key) return; mapCardPos.k = key;
   c.style.transform = `translate(${Math.round(x)}px,${Math.round(y)}px)`; c.style.setProperty('--ax', `${Math.round(ax)}px`);
