@@ -3,7 +3,7 @@ import { mkdir, readFile, stat, unlink, writeFile } from 'node:fs/promises'
 import { join, resolve } from 'node:path'
 import { randomUUID } from 'node:crypto'
 
-const allowedTypes = new Map([['image/png', '.png'], ['image/jpeg', '.jpg'], ['application/pdf', '.pdf']])
+const allowedTypes = new Map([['image/png', '.png'], ['image/jpeg', '.jpg'], ['application/pdf', '.pdf'], ['application/zip', '.zip']])
 
 export function safeBaseName(value) {
   return String(value || 'export').normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^a-zA-Z0-9._-]+/g, '-').replace(/^-+|-+$/g, '').slice(0, 120) || 'export'
@@ -11,11 +11,11 @@ export function safeBaseName(value) {
 
 export function validateUpload(body) {
   const extension = allowedTypes.get(body.mimeType)
-  if (!extension) throw Object.assign(new Error('Nur PNG, JPG und PDF sind erlaubt.'), { status: 415 })
+  if (!extension) throw Object.assign(new Error('Nur PNG, JPG, PDF und ZIP sind erlaubt.'), { status: 415 })
   if (typeof body.data !== 'string' || !body.data) throw Object.assign(new Error('Dateiinhalt fehlt.'), { status: 400 })
   const buffer = Buffer.from(body.data, 'base64')
   if (!buffer.length || buffer.length > 25 * 1024 * 1024) throw Object.assign(new Error('Datei ist leer oder größer als 25 MB.'), { status: 413 })
-  const originalBase = safeBaseName(body.filename).replace(/\.(png|jpe?g|pdf)$/i, '')
+  const originalBase = safeBaseName(body.filename).replace(/\.(png|jpe?g|pdf|zip)$/i, '')
   return { buffer, filename: `${originalBase}${extension}`, mimeType: body.mimeType }
 }
 
