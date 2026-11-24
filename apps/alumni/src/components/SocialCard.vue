@@ -140,25 +140,8 @@ const headlineFontSize = computed(() => {
   }).fontSize
 })
 
-const educationLines = computed(() => {
-  layoutTick.value
-  const cardWidth = previewElement.value?.clientWidth || currentFormat.value.width
-  return calculateTextFit(props.record.education.trim() || 'Ausbildung und Werdegang', {
-    width: cardWidth * 0.82,
-    height: Number.MAX_SAFE_INTEGER,
-    maxFontSize: 12,
-    minFontSize: 12,
-    preserveLayoutUntil: 12,
-    maxLines: 100,
-    lineHeight: 1.38,
-    letterSpacing: 0,
-    padding: { top: 0, right: 0, bottom: 0, left: 0 },
-    compressedPadding: { top: 0, right: 0, bottom: 0, left: 0 },
-    measureText: measureManrope,
-  }).lines
-})
-
-const educationFirstPage = computed(() => educationLines.value.join('\n'))
+// Natürlicher Umbruch über die ganze Breite; eigene Zeilenumbrüche bleiben (white-space: pre-line).
+const educationFirstPage = computed(() => props.record.education.trim() || 'Ausbildung und Werdegang')
 function fitTextBlock(text: string, width: number, height: number, maxFontSize: number, minFontSize: number, maxLines: number, padding: { top: number; right: number; bottom: number; left: number }) {
   return calculateTextFit(text, {
     width,
