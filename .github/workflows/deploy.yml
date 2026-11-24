@@ -142,6 +142,7 @@ jobs:
           printf '%s\n' "$KNOWN" > ~/.ssh/known_hosts && chmod 644 ~/.ssh/known_hosts
 
       - name: Hochladen
+        if: matrix.app != 'alumni'
         env:
           HOST: ${{ secrets.VPS_HOST }}
           USER_: ${{ secrets.VPS_USER }}
@@ -163,9 +164,34 @@ jobs:
           rsync $OPTS -e "$SSH" "apps/$APP/dist/" "$U@$HOST:$DEST/"
           $SSH "$U@$HOST" "chown -R www-data:www-data '$DEST' 2>/dev/null || true"
 
+      # Alumni Editor: Oberfläche + Node-Backend (Dateiarchiv) als systemd-Dienst.
+      # Sicherung, Dienst, lokaler Test und nginx-Umstellung: apps/alumni/deploy/server-install.sh
+      - name: Alumni Editor mit Backend veröffentlichen
+        if: matrix.app == 'alumni'
+        env:
+          HOST: ${{ secrets.VPS_HOST }}
+          USER_: ${{ secrets.VPS_USER }}
+        run: |
+          U="${USER_:-root}"
+          SSH="ssh -i $HOME/.ssh/deploy_key -o IdentitiesOnly=yes -o BatchMode=yes"
+          REL="/opt/alumni-editor/releases/$(date -u +%Y%m%d-%H%M%S)-${GITHUB_SHA::8}"
+          STAGE="$RUNNER_TEMP/alumni-release"
+          rm -rf "$STAGE" && mkdir -p "$STAGE"
+          cp -R apps/alumni/dist apps/alumni/server apps/alumni/deploy apps/alumni/package.json apps/alumni/package-lock.json "$STAGE/"
+          $SSH "$U@$HOST" "mkdir -p '$REL' /opt/alumni-editor/runtime"
+          # Node-Laufzeit des Runners mitliefern (nur übertragen, wenn sie sich geändert hat)
+          rsync -ptz -e "$SSH" "$(readlink -f "$(command -v node)")" "$U@$HOST:/opt/alumni-editor/runtime/node"
+          rsync -rlptz -e "$SSH" "$STAGE/" "$U@$HOST:$REL/"
+          $SSH "$U@$HOST" "bash '$REL/deploy/server-install.sh' '$REL'"
+
       - name: Prüfen
         run: |
           sleep 2
           code=$(curl -s -o /dev/null -w '%{http_code}' "${{ steps.target.outputs.url }}/" || true)
           echo "${{ steps.target.outputs.url }} → HTTP $code"
           [ "$code" = "200" ] || echo "::warning::${{ steps.target.outputs.url }} antwortet mit $code"
+          if [ "${{ matrix.app }}" = "alumni" ]; then
+            health=$(curl -fsS "${{ steps.target.outputs.url }}/api/health" || true)
+            echo "Dateiarchiv: $health"
+            echo "$health" | grep -q '"ok":true' || { echo "::error::Dateiarchiv (/api/health) antwortet nicht"; exit 1; }
+          fi

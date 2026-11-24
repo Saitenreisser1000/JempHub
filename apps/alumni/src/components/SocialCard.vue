@@ -11,7 +11,13 @@ export type ContentBlock = {
 }
 export type AlumniRecord = {
   name: string
+  doubleFirstName: boolean
   nameFontSize: number
+  quoteFontSize?: number
+  educationFontSize?: number
+  contentFontSize?: number
+  paragraphSpacing?: number
+  bulletSpacing?: number
   graduation: string
   profession: string
   education: string
@@ -19,6 +25,7 @@ export type AlumniRecord = {
   contentBlocks?: ContentBlock[]
   quotes: string[]
   image: string
+  photoCredit: string
   imageX: number
   imageY: number
   imageZoom: number
@@ -63,7 +70,11 @@ const nameLines = computed(() => {
   if (!cleaned) return { first: 'Vorname', last: 'Nachname' }
   const parts = cleaned.split(' ')
   if (parts.length === 1) return { first: parts[0], last: '' }
-  return { first: parts[0], last: parts.slice(1).join(' ') }
+  const firstNameCount = props.record.doubleFirstName && parts.length > 2 ? 2 : 1
+  return {
+    first: parts.slice(0, firstNameCount).join(' '),
+    last: parts.slice(firstNameCount).join(' '),
+  }
 })
 
 function measureManrope(text: string, fontSize: number) {
@@ -76,24 +87,21 @@ function measureManrope(text: string, fontSize: number) {
 }
 
 function availableIdentityWidth() {
-  const cardWidth = previewElement.value?.clientWidth
-  const boxWidth = identityBox.value?.clientWidth
   const fallbackWidthRatio = props.format === 'story' ? 0.892 : 0.365
-  const widthRatio = cardWidth && boxWidth ? boxWidth / cardWidth : fallbackWidthRatio
-  return currentFormat.value.width * widthRatio
+  return currentFormat.value.width * fallbackWidthRatio
 }
 
-const nameFontSize = computed(() => {
+const nameFontSizePercent = computed(() => {
   layoutTick.value
   const first = nameLines.value.first
   const last = nameLines.value.last
-  const maxPx = props.format === 'story' ? 48 : 48
-  const minPx = props.format === 'story' ? 18 : 20
+  const maxPx = props.format === 'story' ? 86 : 82
+  const minPx = props.format === 'story' ? 24 : 24
   const availableWidth = availableIdentityWidth() * 0.93
-  if (typeof document === 'undefined') return maxPx
+  if (typeof document === 'undefined') return (maxPx / currentFormat.value.width) * 100
   const canvas = document.createElement('canvas')
   const context = canvas.getContext('2d')
-  if (!context) return maxPx
+  if (!context) return (maxPx / currentFormat.value.width) * 100
 
   const maxLine = () => Math.max(context.measureText(first).width, context.measureText(last).width)
   let low = minPx
@@ -109,7 +117,7 @@ const nameFontSize = computed(() => {
       high = mid - 1
     }
   }
-  return best
+  return (best / currentFormat.value.width) * 100
 })
 
 const headlineFontSize = computed(() => {
@@ -147,7 +155,7 @@ const educationLines = computed(() => {
   }).lines
 })
 
-const educationFirstPage = computed(() => educationLines.value.slice(0, props.format === 'square' ? 4 : 5).join('\n'))
+const educationFirstPage = computed(() => educationLines.value.join('\n'))
 function fitTextBlock(text: string, width: number, height: number, maxFontSize: number, minFontSize: number, maxLines: number, padding: { top: number; right: number; bottom: number; left: number }) {
   return calculateTextFit(text, {
     width,
@@ -217,6 +225,15 @@ const contentBlockFits = computed(() => pageBlocks.value.map(block => fitTextBlo
   { top: 0, right: 0, bottom: 0, left: 0 },
 )))
 
+const quoteStyle = computed(() => ({ fontSize: `${2.1 * ((props.record.quoteFontSize ?? 100) / 100)}cqw`, lineHeight: 1.12, letterSpacing: '-.04em' }))
+const educationStyle = computed(() => ({ fontSize: `${0.9 * ((props.record.educationFontSize ?? 100) / 100)}cqw` }))
+const contentStyle = computed(() => ({
+  fontSize: `${1.75 * ((props.record.contentFontSize ?? 100) / 100)}cqw`,
+  lineHeight: 1.35,
+  '--paragraph-space': `${0.7 * ((props.record.paragraphSpacing ?? 100) / 100)}em`,
+  '--bullet-space': `${0.45 * ((props.record.bulletSpacing ?? 100) / 100)}em`,
+}))
+
 function fitStyle(fit: ReturnType<typeof calculateTextFit>) {
   return {
     fontSize: `${fit.fontSize}px`,
@@ -256,22 +273,23 @@ defineExpose({ element: previewElement })
     <div class="portrait-wrap">
       <img v-if="record.image" :src="record.image" :style="imageStyle" alt="Porträt" />
       <div v-else class="portrait-placeholder"><span>Foto</span><small>Porträt hochladen</small></div>
+      <span v-if="record.image && record.photoCredit" class="photo-credit">{{ record.photoCredit }}</span>
     </div>
     <div class="identity" ref="identityBox">
       <p>{{ record.graduation || 'Abschlussjahr' }}</p>
-      <h2 class="name-lockup" :style="{ fontSize: `${nameFontSize * ((record.nameFontSize ?? 50) / 100)}px` }">
+      <h2 class="name-lockup" :style="{ fontSize: `${nameFontSizePercent * ((record.nameFontSize ?? 50) / 100)}cqw` }">
         <span class="name-line">{{ nameLines.first }}</span>
         <span class="name-line">{{ nameLines.last || '\u00A0' }}</span>
       </h2>
       <div class="yellow-rule"></div>
       <h3>{{ record.profession || 'Beruf' }}</h3>
-      <blockquote v-if="firstQuote && format === 'story'" class="main-quote" :style="{ fontSize: `${quoteFit.fontSize}px`, lineHeight: quoteFit.lineHeight, letterSpacing: `${quoteFit.letterSpacing}em`, padding: `${quoteFit.padding.top}px ${quoteFit.padding.right}px ${quoteFit.padding.bottom}px ${quoteFit.padding.left}px` }">„{{ firstQuote }}“</blockquote>
+      <blockquote v-if="firstQuote && format === 'story'" class="main-quote" :style="quoteStyle">„{{ firstQuote }}“</blockquote>
     </div>
-    <blockquote v-if="firstQuote && format !== 'story'" class="main-quote" :style="{ fontSize: `${quoteFit.fontSize}px`, lineHeight: quoteFit.lineHeight, letterSpacing: `${quoteFit.letterSpacing}em`, padding: `${quoteFit.padding.top}px ${quoteFit.padding.right}px ${quoteFit.padding.bottom}px ${quoteFit.padding.left}px` }">„{{ firstQuote }}“</blockquote>
+    <blockquote v-if="firstQuote && format !== 'story'" class="main-quote" :style="quoteStyle">„{{ firstQuote }}“</blockquote>
     <div v-if="format !== 'story'" class="below-quote">
       <div class="education-note">
         <span>WERDEGANG</span>
-          <p>{{ educationFirstPage }}</p>
+          <p :style="educationStyle">{{ educationFirstPage }}</p>
       </div>
     </div>
     <footer><span>sternsteingymnasium.at</span><span>Bildung + Praxis mit Weitblick</span></footer>
@@ -291,7 +309,7 @@ defineExpose({ element: previewElement })
       <div v-if="pageBlocks.length" class="content-blocks">
         <section v-for="(block, index) in pageBlocks" :key="`${page}-${index}`" class="content-block" :style="{ minHeight: `${contentBlockHeight}px` }">
           <span>{{ block.heading || 'TEXT' }}</span>
-          <div class="content-block-body" :style="fitStyle(contentBlockFits[index])">
+          <div class="content-block-body" :style="contentStyle">
             <p v-if="block.intro">{{ block.intro }}</p>
             <ul v-if="block.bullets.some(bullet => bullet.trim())">
               <li v-for="(bullet, bulletIndex) in block.bullets" v-show="bullet.trim()" :key="bulletIndex">{{ bullet }}</li>
