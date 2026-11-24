@@ -2,7 +2,11 @@
 
 Jeder Merge nach `main` veröffentlicht die geänderten Apps von selbst auf dem
 VPS (Workflow `.github/workflows/deploy.yml`). Betroffen sind Hub, GuitarJemp,
-NoteJemp, EarJemp, ConductJemp, Supersam (Demo), Supersam Labor (unter supersam.jemphub.com/labor/), Maxis Bierkiste (maxi.jemphub.com) und der Alumni Editor (alumni.jemphub.com). Der StemPlayer bleibt vorerst manuell.
+NoteJemp, EarJemp, ConductJemp und der Alumni Editor (alumni.jemphub.com). Der StemPlayer bleibt vorerst manuell.
+
+Supersam (supersam.jemphub.com, Labor unter /labor/) und Maxis Bierkiste (maxi.jemphub.com)
+liegen seit 24.11.2026 in eigenen Repositories (Saitenreisser1000/Supersam, Saitenreisser1000/Maxi)
+und veröffentlichen sich dort selbst, mit eigenen Secrets.
 
 Von Hand: auf GitHub unter **Actions → Deploy → Run workflow** eine App oder
 `all` wählen.
