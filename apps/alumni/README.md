@@ -51,10 +51,10 @@ hoch und führt `deploy/server-install.sh` aus:
    Dienst-Konfiguration; 15 Sicherungen werden behalten)
 2. Neue Version unter `/opt/alumni-editor/releases/…`, aktiv über den Symlink
    `/opt/alumni-editor/current`
-3. systemd-Dienst `alumni-editor` (Benutzer `www-data`, nur `127.0.0.1:3110`)
+3. systemd-Dienst `alumni-editor` (Benutzer `www-data`, nur `127.0.0.1`, erster freier Port ab 3110, gemerkt in `/opt/alumni-editor/port`)
 4. Lokaler Test (`/api/health` und Startseite); schlägt er fehl, bleibt die
    vorherige Version aktiv
-5. Erst dann nginx: `alumni.jemphub.com` → `127.0.0.1:3110` (Zertifikat von
+5. Erst dann nginx: `alumni.jemphub.com` → Node-Dienst (Zertifikat von
    certbot bleibt), bei fehlerhafter Konfiguration automatischer Rückfall
 
 Archivdateien liegen in `/var/lib/alumni-editor/exports` und werden von
