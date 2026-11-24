@@ -14,7 +14,13 @@ const formats: Record<FormatKey, { label: string; width: number; height: number 
 
 const demo: AlumniRecord = {
   name: 'Marlene Beispiel',
+  doubleFirstName: false,
   nameFontSize: 50,
+  quoteFontSize: 100,
+  educationFontSize: 100,
+  contentFontSize: 100,
+  paragraphSpacing: 100,
+  bulletSpacing: 100,
   graduation: 'Matura 2018',
   profession: 'Ärztin',
   education: 'Medizinstudium an der Universität Wien',
@@ -22,6 +28,7 @@ const demo: AlumniRecord = {
   contentBlocks: [{ heading: 'RÜCKBLICK', intro: 'Am Sternstein Gymnasium habe ich gelernt, neugierig zu bleiben und meinen eigenen Weg zu gehen.', bullets: ['Neugierig bleiben', 'Fragen stellen'], page: 2 }],
   quotes: ['Trau dich, deinen Weg zu verändern.'],
   image: '',
+  photoCredit: '',
   imageX: 50,
   imageY: 50,
   imageZoom: 100,
@@ -41,6 +48,12 @@ const busy = ref(false)
 const toast = ref('')
 const fileInput = ref<HTMLInputElement | null>(null)
 const importInput = ref<HTMLInputElement | null>(null)
+type StoredFile = { id: string; filename: string; mimeType: string; size: number; createdAt: string; alumniName?: string; format?: string; page?: number }
+const storedFiles = ref<StoredFile[]>([])
+const storageLoading = ref(false)
+const storageOnline = ref(false)
+const storageLabel = ref('Dateiarchiv')
+const archiveFormat = ref<'png' | 'jpeg' | 'pdf'>('png')
 
 function normalizeContentBlocks(blocks: unknown): ContentBlock[] {
   if (!Array.isArray(blocks)) return []
@@ -134,6 +147,12 @@ async function capturePreview(kind: 'png' | 'jpeg') {
   const element = preview.value?.element
   if (!element) throw new Error('Vorschau nicht verfügbar')
   await nextTick()
+  // Erst exportieren, wenn Schriften und Bilder (z. B. das Porträt) fertig geladen sind.
+  await document.fonts?.ready
+  await Promise.all(Array.from(element.querySelectorAll('img')).map(async (image) => {
+    if (!image.complete) await new Promise<void>((resolve, reject) => { image.addEventListener('load', () => resolve(), { once: true }); image.addEventListener('error', () => reject(new Error('Bild konnte nicht geladen werden')), { once: true }) })
+    if (image.decode) await image.decode().catch(() => undefined)
+  }))
   // Die Karte wird in Vorschaugröße gerendert und auf das Zielformat skaliert,
   // damit Schriften und Abstände genau wie in der Vorschau sitzen.
   const options = {
@@ -327,9 +346,7 @@ function exportStoryBackground() {
   return exportBackgroundAsset(false, false, { width: 1080, height: 1920 })
 }
 
-async function exportPdf() {
-  busy.value = true
-  try {
+async function createPdfBlob() {
     const data = await renderImage('jpeg', 1)
     const { width, height } = currentFormat.value
     const pdf = new jsPDF({ orientation: height > width ? 'portrait' : 'landscape', unit: 'px', format: [width, height], hotfixes: ['px_scaling'] })
@@ -339,12 +356,97 @@ async function exportPdf() {
       pdf.addPage([width, height], height > width ? 'portrait' : 'landscape')
       pdf.addImage(additionalPage, 'JPEG', 0, 0, width, height)
     }
-    pdf.save(`${filename.value}.pdf`)
+    return pdf.output('blob')
+}
+
+async function exportPdf() {
+  busy.value = true
+  try {
+    const blob = await createPdfBlob()
+    const url = URL.createObjectURL(blob)
+    downloadDataUrl(url, `${filename.value}.pdf`)
+    window.setTimeout(() => URL.revokeObjectURL(url), 1200)
     notify('PDF wurde erstellt')
   } catch (error) {
     notify('PDF-Export fehlgeschlagen')
     console.error(error)
   } finally { busy.value = false }
+}
+
+function arrayBufferToBase64(buffer: ArrayBuffer) {
+  const bytes = new Uint8Array(buffer)
+  let binary = ''
+  const chunkSize = 0x8000
+  for (let index = 0; index < bytes.length; index += chunkSize) binary += String.fromCharCode(...bytes.subarray(index, index + chunkSize))
+  return btoa(binary)
+}
+
+async function uploadStoredFile(blob: Blob, storedFilename: string, targetPage: number) {
+  const response = await fetch('/api/files', {
+    method: 'POST', headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ filename: storedFilename, mimeType: blob.type, data: arrayBufferToBase64(await blob.arrayBuffer()), metadata: { alumniName: record.name.trim(), format: format.value, page: targetPage } }),
+  })
+  if (!response.ok) throw new Error((await response.json().catch(() => ({}))).error || 'Speichern fehlgeschlagen')
+}
+
+async function refreshStoredFiles(silent = false) {
+  storageLoading.value = true
+  try {
+    const response = await fetch('/api/files')
+    if (!response.ok) throw new Error('Archiv nicht erreichbar')
+    const data = await response.json()
+    storedFiles.value = Array.isArray(data) ? data : (data.files ?? [])
+    const health = await fetch('/api/health').then(result => result.ok ? result.json() : null).catch(() => null)
+    storageLabel.value = health?.storage === 'SharePoint' ? `SharePoint · ${health.detail}` : 'Lokales Dateiarchiv'
+    storageOnline.value = true
+  } catch (error) {
+    storageOnline.value = false
+    if (!silent) notify('Dateiarchiv ist nicht erreichbar')
+    console.error(error)
+  } finally { storageLoading.value = false }
+}
+
+async function saveFinishedFiles() {
+  busy.value = true
+  storageLoading.value = true
+  try {
+    if (archiveFormat.value === 'pdf') {
+      await uploadStoredFile(await createPdfBlob(), `${filename.value}.pdf`, 0)
+    } else {
+      const ext = archiveFormat.value === 'jpeg' ? 'jpg' : 'png'
+      const totalPages = hasSecondPage.value ? pageCount.value : 1
+      for (let pageNumber = 1; pageNumber <= totalPages; pageNumber += 1) {
+        const dataUrl = await renderImage(archiveFormat.value, pageNumber)
+        const blob = await (await fetch(dataUrl)).blob()
+        const pageSuffix = totalPages > 1 ? `-seite-${pageNumber}` : ''
+        await uploadStoredFile(blob, `${filename.value}${pageSuffix}.${ext}`, pageNumber)
+      }
+    }
+    await refreshStoredFiles(true)
+    notify('Fertige Datei wurde im Archiv gespeichert')
+  } catch (error) {
+    notify('Speichern im Archiv fehlgeschlagen')
+    console.error(error)
+  } finally { busy.value = false; storageLoading.value = false }
+}
+
+async function removeStoredFile(id: string) {
+  if (!window.confirm('Diese Datei wirklich aus dem Archiv löschen?')) return
+  try {
+    const response = await fetch(`/api/files/${encodeURIComponent(id)}`, { method: 'DELETE' })
+    if (!response.ok) throw new Error('Löschen fehlgeschlagen')
+    storedFiles.value = storedFiles.value.filter(file => file.id !== id)
+    notify('Datei wurde gelöscht')
+  } catch (error) {
+    notify('Datei konnte nicht gelöscht werden')
+    console.error(error)
+  }
+}
+
+function formatBytes(bytes: number) {
+  if (bytes < 1024) return `${bytes} B`
+  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`
+  return `${(bytes / 1024 / 1024).toFixed(1)} MB`
 }
 
 function saveLocally() {
@@ -376,14 +478,16 @@ function mapRow(row: Record<string, unknown>): AlumniRecord {
   const quotes = [get('Zitat', 'Zitat 1', 'quote')].filter(Boolean)
   return {
     name: get('Name', 'name'),
+    doubleFirstName: ['ja', 'true', '1', 'yes'].includes(get('Doppelter Vorname', 'doubleFirstName').trim().toLowerCase()),
     nameFontSize: 50,
+    quoteFontSize: 100, educationFontSize: 100, contentFontSize: 100, paragraphSpacing: 100, bulletSpacing: 100,
     graduation: get('Abschlussjahr', 'Matura', 'graduation'),
     profession: get('Beruf', 'profession'),
     education: get('Ausbildung', 'education'),
     retrospective: get('Rückblick', 'Rueckblick', 'retrospective'),
     contentBlocks: [{ heading: 'RÜCKBLICK', intro: get('Rückblick', 'Rueckblick', 'retrospective'), bullets: [], page: 2 }].filter(block => block.intro),
     quotes: quotes.length ? quotes : [''],
-    image: '', imageX: 50, imageY: 50, imageZoom: 100,
+    image: '', photoCredit: get('Fotocredit', 'Foto', 'Bildnachweis', 'photoCredit'), imageX: 50, imageY: 50, imageZoom: 100,
   }
 }
 
@@ -431,6 +535,7 @@ watch(format, () => { if (!silentFormatSwitch.value) notify(`${currentFormat.val
 
 onMounted(() => {
   loadLocal()
+  refreshStoredFiles(true)
   for (let pageNumber = 2; pageNumber <= pageCount.value; pageNumber += 1) ensureContentBlockForPage(pageNumber)
 })
 </script>
@@ -443,6 +548,35 @@ onMounted(() => {
         <span class="brand-divider"></span>
         <div><strong>Alumni-Editor</strong><small>Social Media Studio</small></div>
       </div>
+      <details class="header-storage">
+        <summary>
+          <span class="header-storage-title"><strong>{{ storageLabel }}</strong><small>Fertige Dateien</small></span>
+          <span class="storage-status" :class="{ online: storageOnline }">{{ storageOnline ? 'Verbunden' : 'Offline' }}</span>
+        </summary>
+        <section class="storage-panel" aria-label="Dateiarchiv">
+          <div class="storage-heading">
+            <div><strong>{{ storageLabel }}</strong><small>Fertige Dateien am Server ablegen</small></div>
+            <span class="storage-status" :class="{ online: storageOnline }">{{ storageOnline ? 'Verbunden' : 'Nicht verbunden' }}</span>
+          </div>
+          <div class="storage-actions">
+            <select v-model="archiveFormat" aria-label="Dateiformat für das Archiv">
+              <option value="png">PNG</option><option value="jpeg">JPG</option><option value="pdf">PDF</option>
+            </select>
+            <button class="button button-dark" :disabled="busy || storageLoading || !storageOnline" @click="saveFinishedFiles">Im Archiv speichern</button>
+            <button class="button button-white" :disabled="storageLoading" @click="refreshStoredFiles()">Aktualisieren</button>
+          </div>
+          <div v-if="storedFiles.length" class="stored-files">
+            <div v-for="file in storedFiles" :key="file.id" class="stored-file">
+              <div><strong>{{ file.filename }}</strong><small>{{ new Date(file.createdAt).toLocaleString('de-AT') }} · {{ formatBytes(file.size) }}</small></div>
+              <div class="stored-file-actions">
+                <a class="text-button" :href="`/api/files/${encodeURIComponent(file.id)}/download`">Laden</a>
+                <button class="text-button danger" @click="removeStoredFile(file.id)">Löschen</button>
+              </div>
+            </div>
+          </div>
+          <p v-else-if="storageOnline && !storageLoading" class="empty-hint">Noch keine fertigen Dateien gespeichert.</p>
+        </section>
+      </details>
       <div class="header-actions">
         <button class="button button-ghost" @click="loadLocal">Entwurf laden</button>
         <button class="button button-dark" @click="saveLocally">Entwurf speichern</button>
@@ -483,6 +617,10 @@ onMounted(() => {
           <h2>Person</h2>
           <div class="field-grid">
             <label class="field field-wide"><span>Name</span><input v-model="record.name" placeholder="Vor- und Nachname" /></label>
+            <label class="checkbox-field field-wide">
+              <input v-model="record.doubleFirstName" type="checkbox" />
+              <span><strong>Doppelter Vorname</strong><small>Die ersten beiden Namen stehen gemeinsam in der ersten Zeile.</small></span>
+            </label>
             <label class="field field-wide"><span>Namensgröße: {{ record.nameFontSize }} %</span><input v-model.number="record.nameFontSize" type="range" min="25" max="100" step="5" /></label>
             <template v-if="format !== 'story'">
               <label class="field"><span>Abschluss</span><input v-model="record.graduation" placeholder="z. B. Matura 2018" /></label>
@@ -498,6 +636,7 @@ onMounted(() => {
             <span class="upload-icon">＋</span><span><strong>{{ record.image ? 'Anderes Bild wählen' : 'Porträt hochladen' }}</strong><small>JPG oder PNG · am besten hochauflösend</small></span>
           </button>
           <input ref="fileInput" class="visually-hidden" type="file" accept="image/png,image/jpeg,image/webp" @change="handleImage" />
+          <label class="field photo-credit-field"><span>Fotocredit</span><input v-model="record.photoCredit" placeholder="z. B. Foto: Max Mustermann" /></label>
           <div v-if="record.image" class="crop-controls">
             <label><span>Horizontal: {{ record.imageX }} %</span><input v-model.number="record.imageX" type="range" min="0" max="100" step="1" /></label>
             <label><span>Vertikal: {{ record.imageY }} %</span><input v-model.number="record.imageY" type="range" min="0" max="100" step="1" /></label>
@@ -513,6 +652,15 @@ onMounted(() => {
             <span>„</span><textarea v-model="record.quotes[0]" rows="2" placeholder="Zitat 1"></textarea>
             <span></span>
           </div>
+          <label class="field"><span>Schriftgröße Zitat: {{ record.quoteFontSize ?? 100 }} %</span><input v-model.number="record.quoteFontSize" type="range" min="70" max="140" step="5" /></label>
+        </div>
+
+        <div v-if="format !== 'story'" class="form-section typography-controls">
+          <h2>Schrift und Abstände</h2>
+          <label class="field"><span>Werdegang: {{ record.educationFontSize ?? 100 }} %</span><input v-model.number="record.educationFontSize" type="range" min="70" max="140" step="5" /></label>
+          <label class="field"><span>Text ab Seite 2: {{ record.contentFontSize ?? 100 }} %</span><input v-model.number="record.contentFontSize" type="range" min="70" max="140" step="5" /></label>
+          <label class="field"><span>Absatzabstand: {{ record.paragraphSpacing ?? 100 }} %</span><input v-model.number="record.paragraphSpacing" type="range" min="0" max="200" step="10" /></label>
+          <label class="field"><span>Abstand Stichpunkte: {{ record.bulletSpacing ?? 100 }} %</span><input v-model.number="record.bulletSpacing" type="range" min="0" max="200" step="10" /></label>
         </div>
 
         <div v-if="format !== 'story'" class="form-section">
@@ -553,7 +701,14 @@ onMounted(() => {
             <strong>{{ currentFormat.width }} × {{ currentFormat.height }} px</strong>
           </div>
           <div class="segmented" aria-label="Instagram-Format">
-            <button v-for="(item, key) in formats" :key="key" :class="{ active: format === key }" @click="format = key as FormatKey">{{ item.label }}</button>
+            <button
+              v-for="(item, key) in formats"
+              :key="key"
+              :class="{ active: format === key }"
+              :disabled="key === 'story'"
+              :title="key === 'story' ? 'Story-Format ist derzeit nicht aktiviert' : undefined"
+              @click="format = key as FormatKey"
+            >{{ item.label }}</button>
           </div>
           <div v-if="format !== 'story'" class="segmented" aria-label="Vorschauseite">
             <span v-for="pageNumber in pageCount" :key="pageNumber" class="page-tab-wrap">
@@ -570,6 +725,12 @@ onMounted(() => {
 
         <div class="canvas-stage" :class="{ 'debug-mode': debugMode }">
           <SocialCard ref="preview" :record="record" :format="format" :page="page" :safe-zones="safeZones" />
+        </div>
+
+        <div class="export-bar">
+          <button class="button button-white" :disabled="busy" @click="exportRaster('png')">PNG herunterladen</button>
+          <button class="button button-white" :disabled="busy" @click="exportRaster('jpeg')">JPG herunterladen</button>
+          <button class="button button-dark" :disabled="busy" @click="exportPdf">PDF herunterladen</button>
         </div>
 
       </section>
