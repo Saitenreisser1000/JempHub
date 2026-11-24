@@ -654,83 +654,92 @@ onMounted(() => {
         </div>
 
         <div class="form-section">
-          <h2>Person</h2>
+          <div class="section-title-row"><h2>Person</h2><span class="section-tag">Seite 1</span></div>
           <div class="field-grid">
-            <label class="field field-wide"><span>Name</span><input v-model="record.name" placeholder="Vor- und Nachname" /></label>
+            <div class="field-wide">
+              <label class="field"><span>Name</span><input v-model="record.name" placeholder="Vor- und Nachname" /></label>
+              <label class="size-control"><span>Größe</span><input v-model.number="record.nameFontSize" type="range" min="25" max="100" step="5" /><output>{{ record.nameFontSize }} %</output></label>
+            </div>
             <label class="checkbox-field field-wide">
               <input v-model="record.doubleFirstName" type="checkbox" />
               <span><strong>Doppelter Vorname</strong><small>Die ersten beiden Namen stehen gemeinsam in der ersten Zeile.</small></span>
             </label>
-            <label class="field field-wide"><span>Namensgröße: {{ record.nameFontSize }} %</span><input v-model.number="record.nameFontSize" type="range" min="25" max="100" step="5" /></label>
-            <template v-if="format !== 'story'">
-              <label class="field"><span>Abschluss</span><input v-model="record.graduation" placeholder="z. B. Matura 2018" /></label>
-              <label class="field"><span>Beruf</span><input v-model="record.profession" placeholder="z. B. Ärztin" /></label>
-              <label class="field field-wide"><span>Ausbildung &amp; Werdegang</span><textarea v-model="record.education" rows="2" placeholder="Studium, Ausbildung, heutige Tätigkeit"></textarea></label>
-            </template>
+            <label class="field"><span>Abschluss</span><input v-model="record.graduation" placeholder="z. B. Matura 2018" /></label>
+            <label class="field"><span>Beruf</span><input v-model="record.profession" placeholder="z. B. Ärztin" /></label>
           </div>
         </div>
 
+        <div v-if="format !== 'story'" class="form-section">
+          <div class="section-title-row"><h2>Werdegang</h2><span class="section-tag">Seite 1</span></div>
+          <label class="field"><span>Ausbildung &amp; heutige Tätigkeit</span><textarea v-model="record.education" rows="2" placeholder="Studium, Ausbildung, heutige Tätigkeit"></textarea></label>
+          <label class="size-control"><span>Schriftgröße</span><input v-model.number="record.educationFontSize" type="range" min="70" max="350" step="5" /><output>{{ record.educationFontSize ?? 100 }} %</output></label>
+        </div>
+
         <div class="form-section">
-          <div class="section-title-row"><h2>Porträt</h2><button v-if="record.image" class="text-button" @click="record.image = ''">Entfernen</button></div>
+          <div class="section-title-row">
+            <h2>Porträt</h2>
+            <span class="section-actions"><button v-if="record.image" class="text-button" @click="record.image = ''">Entfernen</button><span class="section-tag">Seite 1</span></span>
+          </div>
           <button class="upload-zone" type="button" @click="fileInput?.click()">
             <span class="upload-icon">＋</span><span><strong>{{ record.image ? 'Anderes Bild wählen' : 'Porträt hochladen' }}</strong><small>JPG oder PNG · am besten hochauflösend</small></span>
           </button>
           <input ref="fileInput" class="visually-hidden" type="file" accept="image/png,image/jpeg,image/webp" @change="handleImage" />
-          <label class="field photo-credit-field"><span>Fotocredit</span><input v-model="record.photoCredit" placeholder="z. B. Foto: Max Mustermann" /></label>
-          <div v-if="record.image" class="crop-controls">
-            <label><span>Horizontal: {{ record.imageX }} %</span><input v-model.number="record.imageX" type="range" min="0" max="100" step="1" /></label>
-            <label><span>Vertikal: {{ record.imageY }} %</span><input v-model.number="record.imageY" type="range" min="0" max="100" step="1" /></label>
-            <label><span>Zoom</span><input v-model.number="record.imageZoom" type="range" min="100" max="180" /></label>
+          <div v-if="record.image" class="control-stack">
+            <label class="size-control"><span>Horizontal</span><input v-model.number="record.imageX" type="range" min="0" max="100" step="1" /><output>{{ record.imageX }} %</output></label>
+            <label class="size-control"><span>Vertikal</span><input v-model.number="record.imageY" type="range" min="0" max="100" step="1" /><output>{{ record.imageY }} %</output></label>
+            <label class="size-control"><span>Zoom</span><input v-model.number="record.imageZoom" type="range" min="100" max="180" /><output>{{ record.imageZoom }} %</output></label>
           </div>
+          <label class="field photo-credit-field"><span>Fotocredit</span><input v-model="record.photoCredit" placeholder="z. B. Foto: Max Mustermann" /></label>
         </div>
 
         <div class="form-section">
-          <div class="section-title-row">
-            <h2>Zitat auf Seite 1</h2>
-          </div>
+          <div class="section-title-row"><h2>Zitat</h2><span class="section-tag">Seite 1</span></div>
           <div class="quote-field">
-            <span>„</span><textarea v-model="record.quotes[0]" rows="2" placeholder="Zitat 1"></textarea>
+            <span>„</span><textarea v-model="record.quotes[0]" rows="2" placeholder="Zitat"></textarea>
             <span></span>
           </div>
-          <label class="field"><span>Schriftgröße Zitat: {{ record.quoteFontSize ?? 100 }} %</span><input v-model.number="record.quoteFontSize" type="range" min="70" max="280" step="5" /></label>
-        </div>
-
-        <div v-if="format !== 'story'" class="form-section typography-controls">
-          <h2>Schrift und Abstände</h2>
-          <label class="field"><span>Werdegang: {{ record.educationFontSize ?? 100 }} %</span><input v-model.number="record.educationFontSize" type="range" min="70" max="350" step="5" /></label>
-          <label class="field"><span>Text ab Seite 2: {{ record.contentFontSize ?? 100 }} %</span><input v-model.number="record.contentFontSize" type="range" min="70" max="280" step="5" /></label>
-          <label class="field"><span>Absatzabstand: {{ record.paragraphSpacing ?? 100 }} %</span><input v-model.number="record.paragraphSpacing" type="range" min="0" max="400" step="10" /></label>
-          <label class="field"><span>Abstand Stichpunkte: {{ record.bulletSpacing ?? 100 }} %</span><input v-model.number="record.bulletSpacing" type="range" min="0" max="400" step="10" /></label>
+          <label class="size-control"><span>Schriftgröße</span><input v-model.number="record.quoteFontSize" type="range" min="70" max="280" step="5" /><output>{{ record.quoteFontSize ?? 100 }} %</output></label>
         </div>
 
         <div v-if="format !== 'story'" class="form-section">
-          <div class="section-title-row">
-            <h2>Textboxen ab Seite 2</h2>
-          </div>
+          <div class="section-title-row"><h2>Textboxen</h2><span class="section-tag">ab Seite 2</span></div>
           <div class="content-block-fields">
             <div v-for="({ block, pageNumber }, index) in pageTextboxes" :key="pageNumber" class="content-block-field">
               <div class="section-title-row">
-                <strong>Seite {{ pageNumber }} · Textbox</strong>
+                <strong>Seite {{ pageNumber }}</strong>
               </div>
               <label class="field"><span>Überschrift</span><input v-model="block.heading" placeholder="z. B. Rückblick" /></label>
-              <label class="field"><span>Text</span><textarea v-model="block.intro" rows="5" maxlength="700" placeholder="Text für diese Seite"></textarea><small>{{ block.intro.length }} / 700 Zeichen</small></label>
-              <div class="field">
-                <span>Stichpunkte</span>
-                <div v-for="(_, bulletIndex) in block.bullets" :key="bulletIndex" class="content-bullet-field">
-                  <input v-model="block.bullets[bulletIndex]" maxlength="160" :aria-label="`Textbox ${index + 1}, Stichpunkt ${bulletIndex + 1}`" placeholder="Kurzer Stichpunkt" />
-                  <button class="text-button" :aria-label="`Stichpunkt ${bulletIndex + 1} entfernen`" @click="removeContentBullet(block, bulletIndex)">×</button>
+              <div class="field-block">
+                <label class="field"><span>Text</span><textarea v-model="block.intro" rows="5" maxlength="700" placeholder="Text für diese Seite"></textarea><small>{{ block.intro.length }} / 700 Zeichen</small></label>
+                <div class="control-stack">
+                  <label class="size-control"><span>Schriftgröße</span><input v-model.number="record.contentFontSize" type="range" min="70" max="280" step="5" /><output>{{ record.contentFontSize ?? 100 }} %</output></label>
+                  <label class="size-control"><span>Absatzabstand</span><input v-model.number="record.paragraphSpacing" type="range" min="0" max="400" step="10" /><output>{{ record.paragraphSpacing ?? 100 }} %</output></label>
                 </div>
-                <button class="text-button content-bullet-add" @click="addContentBullet(block)">+ Stichpunkt</button>
+              </div>
+              <div class="field-block">
+                <div class="field">
+                  <span>Stichpunkte</span>
+                  <div v-for="(_, bulletIndex) in block.bullets" :key="bulletIndex" class="content-bullet-field">
+                    <input v-model="block.bullets[bulletIndex]" maxlength="160" :aria-label="`Textbox ${index + 1}, Stichpunkt ${bulletIndex + 1}`" placeholder="Kurzer Stichpunkt" />
+                    <button class="text-button" :aria-label="`Stichpunkt ${bulletIndex + 1} entfernen`" @click="removeContentBullet(block, bulletIndex)">×</button>
+                  </div>
+                  <button class="text-button content-bullet-add" @click="addContentBullet(block)">+ Stichpunkt</button>
+                </div>
+                <label class="size-control"><span>Abstand</span><input v-model.number="record.bulletSpacing" type="range" min="0" max="400" step="10" /><output>{{ record.bulletSpacing ?? 100 }} %</output></label>
               </div>
             </div>
           </div>
+          <p v-if="pageTextboxes.length > 1" class="control-note">Schriftgröße und Abstände gelten für alle Textboxen gemeinsam.</p>
         </div>
 
+        <div class="form-section">
+          <div class="section-title-row"><h2>Daten</h2></div>
         <div class="data-actions">
           <button class="button button-soft" @click="importInput?.click()">Excel, CSV oder JSON importieren</button>
           <button class="button button-soft" @click="exportJson">Datensatz exportieren</button>
           <button class="text-button" @click="resetForm">Zurücksetzen</button>
           <input ref="importInput" class="visually-hidden" type="file" accept=".xlsx,.xls,.csv,.json" @change="importData" />
+        </div>
         </div>
       </section>
 

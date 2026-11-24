@@ -78,15 +78,24 @@ button:disabled { cursor: not-allowed; opacity: .5; }
 .field-grid { display: grid; grid-template-columns: 1fr 150px; gap: 15px 12px; }
 .field { display: grid; gap: 7px; }
 .field-wide { grid-column: 1 / -1; }
-.field > span, .batch-bar label, .crop-controls span { color: #5a5a67; font-weight: 700; font-size: 11px; }
+.field > span, .batch-bar label { color: #5a5a67; font-weight: 700; font-size: 11px; }
 .field input, .field textarea, .batch-bar select, .quote-field textarea {
   width: 100%; border: 1px solid #d7d7d2; border-radius: 8px; padding: 11px 12px; background: #fff; color: var(--ink); outline: none; resize: vertical;
 }
 .field input:focus, .field textarea:focus, .batch-bar select:focus, .quote-field textarea:focus { border-color: #9a7b2d; box-shadow: 0 0 0 3px rgba(251,192,45,.16); }
 .field small { text-align: right; color: #89898f; font-size: 10px; }
-.typography-controls { display: grid; grid-template-columns: 1fr 1fr; gap: 16px 14px; }
-.typography-controls h2 { grid-column: 1 / -1; margin-bottom: 0; }
-.typography-controls input[type="range"] { padding: 0; accent-color: var(--yellow); }
+/* Regler direkt unter dem Feld, das sie verändern */
+.size-control { display: grid; grid-template-columns: 92px 1fr 46px; align-items: center; gap: 10px; margin-top: 8px; padding: 7px 11px; border-radius: 8px; background: #f0efe8; cursor: pointer; }
+.size-control > span { color: #5a5a67; font-weight: 700; font-size: 11px; }
+.size-control input[type="range"] { width: 100%; margin: 0; padding: 0; accent-color: var(--yellow); }
+.size-control output { color: var(--ink); font: 700 11px/1 Manrope, sans-serif; text-align: right; font-variant-numeric: tabular-nums; }
+.control-stack { display: grid; gap: 6px; margin-top: 8px; }
+.control-stack .size-control { margin-top: 0; }
+.field-block { margin-top: 12px; }
+.section-tag { padding: 3px 8px; border-radius: 999px; background: #ecebe3; color: #6c6a5e; font-size: 10px; font-weight: 700; letter-spacing: .04em; text-transform: uppercase; margin-bottom: 17px; }
+.section-actions { display: flex; align-items: center; gap: 8px; }
+.section-actions .text-button { margin-bottom: 17px; }
+.control-note { margin: 12px 0 0; color: var(--muted); font-size: 12px; }
 .checkbox-field { display: flex; align-items: flex-start; gap: 10px; padding: 10px 12px; border: 1px solid #d7d7d2; border-radius: 8px; background: #fff; cursor: pointer; }
 .checkbox-field input { width: 18px; height: 18px; margin: 1px 0 0; accent-color: var(--yellow); flex: 0 0 auto; }
 .checkbox-field > span { display: grid; gap: 3px; color: var(--ink); font-size: 14px; }
@@ -97,9 +106,6 @@ button:disabled { cursor: not-allowed; opacity: .5; }
 .upload-zone small { color: var(--muted); }
 .photo-credit-field { margin-top: 12px; }
 .upload-icon { display: grid; place-items: center; width: 35px; height: 35px; border-radius: 50%; background: var(--yellow); font-size: 22px; }
-.crop-controls { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-top: 14px; }
-.crop-controls label { display: grid; gap: 5px; }
-.crop-controls input { width: 100%; accent-color: var(--yellow); }
 .quote-field { display: grid; grid-template-columns: 24px 1fr 24px; align-items: start; gap: 7px; margin-bottom: 9px; }
 .quote-field > span { color: var(--orange); font: 800 29px/1 Manrope, sans-serif; }
 .quote-field button { border: 0; background: transparent; color: #888; font-size: 20px; }
@@ -392,7 +398,4 @@ button:disabled { cursor: not-allowed; opacity: .5; }
   .storage-actions .button-white { grid-column: 1 / -1; }
   .field-grid { grid-template-columns: 1fr; }
   .field-wide { grid-column: auto; }
-  .crop-controls { grid-template-columns: 1fr; }
-  .typography-controls { grid-template-columns: 1fr; }
-  .typography-controls h2 { grid-column: auto; }
 }
