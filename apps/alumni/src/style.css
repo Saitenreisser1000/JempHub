@@ -267,11 +267,11 @@ button:disabled { cursor: not-allowed; opacity: .5; }
 .format-story footer span:last-child { display: none; }
 
 /* Quadrat 1080×1080: Foto links, Textspalte rechts, keine Überlappung */
-.format-square .portrait-wrap { top: 15%; width: 45%; height: 65%; }
-.format-square .identity { top: 16%; left: 55%; right: 5.4%; }
-.format-square blockquote { top: 49.5%; left: 46%; right: 5.4%; width: auto; height: 24%; }
-.format-square .below-quote { top: 76.5%; left: 55%; right: 5.4%; }
-.format-square .education-note p { max-width: 100%; }
+/* Quadrat: gleiche Anordnung wie Hochformat, Werdegang über die volle Breite */
+.format-square .portrait-wrap { top: 14.5%; width: 45%; height: 50%; }
+.format-square .identity { top: 15.5%; left: 55%; right: 5.4%; }
+.format-square blockquote { top: 44%; left: 44%; right: 5.4%; width: auto; height: 22%; }
+.format-square .below-quote { top: 69%; }
 
 /* Overlay der verdeckten Story-Bereiche – nur Vorschau, wird beim Export ausgefiltert */
 .safe-zone { position: absolute; z-index: 5; left: 0; right: 0; display: grid; place-items: center; background: repeating-linear-gradient(135deg, rgba(229,57,53,.32) 0 10px, rgba(229,57,53,.16) 10px 20px); pointer-events: none; }
