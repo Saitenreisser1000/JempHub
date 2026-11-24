@@ -14,7 +14,7 @@ RELEASE="${1:?Release-Ordner fehlt}"
 BASE=/opt/alumni-editor
 DATA=/var/lib/alumni-editor
 STORAGE="$DATA/exports"
-PORT=3110
+PORT_FILE=$BASE/port   # gewählter Port, bleibt über Deploys gleich
 SERVICE=alumni-editor
 UNIT="/etc/systemd/system/$SERVICE.service"
 DOMAIN=alumni.jemphub.com
@@ -52,13 +52,31 @@ mkdir -p "$STORAGE"
 chown -R www-data:www-data "$DATA"
 chmod 750 "$DATA"
 
-# 3. Neue Version aktivieren (Symlink), vorherige merken für den Rückfall
+# 3. Port wählen: gemerkter Port, sonst der erste freie ab 3110
+port_free() { ! ss -ltn "sport = :$1" | grep -q LISTEN; }
+PORT=""
+[ -f "$PORT_FILE" ] && PORT=$(cat "$PORT_FILE")
+if [ -n "$PORT" ] && ! systemctl is-active --quiet "$SERVICE" && ! port_free "$PORT"; then
+  say "Gemerkter Port $PORT ist von einem anderen Dienst belegt – suche neu"
+  PORT=""
+fi
+if [ -z "$PORT" ]; then
+  for candidate in $(seq 3110 3199); do
+    if port_free "$candidate"; then PORT=$candidate; break; fi
+    say "Port $candidate belegt: $(ss -ltnp "sport = :$candidate" | tail -n +2 | sed -E 's/.*users:\(\(("[^"]*").*/\1/' | head -1)"
+  done
+  [ -n "$PORT" ] || fail "Kein freier Port zwischen 3110 und 3199"
+  echo "$PORT" > "$PORT_FILE"
+fi
+say "Dienst-Port: $PORT"
+
+# 4. Neue Version aktivieren (Symlink), vorherige merken für den Rückfall
 PREVIOUS=$(readlink -f "$BASE/current" 2>/dev/null || true)
 chown -R root:root "$RELEASE"
 chmod -R u=rwX,go=rX "$RELEASE"
 ln -sfn "$RELEASE" "$BASE/current.new" && mv -Tf "$BASE/current.new" "$BASE/current"
 
-# 4. systemd-Dienst
+# 5. systemd-Dienst
 cat > "$UNIT.new" <<UNIT
 [Unit]
 Description=Alumni Editor ($DOMAIN)
@@ -89,15 +107,11 @@ WantedBy=multi-user.target
 UNIT
 mv -f "$UNIT.new" "$UNIT"
 
-if ! systemctl is-active --quiet "$SERVICE" && ss -ltn "sport = :$PORT" | grep -q LISTEN; then
-  fail "Port $PORT ist bereits von einem anderen Dienst belegt"
-fi
-
 systemctl daemon-reload
 systemctl enable --quiet "$SERVICE"
 systemctl restart "$SERVICE"
 
-# 5. Lokal testen, bevor nginx umgestellt wird
+# 6. Lokal testen, bevor nginx umgestellt wird
 say "Teste den Dienst auf 127.0.0.1:$PORT"
 ok=""
 for _ in $(seq 1 20); do
@@ -116,7 +130,7 @@ if [ -z "$ok" ]; then
   fail "Dienst startet nicht – nginx bleibt unverändert (alte Version weiter online)"
 fi
 
-# 6. nginx: alumni.jemphub.com an den Node-Dienst weiterleiten
+# 7. nginx: alumni.jemphub.com an den Node-Dienst weiterleiten
 CERT="/etc/letsencrypt/live/$DOMAIN"
 PROXY_BLOCK="
     client_max_body_size 40m;
@@ -201,7 +215,7 @@ else
   systemctl reload nginx
 fi
 
-# 7. Alte Releases aufräumen (5 behalten, die aktive nie)
+# 8. Alte Releases aufräumen (5 behalten, die aktive nie)
 CURRENT=$(readlink -f "$BASE/current")
 ls -1dt "$BASE"/releases/*/ 2>/dev/null | sed 's:/$::' | tail -n +6 | while read -r old; do
   [ "$old" != "$CURRENT" ] && rm -rf "$old"
