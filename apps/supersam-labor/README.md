@@ -215,6 +215,12 @@ Editor-Levels, im Editor als Vorschau sichtbar; nicht neben Start, Federn, Fahne
 - Einschlüsse im Boden (Kiesel, Wurzeln, Knochen, Fossilien, Muscheln, Risse, Moos, Eis).
 - Schmetterlinge auf der Wiese, Glühwürmchen im Wald.
 
+## Grafikstil „3D-Diorama“ (im Aufbau)
+- Neue Bilder erstellt ChatGPT nach `grafik-quelle/GRAFIK_VORGABEN.md`; Stand in `grafik-quelle/AUFGABEN.md`.
+- Das Spiel lädt `grafik/<name>.webp` (Quell-PNG in `grafik-quelle/`, nicht veröffentlicht). Fehlt ein Bild, zeichnet es die Pixel-Grafik wie bisher.
+- Sam: Bild 512², Fuß unten mittig, 90 % Höhe → gezeichnet 16·1,2/0,9 Einheiten hoch, weich geglättet.
+- Fehlen Lauf- oder Sprungbilder, wippt bzw. neigt sich das Standbild.
+
 ## Grafikstil „Pixel 3D“ (ruht)
 
 Die Grafik ist fest **Klassisch**; im Menü gibt es keine Auswahl mehr, Taste `G` und `?stil=` sind entfernt.
