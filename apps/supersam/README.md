@@ -4,7 +4,7 @@ Jump'n'Run fürs Handy im Querformat mit Sam, einem kleinen blonden Jungen, gest
 
 ## Stand
 
-Die Hauptseite zeigt den Stand des Labors vom 17. November 2026 (Karte mit fünf Kapiteln, neues Kapitel Wiese
+Die Hauptseite zeigt den Stand des Labors vom 18. November 2026 (15 % mehr Sicht, kompaktes HUD mit Pixel-Haus als Menü-Knopf, Karte mit fünf Kapiteln, neues Kapitel Wiese
 mit Käferkönig, Fähigkeiten von den Endgegnern, schnelle Schuhe in 1-1 statt Übungswiese, Bröckelblöcke von
 unten durchspringbar, langsamere Fahrplattformen, knapper Abschluss-Bildschirm, Leben, Bonuswelten, Medaillen). Die Beschreibung der
 einzelnen Teile steht in `apps/supersam-labor/README.md`.
