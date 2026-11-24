@@ -25,7 +25,7 @@ button:disabled { cursor: not-allowed; opacity: .5; }
   display: flex; align-items: center; justify-content: space-between; position: sticky; top: 0; z-index: 20;
 }
 .brand { display: flex; align-items: center; gap: 18px; }
-.brand img { width: 188px; height: 55px; object-fit: contain; background: transparent; border-radius: 0; padding: 0; }
+.brand img { width: 240px; height: 55px; object-fit: contain; background: transparent; border-radius: 0; padding: 0; }
 .brand-divider { width: 1px; height: 32px; background: rgba(255,255,255,.25); }
 .brand div { display: grid; line-height: 1.1; }
 .brand strong { font-family: Manrope, sans-serif; font-size: 15px; color: #fff; }
@@ -149,7 +149,7 @@ button:disabled { cursor: not-allowed; opacity: .5; }
 .social-card.format-story { height: min(100%, calc(100vh - 260px)); width: auto; }
 .card-grid { position: absolute; inset: 0; opacity: .22; background-image: linear-gradient(rgba(8,8,31,.032) 1px, transparent 1px), linear-gradient(90deg, rgba(8,8,31,.032) 1px, transparent 1px); background-size: 7.4% 5.9%; }
 .card-head { position: absolute; z-index: 2; top: 4.3%; left: 5.4%; right: 5.4%; height: 8%; display: flex; align-items: start; justify-content: space-between; }
-.school-logo { width: 42%; height: 100%; object-fit: contain; object-position: left top; }
+.school-logo { width: 62%; height: 100%; object-fit: contain; object-position: left top; }
 .series-label { font: 800 clamp(6px, .75vw, 11px)/1.15 Manrope, sans-serif; text-align: right; letter-spacing: .11em; }
 .portrait-wrap { position: absolute; top: 15%; left: 5.4%; width: 48%; height: 51%; overflow: hidden; background: #e9e8df; }
 .portrait-wrap img { width: 100%; height: 100%; object-fit: cover; transform-origin: center; }
