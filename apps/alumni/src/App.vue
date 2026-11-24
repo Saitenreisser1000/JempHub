@@ -292,7 +292,7 @@ async function exportRaster(kind: 'png' | 'jpeg') {
 async function exportBackgroundAsset(withFooter: boolean, withLogo: boolean, dimensions = { width: 1080, height: 1350 }) {
   busy.value = true
   try {
-    const [background, logo] = await Promise.all([loadImage('/background.jpg'), loadImage('/logo-white.png')])
+    const [background, logo] = await Promise.all([loadImage('/background.jpg'), loadImage('/logo-absolventen.png')])
     const canvas = document.createElement('canvas')
     canvas.width = dimensions.width
     canvas.height = dimensions.height
@@ -309,7 +309,7 @@ async function exportBackgroundAsset(withFooter: boolean, withLogo: boolean, dim
     context.fillRect(0, 0, canvas.width, canvas.height)
 
     if (withLogo) {
-      const logoScale = Math.min(454 / logo.naturalWidth, 108 / logo.naturalHeight)
+      const logoScale = Math.min(640 / logo.naturalWidth, 108 / logo.naturalHeight)
       context.drawImage(logo, 58, 58, logo.naturalWidth * logoScale, logo.naturalHeight * logoScale)
     }
     if (withFooter) {
@@ -544,7 +544,7 @@ onMounted(() => {
   <div class="app-shell">
     <header class="topbar">
       <div class="brand">
-        <img src="/logo-white.png?v=1" alt="Sternstein Gymnasium" />
+        <img src="/logo-absolventen.png" alt="Sternstein Gymnasium – Absolventen" />
         <span class="brand-divider"></span>
         <div><strong>Alumni-Editor</strong><small>Social Media Studio</small></div>
       </div>

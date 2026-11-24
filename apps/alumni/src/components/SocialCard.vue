@@ -268,7 +268,7 @@ defineExpose({ element: previewElement })
     <div class="card-bg"></div>
     <div class="card-grid"></div>
     <div class="card-head">
-      <img class="school-logo" src="/logo-white.png?v=1" alt="" />
+      <img class="school-logo" src="/logo-absolventen.png" alt="" />
     </div>
     <div class="portrait-wrap">
       <img v-if="record.image" :src="record.image" :style="imageStyle" alt="Porträt" />
@@ -303,7 +303,7 @@ defineExpose({ element: previewElement })
     <div class="card-bg"></div>
     <div class="card-grid"></div>
     <div class="card-head">
-      <img class="school-logo" src="/logo-white.png?v=1" alt="" />
+      <img class="school-logo" src="/logo-absolventen.png" alt="" />
     </div>
     <section class="second-page-content">
       <div v-if="pageBlocks.length" class="content-blocks">
