@@ -2,7 +2,6 @@
 import { computed, nextTick, onMounted, reactive, ref, watch } from 'vue'
 import { toJpeg, toPng } from 'html-to-image'
 import { jsPDF } from 'jspdf'
-import * as XLSX from 'xlsx'
 import { createZip, readZip, type ZipEntry } from './utils/zip'
 import SocialCard, { type AlumniRecord, type ContentBlock, type FormatKey } from './components/SocialCard.vue'
 
@@ -42,12 +41,9 @@ const maxPages = 5
 const debugMode = ref(false)
 const safeZones = ref(false)
 const preview = ref<InstanceType<typeof SocialCard> | null>(null)
-const records = ref<AlumniRecord[]>([])
-const activeRecord = ref(0)
 const busy = ref(false)
 const toast = ref('')
 const fileInput = ref<HTMLInputElement | null>(null)
-const importInput = ref<HTMLInputElement | null>(null)
 type StoredFile = { id: string; filename: string; mimeType: string; size: number; createdAt: string; alumniName?: string; format?: string; page?: number }
 const storedFiles = ref<StoredFile[]>([])
 const storageLoading = ref(false)
@@ -62,6 +58,9 @@ function normalizeContentBlocks(blocks: unknown): ContentBlock[] {
     intro: typeof block.intro === 'string' ? block.intro : typeof block.text === 'string' ? block.text : '',
     bullets: Array.isArray(block.bullets) ? block.bullets.filter((bullet): bullet is string => typeof bullet === 'string') : [],
     page: typeof block.page === 'number' ? block.page : 2,
+    ...(typeof block.fontSize === 'number' ? { fontSize: block.fontSize } : {}),
+    ...(typeof block.paragraphSpacing === 'number' ? { paragraphSpacing: block.paragraphSpacing } : {}),
+    ...(typeof block.bulletSpacing === 'number' ? { bulletSpacing: block.bulletSpacing } : {}),
   }))
 }
 
@@ -85,7 +84,13 @@ const downloadChoice = reactive<Record<FormatKey, boolean>>({ portrait: true, sq
 const silentFormatSwitch = ref(false)
 const pagesFor = (key: FormatKey) => key === 'story' ? 1 : pageCount.value
 const downloadCount = computed(() => formatKeys.filter(key => downloadChoice[key]).reduce((sum, key) => sum + pagesFor(key), 0))
-const downloadLabel = computed(() => downloadCount.value === 1 ? 'JPEG herunterladen' : `ZIP herunterladen · ${downloadCount.value} Bilder`)
+const downloadType = ref<'png' | 'jpeg' | 'pdf'>('jpeg')
+const downloadTypes = [{ key: 'png', label: 'PNG' }, { key: 'jpeg', label: 'JPG' }, { key: 'pdf', label: 'PDF' }] as const
+const downloadFiles = computed(() => downloadType.value === 'pdf' ? formatKeys.filter(key => downloadChoice[key]).length : downloadCount.value)
+const downloadLabel = computed(() => {
+  const type = downloadTypes.find(item => item.key === downloadType.value)!.label
+  return downloadFiles.value === 1 ? `${type} herunterladen` : `ZIP herunterladen · ${downloadFiles.value} Dateien`
+})
 
 function notify(message: string) {
   toast.value = message
@@ -137,7 +142,6 @@ function removePage(pageNumber: number) {
 
 function resetForm() {
   Object.assign(record, { ...demo, quotes: [...demo.quotes], contentBlocks: demo.contentBlocks?.map(block => ({ ...block, bullets: [...block.bullets] })), image: '' })
-  activeRecord.value = 0
   page.value = 1
   pageCount.value = 2
   notify('Beispieldaten wiederhergestellt')
@@ -213,35 +217,47 @@ async function downloadSelection() {
   busy.value = true
   silentFormatSwitch.value = true
   const previous = { format: format.value, page: page.value }
+  const type = downloadType.value
+  const kind = type === 'png' ? 'png' : 'jpeg'
+  const toBytes = async (dataUrl: string) => new Uint8Array(await (await fetch(dataUrl)).arrayBuffer())
   try {
-    const entries: { name: string; data: string }[] = []
+    const entries: ZipEntry[] = []
     for (const target of targets) {
       format.value = target
       await nextTick()
       await wait(180) // Textanpassung an das neue Format nachziehen lassen
       const pages = pagesFor(target)
+      const label = formats[target].label.toLowerCase()
+      const images: string[] = []
       for (let pageNumber = 1; pageNumber <= pages; pageNumber += 1) {
         page.value = pageNumber
         await nextTick()
         await wait(90)
-        const label = formats[target].label.toLowerCase()
-        const name = pages === 1 ? `${fileBase.value}-${label}.jpg` : `${fileBase.value}-${label}-seite-${pageNumber}.jpg`
-        entries.push({ name, data: await capturePreview('jpeg') })
+        images.push(await capturePreview(kind))
+      }
+      if (type === 'pdf') {
+        const { width, height } = formats[target]
+        const orientation = height > width ? 'portrait' : 'landscape'
+        const pdf = new jsPDF({ orientation, unit: 'px', format: [width, height], hotfixes: ['px_scaling'] })
+        images.forEach((image, index) => {
+          if (index > 0) pdf.addPage([width, height], orientation)
+          pdf.addImage(image, 'JPEG', 0, 0, width, height)
+        })
+        entries.push({ name: `${fileBase.value}-${label}.pdf`, data: new Uint8Array(pdf.output('arraybuffer')) })
+      } else {
+        const ext = type === 'png' ? 'png' : 'jpg'
+        for (const [index, image] of images.entries()) {
+          entries.push({ name: pages === 1 ? `${fileBase.value}-${label}.${ext}` : `${fileBase.value}-${label}-seite-${index + 1}.${ext}`, data: await toBytes(image) })
+        }
       }
     }
-    if (entries.length === 1) {
-      await downloadImageData(entries[0].data, entries[0].name)
-      notify('JPEG wurde erstellt')
-    } else {
-      const files: ZipEntry[] = await Promise.all(entries.map(async entry => ({
-        name: entry.name,
-        data: new Uint8Array(await (await fetch(entry.data)).arrayBuffer()),
-      })))
-      const objectUrl = URL.createObjectURL(createZip(files))
-      downloadDataUrl(objectUrl, `${fileBase.value}.zip`)
-      window.setTimeout(() => URL.revokeObjectURL(objectUrl), 1200)
-      notify(`ZIP mit ${entries.length} Bildern wurde erstellt`)
-    }
+    const mime = { png: 'image/png', jpeg: 'image/jpeg', pdf: 'application/pdf' }[type]
+    const single = entries.length === 1
+    const blob = single ? new Blob([entries[0].data], { type: mime }) : createZip(entries)
+    const objectUrl = URL.createObjectURL(blob)
+    downloadDataUrl(objectUrl, single ? entries[0].name : `${fileBase.value}.zip`)
+    window.setTimeout(() => URL.revokeObjectURL(objectUrl), 1200)
+    notify(single ? 'Datei wurde erstellt' : `ZIP mit ${entries.length} Dateien wurde erstellt`)
   } catch (error) {
     notify('Export fehlgeschlagen – bitte nochmals versuchen')
     console.error(error)
@@ -266,27 +282,6 @@ function loadImage(src: string) {
     image.onerror = reject
     image.src = src
   })
-}
-
-async function exportRaster(kind: 'png' | 'jpeg') {
-  busy.value = true
-  try {
-    if (hasSecondPage.value) {
-      const ext = kind === 'jpeg' ? 'jpg' : 'png'
-      for (let pageNumber = 1; pageNumber <= pageCount.value; pageNumber += 1) {
-        const data = await renderImage(kind, pageNumber)
-        await downloadImageData(data, `${filename.value}-seite-${pageNumber}.${ext}`)
-        await wait(120)
-      }
-    } else {
-      const data = await renderImage(kind)
-      await downloadImageData(data, `${filename.value}.${kind === 'jpeg' ? 'jpg' : 'png'}`)
-    }
-    notify(`${kind === 'jpeg' ? 'JPG' : 'PNG'} wurde erstellt`)
-  } catch (error) {
-    notify('Export fehlgeschlagen – bitte nochmals versuchen')
-    console.error(error)
-  } finally { busy.value = false }
 }
 
 async function exportBackgroundAsset(withFooter: boolean, withLogo: boolean, dimensions = { width: 1080, height: 1350 }) {
@@ -357,20 +352,6 @@ async function createPdfBlob() {
       pdf.addImage(additionalPage, 'JPEG', 0, 0, width, height)
     }
     return pdf.output('blob')
-}
-
-async function exportPdf() {
-  busy.value = true
-  try {
-    const blob = await createPdfBlob()
-    const url = URL.createObjectURL(blob)
-    downloadDataUrl(url, `${filename.value}.pdf`)
-    window.setTimeout(() => URL.revokeObjectURL(url), 1200)
-    notify('PDF wurde erstellt')
-  } catch (error) {
-    notify('PDF-Export fehlgeschlagen')
-    console.error(error)
-  } finally { busy.value = false }
 }
 
 function arrayBufferToBase64(buffer: ArrayBuffer) {
@@ -466,7 +447,6 @@ async function loadStoredProject(file: { id: string; filename: string }) {
     if (!project.record) throw new Error('Keine Projektdaten in der Datei')
     applyProject(project.record, project.pageCount)
     if (project.format && project.format in formats) format.value = project.format
-    records.value = []
     notify('Projekt wurde geladen')
   } catch (error) {
     notify('Projekt konnte nicht geladen werden')
@@ -493,79 +473,6 @@ function formatBytes(bytes: number) {
   return `${(bytes / 1024 / 1024).toFixed(1)} MB`
 }
 
-function saveLocally() {
-  localStorage.setItem('sternstein-alumni-current', JSON.stringify(record))
-  notify('Entwurf wurde im Browser gespeichert')
-}
-
-function loadLocal() {
-  const saved = localStorage.getItem('sternstein-alumni-current')
-  if (!saved) return notify('Noch kein lokaler Entwurf vorhanden')
-  try {
-    applyProject(JSON.parse(saved) as Partial<AlumniRecord>)
-    notify('Entwurf wurde geladen')
-  } catch { notify('Entwurf konnte nicht geladen werden') }
-}
-
-function exportJson() {
-  const blob = new Blob([JSON.stringify(record, null, 2)], { type: 'application/json' })
-  downloadDataUrl(URL.createObjectURL(blob), `${filename.value}.json`)
-}
-
-function mapRow(row: Record<string, unknown>): AlumniRecord {
-  const get = (...keys: string[]) => String(keys.map(key => row[key]).find(Boolean) ?? '')
-  const quotes = [get('Zitat', 'Zitat 1', 'quote')].filter(Boolean)
-  return {
-    name: get('Name', 'name'),
-    doubleFirstName: ['ja', 'true', '1', 'yes'].includes(get('Doppelter Vorname', 'doubleFirstName').trim().toLowerCase()),
-    nameFontSize: 50,
-    quoteFontSize: 100, educationFontSize: 100, contentFontSize: 100, paragraphSpacing: 100, bulletSpacing: 100,
-    graduation: get('Abschlussjahr', 'Matura', 'graduation'),
-    profession: get('Beruf', 'profession'),
-    education: get('Ausbildung', 'education'),
-    retrospective: get('Rückblick', 'Rueckblick', 'retrospective'),
-    contentBlocks: [{ heading: 'RÜCKBLICK', intro: get('Rückblick', 'Rueckblick', 'retrospective'), bullets: [], page: 2 }].filter(block => block.intro),
-    quotes: quotes.length ? quotes : [''],
-    image: '', photoCredit: get('Fotocredit', 'Foto', 'Bildnachweis', 'photoCredit'), imageX: 50, imageY: 50, imageZoom: 100,
-  }
-}
-
-async function importData(event: Event) {
-  const file = (event.target as HTMLInputElement).files?.[0]
-  if (!file) return
-  try {
-    if (file.name.toLowerCase().endsWith('.json')) {
-      const parsed = JSON.parse(await file.text()) as Partial<AlumniRecord>
-        Object.assign(record, parsed)
-        record.contentBlocks = normalizeContentBlocks(parsed.contentBlocks)
-        if (!record.contentBlocks.length && record.retrospective.trim()) record.contentBlocks = [{ heading: 'RÜCKBLICK', intro: record.retrospective, bullets: [], page: 2 }]
-        pageCount.value = Math.max(2, ...(record.contentBlocks ?? []).map(block => block.page ?? 2))
-        for (let pageNumber = 2; pageNumber <= pageCount.value; pageNumber += 1) ensureContentBlockForPage(pageNumber)
-      records.value = []
-      notify('Datensatz wurde importiert')
-      return
-    }
-    const workbook = XLSX.read(await file.arrayBuffer(), { type: 'array' })
-    const rows = XLSX.utils.sheet_to_json<Record<string, unknown>>(workbook.Sheets[workbook.SheetNames[0]])
-    records.value = rows.map(mapRow).filter(item => item.name)
-    if (!records.value.length) throw new Error('Keine Datensätze')
-    activeRecord.value = 0
-    Object.assign(record, records.value[0])
-    pageCount.value = Math.max(2, ...(record.contentBlocks ?? []).map(block => block.page ?? 2))
-    for (let pageNumber = 2; pageNumber <= pageCount.value; pageNumber += 1) ensureContentBlockForPage(pageNumber)
-    notify(`${records.value.length} Datensätze importiert`)
-  } catch (error) {
-    notify('Datei konnte nicht importiert werden')
-    console.error(error)
-  } finally { (event.target as HTMLInputElement).value = '' }
-}
-
-function selectRecord(index: number) {
-  records.value[activeRecord.value] = JSON.parse(JSON.stringify(record))
-  activeRecord.value = index
-  Object.assign(record, JSON.parse(JSON.stringify(records.value[index])))
-}
-
 watch(format, () => {
   if (format.value === 'story') page.value = 1
 })
@@ -573,7 +480,6 @@ watch(format, () => {
 watch(format, () => { if (!silentFormatSwitch.value) notify(`${currentFormat.value.label}: ${currentFormat.value.width} × ${currentFormat.value.height} px`) })
 
 onMounted(() => {
-  loadLocal()
   refreshStoredFiles(true)
   for (let pageNumber = 2; pageNumber <= pageCount.value; pageNumber += 1) ensureContentBlockForPage(pageNumber)
 })
@@ -618,8 +524,6 @@ onMounted(() => {
         </section>
       </details>
       <div class="header-actions">
-        <button class="button button-ghost" @click="loadLocal">Entwurf laden</button>
-        <button class="button button-dark" @click="saveLocally">Entwurf speichern</button>
         <div class="download-menu">
           <button class="button button-white" :disabled="busy" :aria-expanded="downloadOpen" aria-haspopup="dialog" @click="downloadOpen = !downloadOpen">{{ busy ? 'Wird erstellt …' : 'Herunterladen' }}</button>
           <div v-if="downloadOpen" class="download-backdrop" @click="downloadOpen = false"></div>
@@ -631,6 +535,9 @@ onMounted(() => {
                 <small>{{ formats[key].width }} × {{ formats[key].height }}<template v-if="pagesFor(key) > 1"> · {{ pagesFor(key) }} Seiten</template></small>
               </span>
             </label>
+            <div class="download-types" role="radiogroup" aria-label="Dateityp">
+              <button v-for="item in downloadTypes" :key="item.key" type="button" role="radio" :aria-checked="downloadType === item.key" :class="{ active: downloadType === item.key }" @click="downloadType = item.key">{{ item.label }}</button>
+            </div>
             <button class="button button-dark" :disabled="!downloadCount" @click="downloadSelection">{{ downloadCount ? downloadLabel : 'Format wählen' }}</button>
           </div>
         </div>
@@ -643,14 +550,6 @@ onMounted(() => {
           <!--p class="eyebrow">Neuer Alumni-Beitrag</p-->
           <h1>Neuer Alumni-Beitrag</h1>
           <p>Inhalte eingeben, Format wählen und den fertigen Beitrag direkt exportieren.</p>
-        </div>
-
-        <div v-if="records.length" class="batch-bar">
-          <label for="batch">Importierte Datensätze</label>
-          <select id="batch" :value="activeRecord" @change="selectRecord(Number(($event.target as HTMLSelectElement).value))">
-            <option v-for="(item, index) in records" :key="index" :value="index">{{ index + 1 }} · {{ item.name }}</option>
-          </select>
-          <span>{{ activeRecord + 1 }} / {{ records.length }}</span>
         </div>
 
         <div class="form-section">
@@ -712,8 +611,8 @@ onMounted(() => {
               <div class="field-block">
                 <label class="field"><span>Text</span><textarea v-model="block.intro" rows="5" maxlength="700" placeholder="Text für diese Seite"></textarea><small>{{ block.intro.length }} / 700 Zeichen</small></label>
                 <div class="control-stack">
-                  <label class="size-control"><span>Schriftgröße</span><input v-model.number="record.contentFontSize" type="range" min="70" max="280" step="5" /><output>{{ record.contentFontSize ?? 100 }} %</output></label>
-                  <label class="size-control"><span>Absatzabstand</span><input v-model.number="record.paragraphSpacing" type="range" min="0" max="400" step="10" /><output>{{ record.paragraphSpacing ?? 100 }} %</output></label>
+                  <label class="size-control"><span>Schriftgröße</span><input :value="block.fontSize ?? record.contentFontSize ?? 100" type="range" min="70" max="280" step="5" @input="block.fontSize = Number(($event.target as HTMLInputElement).value)" /><output>{{ block.fontSize ?? record.contentFontSize ?? 100 }} %</output></label>
+                  <label class="size-control"><span>Absatzabstand</span><input :value="block.paragraphSpacing ?? record.paragraphSpacing ?? 100" type="range" min="0" max="400" step="10" @input="block.paragraphSpacing = Number(($event.target as HTMLInputElement).value)" /><output>{{ block.paragraphSpacing ?? record.paragraphSpacing ?? 100 }} %</output></label>
                 </div>
               </div>
               <div class="field-block">
@@ -725,21 +624,14 @@ onMounted(() => {
                   </div>
                   <button class="text-button content-bullet-add" @click="addContentBullet(block)">+ Stichpunkt</button>
                 </div>
-                <label class="size-control"><span>Abstand</span><input v-model.number="record.bulletSpacing" type="range" min="0" max="400" step="10" /><output>{{ record.bulletSpacing ?? 100 }} %</output></label>
+                <label class="size-control"><span>Abstand</span><input :value="block.bulletSpacing ?? record.bulletSpacing ?? 100" type="range" min="0" max="400" step="10" @input="block.bulletSpacing = Number(($event.target as HTMLInputElement).value)" /><output>{{ block.bulletSpacing ?? record.bulletSpacing ?? 100 }} %</output></label>
               </div>
             </div>
           </div>
-          <p v-if="pageTextboxes.length > 1" class="control-note">Schriftgröße und Abstände gelten für alle Textboxen gemeinsam.</p>
         </div>
 
-        <div class="form-section">
-          <div class="section-title-row"><h2>Daten</h2></div>
-        <div class="data-actions">
-          <button class="button button-soft" @click="importInput?.click()">Excel, CSV oder JSON importieren</button>
-          <button class="button button-soft" @click="exportJson">Datensatz exportieren</button>
-          <button class="text-button" @click="resetForm">Zurücksetzen</button>
-          <input ref="importInput" class="visually-hidden" type="file" accept=".xlsx,.xls,.csv,.json" @change="importData" />
-        </div>
+        <div class="form-section data-actions">
+          <button class="text-button" @click="resetForm">Alle Felder zurücksetzen</button>
         </div>
       </section>
 
@@ -774,12 +666,6 @@ onMounted(() => {
 
         <div class="canvas-stage" :class="{ 'debug-mode': debugMode }">
           <SocialCard ref="preview" :record="record" :format="format" :page="page" :safe-zones="safeZones" />
-        </div>
-
-        <div class="export-bar">
-          <button class="button button-white" :disabled="busy" @click="exportRaster('png')">PNG herunterladen</button>
-          <button class="button button-white" :disabled="busy" @click="exportRaster('jpeg')">JPG herunterladen</button>
-          <button class="button button-dark" :disabled="busy" @click="exportPdf">PDF herunterladen</button>
         </div>
 
       </section>

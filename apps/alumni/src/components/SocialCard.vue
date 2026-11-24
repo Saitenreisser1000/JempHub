@@ -8,6 +8,9 @@ export type ContentBlock = {
   intro: string
   bullets: string[]
   page?: number
+  fontSize?: number
+  paragraphSpacing?: number
+  bulletSpacing?: number
 }
 export type AlumniRecord = {
   name: string
@@ -227,12 +230,18 @@ const contentBlockFits = computed(() => pageBlocks.value.map(block => fitTextBlo
 
 const quoteStyle = computed(() => ({ fontSize: `${2.1 * ((props.record.quoteFontSize ?? 100) / 100)}cqw`, lineHeight: 1.12, letterSpacing: '-.04em' }))
 const educationStyle = computed(() => ({ fontSize: `${0.9 * ((props.record.educationFontSize ?? 100) / 100)}cqw` }))
-const contentStyle = computed(() => ({
-  fontSize: `${1.75 * ((props.record.contentFontSize ?? 100) / 100)}cqw`,
-  lineHeight: 1.35,
-  '--paragraph-space': `${0.7 * ((props.record.paragraphSpacing ?? 100) / 100)}em`,
-  '--bullet-space': `${0.45 * ((props.record.bulletSpacing ?? 100) / 100)}em`,
-}))
+// Jede Textbox hat eigene Werte; ältere Projekte nutzen die früheren gemeinsamen Werte.
+function contentStyle(block: ContentBlock) {
+  const size = block.fontSize ?? props.record.contentFontSize ?? 100
+  const paragraph = block.paragraphSpacing ?? props.record.paragraphSpacing ?? 100
+  const bullet = block.bulletSpacing ?? props.record.bulletSpacing ?? 100
+  return {
+    fontSize: `${1.75 * (size / 100)}cqw`,
+    lineHeight: 1.35,
+    '--paragraph-space': `${0.7 * (paragraph / 100)}em`,
+    '--bullet-space': `${0.45 * (bullet / 100)}em`,
+  }
+}
 
 function fitStyle(fit: ReturnType<typeof calculateTextFit>) {
   return {
@@ -309,7 +318,7 @@ defineExpose({ element: previewElement })
       <div v-if="pageBlocks.length" class="content-blocks">
         <section v-for="(block, index) in pageBlocks" :key="`${page}-${index}`" class="content-block" :style="{ minHeight: `${contentBlockHeight}px` }">
           <span>{{ block.heading || 'TEXT' }}</span>
-          <div class="content-block-body" :style="contentStyle">
+          <div class="content-block-body" :style="contentStyle(block)">
             <p v-if="block.intro">{{ block.intro }}</p>
             <ul v-if="block.bullets.some(bullet => bullet.trim())">
               <li v-for="(bullet, bulletIndex) in block.bullets" v-show="bullet.trim()" :key="bulletIndex">{{ bullet }}</li>
