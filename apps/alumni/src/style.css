@@ -60,6 +60,9 @@ button:disabled { cursor: not-allowed; opacity: .5; }
 .download-option strong { font-size: 14px; }
 .download-option small { color: #67676e; font-size: 12px; }
 .download-popover .button { margin-top: 8px; width: 100%; }
+.download-types { display: grid; grid-template-columns: repeat(3, 1fr); gap: 4px; margin-top: 6px; padding: 4px; border-radius: 9px; background: #f0efe8; }
+.download-types button { border: 0; border-radius: 6px; padding: 7px 0; background: transparent; color: #67676e; font: 700 12px/1 Manrope, sans-serif; cursor: pointer; }
+.download-types button.active { background: #fff; color: var(--ink); box-shadow: 0 1px 3px rgba(8,8,31,.14); }
 .button:disabled:hover { transform: none; }
 .text-button { border: 0; color: #605b4a; background: transparent; padding: 4px; font-weight: 700; font-size: 12px; }
 
@@ -95,7 +98,6 @@ button:disabled { cursor: not-allowed; opacity: .5; }
 .section-tag { padding: 3px 8px; border-radius: 999px; background: #ecebe3; color: #6c6a5e; font-size: 10px; font-weight: 700; letter-spacing: .04em; text-transform: uppercase; margin-bottom: 17px; }
 .section-actions { display: flex; align-items: center; gap: 8px; }
 .section-actions .text-button { margin-bottom: 17px; }
-.control-note { margin: 12px 0 0; color: var(--muted); font-size: 12px; }
 .checkbox-field { display: flex; align-items: flex-start; gap: 10px; padding: 10px 12px; border: 1px solid #d7d7d2; border-radius: 8px; background: #fff; cursor: pointer; }
 .checkbox-field input { width: 18px; height: 18px; margin: 1px 0 0; accent-color: var(--yellow); flex: 0 0 auto; }
 .checkbox-field > span { display: grid; gap: 3px; color: var(--ink); font-size: 14px; }
@@ -164,7 +166,7 @@ button:disabled { cursor: not-allowed; opacity: .5; }
 .portrait-placeholder span { font: 800 clamp(28px, 5vw, 70px)/1 Manrope, sans-serif; opacity: .38; }
 .portrait-placeholder small { margin-top: 8px; font-size: clamp(5px,.7vw,10px); letter-spacing: .12em; text-transform: uppercase; }
 .identity { position: absolute; z-index: 2; top: 16%; left: 58%; right: 5.5%; }
-.identity p { margin: 0 0 6%; font-size: clamp(6px,.78vw,11px); letter-spacing: .14em; text-transform: uppercase; font-weight: 700; }
+.identity p { margin: 0 0 6%; font-size: clamp(7.8px,1.014vw,14.3px); letter-spacing: .14em; text-transform: uppercase; font-weight: 700; }
 .identity h2 {
   margin: 0;
   font: 800 clamp(18px, 2.7vw, 40px)/1.02 Manrope, sans-serif;
@@ -203,7 +205,7 @@ button:disabled { cursor: not-allowed; opacity: .5; }
 }
 .identity h3 {
   margin: 0;
-  font: 600 clamp(7px, .88vw, 12px)/1.24 Manrope, sans-serif;
+  font: 600 clamp(9.1px, 1.144vw, 15.6px)/1.24 Manrope, sans-serif;
   max-width: 94%;
   white-space: pre-line;
 }
