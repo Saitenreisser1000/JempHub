@@ -81,3 +81,33 @@ export function createZip(entries: ZipEntry[], date = new Date()): Blob {
 
   return new Blob([...parts, ...central, end], { type: 'application/zip' })
 }
+
+// Liest ZIP-Dateien ohne Kompression (wie von createZip erzeugt).
+export function readZip(buffer: ArrayBuffer): Map<string, Uint8Array<ArrayBuffer>> {
+  const bytes = new Uint8Array(buffer)
+  const view = new DataView(buffer)
+  let end = -1
+  for (let i = bytes.length - 22; i >= Math.max(0, bytes.length - 65557); i -= 1) {
+    if (view.getUint32(i, true) === 0x06054b50) { end = i; break }
+  }
+  if (end < 0) throw new Error('Keine ZIP-Datei')
+  const count = view.getUint16(end + 10, true)
+  let pointer = view.getUint32(end + 16, true)
+  const decoder = new TextDecoder()
+  const files = new Map<string, Uint8Array<ArrayBuffer>>()
+  for (let n = 0; n < count; n += 1) {
+    if (view.getUint32(pointer, true) !== 0x02014b50) throw new Error('Beschädigte ZIP-Datei')
+    const method = view.getUint16(pointer + 10, true)
+    const size = view.getUint32(pointer + 20, true)
+    const nameLength = view.getUint16(pointer + 28, true)
+    const extraLength = view.getUint16(pointer + 30, true)
+    const commentLength = view.getUint16(pointer + 32, true)
+    const offset = view.getUint32(pointer + 42, true)
+    const name = decoder.decode(bytes.subarray(pointer + 46, pointer + 46 + nameLength))
+    if (method !== 0) throw new Error('Komprimierte ZIP-Einträge werden nicht unterstützt')
+    const start = offset + 30 + view.getUint16(offset + 26, true) + view.getUint16(offset + 28, true)
+    files.set(name, bytes.slice(start, start + size))
+    pointer += 46 + nameLength + extraLength + commentLength
+  }
+  return files
+}

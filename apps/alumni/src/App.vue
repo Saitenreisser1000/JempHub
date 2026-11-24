@@ -3,7 +3,7 @@ import { computed, nextTick, onMounted, reactive, ref, watch } from 'vue'
 import { toJpeg, toPng } from 'html-to-image'
 import { jsPDF } from 'jspdf'
 import * as XLSX from 'xlsx'
-import { createZip, type ZipEntry } from './utils/zip'
+import { createZip, readZip, type ZipEntry } from './utils/zip'
 import SocialCard, { type AlumniRecord, type ContentBlock, type FormatKey } from './components/SocialCard.vue'
 
 const formats: Record<FormatKey, { label: string; width: number; height: number }> = {
@@ -381,10 +381,10 @@ function arrayBufferToBase64(buffer: ArrayBuffer) {
   return btoa(binary)
 }
 
-async function uploadStoredFile(blob: Blob, storedFilename: string, targetPage: number) {
+async function uploadStoredFile(blob: Blob, storedFilename: string, targetPage: number, mimeType = blob.type) {
   const response = await fetch('/api/files', {
     method: 'POST', headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ filename: storedFilename, mimeType: blob.type, data: arrayBufferToBase64(await blob.arrayBuffer()), metadata: { alumniName: record.name.trim(), format: format.value, page: targetPage } }),
+    body: JSON.stringify({ filename: storedFilename, mimeType, data: arrayBufferToBase64(await blob.arrayBuffer()), metadata: { alumniName: record.name.trim(), format: format.value, page: targetPage } }),
   })
   if (!response.ok) throw new Error((await response.json().catch(() => ({}))).error || 'Speichern fehlgeschlagen')
 }
@@ -406,28 +406,72 @@ async function refreshStoredFiles(silent = false) {
   } finally { storageLoading.value = false }
 }
 
+// Ein Archiv-Eintrag pro Projekt: ZIP mit allen Seiten (oder PDF) und den
+// Projektdaten (projekt.json), damit sich das Projekt wieder laden lässt.
+const PROJECT_FILE = 'projekt.json'
+
 async function saveFinishedFiles() {
   busy.value = true
   storageLoading.value = true
   try {
+    const encoder = new TextEncoder()
+    const toBytes = async (blob: Blob) => new Uint8Array(await blob.arrayBuffer())
+    const totalPages = hasSecondPage.value ? pageCount.value : 1
+    const entries: ZipEntry[] = []
     if (archiveFormat.value === 'pdf') {
-      await uploadStoredFile(await createPdfBlob(), `${filename.value}.pdf`, 0)
+      entries.push({ name: `${filename.value}.pdf`, data: await toBytes(await createPdfBlob()) })
     } else {
       const ext = archiveFormat.value === 'jpeg' ? 'jpg' : 'png'
-      const totalPages = hasSecondPage.value ? pageCount.value : 1
       for (let pageNumber = 1; pageNumber <= totalPages; pageNumber += 1) {
         const dataUrl = await renderImage(archiveFormat.value, pageNumber)
-        const blob = await (await fetch(dataUrl)).blob()
         const pageSuffix = totalPages > 1 ? `-seite-${pageNumber}` : ''
-        await uploadStoredFile(blob, `${filename.value}${pageSuffix}.${ext}`, pageNumber)
+        entries.push({ name: `${filename.value}${pageSuffix}.${ext}`, data: await toBytes(await (await fetch(dataUrl)).blob()) })
       }
     }
+    const project = { version: 1, savedAt: new Date().toISOString(), format: format.value, pageCount: pageCount.value, record: JSON.parse(JSON.stringify(record)) }
+    entries.unshift({ name: PROJECT_FILE, data: encoder.encode(JSON.stringify(project)) })
+    await uploadStoredFile(createZip(entries), `${filename.value}.zip`, totalPages, 'application/zip')
     await refreshStoredFiles(true)
-    notify('Fertige Datei wurde im Archiv gespeichert')
+    notify('Projekt wurde im Archiv gespeichert')
   } catch (error) {
     notify('Speichern im Archiv fehlgeschlagen')
     console.error(error)
   } finally { busy.value = false; storageLoading.value = false }
+}
+
+function isProjectFile(file: { filename: string; mimeType?: string }) {
+  return file.mimeType === 'application/zip' || file.filename.toLowerCase().endsWith('.zip')
+}
+
+function applyProject(parsed: Partial<AlumniRecord>, savedPageCount?: number) {
+  Object.assign(record, parsed)
+  record.quotes = Array.isArray(parsed.quotes) && parsed.quotes.length ? [...parsed.quotes] : ['']
+  record.contentBlocks = normalizeContentBlocks(parsed.contentBlocks)
+  if (!record.contentBlocks.length && record.retrospective.trim()) record.contentBlocks = [{ heading: 'RÜCKBLICK', intro: record.retrospective, bullets: [], page: 2 }]
+  const neededPages = Math.max(2, ...(record.contentBlocks ?? []).map(block => block.page ?? 2))
+  pageCount.value = Math.min(maxPages, Math.max(neededPages, Number(savedPageCount) || 0))
+  for (let pageNumber = 2; pageNumber <= pageCount.value; pageNumber += 1) ensureContentBlockForPage(pageNumber)
+  page.value = 1
+}
+
+async function loadStoredProject(file: { id: string; filename: string }) {
+  if (!window.confirm(`Aktuellen Beitrag durch „${file.filename}“ ersetzen?`)) return
+  storageLoading.value = true
+  try {
+    const response = await fetch(`/api/files/${encodeURIComponent(file.id)}/download`)
+    if (!response.ok) throw new Error('Download fehlgeschlagen')
+    const projectData = readZip(await response.arrayBuffer()).get(PROJECT_FILE)
+    if (!projectData) throw new Error('Keine Projektdaten in der Datei')
+    const project = JSON.parse(new TextDecoder().decode(projectData)) as { record: Partial<AlumniRecord>; pageCount?: number; format?: FormatKey }
+    if (!project.record) throw new Error('Keine Projektdaten in der Datei')
+    applyProject(project.record, project.pageCount)
+    if (project.format && project.format in formats) format.value = project.format
+    records.value = []
+    notify('Projekt wurde geladen')
+  } catch (error) {
+    notify('Projekt konnte nicht geladen werden')
+    console.error(error)
+  } finally { storageLoading.value = false }
 }
 
 async function removeStoredFile(id: string) {
@@ -458,12 +502,7 @@ function loadLocal() {
   const saved = localStorage.getItem('sternstein-alumni-current')
   if (!saved) return notify('Noch kein lokaler Entwurf vorhanden')
   try {
-    const parsed = JSON.parse(saved) as Partial<AlumniRecord>
-    Object.assign(record, parsed)
-    record.contentBlocks = normalizeContentBlocks(parsed.contentBlocks)
-    if (!record.contentBlocks.length && record.retrospective.trim()) record.contentBlocks = [{ heading: 'RÜCKBLICK', intro: record.retrospective, bullets: [], page: 2 }]
-    pageCount.value = Math.max(2, ...(record.contentBlocks ?? []).map(block => block.page ?? 2))
-    for (let pageNumber = 2; pageNumber <= pageCount.value; pageNumber += 1) ensureContentBlockForPage(pageNumber)
+    applyProject(JSON.parse(saved) as Partial<AlumniRecord>)
     notify('Entwurf wurde geladen')
   } catch { notify('Entwurf konnte nicht geladen werden') }
 }
@@ -555,7 +594,7 @@ onMounted(() => {
         </summary>
         <section class="storage-panel" aria-label="Dateiarchiv">
           <div class="storage-heading">
-            <div><strong>{{ storageLabel }}</strong><small>Fertige Dateien am Server ablegen</small></div>
+            <div><strong>{{ storageLabel }}</strong><small>Ein Eintrag pro Projekt: alle Seiten + Projektdaten</small></div>
             <span class="storage-status" :class="{ online: storageOnline }">{{ storageOnline ? 'Verbunden' : 'Nicht verbunden' }}</span>
           </div>
           <div class="storage-actions">
@@ -569,12 +608,13 @@ onMounted(() => {
             <div v-for="file in storedFiles" :key="file.id" class="stored-file">
               <div><strong>{{ file.filename }}</strong><small>{{ new Date(file.createdAt).toLocaleString('de-AT') }} · {{ formatBytes(file.size) }}</small></div>
               <div class="stored-file-actions">
-                <a class="text-button" :href="`/api/files/${encodeURIComponent(file.id)}/download`">Laden</a>
+                <button v-if="isProjectFile(file)" class="text-button" :disabled="storageLoading || busy" @click="loadStoredProject(file)">In Editor laden</button>
+                <a class="text-button" :href="`/api/files/${encodeURIComponent(file.id)}/download`">Herunterladen</a>
                 <button class="text-button danger" @click="removeStoredFile(file.id)">Löschen</button>
               </div>
             </div>
           </div>
-          <p v-else-if="storageOnline && !storageLoading" class="empty-hint">Noch keine fertigen Dateien gespeichert.</p>
+          <p v-else-if="storageOnline && !storageLoading" class="empty-hint">Noch keine Projekte gespeichert.</p>
         </section>
       </details>
       <div class="header-actions">
