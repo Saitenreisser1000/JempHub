@@ -657,7 +657,7 @@ onMounted(() => {
 
         <div v-if="format !== 'story'" class="form-section typography-controls">
           <h2>Schrift und Abstände</h2>
-          <label class="field"><span>Werdegang: {{ record.educationFontSize ?? 100 }} %</span><input v-model.number="record.educationFontSize" type="range" min="70" max="280" step="5" /></label>
+          <label class="field"><span>Werdegang: {{ record.educationFontSize ?? 100 }} %</span><input v-model.number="record.educationFontSize" type="range" min="70" max="350" step="5" /></label>
           <label class="field"><span>Text ab Seite 2: {{ record.contentFontSize ?? 100 }} %</span><input v-model.number="record.contentFontSize" type="range" min="70" max="280" step="5" /></label>
           <label class="field"><span>Absatzabstand: {{ record.paragraphSpacing ?? 100 }} %</span><input v-model.number="record.paragraphSpacing" type="range" min="0" max="400" step="10" /></label>
           <label class="field"><span>Abstand Stichpunkte: {{ record.bulletSpacing ?? 100 }} %</span><input v-model.number="record.bulletSpacing" type="range" min="0" max="400" step="10" /></label>
