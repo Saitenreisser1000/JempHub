@@ -13,4 +13,5 @@ for (const file of files) await cp(resolve(root, file), resolve(root, 'dist', fi
 const { html, ids } = inlineLevels(await readFile(resolve(root, 'index.html'), 'utf8'), resolve(root, 'levels'));
 await writeFile(resolve(root, 'dist/index.html'), html);
 await cp(resolve(root, 'editor/index.html'), resolve(root, 'dist/editor/index.html'));
+await cp(resolve(root, 'grafik'), resolve(root, 'dist/grafik'), { recursive: true });   // Bilder im Diorama-Stil (WebP)
 console.log(`supersam-labor: dist/ gebaut (Editor-Levels: ${ids.length ? ids.join(', ') : 'keine'})`);

@@ -3150,8 +3150,36 @@ function heroFrame(){
 }
 // Sam wird 20 % größer gezeichnet als sein 16-px-Sprite; die Trefferzone bleibt gleich (Levels und Sprünge passen weiter)
 const SAM_SCALE=1.2;
+// ---------- Bilder im Diorama-Stil (grafik/, erstellt mit ChatGPT) ----------
+// Liegt ein Bild vor, zeichnet das Spiel es statt der Pixelgrafik; fehlt es, bleibt alles wie bisher.
+// Figuren: 512² mit Fußpunkt unten mittig, sichtbare Höhe 90 % des Bildes (siehe grafik-quelle/GRAFIK_VORGABEN.md).
+const GFX={dir:'grafik/',img:{},list:['sam_stehen','sam_laufen_1','sam_laufen_2','sam_laufen_3','sam_springen']};
+if(!EDIT_ENGINE&&typeof Image==='function') for(const n of GFX.list){ const im=new Image(); im.decoding='async'; im.onload=()=>{ GFX.img[n]=im; }; im.src=GFX.dir+n+'.webp'; }
+const gimg=n=>GFX.img[n];
+// Sam als Bild: Fußpunkt auf Sams Füßen, sichtbare Höhe wie die Pixelfigur (16 × SAM_SCALE). Fehlende Laufbilder:
+// das Standbild mit leichtem Wippen und Neigen, bis die echten Bilder da sind.
+function samImg(){
+  const st=gimg('sam_stehen'); if(!st) return null;
+  const air=!P.ground&&!(P.wallDir&&P.vy>0), run=Math.abs(P.vx)>5&&!air;
+  let n='sam_stehen', bob=0, tilt=0;
+  if(air){ n=gimg('sam_springen')?'sam_springen':n; if(n==='sam_stehen') tilt=P.vy<0?-.08:.05; }
+  else if(run){ const k=Math.floor(P.run*.6)%4, fr=['sam_laufen_1','sam_laufen_2','sam_laufen_3','sam_laufen_2'][k];
+    if(gimg(fr)) n=fr; else { bob=Math.abs(Math.sin(P.run*.6*Math.PI/2))*1.2; tilt=.07; } }
+  return {im:gimg(n),bob,tilt};
+}
+function drawSamImg(si,x,y,face,sq,alpha){
+  const H=16*SAM_SCALE/.9, w=H*(1+sq*.2), h=H*(1-sq*.2);
+  ctx.save(); ctx.globalAlpha*=alpha; ctx.imageSmoothingEnabled=true; ctx.imageSmoothingQuality='high';
+  ctx.translate(x,y-si.bob); ctx.scale(face,1); if(si.tilt) ctx.rotate(si.tilt);
+  ctx.drawImage(si.im,-w/2,-h,w,h); ctx.restore(); ctx.imageSmoothingEnabled=false;
+}
 function drawPlayer(){
   if(P.inv>0&&Math.floor(P.inv*12)%2&&state==="play"){ ctx.globalAlpha=.35; }
+  const si=samImg();
+  if(si){ const face=(P.wallDir&&P.vy>0)?-P.wallDir:P.face;
+    for(const t of trail) drawSamImg(si,t.x+4,t.y+14,t.face>0?1:-1,0,t.t*1.6);
+    if(P.glide) ctx.drawImage(LEAF,Math.round(P.x+P.w/2-8*SAM_SCALE),Math.round(P.y+P.h-27*SAM_SCALE),16*SAM_SCALE,16*SAM_SCALE);
+    drawSamImg(si,P.x+P.w/2,P.y+P.h,face>0?1:-1,P.squash,1); ctx.globalAlpha=1; return; }
   const f=heroFrame();
   const Z=SAM_SCALE, fw=16*Z;
   for(const t of trail){ ctx.globalAlpha=t.t*1.6; ctx.drawImage(t.face>0?f.r:f.l,Math.round(t.x+4-fw/2),Math.round(t.y+14-fw),fw,fw); }
