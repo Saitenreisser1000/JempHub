@@ -144,7 +144,7 @@ const educationLines = computed(() => {
   layoutTick.value
   const cardWidth = previewElement.value?.clientWidth || currentFormat.value.width
   return calculateTextFit(props.record.education.trim() || 'Ausbildung und Werdegang', {
-    width: cardWidth * (props.format === 'square' ? 0.37 : 0.82),
+    width: cardWidth * 0.82,
     height: Number.MAX_SAFE_INTEGER,
     maxFontSize: 12,
     minFontSize: 12,
@@ -186,7 +186,7 @@ const quoteFit = computed(() => {
   const text = firstQuote.value || 'Trau dich, deinen Weg zu verändern.'
   const cardWidth = previewElement.value?.clientWidth || currentFormat.value.width
   const cardHeight = previewElement.value?.clientHeight || currentFormat.value.height
-  const width = cardWidth * (props.format === 'story' ? 0.892 : props.format === 'square' ? 0.486 : 0.46)
+  const width = cardWidth * (props.format === 'story' ? 0.892 : props.format === 'square' ? 0.506 : 0.46)
   const height = cardHeight * (props.format === 'story' ? 0.12 : 0.24)
   return calculateTextFit(text, {
     width,
