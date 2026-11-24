@@ -552,8 +552,13 @@ onMounted(() => {
           <p>Inhalte eingeben, Format wählen und den fertigen Beitrag direkt exportieren.</p>
         </div>
 
+        <div class="page-group" :class="{ active: page === 1 }" @focusin="page = 1">
+          <button type="button" class="page-group-head" @click="page = 1">
+            <span class="page-number">1</span>
+            <span><strong>Seite 1</strong><small>Titelseite · Person, Werdegang, Porträt, Zitat</small></span>
+          </button>
         <div class="form-section">
-          <div class="section-title-row"><h2>Person</h2><span class="section-tag">Seite 1</span></div>
+          <div class="section-title-row"><h3>Person</h3></div>
           <div class="field-grid">
             <div class="field-wide">
               <label class="field"><span>Name</span><input v-model="record.name" placeholder="Vor- und Nachname" /></label>
@@ -569,15 +574,15 @@ onMounted(() => {
         </div>
 
         <div v-if="format !== 'story'" class="form-section">
-          <div class="section-title-row"><h2>Werdegang</h2><span class="section-tag">Seite 1</span></div>
+          <div class="section-title-row"><h3>Werdegang</h3></div>
           <label class="field"><span>Ausbildung &amp; heutige Tätigkeit</span><textarea v-model="record.education" rows="2" placeholder="Studium, Ausbildung, heutige Tätigkeit"></textarea></label>
           <label class="size-control"><span>Schriftgröße</span><input v-model.number="record.educationFontSize" type="range" min="70" max="350" step="5" /><output>{{ record.educationFontSize ?? 100 }} %</output></label>
         </div>
 
         <div class="form-section">
           <div class="section-title-row">
-            <h2>Porträt</h2>
-            <span class="section-actions"><button v-if="record.image" class="text-button" @click="record.image = ''">Entfernen</button><span class="section-tag">Seite 1</span></span>
+            <h3>Porträt</h3>
+            <button v-if="record.image" class="text-button" @click="record.image = ''">Entfernen</button>
           </div>
           <button class="upload-zone" type="button" @click="fileInput?.click()">
             <span class="upload-icon">＋</span><span><strong>{{ record.image ? 'Anderes Bild wählen' : 'Porträt hochladen' }}</strong><small>JPG oder PNG · am besten hochauflösend</small></span>
@@ -592,7 +597,7 @@ onMounted(() => {
         </div>
 
         <div class="form-section">
-          <div class="section-title-row"><h2>Zitat</h2><span class="section-tag">Seite 1</span></div>
+          <div class="section-title-row"><h3>Zitat</h3></div>
           <div class="quote-field">
             <span>„</span><textarea v-model="record.quotes[0]" rows="2" placeholder="Zitat"></textarea>
             <span></span>
@@ -600,13 +605,18 @@ onMounted(() => {
           <label class="size-control"><span>Schriftgröße</span><input v-model.number="record.quoteFontSize" type="range" min="70" max="280" step="5" /><output>{{ record.quoteFontSize ?? 100 }} %</output></label>
         </div>
 
-        <div v-if="format !== 'story'" class="form-section">
-          <div class="section-title-row"><h2>Textboxen</h2><span class="section-tag">ab Seite 2</span></div>
-          <div class="content-block-fields">
-            <div v-for="({ block, pageNumber }, index) in pageTextboxes" :key="pageNumber" class="content-block-field">
-              <div class="section-title-row">
-                <strong>Seite {{ pageNumber }}</strong>
-              </div>
+        </div>
+
+        <template v-if="format !== 'story'">
+          <div v-for="({ block, pageNumber }, index) in pageTextboxes" :key="pageNumber" class="page-group" :class="{ active: page === pageNumber }" @focusin="page = pageNumber">
+            <div class="page-group-head-row">
+              <button type="button" class="page-group-head" @click="page = pageNumber">
+                <span class="page-number">{{ pageNumber }}</span>
+                <span><strong>Seite {{ pageNumber }}</strong><small>Textbox · {{ block.heading || 'ohne Überschrift' }}</small></span>
+              </button>
+              <button type="button" class="text-button danger" :aria-label="`Seite ${pageNumber} entfernen`" @click.stop="removePage(pageNumber)">Seite entfernen</button>
+            </div>
+            <div class="page-group-body">
               <label class="field"><span>Überschrift</span><input v-model="block.heading" placeholder="z. B. Rückblick" /></label>
               <div class="field-block">
                 <label class="field"><span>Text</span><textarea v-model="block.intro" rows="5" maxlength="700" placeholder="Text für diese Seite"></textarea><small>{{ block.intro.length }} / 700 Zeichen</small></label>
@@ -628,7 +638,8 @@ onMounted(() => {
               </div>
             </div>
           </div>
-        </div>
+          <button v-if="pageCount < maxPages" type="button" class="add-page" @click="addPage">+ Seite {{ pageCount + 1 }} hinzufügen</button>
+        </template>
 
         <div class="form-section data-actions">
           <button class="text-button" @click="resetForm">Alle Felder zurücksetzen</button>

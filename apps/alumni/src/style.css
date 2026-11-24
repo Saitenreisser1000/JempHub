@@ -95,6 +95,23 @@ button:disabled { cursor: not-allowed; opacity: .5; }
 .control-stack { display: grid; gap: 6px; margin-top: 8px; }
 .control-stack .size-control { margin-top: 0; }
 .field-block { margin-top: 12px; }
+/* Editor nach Seiten gegliedert */
+.page-group { margin: 18px 0; padding: 4px 18px 6px; border: 1px solid var(--line); border-radius: 12px; background: #fff; transition: border-color .18s ease, box-shadow .18s ease; }
+.page-group.active { border-color: rgba(251,192,45,.9); box-shadow: 0 0 0 3px rgba(251,192,45,.16); }
+.page-group .form-section { padding: 18px 0; }
+.page-group .form-section:last-child { padding-bottom: 12px; }
+.page-group h3 { font: 700 12px/1 Manrope, sans-serif; letter-spacing: .03em; margin: 0 0 14px; color: var(--ink); }
+.page-group-head-row { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+.page-group-head { display: flex; align-items: center; gap: 12px; width: 100%; padding: 14px 0; border: 0; background: transparent; text-align: left; cursor: pointer; color: var(--ink); }
+.page-group-head strong { display: block; font: 800 15px/1.1 Manrope, sans-serif; }
+.page-group-head small { display: block; margin-top: 3px; color: var(--muted); font-size: 12px; }
+.page-number { display: grid; place-items: center; width: 30px; height: 30px; border-radius: 50%; background: #ecebe3; color: #6c6a5e; font: 800 13px/1 Manrope, sans-serif; flex: 0 0 auto; }
+.page-group.active .page-number { background: var(--yellow); color: var(--ink); }
+.page-group-head-row .text-button { white-space: nowrap; }
+.page-group-body { padding: 4px 0 16px; border-top: 1px solid var(--line); }
+.page-group-body > .field:first-child { margin-top: 14px; }
+.add-page { width: 100%; margin: 0 0 18px; padding: 14px; border: 1px dashed #c9c7bd; border-radius: 12px; background: transparent; color: #605b4a; font: 700 13px/1 Manrope, sans-serif; cursor: pointer; }
+.add-page:hover { border-color: var(--yellow); background: #fffaf0; }
 .section-tag { padding: 3px 8px; border-radius: 999px; background: #ecebe3; color: #6c6a5e; font-size: 10px; font-weight: 700; letter-spacing: .04em; text-transform: uppercase; margin-bottom: 17px; }
 .section-actions { display: flex; align-items: center; gap: 8px; }
 .section-actions .text-button { margin-bottom: 17px; }
