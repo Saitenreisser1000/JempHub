@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
+import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { calculateTextFit } from '../utils/textFit'
 
 export type FormatKey = 'portrait' | 'square' | 'story'
@@ -211,7 +211,60 @@ const contentBlockFits = computed(() => pageBlocks.value.map(block => fitTextBlo
   { top: 0, right: 0, bottom: 0, left: 0 },
 )))
 
-const quoteStyle = computed(() => ({ fontSize: `${2.1 * ((props.record.quoteFontSize ?? 100) / 100)}cqw`, lineHeight: 1.12, letterSpacing: '-.04em' }))
+// Zitat-Kasten (Hochformat/Quadrat): Der Regler gibt die Wunschgröße vor. Ist der Block
+// Matura/Name/Beruf länger als vorgesehen, rückt die Oberkante des Kastens darunter
+// (Unterkante bleibt). Passt der Text dann nicht, wird die Schrift verkleinert.
+const quoteBox = ref<HTMLElement | null>(null)
+const quoteAdjust = ref<{ font: number; top?: number; height?: number } | null>(null)
+const quoteBaseSize = computed(() => 2.1 * ((props.record.quoteFontSize ?? 100) / 100))
+const quoteStyle = computed(() => ({
+  fontSize: `${quoteAdjust.value?.font ?? quoteBaseSize.value}cqw`,
+  lineHeight: 1.12,
+  letterSpacing: '-.04em',
+  ...(quoteAdjust.value?.top !== undefined ? { top: `${quoteAdjust.value.top}%`, height: `${quoteAdjust.value.height}%` } : {}),
+}))
+
+function fitQuote() {
+  const card = previewElement.value
+  const quote = quoteBox.value
+  const identity = identityBox.value
+  if (!card || !quote || props.format === 'story' || props.page !== 1) { quoteAdjust.value = null; return }
+  const cardHeight = card.clientHeight
+  if (!cardHeight) return
+  // Ausgangslage messen (Größen aus dem Stylesheet)
+  quote.style.top = ''
+  quote.style.height = ''
+  quote.style.fontSize = `${quoteBaseSize.value}cqw`
+  const baseTop = quote.offsetTop
+  const bottom = baseTop + quote.offsetHeight
+  let top: number | undefined
+  let height: number | undefined
+  if (identity) {
+    const identityBottom = identity.offsetTop + identity.offsetHeight + cardHeight * 0.02
+    if (identityBottom > baseTop) {
+      const newTop = Math.min(identityBottom, bottom - cardHeight * 0.12)
+      top = (newTop / cardHeight) * 100
+      height = ((bottom - newTop) / cardHeight) * 100
+      quote.style.top = `${top}%`
+      quote.style.height = `${height}%`
+    }
+  }
+  // Schrift verkleinern, bis der Text in den Kasten passt
+  let font = quoteBaseSize.value
+  const fits = () => quote.scrollHeight <= quote.clientHeight + 1 && quote.scrollWidth <= quote.clientWidth + 1
+  for (let scale = 1; scale >= 0.35; scale -= 0.05) {
+    font = quoteBaseSize.value * scale
+    quote.style.fontSize = `${font}cqw`
+    if (fits()) break
+  }
+  quoteAdjust.value = { font, top, height }
+}
+
+watch(
+  () => [props.format, props.page, firstQuote.value, props.record.quoteFontSize, props.record.name, props.record.nameFontSize, props.record.doubleFirstName, props.record.graduation, props.record.profession, layoutTick.value],
+  () => { void nextTick(fitQuote) },
+  { flush: 'post' },
+)
 const educationStyle = computed(() => ({ fontSize: `${0.9 * ((props.record.educationFontSize ?? 100) / 100)}cqw` }))
 // Jede Textbox hat eigene Werte; ältere Projekte nutzen die früheren gemeinsamen Werte.
 function contentStyle(block: ContentBlock) {
@@ -277,7 +330,7 @@ defineExpose({ element: previewElement })
       <h3>{{ record.profession || 'Beruf' }}</h3>
       <blockquote v-if="firstQuote && format === 'story'" class="main-quote" :style="quoteStyle">„{{ firstQuote }}“</blockquote>
     </div>
-    <blockquote v-if="firstQuote && format !== 'story'" class="main-quote" :style="quoteStyle">„{{ firstQuote }}“</blockquote>
+    <blockquote v-if="firstQuote && format !== 'story'" ref="quoteBox" class="main-quote" :style="quoteStyle">„{{ firstQuote }}“</blockquote>
     <div v-if="format !== 'story'" class="below-quote">
       <div class="education-note">
         <span>WERDEGANG</span>
