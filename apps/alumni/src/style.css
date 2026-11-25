@@ -183,7 +183,7 @@ button:disabled { cursor: not-allowed; opacity: .5; }
 .portrait-placeholder span { font: 800 clamp(28px, 5vw, 70px)/1 Manrope, sans-serif; opacity: .38; }
 .portrait-placeholder small { margin-top: 8px; font-size: clamp(5px,.7vw,10px); letter-spacing: .12em; text-transform: uppercase; }
 .identity { position: absolute; z-index: 2; top: 16%; left: 58%; right: 5.5%; }
-.identity p { margin: 0 0 6%; font-size: clamp(7.8px,1.014vw,14.3px); letter-spacing: .14em; text-transform: uppercase; font-weight: 700; }
+.identity p { margin: 0 0 6%; font-size: 1.6cqw; letter-spacing: .14em; text-transform: uppercase; font-weight: 700; }
 .identity h2 {
   margin: 0;
   font: 800 clamp(18px, 2.7vw, 40px)/1.02 Manrope, sans-serif;
@@ -222,7 +222,7 @@ button:disabled { cursor: not-allowed; opacity: .5; }
 }
 .identity h3 {
   margin: 0;
-  font: 600 clamp(9.1px, 1.144vw, 15.6px)/1.24 Manrope, sans-serif;
+  font: 600 1.85cqw/1.24 Manrope, sans-serif;
   max-width: 94%;
   white-space: pre-line;
 }
@@ -230,11 +230,11 @@ button:disabled { cursor: not-allowed; opacity: .5; }
 .social-card .main-quote { font-weight: 800; line-height: 1.12; letter-spacing: -.04em; }
 .below-quote { position: absolute; z-index: 2; left: 5.4%; right: 5.4%; top: 70%; display: flex; flex-direction: column; justify-content: flex-start; gap: 10%; }
 .education-note span,
-.retrospective span { display: block; margin-bottom: 2%; font-size: clamp(5px,.67vw,10px); letter-spacing: .18em; font-weight: 800; }
+.retrospective span { display: block; margin-bottom: 2%; font-size: 1.25cqw; letter-spacing: .18em; font-weight: 800; }
 .education-note p,
 .retrospective p { margin: 0; font-size: clamp(6px,.9vw,12px); line-height: 1.38; max-width: 92%; }
 .education-note p { white-space: pre-line; }
-.social-card footer { position: absolute; left: 5.4%; right: 5.4%; bottom: 4%; padding-top: 2%; border-top: 1px solid rgba(8,8,31,.24); display: flex; justify-content: space-between; font-size: clamp(4px,.56vw,8px); font-weight: 700; letter-spacing: .08em; text-transform: uppercase; }
+.social-card footer { position: absolute; left: 5.4%; right: 5.4%; bottom: 4%; padding-top: 2%; border-top: 1px solid rgba(8,8,31,.24); display: flex; justify-content: space-between; font-size: 1cqw; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; }
 .identity p,
 .identity h2,
 .identity h3,
